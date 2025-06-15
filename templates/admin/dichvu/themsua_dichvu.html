@@ -1,0 +1,131 @@
+{% load static %}
+{% load static custom_filters %}
+<form
+    action="{% if dich_vu %}{% url 'dichvu:sua_dich_vu' dich_vu.MA_DICH_VU %}{% else %}{% url 'dichvu:them_dich_vu' %}{% endif %}"
+    method="POST" class="max-w-3xl mx-auto space-y-8 text-gray-900 text-base">
+    {% csrf_token %}
+    {% if dich_vu %}    
+        <input type="hidden" name="_method" value="PUT">
+    {% endif %}
+    <!-- Tên Dịch Vụ -->
+    <div>
+        <label for="TENDICHVU" class="block mb-2 text-base font-semibold text-indigo-900">
+            Tên Dịch Vụ <span class="text-red-600">*</span>
+        </label>
+        <input type="text" name="TENDICHVU" id="TENDICHVU" required
+            value="{% if dich_vu %}{{ dich_vu.TEN_DICH_VU }}{% endif %}"
+            placeholder="Nhập tên dịch vụ"
+            class="w-full px-4 py-2 border border-indigo-300 rounded-md shadow-sm
+            focus:outline-none focus:ring-2 focus:ring-indigo-400 transition duration-300 text-sm" />
+    </div>
+
+    <!-- Đơn Vị Tính & Giá Dịch Vụ -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+            <label for="DONVITINH" class="block mb-2 text-base font-semibold text-indigo-900">
+                Đơn Vị Tính <span class="text-red-600">*</span>
+            </label>
+            <select name="DONVITINH" id="DONVITINH" required
+                class="w-full px-4 py-2 border border-indigo-300 rounded-md shadow-sm
+                focus:outline-none focus:ring-2 focus:ring-indigo-400 transition duration-300 text-sm">
+                {% for don_vi in 'kWh,Khối,Tháng,Người,Lần,Cái,Chiết'|split:',' %}
+                    <option value="{{ don_vi }}"
+                        {% if dich_vu and dich_vu.DON_VI_TINH == don_vi %}selected{% endif %}>
+                        {{ don_vi }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label for="GIADICHVU" class="block mb-2 text-base font-semibold text-indigo-900">
+                Giá Dịch Vụ <span class="text-red-600">*</span>
+            </label>
+            <input type="number" name="GIADICHVU" id="GIADICHVU" min="0" step="0.01" required
+                value="{% if dich_vu %}{{ dich_vu.GIA_DICH_VU }}{% endif %}"
+                placeholder="Nhập giá dịch vụ"
+                class="w-full px-4 py-2 border border-indigo-300 rounded-md shadow-sm
+                focus:outline-none focus:ring-2 focus:ring-indigo-400 transition duration-300 text-sm" />
+        </div>
+    </div>
+
+    <!-- Checkbox: Tính theo kiểu đồng hồ điện, nước -->
+    <div class="flex items-start space-x-3">
+        <input type="hidden" name="dong_ho_dien_nuoc" value="0" />
+        <input type="checkbox" name="dong_ho_dien_nuoc" id="dong_ho_dien_nuoc" value="1"
+            {% if dich_vu and dich_vu.LOAI_DICH_VU == 'chi_so' %}checked{% endif %}
+            class="form-checkbox h-5 w-5 text-indigo-600 rounded transition duration-200 mt-1" />
+        <div>
+            <label for="dong_ho_dien_nuoc"
+                class="block text-indigo-900 font-medium cursor-pointer select-none text-sm">
+                Tính theo kiểu đồng hồ điện, nước
+            </label>
+            <p class="text-indigo-600 text-xs italic mt-1 max-w-lg">
+                Mức sử dụng của khách thuê có sự chênh lệch trước sau
+            </p>
+        </div>
+    </div>
+
+    <!-- Chọn khu vực muốn áp dụng -->
+    <div>
+        <div class="flex justify-between items-center mb-2">
+            <label class="font-semibold text-gray-700 text-base">Chọn khu vực muốn áp dụng</label>
+            <label for="selectAllRooms"
+                class="inline-flex items-center cursor-pointer select-none text-sm text-gray-600">
+                <input type="checkbox" id="selectAllRooms" class="form-checkbox h-4 w-4" />
+                <span class="ml-2">Chọn tất cả</span>
+            </label>
+        </div>
+
+        <div
+            class="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-56 overflow-y-auto border border-gray-300 rounded-md p-3 bg-gray-50 text-sm">
+            {% for khu_vuc in khu_vucs %}
+                <div>
+                    <label class="inline-flex items-center cursor-pointer select-none text-gray-800">
+                        <input type="checkbox" name="rooms[]"
+                            class="room-checkbox form-checkbox h-4 w-4 text-indigo-600"
+                            value="{{ khu_vuc.MA_KHU_VUC }}"
+                            {% if khu_vuc.MA_KHU_VUC in khu_vuc_ap_dung|map:'MA_KHU_VUC' %}checked{% endif %}>
+                        <span class="ml-2">{{ khu_vuc.TEN_KHU_VUC }}</span>
+                    </label>
+                    {% for ap_dung in khu_vuc_ap_dung %}
+                        {% if ap_dung.MA_KHU_VUC == khu_vuc.MA_KHU_VUC %}
+                            <input type="hidden" name="dichvukhuvuc[{{ khu_vuc.MA_KHU_VUC }}][madichvukhuvuc]"
+                                value="{{ ap_dung.lichsu_dichvu__MA_AP_DUNG_DV }}">
+                            <input type="hidden" name="dichvukhuvuc[{{ khu_vuc.MA_KHU_VUC }}][khuvuc]"
+                                value="{{ khu_vuc.MA_KHU_VUC }}">
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        </div>
+        <!-- Phân trang -->
+        {% if khu_vucs.has_other_pages %}
+            <div class="mt-4">
+                {% if khu_vucs.has_previous %}
+                    <a href="?page={{ khu_vucs.previous_page_number }}"
+                       class="px-4 py-2 bg-indigo-600 text-white rounded">Trước</a>
+                {% endif %}
+                <span>Trang {{ khu_vucs.number }} / {{ khu_vucs.paginator.num_pages }}</span>
+                {% if khu_vucs.has_next %}
+                    <a href="?page={{ khu_vucs.next_page_number }}"
+                       class="px-4 py-2 bg-indigo-600 text-white rounded">Sau</a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Nút Lưu -->
+    <div class="flex justify-center space-x-6 pt-6 border-t border-indigo-300">
+        <button type="submit"
+            class="px-10 py-2 bg-indigo-700 text-white rounded-md hover:bg-indigo-800
+            focus:outline-none focus:ring-4 focus:ring-indigo-400 transition shadow-md font-semibold text-sm">
+            {% if dich_vu %}Cập Nhật{% else %}Lưu{% endif %}
+        </button>
+        <button type="button"
+            class="px-10 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400
+            focus:outline-none focus:ring-4 focus:ring-gray-300 transition font-semibold text-sm"
+            onclick="document.getElementById('serviceModal').classList.add('hidden')">
+            Đóng
+        </button>
+    </div>
+</form>

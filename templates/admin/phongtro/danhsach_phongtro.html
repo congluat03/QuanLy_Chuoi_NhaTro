@@ -1,0 +1,80 @@
+{% extends 'admin/admin_layout.html' %}
+{% load static %}
+
+{% block content_body %}
+    <!-- Tiêu đề -->
+    <div class="w-full">
+        <div class="bg-gradient-to-r from-blue-600 to-blue-500 p-6 rounded-xl shadow text-white">
+            <h3 class="text-2xl font-bold tracking-wide">📍 Danh sách khu vực quản lý</h3>
+            <p class="text-sm opacity-80">Chọn khu vực để xem danh sách phòng trọ tương ứng</p>
+        </div>
+    </div>
+
+    <!-- Tabs khu vực -->
+    <div class="w-full mt-2">
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+            <ul id="khuvuc-tabs" class="flex flex-wrap items-center gap-3 sm:gap-5 border-b border-gray-200 pb-2">
+                {% if not khu_vucs %}
+                    <li>
+                        <span class="text-gray-400 italic">⚠️ Chưa có khu vực nào được tạo.</span>
+                    </li>
+                {% else %}
+                    {% for khu_vuc in khu_vucs %}
+                        <li>
+                            <a
+                               data-makhuvuc="{{ khu_vuc.MA_KHU_VUC }}"
+                               onclick="handleKhuVucClick(event, this)"
+                               class="khuvuc-tab text-sm sm:text-base font-medium px-4 py-1.5 rounded-lg transition-all duration-200
+                               {% if forloop.first %}bg-blue-600 text-white shadow-md{% else %}bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-600{% endif %}">
+                                {{ khu_vuc.TEN_KHU_VUC }}
+                            </a>
+                        </li>
+                    {% endfor %}
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+
+    <!-- Danh sách phòng trọ -->
+    <div id="phong-tro-content" class="mt-2 bg-white p-6 rounded-xl shadow-lg min-h-[200px]">
+        <div class="text-gray-400 text-center">
+            <span class="italic">🔄 Danh sách phòng trọ sẽ hiển thị tại đây khi bạn chọn khu vực.</span>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="phongTroModal" tabindex="-1" role="dialog" aria-modal="true"
+         class="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50 hidden transition-opacity duration-300 ease-in-out"
+         onclick="if(event.target === this) togglePhongTroModal()">
+        <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-3xl mx-4 max-h-[90vh] overflow-y-auto">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-center relative px-4 py-2 bg-blue-600 rounded-t-xl">
+                <h4 id="phongTroModalLabel" class="text-white text-xl font-semibold text-center flex-grow">
+                    <!-- Tiêu đề modal -->
+                </h4>
+                <button type="button" aria-label="Đóng"
+                        class="absolute right-4 top-1/2 transform -translate-y-1/2 text-white text-2xl font-bold hover:text-blue-300 focus:outline-none"
+                        onclick="togglePhongTroModal()">
+                    ×
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div id="modalContentPhongTro" class="px-8 py-6">
+                <!-- Nội dung động sẽ được chèn vào đây -->
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Includes -->
+    <script src="{% static 'js/phongtro/hoaDonHoanCoc.js' %}"></script>
+    <script src="{% static 'js/phongtro/hoadonBatDauHD.js' %}"></script>
+    <script src="{% static 'js/phongtro/hoaDonKetThucHD.js' %}"></script>
+    <script src="{% static 'js/phongtro/hoaDonTheoThang.js' %}"></script>
+    <script src="{% static 'js/phongtro/hoaDonTheoChuKy.js' %}"></script>
+    <script src="{% static 'js/phongtro/hoaDonCoc.js' %}"></script>
+    <script src="{% static 'js/phongtro/lapHoaDon.js' %}"></script>
+    <script src="{% static 'js/phongtro/lapHopDong.js' %}"></script>
+    <script src="{% static 'js/phongtro/hoaDonDichVu.js' %}"></script> 
+    <script src="{% static 'js/admin/phongtro/phongtro.js' %}"></script>
+{% endblock %}

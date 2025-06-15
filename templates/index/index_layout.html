@@ -1,0 +1,43 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Trang Chủ | Quản Lý Nhà Trọ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-gray-50 text-gray-900">
+    <!-- Navbar -->
+    <header class="bg-blue-800 shadow-md fixed w-full z-50 top-0">
+      <div class="max-w-screen-xl mx-auto px-6 sm:px-8 lg:px-12">
+        <div class="flex justify-between items-center h-16">
+          <div class="text-2xl font-extrabold text-white tracking-wide">Quản Lý Nhà Trọ</div>
+          <nav class="hidden md:flex space-x-8 font-semibold text-white">
+            <a href="/" class="hover:text-sky-300 transition-colors duration-300">Trang Chủ</a>
+            <a href="{% url 'index:register' %}" class="hover:text-sky-300 transition-colors duration-300">Đăng ký quản lý</a>
+            <a href="{% url 'index:login' %}" class="hover:text-sky-300 transition-colors duration-300">Đăng Nhập</a>
+          </nav>
+          <div class="md:hidden">
+            <button class="text-white focus:outline-none">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+    <!-- Giới Thiệu -->
+    <main class="min-h-screen">
+      {% block content %}
+
+      {% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-blue-900 text-white py-6 mt-16">
+      <div class="text-center text-sm font-light tracking-wide">© 2025 Quản Lý Nhà Trọ. Được phát triển bởi nhóm sinh viên.</div>
+    </footer>
+  </body>
+</html>

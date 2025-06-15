@@ -1,0 +1,65 @@
+{% load widget_tweaks %}
+<form method="POST" class="bg-white p-6 rounded-lg shadow-lg space-y-6">
+  {% csrf_token %}
+  <input type="hidden" name="MAPHONGTRO" id="MAPHONGTRO" value="{{ phong_tro.MA_PHONG }}" />
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- Cột 1: Thông tin cọc phòng -->
+    <div class="space-y-4">
+      <h3 class="text-lg font-semibold text-gray-700">Thông tin cọc phòng</h3>
+      <!-- Ngày cọc giữ chỗ -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1" for="NGAY_COC_PHONG">Ngày cọc giữ chỗ <span class="text-red-500">*</span></label>
+        <input type="date" id="NGAY_COC_PHONG" name="NGAY_COC_PHONG" value="{{ form_data.NGAY_COC_PHONG|default_if_none:'' }}" class="w-full border border-gray-300 p-2 rounded focus:ring-2 focus:ring-blue-500" required />
+      </div>
+      <!-- Ngày vào ở -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1" for="NGAY_DU_KIEN_VAO">Ngày đến ký hợp đồng <span class="text-red-500">*</span></label>
+        <input type="date" id="NGAY_DU_KIEN_VAO" name="NGAY_DU_KIEN_VAO" value="{{ form_data.NGAY_DU_KIEN_VAO|default_if_none:'' }}" class="w-full border border-gray-300 p-2 rounded focus:ring-2 focus:ring-blue-500" required />
+      </div>
+      <!-- Thu tiền cọc -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1" for="TIEN_COC_PHONG">Thu tiền cọc</label>
+        <input type="number" id="TIEN_COC_PHONG" name="TIEN_COC_PHONG" value="{{ form_data.TIEN_COC_PHONG|default_if_none:phong_tro.GIA_PHONG }}" step="0.01" class="w-full border border-gray-300 p-2 rounded focus:ring-2 focus:ring-blue-500" />
+      </div>
+      <!-- Giá phòng -->
+      <div class="bg-blue-50 border border-blue-200 text-blue-800 p-3 rounded">
+        <p class="text-sm">
+          <strong>Giá phòng:</strong> {{ phong_tro.GIA_PHONG|floatformat:0 }} đ
+        </p>
+      </div>
+    </div>
+
+    <!-- Cột 2: Thông tin khách thuê -->
+    <div class="space-y-4">
+      <h3 class="text-lg font-semibold text-gray-700">Thông tin khách thuê</h3>
+      <!-- Họ tên khách thuê -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1" for="HO_TEN_KT">Họ tên khách thuê <span class="text-red-500">*</span></label>
+        <input type="text" id="HO_TEN_KT" name="HO_TEN_KT" value="{{ form_data.HO_TEN_KT|default_if_none:'' }}" class="w-full border border-gray-300 p-2 rounded focus:ring-2 focus:ring-blue-500" placeholder="Nhập họ tên khách thuê" required />
+      </div>
+      <!-- Số điện thoại -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1" for="SDT_KT">Số điện thoại <span class="text-red-500">*</span></label>
+        <input type="tel" id="SDT_KT" name="SDT_KT" value="{{ form_data.SDT_KT|default_if_none:'' }}" class="w-full border border-gray-300 p-2 rounded focus:ring-2 focus:ring-blue-500" placeholder="Nhập số điện thoại" required />
+      </div>
+      <!-- Email -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1" for="EMAIL_KT">Email</label>
+        <input type="email" id="EMAIL_KT" name="EMAIL_KT" value="{{ form_data.EMAIL_KT|default_if_none:'' }}" class="w-full border border-gray-300 p-2 rounded focus:ring-2 focus:ring-blue-500" placeholder="Nhập email" />
+      </div>
+    </div>
+  </div>
+
+  <!-- Ghi chú -->
+  <div>
+    <label class="block text-sm font-medium text-gray-700 mb-1" for="GHI_CHU_CP">Ghi chú</label>
+    <textarea id="GHI_CHU_CP" name="GHI_CHU_CP" class="w-full border border-gray-300 p-2 rounded focus:ring-2 focus:ring-blue-500 min-h-[120px]" placeholder="Ghi chú nếu có">{{ form_data.GHI_CHU_CP|default_if_none:'' }}</textarea>
+  </div>
+
+  <!-- Các nút -->
+  <div class="flex justify-center gap-4 pt-4">
+    <button type="button" id="cancelButton" class="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400 transition">Hủy bỏ</button>
+    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">Thêm cọc giữ chỗ</button>
+  </div>
+</form>

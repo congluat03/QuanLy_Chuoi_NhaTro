@@ -1,0 +1,303 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi" class="no-js">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="csrf-token" content="{% csrf_token %}" />
+    <title>Quản Lý Nhà Trọ</title>
+    <meta name="description" content="Hệ thống quản lý nhà trọ hiện đại" />
+    <link
+      rel="shortcut icon"
+      type="image/x-icon"
+      href="{% static 'img/favicon.ico' %}"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;700;900&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-gray-50 font-['Roboto'] m-0">
+    <!-- Sidebar -->
+    <div
+      class="fixed top-0 left-0 h-full w-56 bg-blue-900 text-white shadow-lg z-20"
+    >
+      <!-- Logo -->
+      <div class="flex items-center space-x-3 p-5 border-b border-blue-800">
+        <span class="text-xl font-semibold hidden lg:block"
+          >Quản Lý Nhà Trọ</span
+        >
+      </div>
+
+      <!-- Menu -->
+      <nav class="px-4 py-6 overflow-y-auto max-h-[calc(100vh-80px)]">
+        <ul class="space-y-2 text-sm font-medium">
+          <!-- Trang chủ -->
+          <li>
+            <a
+              href="{% url 'admin' %}"
+              class="flex items-center gap-3 p-3 rounded-lg transition-all duration-200 ease-in-out {% if request.path == '/admin' %} bg-gradient-to-r from-blue-800 to-blue-700 shadow-inner font-semibold ring-2 ring-white/10 {% else %} hover:bg-blue-800 hover:ring-1 hover:ring-white/20 {% endif %}"
+            >
+              <i class="fas fa-home w-5"></i>
+              <span>Trang chủ</span>
+            </a>
+          </li>
+
+          <!-- Khu vực -->
+          <li>
+            <a
+              href="{% url 'admin_nhatro:khuvuc_list' %}"
+              class="flex items-center gap-3 p-3 rounded-lg transition-all duration-200 ease-in-out {% if request.path == '/admin/khuvuc' %} bg-gradient-to-r from-blue-800 to-blue-700 shadow-inner font-semibold ring-2 ring-white/10 {% else %} hover:bg-blue-800 hover:ring-1 hover:ring-white/20 {% endif %}"
+            >
+              <i class="fas fa-map-marked-alt w-5"></i>
+              <span>Quản lý khu vực</span>
+            </a>
+          </li>
+
+          <!-- Phòng trọ -->
+          <li>
+            <a
+              href="{% url 'admin_phongtro:phongtro_list' %}"
+              class="flex items-center gap-3 p-3 rounded-lg transition-all duration-200 ease-in-out {% if request.path == '/admin/phongtro' %} bg-gradient-to-r from-blue-800 to-blue-700 shadow-inner font-semibold ring-2 ring-white/10 {% else %} hover:bg-blue-800 hover:ring-1 hover:ring-white/20 {% endif %}"
+            >
+              <i class="fas fa-door-open w-5"></i>
+              <span>Danh sách phòng</span>
+            </a>
+          </li>
+
+          <!-- Dịch vụ -->
+          <li>
+            <a
+              href="{% url 'admin_dichvu:dichvu_list' %}"
+              class="flex items-center gap-3 p-3 rounded-lg transition-all duration-200 ease-in-out {% if request.path == '/admin/dichvu' %} bg-gradient-to-r from-blue-800 to-blue-700 shadow-inner font-semibold ring-2 ring-white/10 {% else %} hover:bg-blue-800 hover:ring-1 hover:ring-white/20 {% endif %}"
+            >
+              <i class="fas fa-toolbox w-5"></i>
+              <span>Quản lý dịch vụ</span>
+            </a>
+          </li>
+
+          <!-- Khách thuê -->
+          <li>
+            <a
+              href="{% url 'admin_khachthue:khachthue_list' %}"
+              class="flex items-center gap-3 p-3 rounded-lg transition-all duration-200 ease-in-out {% if request.path == '/admin/khachthue' %} bg-gradient-to-r from-blue-800 to-blue-700 shadow-inner font-semibold ring-2 ring-white/10 {% else %} hover:bg-blue-800 hover:ring-1 hover:ring-white/20 {% endif %}"
+            >
+              <i class="fas fa-user-friends w-5"></i>
+              <span>Khách thuê trọ</span>
+            </a>
+          </li>
+
+          <!-- Hợp đồng -->
+          <li>
+            <a
+              href="{% url 'admin_hopdong:hopdong_list' %}"
+              class="flex items-center gap-3 p-3 rounded-lg transition-all duration-200 ease-in-out {% if request.path == '/admin/hopdong' %} bg-gradient-to-r from-blue-800 to-blue-700 shadow-inner font-semibold ring-2 ring-white/10 {% else %} hover:bg-blue-800 hover:ring-1 hover:ring-white/20 {% endif %}"
+            >
+              <i class="fas fa-file-signature w-5"></i>
+              <span>Quản lý hợp đồng</span>
+            </a>
+          </li>
+
+          <!-- Hóa đơn -->
+          <li>
+            <a
+              href="{% url 'admin_hoadon:hoadon_list' %}"
+              class="flex items-center gap-3 p-3 rounded-lg transition-all duration-200 ease-in-out {% if request.path == '/admin/hoadon' %} bg-gradient-to-r from-blue-800 to-blue-700 shadow-inner font-semibold ring-2 ring-white/10 {% else %} hover:bg-blue-800 hover:ring-1 hover:ring-white/20 {% endif %}"
+            >
+              <i class="fas fa-receipt w-5"></i>
+              <span>Quản lý hóa đơn</span>
+            </a>
+          </li>
+
+          <!-- Nhân sự -->
+          <li>
+            <a
+              href="{% url 'admin_thanhvien:nhanvien_list' %}"
+              class="flex items-center gap-3 p-3 rounded-lg transition-all duration-200 ease-in-out {% if request.path == '/admin/thanhvien' %} bg-gradient-to-r from-blue-800 to-blue-700 shadow-inner font-semibold ring-2 ring-white/10 {% else %} hover:bg-blue-800 hover:ring-1 hover:ring-white/20 {% endif %}"
+            >
+              <i class="fas fa-id-badge w-5"></i>
+              <span>Quản lý nhân sự</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+
+    <!-- Header -->
+    <header
+      class="bg-blue-600 text-white shadow-sm fixed top-0 left-0 right-0 z-10"
+    >
+      <div class="mx-auto px-4 py-3 flex items-center justify-between">
+        <!-- Placeholder bên trái (để trống hoặc thêm logo sau này) -->
+        <div class="flex items-center space-x-4"></div>
+
+        <!-- User Dropdown luôn canh phải -->
+        <div class="relative" id="dropdownMenu">
+          <a
+            href="#"
+            id="dropdownToggle"
+            class="flex items-center space-x-2 text-white hover:text-blue-200 cursor-pointer select-none"
+            onclick="toggleDropdown(event)"
+          >
+            {% if user.quanly.profile_picture %}
+            <img
+              src="{{ user.quanly.profile_picture.url }}"
+              alt="Ảnh quản lý"
+              class="h-8 w-8 rounded-full border-2 border-white object-cover"
+            />
+            {% else %}
+            <img
+              src="{% static 'img/default-avatar.png' %}"
+              alt="Ảnh mặc định"
+              class="h-8 w-8 rounded-full border-2 border-white object-cover"
+            />
+            {% endif %}
+            <span class="font-semibold text-sm md:text-base"
+              >{{ user.username }}</span
+            >
+            <i class="fas fa-chevron-down text-blue-300 text-sm"></i>
+          </a>
+
+          <!-- Dropdown Menu -->
+          <ul
+            id="dropdownList"
+            class="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded-lg py-2 hidden z-20 ring-1 ring-black ring-opacity-5"
+          >
+            <li>
+              <a
+                href="{% url 'index:profile' %}"
+                class="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-blue-100 hover:text-blue-800 rounded"
+              >
+                <i class="fas fa-user-circle w-5"></i>
+                Hồ sơ
+              </a>
+            </li>
+            <li>
+              <form
+                id="logout-form"
+                action="{% url 'index:logout' %}"
+                method="POST"
+              >
+                {% csrf_token %}
+                <a
+                  href="#"
+                  onclick="event.preventDefault(); document.getElementById('logout-form').submit();"
+                  class="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-blue-100 hover:text-blue-800 rounded"
+                >
+                  <i class="fas fa-sign-out-alt w-5"></i>
+                  Đăng xuất
+                </a>
+              </form>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Wrapper -->
+    <div class="ml-0 lg:ml-56 pt-8 transition-all duration-300">
+      <!-- Main Content -->
+      <div class="min-h-screen bg-gray-50 px-2 py-4">
+        {% block content_body %} {% endblock %}
+      </div>
+
+      <!-- Footer -->
+      <footer class="bg-blue-900 text-white mt-12">
+        <div class="container mx-auto px-4 py-8">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div>
+              <h3 class="text-xl font-bold">Quản Lý Chuỗi Nhà Trọ</h3>
+              <p class="mt-3 text-blue-200">
+                Hệ thống quản lý nhà trọ hiện đại, giúp tối ưu hóa việc quản lý
+                cho chủ nhà và nâng cao trải nghiệm cho người thuê.
+              </p>
+            </div>
+            <div>
+              <h4 class="text-lg font-semibold">Liên kết nhanh</h4>
+              <ul class="mt-3 space-y-2">
+                <li>
+                  <a
+                    href="{% url 'admin' %}"
+                    class="text-blue-200 hover:text-white transition-colors"
+                    >Trang chủ</a
+                  >
+                </li>
+                <li>
+                  <a
+                    href="#"
+                    class="text-blue-200 hover:text-white transition-colors"
+                    >Dịch vụ</a
+                  >
+                </li>
+                <li>
+                  <a
+                    href="#"
+                    class="text-blue-200 hover:text-white transition-colors"
+                    >Giới thiệu</a
+                  >
+                </li>
+                <li>
+                  <a
+                    href="#"
+                    class="text-blue-200 hover:text-white transition-colors"
+                    >Liên hệ</a
+                  >
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h4 class="text-lg font-semibold">Thông tin liên hệ</h4>
+              <ul class="mt-3 space-y-2">
+                <li><strong>Địa chỉ:</strong> 123 Đường ABC, Thành phố XYZ</li>
+                <li><strong>Điện thoại:</strong> 0123456789</li>
+                <li><strong>Email:</strong> lienhe@quanglynhatro.com</li>
+              </ul>
+            </div>
+          </div>
+          <div class="mt-8 border-t border-blue-800 pt-4 text-center">
+            <p class="text-blue-200">
+              © 2025 Quản Lý Chuỗi Nhà Trọ - Tất cả các quyền được bảo vệ.
+            </p>
+          </div>
+        </div>
+      </footer>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+      function toggleDropdown(event) {
+        event.preventDefault();
+        const dropdownList = document.getElementById("dropdownList");
+        if (dropdownList.classList.contains("hidden")) {
+          dropdownList.classList.remove("hidden");
+          dropdownList.addEventListener(
+            "mouseleave",
+            closeDropdownOnMouseLeave
+          );
+        } else {
+          dropdownList.classList.add("hidden");
+          dropdownList.removeEventListener(
+            "mouseleave",
+            closeDropdownOnMouseLeave
+          );
+        }
+      }
+
+      function closeDropdownOnMouseLeave() {
+        const dropdownList = document.getElementById("dropdownList");
+        dropdownList.classList.add("hidden");
+        dropdownList.removeEventListener(
+          "mouseleave",
+          closeDropdownOnMouseLeave
+        );
+      }
+    </script>
+  </body>
+</html>

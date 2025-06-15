@@ -1,0 +1,180 @@
+{% extends 'admin/admin_layout.html' %}
+{% load static %}
+
+{% block content_body %}
+<div class="min-h-[500px] overflow-y-auto bg-gray-50 p-4 sm:p-6">
+    <div class="max-w-7xl mx-auto">
+        <!-- Thông Tin Khu Vực -->
+        <div class="bg-white shadow-lg rounded-2xl p-6 mb-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                <h4 class="text-2xl font-bold text-gray-800 flex items-center">
+                    <i class="fas fa-info-circle text-indigo-600 mr-3" aria-hidden="true"></i>
+                    Thông Tin Khu Vực
+                </h4>
+                <a href="{% url 'nhatro:khuvuc_list' %}" class="inline-flex items-center px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition duration-300 shadow-sm">
+                    <i class="fas fa-arrow-left mr-2" aria-hidden="true"></i>
+                    Quay Lại Danh Sách
+                </a>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="flex flex-col p-4 bg-gray-100 rounded-xl shadow-sm">
+                    <span class="text-sm font-semibold text-gray-600">Tên Khu Vực</span>
+                    <span class="text-lg font-medium text-gray-900">{{ khu_vuc.TEN_KHU_VUC|default:"Chưa có tên" }}</span>
+                </div>
+                <div class="flex flex-col p-4 bg-gray-100 rounded-xl shadow-sm">
+                    <span class="text-sm font-semibold text-gray-600">Thành Phố</span>
+                    <span class="text-lg font-medium text-gray-900">{{ khu_vuc.DV_HANH_CHINH_CAP1|default:"Chưa có thông tin" }}</span>
+                </div>
+                <div class="flex flex-col p-4 bg-gray-100 rounded-xl shadow-sm">
+                    <span class="text-sm font-semibold text-gray-600">Quận/Huyện</span>
+                    <span class="text-lg font-medium text-gray-900">{{ khu_vuc.DV_HANH_CHINH_CAP2|default:"Chưa có thông tin" }}</span>
+                </div>
+                <div class="flex flex-col p-4 bg-gray-100 rounded-xl shadow-sm">
+                    <span class="text-sm font-semibold text-gray-600">Phường/Xã</span>
+                    <span class="text-lg font-medium text-gray-900">{{ khu_vuc.DV_HANH_CHINH_CAP3|default:"Chưa có thông tin" }}</span>
+                </div>
+                <div class="flex flex-col p-4 bg-gray-100 rounded-xl shadow-sm">
+                    <span class="text-sm font-semibold text-gray-600">Trạng Thái Khu Vực</span>
+                    <span class="text-lg font-medium text-gray-900">{{ khu_vuc.TRANG_THAI_KV|default:"Chưa có trạng thái" }}</span>
+                </div>
+                <div class="flex flex-col p-4 bg-gray-100 rounded-xl shadow-sm">
+                    <span class="text-sm font-semibold text-gray-600">Số Lượng Phòng Trọ</span>
+                    <span class="text-lg font-medium text-gray-900">{{ so_luong_phong_tro }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Thông Tin Người Quản Lý -->
+        <div class="bg-white shadow-lg rounded-2xl p-6 mb-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                <h4 class="text-2xl font-bold text-gray-800 flex items-center">
+                    <i class="fas fa-user-cog text-indigo-600 mr-3" aria-hidden="true"></i>
+                    Thông Tin Người Quản Lý
+                </h4>
+            </div>
+            <form action="{% url 'nhatro:khuvuc_thiet_lap_nguoi_quan_ly' khu_vuc.MA_KHU_VUC %}" method="POST" class="space-y-6">
+                {% csrf_token %}
+                <input type="hidden" name="MA_KHU_VUC" value="{{ khu_vuc.MA_KHU_VUC }}">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="MA_QUAN_LY" class="block text-sm font-semibold text-gray-700 mb-2">Tên Quản Lý</label>
+                        <select name="MA_QUAN_LY" id="MA_QUAN_LY" class="w-full p-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition bg-white" required>
+                            <option value="" {% if not lich_su_quan_ly.MA_QUAN_LY %}selected{% endif %}>-- Chọn Quản Lý --</option>
+                            {% for quanly in quan_lys %}
+                                <option value="{{ quanly.MA_QUAN_LY }}"
+                                    {% if lich_su_quan_ly.MA_QUAN_LY_id == quanly.MA_QUAN_LY %}selected{% endif %}>
+                                    {{ quanly.TEN_QUAN_LY }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label for="NGAY_BAT_DAU_QL" class="block text-sm font-semibold text-gray-700 mb-2">Ngày Bắt Đầu</label>
+                        <input type="date" name="NGAY_BAT_DAU_QL" id="NGAY_BAT_DAU_QL"
+                            class="w-full p-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition bg-white"
+                            value="{{ lich_su_quan_ly.NGAY_BAT_DAU_QL|date:'Y-m-d'|default_if_none:'' }}" required>
+                    </div>
+                    <div>
+                        <label for="NGAY_KET_THUC_QL" class="block text-sm font-semibold text-gray-700 mb-2">Ngày Kết Thúc</label>
+                        <input type="date" name="NGAY_KET_THUC_QL" id="NGAY_KET_THUC_QL"
+                            class="w-full p-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition bg-white"
+                            value="{{ lich_su_quan_ly.NGAY_KET_THUC_QL|date:' }" required>
+                    </div>
+                    <div>
+                        <label for="LY_DO_KET_THUC" class="block text-sm font-semibold text-gray-700 mb-2">Lý Do Kết Thúc</label>
+                        <input type="text" name="LY_DO_KET_THUC" id="LY_DO_KET_THUC"
+                            class="w-full p-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition bg-white"
+                            value="{{ lich_su_quan_ly.LY_DO_KET_THUC|default_if_none:'' }}">
+                    </div>
+                </div>
+                <div class="text-center">
+                    <button type="submit"
+                        class="inline-flex items-center px-6 py-3 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition duration-300 shadow-md">
+                        <i class="fas fa-save mr-2" aria-hidden="true"></i>
+                        Lưu Thiết Lập
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Thông Tin Dịch Vụ -->
+        <div class="bg-white shadow-lg rounded-2xl p-6" id="service-info">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                <h4 class="text-2xl font-bold text-gray-800 flex items-center">
+                    <i class="fas fa-concierge-bell text-indigo-600 mr-3" aria-hidden="true"></i>
+                    Danh Sách Dịch Vụ
+                </h4>
+            </div>
+            {% if not dich_vu_khu_vucs %}
+                <p class="text-red-500 text-center py-4 text-lg">Chưa thiết lập dịch vụ.</p>
+            {% else %}
+                <form action="{% url 'nhatro:khuvuc_thiet_lap_dich_vu' khu_vuc.MA_KHU_VUC %}" method="POST" class="space-y-6">
+                    {% csrf_token %}
+                    <input type="hidden" name="MA_KHU_VUC" value="{{ khu_vuc.MA_KHU_VUC }}">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="bg-indigo-600 text-white">
+                                <tr>
+                                    <th class="p-3 text-sm font-semibold rounded-tl-lg">#</th>
+                                    <th class="p-3 text-sm font-semibold">Tên Dịch Vụ</th>
+                                    <th class="p-3 text-sm font-semibold">Giá Dịch Vụ</th>
+                                    <th class="p-3 text-sm font-semibold">Loại Dịch Vụ</th>
+                                    <th class="p-3 text-sm font-semibold">Ngày Áp Dụng</th>
+                                    <th class="p-3 text-sm font-semibold rounded-tr-lg">Ngày Hủy</th>
+                                </tr>
+                            </thead>
+                            <tbody id="service-details">
+                                {% for dich_vu in dich_vu_khu_vucs %}
+                                    <tr id="dichvu-{{ dich_vu.MA_AP_DUNG_DV }}" class="border-b border-gray-200 hover:bg-gray-50 transition duration-200">
+                                        <td class="p-3 text-sm text-gray-700">{{ forloop.counter }}</td>
+                                        <td class="p-3 text-sm text-gray-700">{{ dich_vu.MA_DICH_VU.TEN_DICH_VU }}</td>
+                                        <td class="p-3">
+                                            <input type="number" name="GIA_DICH_VU_AD[{{ dich_vu.MA_AP_DUNG_DV }}]"
+                                                value="{{ dich_vu.GIA_DICH_VU_AD|default_if_none:'' }}"
+                                                class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition bg-white"
+                                                id="giadichvu-{{ dich_vu.MA_AP_DUNG_DV }}">
+                                        </td>
+                                        <td class="p-3">
+                                            <select name="LOAI_DICH_VU_AD[{{ dich_vu.MA_AP_DUNG_DV }}]"
+                                                class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition bg-white"
+                                                id="LOAI_DICH_VU_AD-{{ dich_vu.MA_AP_DUNG_DV }}">
+                                                <option value="thang"
+                                                    {% if dich_vu.LOAI_DICH_VU_AD == 'thang' %}selected{% endif %}>
+                                                    Theo tháng
+                                                </option>
+                                                <option value="chi_so"
+                                                    {% if dich_vu.LOAI_DICH_VU_AD == 'chi_so' %}selected{% endif %}>
+                                                    Theo chỉ số
+                                                </option>
+                                            </select>
+                                        </td>
+                                        <td class="p-3">
+                                            <input type="date" name="NGAY_AP_DUNG_DV[{{ dich_vu.MA_AP_DUNG_DV }}]"
+                                                value="{{ dich_vu.NGAY_AP_DUNG_DV|date:'Y-m-d'|default_if_none:'' }}"
+                                                class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition bg-white"
+                                                id="ngayapdung-{{ dich_vu.MA_AP_DUNG_DV }}">
+                                        </td>
+                                        <td class="p-3">
+                                            <input type="date" name="NGAY_HUY_DV[{{ dich_vu.MA_AP_DUNG_DV }}]"
+                                                value="{{ dich_vu.NGAY_HUY_DV|date:'Y-m-d'|default_if_none:'' }}"
+                                                class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition bg-white"
+                                                id="ngayhuy-{{ dich_vu.MA_AP_DUNG_DV }}">
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="text-center">
+                        <button type="submit"
+                            class="inline-flex items-center px-6 py-3 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition duration-300 shadow-md">
+                            <i class="fas fa-save mr-2" aria-hidden="true"></i>
+                            Lưu Thiết Lập Dịch Vụ
+                        </button>
+                    </div>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
