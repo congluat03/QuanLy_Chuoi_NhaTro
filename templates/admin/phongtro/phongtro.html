@@ -30,11 +30,11 @@
             <h4 class="text-2xl font-bold text-gray-800 mb-4 sm:mb-0">Quản lý danh sách phòng</h4>
             <div class="flex flex-wrap gap-3">
                 <button class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition"
-                    onclick="showModalPhongTro('themnhieu', {{ ma_khu_vuc }})">
+                    onclick="showModalPhongTro('themnhieu', null, {{ ma_khu_vuc }})">
                     Thêm nhiều phòng trọ
                 </button>
                 <button class="bg-blue-600 text-white px-4 py-2 text-sm rounded-lg font-medium hover:bg-blue-700 transition"
-                    onclick="showModalPhongTro('them', {{ ma_khu_vuc }})">
+                    onclick="showModalPhongTro('them', null, {{ ma_khu_vuc }})">
                     Thêm phòng trọ
                 </button>
             </div>
@@ -129,33 +129,55 @@
                             </button>
 
                             <div id="menuPhongTro-{{ phong_tro.MA_PHONG }}"
-                                 class="hidden absolute top-12 right-0 bg-white border border-gray-200 rounded-lg shadow-lg w-60 z-50 animate-fadeIn overflow-hidden"
-                                 role="menu">
+                                class="hidden absolute top-12 right-0 bg-white border border-gray-200 rounded-xl shadow-xl w-64 z-50 animate-fadeIn overflow-hidden"
+                                role="menu">
+                                
                                 <a href="#"
-                                   class="block px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition"
-                                   onclick="showModalPhongTro('chinhsua', {{ phong_tro.MA_PHONG }}, {{ ma_khu_vuc }},'{{ phong_tro.TEN_PHONG }}')">Chỉnh sửa phòng</a>
+                                class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition"
+                                onclick="showModalPhongTro('chinhsua', {{ phong_tro.MA_PHONG }}, {{ ma_khu_vuc }},'{{ phong_tro.TEN_PHONG }}')">
+                                    <i class="fas fa-edit w-4"></i> Chỉnh sửa phòng
+                                </a>
+
                                 <a href="#"
-                                   class="block px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition"
-                                   onclick="showModalPhongTro('CoPhong', {{ phong_tro.MA_PHONG }}, null, '{{ phong_tro.TEN_PHONG }}')">Cọc giữ chỗ</a>
+                                class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition"
+                                onclick="showModalPhongTro('CoPhong', {{ phong_tro.MA_PHONG }}, null, '{{ phong_tro.TEN_PHONG }}')">
+                                    <i class="fas fa-hand-holding-usd w-4"></i> Cọc giữ chỗ
+                                </a>
+
                                 <a href="#"
-                                   class="block px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition"
-                                   onclick="showModalPhongTro('HopDong', {{ phong_tro.MA_PHONG }})">Lập hợp đồng</a>
+                                class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition"
+                                onclick="showModalPhongTro('HopDong', {{ phong_tro.MA_PHONG }})">
+                                    <i class="fas fa-file-signature w-4"></i> Lập hợp đồng
+                                </a>
+
                                 <a href="#"
-                                   class="block px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition"
-                                   onclick="showModalPhongTro('info', {{ phong_tro.MA_PHONG }})">Danh sách khách thuê</a>
+                                class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition"
+                                onclick="showModalPhongTro('ChonHoaDon', {{ phong_tro.MA_PHONG }})">
+                                    <i class="fas fa-file-invoice w-4"></i> Lập hóa đơn
+                                </a>
+
                                 <a href="#"
-                                   class="block px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition"
-                                   onclick="showModalPhongTro('ChonHoaDon', {{ phong_tro.MA_PHONG }})">Lập hóa đơn</a>
+                                class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition"
+                                onclick="showModalPhongTro('info', {{ phong_tro.MA_PHONG }})">
+                                    <i class="fas fa-flag-checkered w-4"></i> Báo kết thúc hợp đồng
+                                </a>
+
                                 <a href="#"
-                                   class="block px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition"
-                                   onclick="showModalPhongTro('info', {{ phong_tro.MA_PHONG }})">Báo kết thúc hợp đồng</a>
-                                <a href="#"
-                                   class="block px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition"
-                                   onclick="showModalPhongTro('info', {{ phong_tro.MA_PHONG }})">Kết thúc hợp đồng</a>
-                                <hr class="border-gray-200">
-                                <a href="#"
-                                   class="block px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 transition font-semibold"
-                                   onclick="confirmXoaPhongTro({{ phong_tro.MA_PHONG }})">Xóa phòng</a>
+                                class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition"
+                                onclick="showModalPhongTro('info', {{ phong_tro.MA_PHONG }})">
+                                    <i class="fas fa-door-closed w-4"></i> Kết thúc hợp đồng
+                                </a>
+
+                                <hr class="border-gray-200 my-1">
+
+                                <form method="POST" action="{% url 'phongtro:xoa_phongtro' phong_tro.MA_PHONG %}" onsubmit="return confirm('Bạn có chắc muốn xóa phòng này không?');">
+                                    {% csrf_token %}
+                                    <button type="submit"
+                                        class="w-full text-left flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 transition font-semibold">
+                                        <i class="fas fa-trash-alt w-4"></i> Xóa phòng
+                                    </button>
+                                </form>
+
                             </div>
                         </div>
                     </div>

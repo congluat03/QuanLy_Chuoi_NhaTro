@@ -78,6 +78,7 @@ function showModalKhuvuc(type, khuVucId = null) {
         case "chiSua":
             url = `/admin/khuvuc/sua/${khuVucId}/`;
             break;
+        
         case "thietLapDichVu":
             url = `/admin/khuvuc/thiet-lap-dich-vu/${khuVucId}/`;
             initFunction = initThietLapDichVu;

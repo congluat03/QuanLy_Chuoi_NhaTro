@@ -1,33 +1,89 @@
-function toggleMenuKhachThue(khachThueId) {
-    const menu = document.getElementById(`menuKhachThue-${khachThueId}`);
-    const isVisible = !menu.classList.contains('hidden');
+// Initialize on DOM load
+document.addEventListener("DOMContentLoaded", () => {
+    if (typeof toggleRoomList === 'function') {
+        toggleRoomList(); // Call only if defined
+    }
 
-    // Close all other menus
-    document.querySelectorAll('.menu-items').forEach(m => {
-        m.classList.add('hidden');
-        m.classList.remove('show');
+    // Close menus when clicking outside
+    document.addEventListener('click', event => {
+        const isClickInside = event.target.closest('[id^="menuKhachThue-"]') || 
+                             event.target.closest('.cursor-pointer');
+        if (!isClickInside) {
+            document.querySelectorAll('[id^="menuKhachThue-"]').forEach(menu => {
+                menu.classList.add('hidden');
+                menu.classList.remove('animate-fadeIn');
+            });
+        }
     });
+});
 
-    if (!isVisible) {
-        // Check if menu would be cut off at the bottom
-        const rect = menu.getBoundingClientRect();
-        const windowHeight = window.innerHeight;
-        const isOverflowing = rect.bottom > windowHeight - 20;
+function toggleMenuKhachThue(khachThueId, event = null) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
 
-        // Adjust positioning with Tailwind-compatible classes
-        menu.classList.remove('top-full', 'bottom-full', 'mt-2', 'mb-2');
-        if (isOverflowing) {
-            menu.classList.add('bottom-full', 'mb-2');
+    const menu = document.getElementById(`menuKhachThue-${khachThueId}`);
+    if (!menu) {
+        console.error(`Menu with ID menuKhachThue-${khachThueId} not found`);
+        return;
+    }
+
+    const button = document.querySelector(`div[data-menu-id="${khachThueId}"]`);
+    if (!button) {
+        console.error(`Button for menuKhachThue-${khachThueId} not found`);
+        return;
+    }
+
+    const card = button.closest("div.relative");
+    const allMenus = document.querySelectorAll("[id^='menuKhachThue-']");
+
+    // Toggle menu visibility
+    if (menu.classList.contains("hidden")) {
+        // Hide all other menus
+        allMenus.forEach(m => {
+            m.classList.add("hidden");
+            m.classList.remove("animate-fadeIn");
+        });
+
+        // Show current menu
+        menu.classList.remove("hidden");
+        menu.classList.add("animate-fadeIn");
+
+        // Prevent overflow by adjusting menu position
+        const menuRect = menu.getBoundingClientRect();
+        const cardRect = card.getBoundingClientRect();
+        const viewportWidth = window.innerWidth;
+
+        if (menuRect.right > viewportWidth - 10) {
+            menu.classList.remove("right-0");
+            menu.classList.add("left-0");
+            menu.style.transform = `translateX(-${menuRect.width - button.offsetWidth}px)`;
         } else {
-            menu.classList.add('top-full', 'mt-2');
+            menu.classList.add("right-0");
+            menu.classList.remove("left-0");
+            menu.style.transform = "";
         }
 
-        // Show the menu
-        menu.classList.remove('hidden');
-        setTimeout(() => menu.classList.add('show'), 10);
+        if (menuRect.bottom > window.innerHeight - 10) {
+            menu.classList.remove("top-full", "mt-2");
+            menu.classList.add("bottom-full", "mb-2");
+        } else {
+            menu.classList.add("top-full", "mt-2");
+            menu.classList.remove("bottom-full", "mb-2");
+        }
+
+        // Add event to auto-close when mouse leaves the menu
+        menu.onmouseleave = function () {
+            menu.classList.add("hidden");
+            menu.classList.remove("animate-fadeIn");
+        };
+    } else {
+        // Hide current menu
+        menu.classList.add("hidden");
+        menu.classList.remove("animate-fadeIn");
     }
 }
-
 function showChucNangKhachThue(type, khachThueId = null) {
     
     let url = "";
@@ -163,19 +219,3 @@ function toggleRoomList() {
         });
     });
 }
-
-// Initialize on DOM load
-document.addEventListener("DOMContentLoaded", () => {
-    toggleRoomList();
-
-    // Close menus when clicking outside
-    document.addEventListener('click', event => {
-        const isClickInside = event.target.closest('.menu-items') || event.target.closest('.cursor-pointer');
-        if (!isClickInside) {
-            document.querySelectorAll('.menu-items').forEach(menu => {
-                menu.classList.add('hidden');
-                menu.classList.remove('show');
-            });
-        }
-    });
-});

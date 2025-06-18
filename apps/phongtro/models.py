@@ -35,6 +35,7 @@ class PhongTro(models.Model):
     DIEN_TICH = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     SO_NGUOI_TOI_DA = models.IntegerField(null=True, blank=True)
     MO_TA_P = models.TextField(null=True, blank=True)
+    SO_TIEN_CAN_COC = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
 
     def __str__(self):
         return self.TEN_PHONG or f"Phòng {self.MA_PHONG}"

@@ -46,8 +46,7 @@
                     Quản lý Khách Thuê
                 </h4>
                 <div class="flex flex-wrap sm:flex-nowrap items-center gap-3">
-                    <a  href="#"
-                        onclick="showChucNangKhachThue('them', {{ khach_thue.MA_KHACH_THUE }})"
+                    <a  href="/admin/khachthue/viewthem/"         
                        class="inline-flex items-center px-5 py-2.5 bg-blue-700 text-white text-sm font-semibold rounded-lg hover:bg-blue-800 transition duration-300 shadow-md whitespace-nowrap">
                         <i class="fas fa-user-plus mr-2" aria-hidden="true"></i>
                         Thêm khách thuê mới
@@ -179,48 +178,49 @@
                                                 Chưa đăng ký
                                             </button>
                                         </td>
-                                        <td class="text-center p-4 align-middle">
+                                       <td class="text-center p-4 align-middle">
                                             <div class="relative inline-block text-left">
                                                 <!-- Nút mở menu -->
                                                 <div class="cursor-pointer p-2 hover:bg-gray-100 rounded-full transition duration-200"
-                                                    onclick="toggleMenuKhachThue({{ khach_thue.MA_KHACH_THUE }})">
+                                                     data-menu-id="{{ khach_thue.MA_KHACH_THUE }}"
+                                                     onclick="toggleMenuKhachThue({{ khach_thue.MA_KHACH_THUE }}, event)">
                                                     <i class="fas fa-ellipsis-v text-lg text-blue-700"></i>
                                                 </div>
 
                                                 <!-- Menu tùy chọn -->
                                                 <div id="menuKhachThue-{{ khach_thue.MA_KHACH_THUE }}"
-                                                    class="absolute right-0 mt-2 w-64 origin-top-right bg-white border border-gray-200 rounded-xl shadow-lg z-20 hidden">
+                                                     class="absolute right-0 mt-2 w-64 origin-top-right bg-white border border-gray-200 rounded-xl shadow-lg z-20 hidden">
                                                     <div class="py-2 text-sm text-gray-700">
-                                                        <a href="#"
-                                                        class="flex items-center px-4 py-2 hover:bg-blue-50 hover:text-blue-900 transition"
-                                                        onclick="showChucNangKhachThue('chitiet', {{ khach_thue.MA_KHACH_THUE }})">
+                                                        <a href="#" class="flex items-center px-4 py-2 hover:bg-blue-50 hover:text-blue-900 transition"
+                                                           onclick="showChucNangKhachThue('chitiet', {{ khach_thue.MA_KHACH_THUE }}, event)">
                                                             <i class="fas fa-file-alt mr-3 text-blue-600 w-5 text-base"></i> Xem văn bản tạm trú
                                                         </a>
-                                                        <a href="#"
-                                                        class="flex items-center px-4 py-2 hover:bg-blue-50 hover:text-blue-900 transition"
-                                                        onclick="showChucNangKhachThue('chitiet', {{ khach_thue.MA_KHACH_THUE }})">
+                                                        <a href="#" class="flex items-center px-4 py-2 hover:bg-blue-50 hover:text-blue-900 transition"
+                                                           onclick="showChucNangKhachThue('chitiet', {{ khach_thue.MA_KHACH_THUE }}, event)">
                                                             <i class="fas fa-print mr-3 text-blue-600 w-5 text-base"></i> In văn bản tạm trú
                                                         </a>
-                                                        <a href="#"
-                                                        class="flex items-center px-4 py-2 hover:bg-blue-50 hover:text-blue-900 transition"
-                                                        onclick="showChucNangKhachThue('chitiet', {{ khach_thue.MA_KHACH_THUE }})">
+                                                        <a href="#" class="flex items-center px-4 py-2 hover:bg-blue-50 hover:text-blue-900 transition"
+                                                           onclick="showChucNangKhachThue('chitiet', {{ khach_thue.MA_KHACH_THUE }}, event)">
                                                             <i class="fas fa-share-square mr-3 text-blue-600 w-5 text-base"></i> Chia sẻ văn bản
                                                         </a>
-                                                        <a href="#"
-                                                        class="flex items-center px-4 py-2 hover:bg-blue-50 hover:text-blue-900 transition"
-                                                        onclick="showChucNangKhachThue('chinhsua', {{ khach_thue.MA_KHACH_THUE }})">
+                                                        <a href="/admin/khachthue/viewCCCD/{{ khach_thue.MA_KHACH_THUE }}" class="flex items-center px-4 py-2 hover:bg-blue-50 hover:text-blue-900 transition">
+                                                            <i class="fas fa-id-card mr-3 text-blue-600 w-5 text-base"></i> Cập nhật căn cước công dân
+                                                        </a>
+
+                                                        <a href="/admin/khachthue/viewsua/{{ khach_thue.MA_KHACH_THUE }}/{{ room_id }}" class="flex items-center px-4 py-2 hover:bg-blue-50 hover:text-blue-900 transition">
                                                             <i class="fas fa-user-edit mr-3 text-blue-600 w-5 text-base"></i> Chỉnh sửa thông tin
                                                         </a>
-                                                        <a href="#"
-                                                        class="flex items-center px-4 py-2 text-red-600 hover:bg-red-50 hover:text-red-800 transition"
-                                                        onclick="XoaKhachThue({{ khach_thue.MA_KHACH_THUE }})">
-                                                            <i class="fas fa-trash-alt mr-3 w-5 text-base"></i> Xóa khách thuê
-                                                        </a>
+
+                                                        <form action="{% url 'khachthue:xoa_khach_thue' khach_thue.MA_KHACH_THUE %}" method="POST" class="inline" onsubmit="return confirm('Bạn có chắc muốn xóa khách thuê này?');">
+                                                            {% csrf_token %}
+                                                            <button type="submit" class="text-red-600 hover:text-red-900 ml-2"> 
+                                                                <i class="fas fa-trash-alt mr-3 w-5 text-base"></i> Xóa</button>
+                                                        </form>
+                                    
                                                     </div>
                                                 </div>
                                             </div>
                                         </td>
-
                                     </tr>
                                 {% endwith %}
                             {% endfor %}

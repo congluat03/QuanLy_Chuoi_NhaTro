@@ -6,6 +6,11 @@ from django.db.models import Prefetch
 from django.contrib import messages
 from django.shortcuts import get_object_or_404
 from apps.thanhvien.models import TaiKhoan
+from apps.phongtro.models import PhongTro
+from apps.hopdong.models import HopDong
+from django.db import transaction
+
+
 def khachthue_list(request):
     # Build queryset with optimized relations
     queryset = KhachThue.objects.select_related('MA_TAI_KHOAN').prefetch_related(
@@ -65,79 +70,179 @@ def khachthue_list(request):
         'search_query': search_query
     }
     return render(request, 'admin/khachthue/danhsach_khachthue.html', context)
-def view_them_khach_thue(request):
+def get_phongtro_list():
+    return PhongTro.objects.filter(
+        Q(hopdong__TRANG_THAI_HD__in=['Đang hoạt động', 'Đang báo kết thúc', 'Sắp kết thúc'])  
+    ).distinct()
+
+def them_khach_thue(request):
+    phongtro_list = get_phongtro_list()
     if request.method == 'POST':
-        # Create new KhachThue
-        ma_tai_khoan_id = request.POST.get('MA_TAI_KHOAN')  # Assuming a field to select or input MA_TAI_KHOAN
         try:
-            ma_tai_khoan = TaiKhoan.objects.get(pk=ma_tai_khoan_id)
-        except TaiKhoan.DoesNotExist:
-            messages.error(request, 'Tài khoản không tồn tại!')
-            return render(request, 'admin/khachthue/themsua_khachthue.html', {'khachthue': None, 'cccd_cmnd': None})
+            # Lấy dữ liệu từ form
+            ho_ten_kt = request.POST.get('HOTENKHACHTHUE')
+            sdt_kt = request.POST.get('SODIENTHOAIKHACHTHUE')
+            email_kt = request.POST.get('EMAILKHACHTHUE')
+            tai_khoan = request.POST.get('TAI_KHOAN')
+            mat_khau = request.POST.get('MAT_KHAU')
+            nghe_nghiep = request.POST.get('NGHENGHIEP')
+            ma_phong = request.POST.get('MA_PHONG')
+            moi_quan_he = request.POST.get('MOI_QUAN_HE')
+            ngay_tham_gia = request.POST.get('NGAY_THAM_GIA')
+            avatar = request.FILES.get('AVATAR')
+            # Tạo tài khoản mới
+            tai_khoan_obj = TaiKhoan.create_tai_khoan(tai_khoan, mat_khau)
 
-        khachthue = KhachThue(
-            MA_TAI_KHOAN=ma_tai_khoan,
-            HO_TEN_KT=request.POST.get('HOTENKHACHTHUE'),
-            SDT_KT=request.POST.get('SODIENTHOAIKHACHTHUE'),
-            NGAY_SINH_KT=request.POST.get('NGAYSINHKHACHTHUE'),
-            NOI_SINH_KT=request.POST.get('NOISINH'),
-            GIOI_TINH_KT=request.POST.get('GIOITINHKHACHTHUE'),
-            EMAIL_KT=request.POST.get('EMAILKHACHTHUE'),
-            NGHE_NGHIEP=request.POST.get('NGHENGHIEP')
-        )
-        khachthue.save()
-
-        # Create CccdCmnd if provided
-        so_cmnd_cccd = request.POST.get('CMNDORCCCD')
-        noi_cap = request.POST.get('NOICAP')
-        if so_cmnd_cccd:
-            CccdCmnd.objects.create(
-                SO_CMND_CCCD=so_cmnd_cccd,
-                MA_KHACH_THUE=khachthue,
-                NOI_CAP=noi_cap
+            # Tạo khách thuê mới
+            khach_thue = KhachThue.create_khach_thue(
+                tai_khoan_obj, ho_ten_kt, sdt_kt, email_kt, nghe_nghiep, avatar
             )
-        messages.success(request, 'Thêm khách thuê thành công!')
-        return redirect('sua_khach_thue', ma_khach_thue=khachthue.MA_KHACH_THUE)
+            # Xử lý lịch sử hợp đồng
+            if ma_phong and moi_quan_he:
+                hop_dong = HopDong.objects.filter(
+                    MA_PHONG=ma_phong,
+                    TRANG_THAI_HD__in=['Đang hoạt động', 'Đang báo kết thúc', 'Sắp kết thúc']              
+                ).first()
+                if hop_dong:
+                    LichSuHopDong.create_or_update_lich_su_hop_dong(khach_thue, hop_dong, moi_quan_he, ngay_tham_gia)
 
-    context = {
-        'khachthue': None,
-        'cccd_cmnd': None
-    }
-    return render(request, 'admin/khachthue/themsua_khachthue.html', context)
-def view_sua_thong_tin(request, ma_khach_thue):
-    khachthue = get_object_or_404(KhachThue, MA_KHACH_THUE=ma_khach_thue)
-    cccd_cmnd = khachthue.cccd_cmnd.first() if khachthue.cccd_cmnd.exists() else None
+            messages.success(request, 'Thêm khách thuê thành công.')
+            return redirect('khachthue:khachthue_list')
+
+        except ValueError as e:
+            messages.error(request, str(e))
+            return render(request, 'admin/khachthue/themsua_khachthue.html', {'phongtro_list': phongtro_list})
+        except Exception as e:
+            messages.error(request, f'Có lỗi xảy ra: {str(e)}')
+            return render(request, 'admin/khachthue/themsua_khachthue.html', {'phongtro_list': phongtro_list})
+
+    return render(request, 'admin/khachthue/themsua_khachthue.html', {'phongtro_list': phongtro_list})
+def sua_khach_thue(request, ma_khach_thue, maphong=None):
+    khach_thue = get_object_or_404(KhachThue, MA_KHACH_THUE=ma_khach_thue)
+    # Lấy danh sách phòng trọ có hợp đồng đang hoạt động
+    phongtro_list = PhongTro.objects.filter( hopdong__TRANG_THAI_HD__in=['Đang hoạt động', 'Đang báo kết thúc', 'Sắp kết thúc']).distinct()
+    # Lấy hợp đồng nếu có mã phòng
+    hop_dong = None
+    lichsuhopdong = None
+    if maphong:
+        hop_dong = HopDong.objects.filter( 
+            MA_PHONG=maphong, TRANG_THAI_HD__in=['Đang hoạt động', 'Đang báo kết thúc', 'Sắp kết thúc']
+        ).first()
+        lichsuhopdong = LichSuHopDong.objects.filter(
+            MA_KHACH_THUE=khach_thue,
+            MA_HOP_DONG=hop_dong
+        ).first()   
+    hopdong = hop_dong if hop_dong else None
 
     if request.method == 'POST':
-        # Update KhachThue
-        khachthue.HO_TEN_KT = request.POST.get('HOTENKHACHTHUE')
-        khachthue.SDT_KT = request.POST.get('SODIENTHOAIKHACHTHUE')
-        khachthue.NGAY_SINH_KT = request.POST.get('NGAYSINHKHACHTHUE')
-        khachthue.NOI_SINH_KT = request.POST.get('NOISINH')
-        khachthue.GIOI_TINH_KT = request.POST.get('GIOITINHKHACHTHUE')
-        khachthue.EMAIL_KT = request.POST.get('EMAILKHACHTHUE')
-        khachthue.NGHE_NGHIEP = request.POST.get('NGHENGHIEP')
-        khachthue.save()
+        try:
+            # Lấy dữ liệu từ form
+            ho_ten_kt = request.POST.get('HOTENKHACHTHUE')
+            sdt_kt = request.POST.get('SODIENTHOAIKHACHTHUE')
+            email_kt = request.POST.get('EMAILKHACHTHUE')
+            nghe_nghiep = request.POST.get('NGHENGHIEP')
+            ma_phong = request.POST.get('MA_PHONG')
+            moi_quan_he = request.POST.get('MOI_QUAN_HE')
+            ngay_tham_gia = request.POST.get('NGAY_THAM_GIA')
+            avatar = request.FILES.get('AVATAR')
+            tai_khoan = request.POST.get('TAI_KHOAN')
+            mat_khau = request.POST.get('MAT_KHAU')
+            ma_lich_su_hd = request.POST.get('MA_LS_HOP_DONG')
 
-        # Update or create CccdCmnd
-        so_cmnd_cccd = request.POST.get('CMNDORCCCD')
-        noi_cap = request.POST.get('NOICAP')
-        if so_cmnd_cccd:
-            if cccd_cmnd:
-                cccd_cmnd.SO_CMND_CCCD = so_cmnd_cccd
-                cccd_cmnd.NOI_CAP = noi_cap
-                cccd_cmnd.save()
-            else:
-                CccdCmnd.objects.create(
-                    SO_CMND_CCCD=so_cmnd_cccd,
-                    MA_KHACH_THUE=khachthue,
-                    NOI_CAP=noi_cap
+            # Cập nhật tài khoản
+            khach_thue.MA_TAI_KHOAN.update_tai_khoan(tai_khoan, mat_khau)
+
+            # Cập nhật khách thuê
+            khach_thue.update_khach_thue(ho_ten_kt, sdt_kt, email_kt, nghe_nghiep, avatar)
+
+            # Cập nhật lịch sử hợp đồng
+            if ma_phong and moi_quan_he:
+                hop_dong = HopDong.objects.filter(
+                    MA_PHONG=ma_phong,
+                    TRANG_THAI_HD__in=['Đang hoạt động', 'Đang báo kết thúc', 'Sắp kết thúc'],
+                ).first()              
+                LichSuHopDong.create_or_update_lich_su_hop_dong(
+                    khach_thue, hop_dong, moi_quan_he, ngay_tham_gia, ma_lich_su_hd
                 )
-        messages.success(request, 'Thông tin đã được cập nhật thành công!')
-        return redirect('sua_khach_thue', ma_khach_thue=ma_khach_thue)
 
-    context = {
-        'khachthue': khachthue,
-        'cccd_cmnd': cccd_cmnd
-    }
-    return render(request, 'admin/khachthue/themsua_khachthue.html', context)
+            messages.success(request, 'Cập nhật thông tin khách thuê thành công.')
+            return redirect('khachthue:khachthue_list')
+
+        except ValueError as e:
+            messages.error(request, str(e))
+            return render(request, 'admin/khachthue/themsua_khachthue.html', {
+                'khachthue': khach_thue,
+                'phongtro_list': phongtro_list,
+                'lichsuhopdong': lichsuhopdong,
+                'hopdong': hopdong
+            })
+        except Exception as e:
+            messages.error(request, f'Có lỗi xảy ra: {str(e)}')
+            return render(request, 'admin/khachthue/themsua_khachthue.html', {
+                'khachthue': khach_thue,
+                'phongtro_list': phongtro_list,
+                'lichsuhopdong': lichsuhopdong,
+                'hopdong': hopdong
+            })
+
+    return render(request, 'admin/khachthue/themsua_khachthue.html', {
+        'khachthue': khach_thue,
+        'phongtro_list': phongtro_list,
+        'lichsuhopdong': lichsuhopdong,
+        'hopdong': hopdong
+    })
+def xoa_khach_thue(request, ma_khach_thue):
+    khach_thue = get_object_or_404(KhachThue, MA_KHACH_THUE=ma_khach_thue)
+    
+    if request.method == 'POST':
+        try:
+            with transaction.atomic():
+                khach_thue.delete_khach_thue()
+                messages.success(request, 'Xóa khách thuê thành công.')
+                return redirect('khachthue:khachthue_list')
+        except ValueError as e:
+            messages.error(request, str(e))
+            return redirect('khachthue:khachthue_list')
+        except Exception as e:
+            messages.error(request, f'Có lỗi xảy ra: {str(e)}')
+            return redirect('khachthue:khachthue_list')
+    
+    messages.warning(request, 'Yêu cầu không hợp lệ.')
+    return redirect('khachthue:khachthue_list')
+
+def view_cccd(request, ma_khach_thue=None):
+    khach_thue = None
+    cccd_cmnd = None
+
+    if ma_khach_thue:
+        khach_thue = get_object_or_404(KhachThue, MA_KHACH_THUE=ma_khach_thue)
+        cccd_cmnd = CccdCmnd.objects.filter(MA_KHACH_THUE=khach_thue).first()
+
+    if request.method == 'POST':
+        try:
+            if ma_khach_thue:
+                khach_thue.update_cccd_cmnd(
+                    so_cmnd_cccd=request.POST.get('CMNDORCCCD'),
+                    ma_cccd = cccd_cmnd.MA_CCCD if cccd_cmnd else None,
+                    ngay_cap=request.POST.get('NGAY_CAP') or None,
+                    anh_mat_truoc=request.FILES.get('ANH_MAT_TRUOC'),
+                    anh_mat_sau=request.FILES.get('ANH_MAT_SAU'),
+                    gioi_tinh_kt=request.POST.get('GIOITINHKHACHTHUE'),
+                    ngay_sinh_kt=request.POST.get('NGAYSINHKHACHTHUE')or None,
+                    que_quan=request.POST.get('QUEQUAN'),
+                    dia_chi_thuong_tru=request.POST.get('DIA_CHI_THUONG_TRU')
+                )
+                messages.success(request, 'Cập nhật thông tin CCCD/CMND thành công.')
+            else:
+                # Logic thêm mới khách thuê và CCCD (cần bổ sung thêm trường HO_TEN_KT, SDT_KT trong form)
+                raise ValueError('Chức năng thêm mới chưa được triển khai.')
+            return redirect('khachthue:khachthue_list')
+        except ValueError as e:
+            messages.error(request, f'Lỗi: {str(e)}')
+        except Exception as e:
+            messages.error(request, f'Đã xảy ra lỗi không xác định: {str(e)}')
+
+    return render(request, 'admin/khachthue/themsua_cccd.html', {
+        'khachthue': khach_thue,
+        'cccd_cmnd': cccd_cmnd,
+    })

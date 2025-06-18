@@ -1,0 +1,139 @@
+{% extends 'admin/admin_layout.html' %}
+{% load static %}
+
+{% block content_body %}
+<div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+    <div class="bg-white shadow-xl rounded-2xl p-6 sm:p-10 space-y-8">
+        <h3 class="text-2xl font-bold text-blue-700 border-b pb-4">
+            {% if khachthue %}Cập nhật{% else %}Thêm mới{% endif %} thông tin CCCD/CMND
+        </h3>
+
+        <!-- Hiển thị thông báo -->
+        {% if messages %}
+            <div class="mb-4">
+                {% for message in messages %}
+                    <div class="p-4 rounded-xl {% if message.tags == 'success' %}bg-green-100 text-green-700{% else %}bg-red-100 text-red-700{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <form method="POST" action="{% if khachthue %}{% url 'khachthue:view_CCCD' khachthue.MA_KHACH_THUE %}{% else %}{% url 'khachthue:view_CCCD' %}{% endif %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <!-- Số CCCD/CMND -->
+                <div>
+                    <label for="CMNDORCCCD" class="block mb-2 font-semibold text-gray-800">Số CCCD/CMND <span class="text-red-500">*</span></label>
+                    <input name="CMNDORCCCD" type="text" required
+                        class="w-full border border-gray-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-sm"
+                        value="{{ cccd_cmnd.SO_CMND_CCCD|default_if_none:'' }}"
+                        placeholder="VD: 012345678901">
+                    <p class="text-sm text-gray-500 mt-1">Nhập 9 hoặc 12 số hợp lệ</p>
+                </div>
+                <!-- Ngày cấp -->
+                <div>
+                    <label for="NGAY_CAP" class="block mb-2 font-semibold text-gray-800">Ngày cấp</label>
+                    <input name="NGAY_CAP" type="date"
+                        class="w-full border border-gray-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-sm"
+                        value="{{ cccd_cmnd.NGAY_CAP|date:'Y-m-d'|default_if_none:'' }}">
+                    <p class="text-sm text-gray-500 mt-1">Chọn ngày cấp chính xác</p>
+                </div>
+                <!-- Giới tính -->
+                <div>
+                    <label for="GIOITINHKHACHTHUE" class="block mb-2 font-semibold text-gray-800">Giới tính</label>
+                    <select name="GIOITINHKHACHTHUE"
+                        class="w-full border border-gray-300 rounded-xl px-4 py-2 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-sm">
+                        <option value="" {% if not khachthue.GIOI_TINH_KT %}selected{% endif %}>Chọn giới tính</option>
+                        <option value="Nam" {% if khachthue.GIOI_TINH_KT == 'Nam' %}selected{% endif %}>Nam</option>
+                        <option value="Nữ" {% if khachthue.GIOI_TINH_KT == 'Nữ' %}selected{% endif %}>Nữ</option>
+                        <option value="Khác" {% if khachthue.GIOI_TINH_KT == 'Khác' %}selected{% endif %}>Khác</option>
+                    </select>
+                    <p class="text-sm text-gray-500 mt-1">Lựa chọn đúng giới tính</p>
+                </div>
+                <!-- Ngày sinh -->
+                <div>
+                    <label for="NGAYSINHKHACHTHUE" class="block mb-2 font-semibold text-gray-800">Ngày sinh <span class="text-red-500">*</span></label>
+                    <input name="NGAYSINHKHACHTHUE" type="date" required
+                        class="w-full border border-gray-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-sm"
+                        value="{{ khachthue.NGAY_SINH_KT|date:'Y-m-d'|default_if_none:'' }}">
+                    <p class="text-sm text-gray-500 mt-1">Chọn ngày sinh hợp lệ</p>
+                </div>
+                <!-- Quê quán -->
+                <div>
+                    <label for="QUEQUAN" class="block mb-2 font-semibold text-gray-800">Quê quán</label>
+                    <input name="QUEQUAN" type="text"
+                        class="w-full border border-gray-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-sm"
+                        value="{{ khachthue.NOI_SINH_KT|default_if_none:'' }}"
+                        placeholder="VD: Nghệ An, Quảng Nam">
+                </div>
+                <!-- Địa chỉ thường trú -->
+                <div>
+                    <label for="DIA_CHI_THUONG_TRU" class="block mb-2 font-semibold text-gray-800">Địa chỉ thường trú</label>
+                    <input name="DIA_CHI_THUONG_TRU" type="text"
+                        class="w-full border border-gray-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-sm"
+                        value="{{ cccd_cmnd.DIA_CHI_THUONG_TRU|default_if_none:'' }}"
+                        placeholder="VD: 123 Nguyễn Trãi, TP. Huế">
+                </div>
+            </div>
+            <!-- Ảnh CCCD -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-6">
+                <!-- Mặt trước -->
+                <div>
+                    <label for="file-front" class="block mb-2 font-semibold text-gray-800">Ảnh mặt trước <span class="text-red-500">{% if not khachthue %}*{% endif %}</span></label>
+                    <input name="ANH_MAT_TRUOC" type="file" accept="image/*" {% if not khachthue %}required{% endif %} id="file-front"
+                        class="w-full border border-gray-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-sm"
+                        onchange="previewImage('file-front', 'preview-front-img')">
+                    <p class="text-sm text-gray-500 mt-1">Định dạng JPG/PNG, tối đa 5MB</p>
+                    {% if cccd_cmnd and cccd_cmnd.ANH_MAT_TRUOC %}
+                        <a href="{{ cccd_cmnd.ANH_MAT_TRUOC.url }}" target="_blank" class="block mt-2 text-blue-600 hover:underline text-sm">Xem ảnh mặt trước đã lưu</a>
+                    {% endif %}
+                    <div class="mt-4 w-72 h-44 border border-gray-300 bg-gray-100 rounded-xl flex items-center justify-center overflow-hidden">
+                        <img id="preview-front-img"
+                            src="{% if cccd_cmnd and cccd_cmnd.ANH_MAT_TRUOC %}{{ cccd_cmnd.ANH_MAT_TRUOC.url }}{% else %}{% static 'img/placeholder_front.png' %}{% endif %}"
+                            alt="Ảnh mặt trước"
+                            class="object-cover w-full h-full" />
+                    </div>
+                </div>
+                <!-- Mặt sau -->
+                <div>
+                    <label for="file-back" class="block mb-2 font-semibold text-gray-800">Ảnh mặt sau <span class="text-red-500">{% if not khachthue %}*{% endif %}</span></label>
+                    <input name="ANH_MAT_SAU" type="file" accept="image/*" {% if not khachthue %}required{% endif %} id="file-back"
+                        class="w-full border border-gray-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-sm"
+                        onchange="previewImage('file-back', 'preview-back-img')">
+                    <p class="text-sm text-gray-500 mt-1">Định dạng JPG/PNG, tối đa 5MB</p>
+                    {% if cccd_cmnd and cccd_cmnd.ANH_MAT_SAU %}
+                        <a href="{{ cccd_cmnd.ANH_MAT_SAU.url }}" target="_blank" class="block mt-2 text-blue-600 hover:underline text-sm">Xem ảnh mặt sau đã lưu</a>
+                    {% endif %}
+                    <div class="mt-4 w-72 h-44 border border-gray-300 bg-gray-100 rounded-xl flex items-center justify-center overflow-hidden">
+                        <img id="preview-back-img"
+                            src="{% if cccd_cmnd and cccd_cmnd.ANH_MAT_SAU %}{{ cccd_cmnd.ANH_MAT_SAU.url }}{% else %}{% static 'img/placeholder_back.png' %}{% endif %}"
+                            alt="Ảnh mặt sau"
+                            class="object-cover w-full h-full" />
+                    </div>
+                </div>
+            </div>
+            <!-- Nút submit -->
+            <div class="mt-6">
+                <button type="submit" class="bg-blue-600 text-white font-semibold px-6 py-2 rounded-xl hover:bg-blue-700">
+                    {% if khachthue %}Cập nhật{% else %}Thêm mới{% endif %}
+                </button>
+                <a href="{% url 'khachthue:khachthue_list' %}" class="ml-4 text-gray-600 hover:underline">Hủy</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function previewImage(inputId, imgId) {
+    const input = document.getElementById(inputId);
+    const img = document.getElementById(imgId);
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => img.src = e.target.result;
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+</script>
+{% endblock %}

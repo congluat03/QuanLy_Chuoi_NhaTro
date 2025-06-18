@@ -29,9 +29,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 });
 function handleKhuVucClick(event, button) {
-    event.preventDefault(); // Ngăn chặn chuyển trang nếu là <a>
-
-    // Hiển thị hiệu ứng tải
+    event.preventDefault();
     const contentDiv = document.getElementById("phong-tro-content");
     contentDiv.innerHTML = `
         <div class="flex flex-col items-center justify-center text-gray-500 py-10 animate-pulse">
@@ -39,30 +37,22 @@ function handleKhuVucClick(event, button) {
             <p class="italic text-sm">Đang tải dữ liệu phòng trọ...</p>
         </div>
     `;
-
-    // Xóa active tab cũ
     document.querySelectorAll(".khuvuc-tab").forEach((tab) => {
         tab.classList.remove("bg-blue-600", "text-white", "shadow-md");
         tab.classList.add("bg-gray-100", "text-gray-700", "hover:bg-blue-50", "hover:text-blue-600");
     });
-
-    // Active tab mới
     button.classList.remove("bg-gray-100", "text-gray-700", "hover:bg-blue-50", "hover:text-blue-600");
     button.classList.add("bg-blue-600", "text-white", "shadow-md");
-
-    // Gọi hàm tải phòng trọ
     const maKhuVuc = button.getAttribute("data-makhuvuc");
     loadPhongTro(maKhuVuc);
 }
-// Hàm AJAX để tải dữ liệu phòng trọ
+
 function loadPhongTro(maKhuVuc, page = 1) {
-    const url = `/admin/phong-tro/khu-vuc/${maKhuVuc}/${page}`;
-    // Gửi yêu cầu AJAX
+    const url = `/admin/phong-tro/${maKhuVuc}/${page}`;
     fetch(url)
         .then((response) => response.text())
         .then((html) => {
-            // Cập nhật nội dung phần tử #phong-tro-content
-            document.getElementById("phong-tro-content").innerHTML = html;         
+            document.getElementById("phong-tro-content").innerHTML = html;
         })
         .catch((error) => console.error("Error:", error));
 }
@@ -139,7 +129,6 @@ function showModalPhongTro(type, maPhongTro = null, khuVucId = null, tenPhong = 
         console.error("Invalid modal type:", type);
         return;
     }
-    
     modalLabel.innerText = getModalTitle(type, maPhongTro, tenPhong);
     hidePhongTroMenu(khuVucId, maPhongTro);
     

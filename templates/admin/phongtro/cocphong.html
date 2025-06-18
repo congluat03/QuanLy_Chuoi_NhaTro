@@ -1,5 +1,5 @@
 {% load widget_tweaks %}
-<form method="POST" class="bg-white p-6 rounded-lg shadow-lg space-y-6">
+<form method="POST">
   {% csrf_token %}
   <input type="hidden" name="MAPHONGTRO" id="MAPHONGTRO" value="{{ phong_tro.MA_PHONG }}" />
 

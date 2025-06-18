@@ -1,52 +1,60 @@
 {% load static %}
 
-<form action="{% if loai == 'edit' %}{% url 'phongtro:sua_phongtro' phong_tro.MA_PHONG %}{% else %}{% url 'phongtro:them_phongtro' loai %}{% endif %}"
-      method="POST">
+<form action="{% if loai == 'edit' %}{% url 'phongtro:sua_phongtro' phong_tro.MA_PHONG %}{% else %}{% url 'phongtro:them_phongtro' %}{% endif %}"
+      method="POST"
+      >
     {% csrf_token %}
     <input type="hidden" name="loai" value="{{ loai }}">
-
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- CỘT TRÁI -->
-        <div>
-            <div class="mb-4">
-                <label for="TEN_PHONG" class="block text-sm font-semibold mb-1">Tên phòng trọ</label>
+        <!-- Cột trái -->
+        <div class="space-y-4">
+            <!-- Tên phòng -->
+            <div>
+                <label for="TEN_PHONG" class="block text-sm font-semibold mb-1 text-gray-700">Tên phòng trọ</label>
                 <input name="TEN_PHONG" type="text"
                        class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                        placeholder="Nhập tên phòng"
-                       value="{% if phong_tro %}{{ phong_tro.TEN_PHONG }}{% else %}{{ form.TEN_PHONG.value|default:'' }}{% endif %}" required>
+                       value="{% if phong_tro %}{{ phong_tro.TEN_PHONG }}{% else %}{{ form.TEN_PHONG.value|default:'' }}{% endif %}"
+                       required>
             </div>
-
             {% if loai == 'multiple' %}
-                <div class="mb-4">
-                    <label for="SOPHONGBATDAU" class="block text-sm font-semibold mb-1">Số phòng bắt đầu</label>
-                    <input name="SOPHONGBATDAU" type="number"
-                           class="w-full border border-gray-300 rounded-lg px-4 py-2"
-                           placeholder="VD: 101"
-                           value="{% if phong_tro %}{{ phong_tro.SOPHONGBATDAU }}{% else %}{{ form.SOPHONGBATDAU.value|default:'' }}{% endif %}" required>
-                </div>
+            <!-- Số phòng bắt đầu -->
+            <div>
+                <label for="SOPHONGBATDAU" class="block text-sm font-semibold mb-1 text-gray-700">Số phòng bắt đầu</label>
+                <input name="SOPHONGBATDAU" type="number"
+                       class="w-full border border-gray-300 rounded-lg px-4 py-2"
+                       placeholder="VD: 101"
+                       value="{% if phong_tro %}{{ phong_tro.SOPHONGBATDAU }}{% else %}{{ form.SOPHONGBATDAU.value|default:'' }}{% endif %}"
+                       required>
+            </div>
             {% endif %}
 
-            <div class="mb-4">
-                <label for="GIA_PHONG" class="block text-sm font-semibold mb-1">Giá phòng (VND)</label>
+            <!-- Giá phòng -->
+            <div>
+                <label for="GIA_PHONG" class="block text-sm font-semibold mb-1 text-gray-700">Giá phòng (VND)</label>
                 <input name="GIA_PHONG" type="number"
                        class="w-full border border-gray-300 rounded-lg px-4 py-2"
                        placeholder="VD: 1500000"
-                       value="{% if phong_tro %}{{ phong_tro.GIA_PHONG }}{% else %}{{ form.GIA_PHONG.value|default:'' }}{% endif %}" required>
+                       value="{% if phong_tro %}{{ phong_tro.GIA_PHONG }}{% else %}{{ form.GIA_PHONG.value|default:'' }}{% endif %}"
+                       required>
             </div>
 
-            <div class="mb-4">
-                <label for="SO_NGUOI_TOI_DA" class="block text-sm font-semibold mb-1">Số người tối đa</label>
+            <!-- Số người tối đa -->
+            <div>
+                <label for="SO_NGUOI_TOI_DA" class="block text-sm font-semibold mb-1 text-gray-700">Số người tối đa</label>
                 <input name="SO_NGUOI_TOI_DA" type="number"
                        class="w-full border border-gray-300 rounded-lg px-4 py-2"
                        placeholder="VD: 3"
-                       value="{% if phong_tro %}{{ phong_tro.SO_NGUOI_TOI_DA }}{% else %}{{ form.SO_NGUOI_TOI_DA.value|default:'' }}{% endif %}" required>
+                       value="{% if phong_tro %}{{ phong_tro.SO_NGUOI_TOI_DA }}{% else %}{{ form.SO_NGUOI_TOI_DA.value|default:'' }}{% endif %}"
+                       required>
             </div>
         </div>
 
-        <!-- CỘT PHẢI -->
-        <div>
-            <div class="mb-4">
-                <label for="MA_LOAI_PHONG" class="block text-sm font-semibold mb-1">Loại phòng</label>
+        <!-- Cột phải -->
+        <div class="space-y-4">
+            <!-- Loại phòng -->
+            <div>
+                <label for="MA_LOAI_PHONG" class="block text-sm font-semibold mb-1 text-gray-700">Loại phòng</label>
                 <select name="MA_LOAI_PHONG" id="MA_LOAI_PHONG"
                         class="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white"
                         required>
@@ -58,35 +66,51 @@
             </div>
 
             {% if loai == 'multiple' %}
-                <div class="mb-4">
-                    <label for="SOPHONGKETTHUC" class="block text-sm font-semibold mb-1">Số phòng kết thúc</label>
-                    <input name="SOPHONGKETTHUC" type="number"
-                           class="w-full border border-gray-300 rounded-lg px-4 py-2"
-                           placeholder="VD: 110"
-                           value="{% if phong_tro %}{{ phong_tro.SOPHONGKETTHUC }}{% else %}{{ form.SOPHONGKETTHUC.value|default:'' }}{% endif %}" required>
-                </div>
+            <!-- Số phòng kết thúc -->
+            <div>
+                <label for="SOPHONGKETTHUC" class="block text-sm font-semibold mb-1 text-gray-700">Số phòng kết thúc</label>
+                <input name="SOPHONGKETTHUC" type="number"
+                       class="w-full border border-gray-300 rounded-lg px-4 py-2"
+                       placeholder="VD: 110"
+                       value="{% if phong_tro %}{{ phong_tro.SOPHONGKETTHUC }}{% else %}{{ form.SOPHONGKETTHUC.value|default:'' }}{% endif %}"
+                       required>
+            </div>
             {% endif %}
 
-            <div class="mb-4">
-                <label for="SOTIENCANCOC" class="block text-sm font-semibold mb-1">Tiền cọc (VND)</label>
+            <!-- Tiền cọc -->
+            <div>
+                <label for="SOTIENCANCOC" class="block text-sm font-semibold mb-1 text-gray-700">Tiền cọc (VND)</label>
                 <input type="number" name="SOTIENCANCOC" id="SOTIENCANCOC"
                        class="w-full border border-gray-300 rounded-lg px-4 py-2"
                        min="0" step="1000"
                        placeholder="VD: 500000"
-                       value="{% if phong_tro %}{{ phong_tro.SOTIENCANCOC }}{% else %}{{ form.SOTIENCANCOC.value|default:'' }}{% endif %}" required>
+                       value="{% if phong_tro %}{{ phong_tro.SO_TIEN_CAN_COC }}{% else %}{{ form.SO_TIEN_CAN_COC.value|default:'' }}{% endif %}"
+                       required>
             </div>
 
-            <div class="mb-4">
-                <label for="MA_KHU_VUC" class="block text-sm font-semibold mb-1">Khu vực</label>
-                <input type="text" readonly
-                       class="w-full bg-gray-100 cursor-not-allowed border border-gray-300 rounded-lg px-4 py-2"
-                       value="{{ khu_vuc.TEN_KHU_VUC }}">
-                <input type="hidden" name="MA_KHU_VUC" value="{{ khu_vuc.MA_KHU_VUC }}">
+            <!-- Diện tích -->
+            <div>
+                <label for="DIEN_TICH" class="block text-sm font-semibold mb-1 text-gray-700">Diện tích (m²)</label>
+                <input type="number" name="DIEN_TICH" id="DIEN_TICH"
+                       class="w-full border border-gray-300 rounded-lg px-4 py-2"
+                       min="0" step="0.01"
+                       placeholder="VD: 20.5"
+                       value="{% if phong_tro %}{{ phong_tro.DIEN_TICH }}{% else %}{{ form.DIEN_TICH.value|default:'' }}{% endif %}">
             </div>
         </div>
     </div>
 
-    <div class="text-center mt-6">
+    <!-- Mô tả phòng -->
+    <div>
+        <label for="MO_TA_P" class="block text-sm font-semibold mb-1 text-gray-700">Mô tả phòng</label>
+        <textarea name="MO_TA_P" id="MO_TA_P"
+                  class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  placeholder="Nhập mô tả phòng trọ"
+                  rows="4">{% if phong_tro %}{{ phong_tro.MO_TA_P }}{% else %}{{ form.MO_TA_P.value|default:'' }}{% endif %}</textarea>
+    </div>
+
+    <!-- Nút submit -->
+    <div class="text-center pt-4">
         <button type="submit"
                 class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-6 py-2 rounded-lg shadow-md transition-all">
             {% if loai == 'edit' %}Cập nhật thông tin{% else %}Thêm phòng mới{% endif %}

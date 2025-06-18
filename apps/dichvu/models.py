@@ -11,7 +11,9 @@ class DichVu(models.Model):
 
     def __str__(self):
         return self.TEN_DICH_VU or f"Dịch vụ {self.MA_DICH_VU}"
-
+    @property
+    def is_applied(self):
+        return self.lichsu_dichvu.filter(NGAY_HUY_DV__isnull=True).exists()
     class Meta:
         db_table = 'dichvu'
 

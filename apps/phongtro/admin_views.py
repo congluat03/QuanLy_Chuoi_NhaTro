@@ -5,6 +5,9 @@ from django.contrib import messages
 from .models import PhongTro, CocPhong
 from apps.nhatro.models import KhuVuc
 from apps.khachthue.models import KhachThue
+from apps.hopdong.models import HopDong
+from django.db import transaction
+from django.views.decorators.http import require_POST
 
 def phongtro_list(request):
     # Lấy danh sách khu vực thuộc nhà trọ có MA_NHA_TRO=1
@@ -15,10 +18,28 @@ def phong_tro_theo_khu_vuc(request, ma_khu_vuc, page_number=1):
     # Kiểm tra xem khu vực có tồn tại không
     khu_vuc = get_object_or_404(KhuVuc, MA_KHU_VUC=ma_khu_vuc)
 
-    # Lấy danh sách phòng trọ theo mã khu vực và phân trang (8 mục/trang)
+    # Lấy tham số tìm kiếm và bộ lọc từ request
+    keyword = request.GET.get('keyword', '')
+    trang_thai_filters = request.GET.getlist('options[]', [])
+
+    # Lấy danh sách phòng trọ theo mã khu vực
     phong_tros = PhongTro.objects.filter(MA_KHU_VUC=ma_khu_vuc)
+
+    # Áp dụng bộ lọc tìm kiếm nếu có
+    if keyword:
+        phong_tros = phong_tros.filter(
+            Q(TEN_PHONG__icontains=keyword) |
+            Q(LOAI_PHONG__icontains=keyword)
+        )
+
+    # Áp dụng bộ lọc trạng thái nếu có
+    if trang_thai_filters:
+        phong_tros = phong_tros.filter(TRANG_THAI_P__in=trang_thai_filters)
+
+    # Phân trang (8 mục/trang)
     paginator = Paginator(phong_tros, 8)
     phong_tros_page = paginator.get_page(page_number)
+
     trang_thai_options = [
         'Đang ở',
         'Đang trống',
@@ -28,19 +49,23 @@ def phong_tro_theo_khu_vuc(request, ma_khu_vuc, page_number=1):
         'Đang nợ tiền',
     ]
 
-    # Nếu là request AJAX, trả về template phần nội dung phòng trọ
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return render(request, 'admin/hoadon/danhsach_phongtro.html', {
-            'phong_tros': phong_tros_page,
-            'ma_khu_vuc': ma_khu_vuc
-        })
-
-    # Nếu không phải AJAX, trả về toàn bộ trang
-    return render(request, 'admin/phongtro/phongtro.html', {
+    context = {
         'phong_tros': phong_tros_page,
         'ma_khu_vuc': ma_khu_vuc,
-        'trang_thai_options': trang_thai_options
-    })
+        'trang_thai_options': trang_thai_options,
+        'keyword': keyword,  # Truyền lại keyword để hiển thị trong input tìm kiếm
+        'selected_filters': trang_thai_filters,  # Truyền lại các bộ lọc đã chọn
+    }
+
+    # Nếu là request AJAX, trả về template phần nội dung phòng trọ
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return render(request, 'admin/hoadon/danhsach_phongtro.html', context)
+
+    # Nếu không phải AJAX, trả về toàn bộ trang
+    return render(request, 'admin/phongtro/phongtro.html', context)
+
+
+
 
 def view_themsua_phongtro(request, ma_khu_vuc, loai='single', ma_phong_tro=None):
     # 1. Tìm khu vực
@@ -75,19 +100,21 @@ def view_themsua_phongtro(request, ma_khu_vuc, loai='single', ma_phong_tro=None)
     }
     return render(request, 'admin/phongtro/themsua_phongtro.html', context)
 
-def sua_phongtro(request, ma_phong):
-    phong_tro = get_object_or_404(PhongTro, MA_PHONG=ma_phong)
+def sua_phongtro(request, ma_phong_tro):
+    phong_tro = get_object_or_404(PhongTro, MA_PHONG=ma_phong_tro)
     if request.method == 'POST':
         data = request.POST
         phong_tro.TEN_PHONG = data.get('TEN_PHONG')
         phong_tro.MA_LOAI_PHONG_id = data.get('MA_LOAI_PHONG')
-        phong_tro.MA_KHU_VUC_id = data.get('MA_KHU_VUC')
         phong_tro.GIA_PHONG = data.get('GIA_PHONG')
         phong_tro.SO_NGUOI_TOI_DA = data.get('SO_NGUOI_TOI_DA')
+        phong_tro.SO_TIEN_CAN_COC=data.get('SOTIENCANCOC')
+        phong_tro.DIEN_TICH=data.get('DIEN_TICH', '')
+        phong_tro.MO_TA_P = data.get('MO_TA_P', '')
         phong_tro.save()
         messages.success(request, 'Cập nhật phòng trọ thành công.')
         return redirect(request.META.get('HTTP_REFERER', 'phongtro:danh_sach_phongtro'))
-    return render(request, 'phongtro/phongtro_form.html', {'phong_tro': phong_tro, 'loai': 'edit'})
+    return redirect('phongtro:phongtro_list')
 
 def them_phongtro(request):
     if request.method == 'POST':
@@ -116,11 +143,14 @@ def them_phongtro(request):
                     TEN_PHONG=f"{data.get('TEN_PHONG')} {i}",
                     GIA_PHONG=data.get('GIA_PHONG'),
                     SO_NGUOI_TOI_DA=data.get('SO_NGUOI_TOI_DA'),
-                    SOTIENCANCOC=data.get('SOTIENCANCOC'),
+                    SO_TIEN_CAN_COC=data.get('SOTIENCANCOC'),
+                    TRANG_THAI_P = 'Đang trống',  # Mặc định trạng thái là 'Đang trống'
+                    DIEN_TICH=data.get('DIEN_TICH', ''),
+                    MO_TA_P = data.get('MO_TA_P', ''),
                 )
 
             messages.success(request, 'Thêm nhiều phòng trọ thành công.')
-            return redirect('phongtro:danh_sach_phongtro', ma_khu_vuc=data.get('MA_KHU_VUC'))
+            return redirect('phongtro:phongtro_list')
 
         elif loai == 'single':
             PhongTro.objects.create(
@@ -129,17 +159,43 @@ def them_phongtro(request):
                 TEN_PHONG=data.get('TEN_PHONG'),
                 GIA_PHONG=data.get('GIA_PHONG'),
                 SO_NGUOI_TOI_DA=data.get('SO_NGUOI_TOI_DA'),
-                SOTIENCANCOC=data.get('SOTIENCANCOC'),
+                SO_TIEN_CAN_COC=data.get('SOTIENCANCOC'),
+                TRANG_THAI_P='Đang trống',  # Mặc định trạng thái là 'Đang trống'
+                DIEN_TICH=data.get('DIEN_TICH', ''),
+                MO_TA_P=data.get('MO_TA_P', ''),
             )
             messages.success(request, 'Thêm phòng trọ thành công.')
-            return redirect('phongtro:danh_sach_phongtro', ma_khu_vuc=data.get('MA_KHU_VUC'))
+            return redirect('phongtro:phongtro_list')
 
         else:
             messages.error(request, 'Loại hành động không hợp lệ.')
             return redirect(request.META.get('HTTP_REFERER', 'phongtro:them_phongtro'))
 
-    return render(request, 'phongtro/phongtro_form.html', {'loai': 'single'})
+    return redirect('phongtro:phongtro_list')
 
+@require_POST
+def xoa_phong_tro(request, ma_phong_tro):
+    phong_tro = get_object_or_404(PhongTro, MA_PHONG=ma_phong_tro)
+
+    # Kiểm tra phòng có hợp đồng hiệu lực không
+    hop_dong_hieu_luc = HopDong.objects.filter(
+        MA_PHONG=phong_tro,
+        TRANG_THAI_HD__in=['Hiệu lực', 'Đang thực hiện']
+    ).exists()
+
+    # Nếu có hợp đồng và không có xác nhận xóa từ phía người dùng
+    if hop_dong_hieu_luc and not request.POST.get('confirm_delete'):
+        messages.error(request, f"Phòng '{phong_tro.TEN_PHONG}' đang có hợp đồng hiệu lực. Không thể xóa.")
+        return redirect('phongtro:phongtro_list')  # Đổi lại route phù hợp
+
+    try:
+        with transaction.atomic():
+            phong_tro.delete()
+            messages.success(request, f"Phòng '{phong_tro.TEN_PHONG}' đã được xóa thành công.")
+    except Exception as e:
+        messages.error(request, f"Lỗi khi xóa phòng trọ: {str(e)}")
+
+    return redirect('phongtro:phongtro_list')  # Đổi lại route phù hợp
 def view_coc_giu_cho(request, ma_phong):
     phong_tro = get_object_or_404(PhongTro, MA_PHONG=ma_phong)
     

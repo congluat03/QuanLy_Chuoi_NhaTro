@@ -1,4 +1,5 @@
 from django.db import models
+from datetime import datetime
 
 # Create your models here.
 # Model for hopdong
@@ -51,6 +52,25 @@ class LichSuHopDong(models.Model):
 
     class Meta:
         db_table = 'lichsuhopdong'
+    @classmethod
+    def create_or_update_lich_su_hop_dong(cls, khach_thue, hop_dong, moi_quan_he, ngay_tham_gia=None, ma_lich_su_hd=None):
+        if not hop_dong or not moi_quan_he:
+            raise ValueError('Phòng trọ và mối quan hệ là bắt buộc.')
+        ngay_tham_gia = ngay_tham_gia or datetime.now().date()
+        if ma_lich_su_hd:
+            lich_su = cls.objects.filter(MA_LICH_SU_HD=ma_lich_su_hd).first()
+            if lich_su:
+                lich_su.MA_HOP_DONG = hop_dong
+                lich_su.MOI_QUAN_HE = moi_quan_he
+                lich_su.NGAY_THAM_GIA = ngay_tham_gia
+                lich_su.save()
+                return lich_su
+        return cls.objects.create(
+            MA_HOP_DONG=hop_dong,
+            MA_KHACH_THUE=khach_thue,
+            MOI_QUAN_HE=moi_quan_he,
+            NGAY_THAM_GIA=ngay_tham_gia
+        )
 
 # Model for chukythanhtoan
 class ChuKyThanhToan(models.Model):

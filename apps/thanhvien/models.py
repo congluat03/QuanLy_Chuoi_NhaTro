@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.hashers import make_password, check_password
+import re
 
 # Model for taikhoan
 class TaiKhoan(models.Model):
@@ -17,7 +18,41 @@ class TaiKhoan(models.Model):
 
     def __str__(self):
         return self.TAI_KHOAN or f"Tài khoản {self.MA_TAI_KHOAN}"
+    @staticmethod
+    def validate_tai_khoan(tai_khoan):
+        if not tai_khoan or not re.match(r'^[a-zA-Z0-9]{6,20}$', tai_khoan):
+            raise ValueError('Tài khoản phải từ 6-20 ký tự, không chứa ký tự đặc biệt.')
+        return tai_khoan
 
+    @staticmethod
+    def validate_mat_khau(mat_khau):
+        if mat_khau and not re.match(r'^(?=.*[a-zA-Z])(?=.*[0-9]).{8,}$', mat_khau):
+            raise ValueError('Mật khẩu phải tối thiểu 8 ký tự, bao gồm chữ và số.')
+        return mat_khau
+
+    @classmethod
+    def create_tai_khoan(cls, tai_khoan, mat_khau):
+        cls.validate_tai_khoan(tai_khoan)
+        cls.validate_mat_khau(mat_khau)
+        if cls.objects.filter(TAI_KHOAN=tai_khoan).exists():
+            raise ValueError('Tài khoản đã tồn tại.')
+        return cls.objects.create(
+            TAI_KHOAN=tai_khoan,
+            MAT_KHAU=make_password(mat_khau),
+            TRANG_THAI_TK='Hoạt động',
+            QUYEN_HAN='Khách thuê'
+        )
+
+    def update_tai_khoan(self, tai_khoan=None, mat_khau=None):
+        if tai_khoan and tai_khoan != self.TAI_KHOAN:
+            self.validate_tai_khoan(tai_khoan)
+            if TaiKhoan.objects.filter(TAI_KHOAN=tai_khoan).exclude(pk=self.pk).exists():
+                raise ValueError('Tài khoản đã tồn tại.')
+            self.TAI_KHOAN = tai_khoan
+        if mat_khau:
+            self.validate_mat_khau(mat_khau)
+            self.MAT_KHAU = make_password(mat_khau)
+        self.save()
     class Meta:
         db_table = 'taikhoan'
 

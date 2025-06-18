@@ -3,7 +3,6 @@ from django.contrib import messages
 from apps.dichvu.models import DichVu, ChiSoDichVu, LichSuApDungDichVu
 from apps.nhatro.models import KhuVuc
 from apps.phongtro.models import PhongTro
-from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.shortcuts import get_object_or_404
@@ -16,6 +15,8 @@ import pandas as pd
 from io import BytesIO
 from collections import defaultdict
 from django.core.paginator import Paginator
+from django.db import transaction
+from datetime import date
 
 def dichvu_list(request):
     # Lấy toàn bộ danh sách dịch vụ (không phân trang)
@@ -206,7 +207,6 @@ def export_thong_ke_dich_vu(request):
     response['Content-Disposition'] = 'attachment; filename=thongke_dichvu.xlsx'
     return response
 
-
 def view_sua_dich_vu(request, ma_dich_vu):
     """Hiển thị form sửa dịch vụ."""
     # Tìm dịch vụ theo MA_DICH_VU
@@ -241,248 +241,151 @@ def view_them_moi_dich_vu(request):
         'khu_vucs': khu_vucs
     }
     return render(request, 'admin/dichvu/themsua_dichvu.html', context)
-def them_dich_vu(request):
-    # Validate input data
-    ten_dich_vu = request.POST.get('TENDICHVU')
-    don_vi_tinh = request.POST.get('DONVITINH')
-    gia_dich_vu = request.POST.get('GIADICHVU')
-    dong_ho_dien_nuoc = request.POST.get('dong_ho_dien_nuoc', '0') == '1'
-    rooms = request.POST.getlist('rooms[]')
+def validate_dich_vu_data(data, rooms):
+    """Validate input data for DichVu and return errors if any."""
+    errors = {}
+    ten_dich_vu = data.get('TENDICHVU')
+    don_vi_tinh = data.get('DONVITINH')
+    gia_dich_vu = data.get('GIADICHVU')
 
-    # Manual validation
-    errors = []
-    if not ten_dich_vu or len(ten_dich_vu) > 200:
-        errors.append("Tên dịch vụ là bắt buộc và không được vượt quá 200 ký tự.")
+    if not ten_dich_vu or len(ten_dich_vu.strip()) > 200:
+        errors['TENDICHVU'] = "Tên dịch vụ là bắt buộc và không được vượt quá 200 ký tự."
     if not don_vi_tinh or len(don_vi_tinh) > 50:
-        errors.append("Đơn vị tính là bắt buộc và không được vượt quá 50 ký tự.")
+        errors['DONVITINH'] = "Đơn vị tính là bắt buộc và không được vượt quá 50 ký tự."
     if not gia_dich_vu:
-        errors.append("Giá dịch vụ là bắt buộc.")
+        errors['GIADICHVU'] = "Giá dịch vụ là bắt buộc."
     else:
         try:
             gia_dich_vu = float(gia_dich_vu)
             if gia_dich_vu < 0:
-                errors.append("Giá dịch vụ phải lớn hơn hoặc bằng 0.")
+                errors['GIADICHVU'] = "Giá dịch vụ phải lớn hơn hoặc bằng 0."
         except ValueError:
-            errors.append("Giá dịch vụ phải là một số hợp lệ.")
-    # Validate that all room IDs exist
+            errors['GIADICHVU'] = "Giá dịch vụ phải là một số hợp lệ."
     if rooms:
         invalid_rooms = [room for room in rooms if not KhuVuc.objects.filter(MA_KHU_VUC=room).exists()]
         if invalid_rooms:
-            errors.append(f"Các khu vực sau không tồn tại: {', '.join(invalid_rooms)}.")
+            errors['rooms'] = f"Các khu vực sau không tồn tại: {', '.join(invalid_rooms)}."
+    else:
+        errors['rooms'] = "Vui lòng chọn ít nhất một khu vực áp dụng."
 
-    if errors:
-        messages.error(request, "Có lỗi xảy ra: " + "; ".join(errors))
-        # Re-render the form with errors
-        khu_vucs = KhuVuc.objects.all()
-        paginator = Paginator(khu_vucs, 10)  # Paginate with 10 areas per page
-        page_number = request.GET.get('page')
-        page_obj = paginator.get_page(page_number)
-        return render(request, 'app/dich_vu_form.html', {
-            'khu_vucs': page_obj,
-            'khu_vuc_ap_dung': [],
-            'errors': errors,
-            'form_data': request.POST
-        })
+    return errors, gia_dich_vu if not errors.get('GIADICHVU') else None
 
-    # Create new DichVu
-    dich_vu = DichVu.objects.create(
-        TEN_DICH_VU=ten_dich_vu,
-        DON_VI_TINH=don_vi_tinh,
-        GIA_DICH_VU=gia_dich_vu,
-        LOAI_DICH_VU='chi_so' if dong_ho_dien_nuoc else 'thang'
-    )
+def them_dich_vu(request):
+    if request.method == 'POST':
+        dong_ho_dien_nuoc = request.POST.get('dong_ho_dien_nuoc', '0') == '1'
+        rooms = request.POST.getlist('rooms[]')
+        errors, gia_dich_vu = validate_dich_vu_data(request.POST, rooms)
 
-    # Create LichSuApDungDichVu records for selected areas
-    if rooms:
-        for ma_khu_vuc in rooms:
-            LichSuApDungDichVu.objects.create(
-                MA_KHU_VUC_id=ma_khu_vuc,
-                MA_DICH_VU=dich_vu,
-                NGAY_AP_DUNG_DV=date.today(),
-                GIA_DICH_VU_AD=gia_dich_vu,
-                LOAI_DICH_VU_AD='chi_so' if dong_ho_dien_nuoc else 'thang'
+        if errors:
+            messages.error(request, "Vui lòng kiểm tra các lỗi sau.")
+            return redirect('dichvu:dichvu_list')
+
+        with transaction.atomic():
+            dich_vu = DichVu.objects.create(
+                TEN_DICH_VU=request.POST['TENDICHVU'].strip(),
+                DON_VI_TINH=request.POST['DONVITINH'],
+                GIA_DICH_VU=gia_dich_vu,
+                LOAI_DICH_VU='chi_so' if dong_ho_dien_nuoc else 'thang'
             )
 
-    messages.success(request, 'Dịch vụ mới đã được thêm thành công.')
-    return redirect('app:danh_sach_dich_vu')
+            lich_su_records = [
+                LichSuApDungDichVu(
+                    MA_KHU_VUC_id=ma_khu_vuc,
+                    MA_DICH_VU=dich_vu,
+                    NGAY_AP_DUNG_DV=date.today(),
+                    GIA_DICH_VU_AD=gia_dich_vu,
+                    LOAI_DICH_VU_AD='chi_so' if dong_ho_dien_nuoc else 'thang'
+                ) for ma_khu_vuc in rooms
+            ]
+            LichSuApDungDichVu.objects.bulk_create(lich_su_records)
+
+        messages.success(request, 'Dịch vụ mới đã được thêm thành công.')
+        return redirect('dichvu:dichvu_list')
+
+    return redirect('dichvu:dichvu_list')
 
 def sua_dich_vu(request, ma_dich_vu):
     dich_vu = get_object_or_404(DichVu, MA_DICH_VU=ma_dich_vu)
 
     if request.method == 'GET':
-        # Fetch all areas and applied areas
-        khu_vucs = KhuVuc.objects.all()
-        khu_vuc_ap_dung = LichSuApDungDichVu.objects.filter(
-            MA_DICH_VU=dich_vu,
-            NGAY_HUY_DV__isnull=True
-        ).select_related('MA_KHU_VUC')
-        
-        paginator = Paginator(khu_vucs, 10)  # Paginate with 10 areas per page
-        page_number = request.GET.get('page')
-        page_obj = paginator.get_page(page_number)
+        return redirect('dichvu:dichvu_list')
 
-        return render(request, 'app/dich_vu_form.html', {
-            'dich_vu': dich_vu,
-            'khu_vucs': page_obj,
-            'khu_vuc_ap_dung': khu_vuc_ap_dung
-        })
+    # Handle POST or PUT
+    if request.method == 'POST' or request.POST.get('_method') == 'PUT':
+        dong_ho_dien_nuoc = request.POST.get('dong_ho_dien_nuoc', '0') == '1'
+        rooms = request.POST.getlist('rooms[]')
+        errors, gia_dich_vu = validate_dich_vu_data(request.POST, rooms)
 
-    # POST request: Update service
-    ten_dich_vu = request.POST.get('TENDICHVU')
-    don_vi_tinh = request.POST.get('DONVITINH')
-    gia_dich_vu = request.POST.get('GIADICHVU')
-    dong_ho_dien_nuoc = request.POST.get('dong_ho_dien_nuoc', '0') == '1'
-    rooms = request.POST.getlist('rooms[]')
+        if errors:
+            messages.error(request, "Vui lòng kiểm tra các lỗi sau.")
+            return redirect('dichvu:dichvu_list')
 
-    # Manual validation
-    errors = []
-    if not ten_dich_vu or len(ten_dich_vu) > 200:
-        errors.append("Tên dịch vụ là bắt buộc và không được vượt quá 200 ký tự.")
-    if not don_vi_tinh or len(don_vi_tinh) > 50:
-        errors.append("Đơn vị tính là bắt buộc và không được vượt quá 50 ký tự.")
-    if not gia_dich_vu:
-        errors.append("Giá dịch vụ là bắt buộc.")
-    else:
-        try:
-            gia_dich_vu = float(gia_dich_vu)
-            if gia_dich_vu < 0:
-                errors.append("Giá dịch vụ phải lớn hơn hoặc bằng 0.")
-        except ValueError:
-            errors.append("Giá dịch vụ phải là một số hợp lệ.")
-    # Validate that all room IDs exist
-    if rooms:
-        invalid_rooms = [room for room in rooms if not KhuVuc.objects.filter(MA_KHU_VUC=room).exists()]
-        if invalid_rooms:
-            errors.append(f"Các khu vực sau không tồn tại: {', '.join(invalid_rooms)}.")
-
-    if errors:
-        messages.error(request, "Có lỗi xảy ra: " + "; ".join(errors))
-        # Re-render the form with errors
-        khu_vucs = KhuVuc.objects.all()
-        khu_vuc_ap_dung = LichSuApDungDichVu.objects.filter(
-            MA_DICH_VU=dich_vu,
-            NGAY_HUY_DV__isnull=True
-        ).select_related('MA_KHU_VUC')
-        paginator = Paginator(khu_vucs, 10)
-        page_number = request.GET.get('page')
-        page_obj = paginator.get_page(page_number)
-        return render(request, 'app/dich_vu_form.html', {
-            'dich_vu': dich_vu,
-            'khu_vucs': page_obj,
-            'khu_vuc_ap_dung': khu_vuc_ap_dung,
-            'errors': errors,
-            'form_data': request.POST
-        })
-
-    # Update DichVu
-    dich_vu.TEN_DICH_VU = ten_dich_vu
-    dich_vu.DON_VI_TINH = don_vi_tinh
-    dich_vu.GIA_DICH_VU = gia_dich_vu
-    dich_vu.LOAI_DICH_VU = 'chi_so' if dong_ho_dien_nuoc else 'thang'
-    dich_vu.save()
-
-    # Get current active service applications
-    current_ap_dungs = LichSuApDungDichVu.objects.filter(
-        MA_DICH_VU=dich_vu,
-        NGAY_HUY_DV__isnull=True
-    )
-    current_khu_vuc_ids = set(ap_dung.MA_KHU_VUC_id for ap_dung in current_ap_dungs)
-    selected_khu_vuc_ids = set(int(room) for room in rooms)
-
-    # Add or update service applications for selected areas
-    for ma_khu_vuc in selected_khu_vuc_ids:
-        if ma_khu_vuc in current_khu_vuc_ids:
-            # Update existing application
-            ap_dung = current_ap_dungs.get(MA_KHU_VUC_id=ma_khu_vuc)
-            ap_dung.GIA_DICH_VU_AD = gia_dich_vu
-            ap_dung.LOAI_DICH_VU_AD = 'chi_so' if dong_ho_dien_nuoc else 'thang'
-            ap_dung.save()
-        else:
-            # Create new application
-            LichSuApDungDichVu.objects.create(
-                MA_KHU_VUC_id=ma_khu_vuc,
-                MA_DICH_VU=dich_vu,
-                NGAY_AP_DUNG_DV=date.today(),
-                GIA_DICH_VU_AD=gia_dich_vu,
-                LOAI_DICH_VU_AD='chi_so' if dong_ho_dien_nuoc else 'thang'
-            )
-
-    # Deactivate (set NGAY_HUY_DV) for unselected areas
-    for ap_dung in current_ap_dungs:
-        if ap_dung.MA_KHU_VUC_id not in selected_khu_vuc_ids:
-            ap_dung.NGAY_HUY_DV = date.today()
-            ap_dung.save()
-
-    messages.success(request, 'Cập nhật dịch vụ thành công!')
-    return redirect('app:danh_sach_dich_vu')
-
-
-def add_dich_vu(request):
-    if request.method == 'POST':
-        ten_dich_vu = request.POST.get('TEN_DICH_VU')
-        don_vi_tinh = request.POST.get('DON_VI_TINH')
-        loai_dich_vu = request.POST.get('LOAI_DICH_VU')
-        gia_dich_vu = request.POST.get('GIA_DICH_VU')
-
-        if not ten_dich_vu:
-            request.session['error'] = 'Tên dịch vụ là bắt buộc.'
-            return redirect('dichvu_list')
-
-        try:
-            DichVu.objects.create(
-                TEN_DICH_VU=ten_dich_vu,
-                DON_VI_TINH=don_vi_tinh,
-                LOAI_DICH_VU=loai_dich_vu,
-                GIA_DICH_VU=gia_dich_vu
-            )
-            request.session['success'] = 'Thêm dịch vụ thành công!'
-            return redirect('dichvu_list')
-        except Exception as e:
-            request.session['error'] = f'Lỗi khi thêm dịch vụ: {str(e)}'
-            return redirect('dichvu_list')
-    return redirect('dichvu_list')
-
-def get_dich_vu(request, ma_dich_vu):
-    dich_vu = get_object_or_404(DichVu, MA_DICH_VU=ma_dich_vu)
-    data = {
-        'TEN_DICH_VU': dich_vu.TEN_DICH_VU,
-        'DON_VI_TINH': dich_vu.DON_VI_TINH,
-        'LOAI_DICH_VU': dich_vu.LOAI_DICH_VU,
-        'GIA_DICH_VU': str(dich_vu.GIA_DICH_VU),
-    }
-    return JsonResponse(data)
-
-def update_dich_vu(request, ma_dich_vu):
-    dich_vu = get_object_or_404(DichVu, MA_DICH_VU=ma_dich_vu)
-    if request.method == 'POST':
-        ten_dich_vu = request.POST.get('TEN_DICH_VU')
-        don_vi_tinh = request.POST.get('DON_VI_TINH')
-        loai_dich_vu = request.POST.get('LOAI_DICH_VU')
-        gia_dich_vu = request.POST.get('GIA_DICH_VU')
-
-        if not ten_dich_vu:
-            request.session['error'] = 'Tên dịch vụ là bắt buộc.'
-            return redirect('dichvu_list')
-
-        try:
-            dich_vu.TEN_DICH_VU = ten_dich_vu
-            dich_vu.DON_VI_TINH = don_vi_tinh
-            dich_vu.LOAI_DICH_VU = loai_dich_vu
+        with transaction.atomic():
+            # Update DichVu
+            dich_vu.TEN_DICH_VU = request.POST['TENDICHVU'].strip()
+            dich_vu.DON_VI_TINH = request.POST['DONVITINH']
             dich_vu.GIA_DICH_VU = gia_dich_vu
+            dich_vu.LOAI_DICH_VU = 'chi_so' if dong_ho_dien_nuoc else 'thang'
             dich_vu.save()
-            request.session['success'] = 'Cập nhật dịch vụ thành công!'
-            return redirect('dichvu_list')
-        except Exception as e:
-            request.session['error'] = f'Lỗi khi cập nhật dịch vụ: {str(e)}'
-            return redirect('dichvu_list')
-    return redirect('dichvu_list')
+
+            # Get current active service applications
+            current_ap_dungs = LichSuApDungDichVu.objects.filter(
+                MA_DICH_VU=dich_vu,
+                NGAY_HUY_DV__isnull=True
+            )
+            current_khu_vuc_ids = set(ap_dung.MA_KHU_VUC_id for ap_dung in current_ap_dungs)
+            selected_khu_vuc_ids = set(int(room) for room in rooms)
+
+            # Update or create new applications
+            new_records = []
+            for ma_khu_vuc in selected_khu_vuc_ids:
+                if ma_khu_vuc in current_khu_vuc_ids:
+                    ap_dung = current_ap_dungs.get(MA_KHU_VUC_id=ma_khu_vuc)
+                    ap_dung.GIA_DICH_VU_AD = gia_dich_vu
+                    ap_dung.LOAI_DICH_VU_AD = 'chi_so' if dong_ho_dien_nuoc else 'thang'
+                    ap_dung.save()
+                else:
+                    new_records.append(LichSuApDungDichVu(
+                        MA_KHU_VUC_id=ma_khu_vuc,
+                        MA_DICH_VU=dich_vu,
+                        NGAY_AP_DUNG_DV=date.today(),
+                        GIA_DICH_VU_AD=gia_dich_vu,
+                        LOAI_DICH_VU_AD='chi_so' if dong_ho_dien_nuoc else 'thang'
+                    ))
+            if new_records:
+                LichSuApDungDichVu.objects.bulk_create(new_records)
+
+            # Deactivate unselected areas
+            for ap_dung in current_ap_dungs:
+                if ap_dung.MA_KHU_VUC_id not in selected_khu_vuc_ids:
+                    ap_dung.NGAY_HUY_DV = date.today()
+                    ap_dung.save()
+
+        messages.success(request, 'Cập nhật dịch vụ thành công!')
+        return redirect('dichvu:dichvu_list')
+
+    return redirect('dichvu:dichvu_list')
 
 @require_POST
-@csrf_exempt
-def delete_dich_vu(request, ma_dich_vu):
-    try:
-        dich_vu = get_object_or_404(DichVu, MA_DICH_VU=ma_dich_vu)
+def xoa_dich_vu(request, ma_dich_vu):
+    dich_vu = get_object_or_404(DichVu, MA_DICH_VU=ma_dich_vu)
+    
+    # Check if the service is currently applied to any area
+    is_applied = LichSuApDungDichVu.objects.filter(
+        MA_DICH_VU=dich_vu,
+        NGAY_HUY_DV__isnull=True
+    ).exists()
+
+    # If service is applied, rely on frontend confirmation
+    if is_applied and not request.POST.get('confirm_delete'):
+        # This case is handled by the form's onsubmit confirmation
+        pass
+
+    with transaction.atomic():
+        # Delete all related LichSuApDungDichVu records
+        LichSuApDungDichVu.objects.filter(MA_DICH_VU=dich_vu).delete()
+        # Delete the service
         dich_vu.delete()
-        return JsonResponse({'success': True})
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
+
+    messages.success(request, f"Dịch vụ '{dich_vu.TEN_DICH_VU}' và các áp dụng liên quan đã được xóa thành công.")
+    return redirect('dichvu:dichvu_list')
