@@ -1,0 +1,239 @@
+{% extends 'admin/admin_layout.html' %}
+{% load static %}
+
+{% block content_body %}
+<style>
+    /* Giữ nguyên CSS từ Blade */
+    .menu-items {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        background-color: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        min-width: 220px;
+        max-height: 300px;
+        overflow-y: auto;
+        z-index: 9999;
+        padding: 8px 0;
+        opacity: 0;
+        transform: translateY(-10px);
+        transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+    .menu-items.show {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    .menu-items a {
+        display: flex;
+        align-items: center;
+        padding: 10px 15px;
+        color: #333333;
+        font-size: 14px;
+        text-decoration: none;
+    }
+    .menu-items a:hover {
+        background-color: #f1f5f9;
+    }
+    td, .tooltipHoaDon {
+        position: relative;
+    }
+    #table_khachthue th {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background-color: #e0f2fe;
+    }
+    .rental-theme-bg {
+        background: linear-gradient(45deg, #f8fafc 25%, transparent 25%),
+                    linear-gradient(-45deg, #f8fafc 25%, transparent 25%),
+                    linear-gradient(45deg, transparent 75%, #f8fafc 75%),
+                    linear-gradient(-45deg, transparent 75%, #f8fafc 75%);
+        background-size: 20px 20px;
+        background-color: #f1f5f9;
+    }
+</style>
+
+<div class="max-w-7xl mx-auto">
+    <div class="bg-white shadow-xl rounded-xl p-6 sm:p-8">
+        <div class="flex flex-col sm:flex-row justify-between items-center mb-10 gap-4 sm:gap-6">
+            <h4 class="text-3xl font-extrabold text-blue-900 flex items-center whitespace-nowrap">
+                <i class="fas fa-file-invoice-dollar mr-3 text-blue-700 text-2xl" aria-hidden="true"></i>
+                Quản lý Hóa đơn
+            </h4>
+            <div class="flex flex-wrap sm:flex-nowrap items-center gap-3">
+                <a href="{% url 'hoadon:them_hoa_don' %}" class="inline-flex items-center px-5 py-2.5 bg-blue-700 text-white text-sm font-semibold rounded-lg hover:bg-blue-800 transition duration-300 shadow-md whitespace-nowrap">
+                    <i class="fas fa-plus-circle mr-2" aria-hidden="true"></i> Thêm hóa đơn mới
+                </a>
+                <button class="inline-flex items-center px-5 py-2.5 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 transition duration-300 shadow-md whitespace-nowrap" type="button">
+                    <i class="fas fa-file-export mr-2" aria-hidden="true"></i> Xuất Excel
+                </button>
+            </div>
+        </div>
+
+        <!-- Month & Year Selector -->
+        <div class="w-full mb-6">
+            <div class="flex justify-center items-center gap-1 flex-wrap">
+                <a href="?year={{ year|add:-1 }}&month={{ current_month|slice:'0:2' }}" class="px-3 py-2 text-sm bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 font-medium shadow-sm">
+                    ← {{ year|add:-1 }}
+                </a>
+                {% for month in months %}
+                    <a href="?year={{ month.year }}&month={{ month.month }}" class="px-3 py-2 text-sm rounded-lg font-medium transition {% if month.active %}bg-blue-600 text-white shadow-sm{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300{% endif %}">
+                        {{ month.short_name }}
+                    </a>
+                {% endfor %}
+                <a href="?year={{ year|add:1 }}&month={{ current_month|slice:'0:2' }}" class="px-3 py-2 text-sm bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 font-medium shadow-sm">
+                    {{ year|add:1 }} →
+                </a>
+            </div>
+        </div>
+
+        <!-- Filter and Action Section -->
+        <div class="bg-white shadow-md rounded-xl p-4 mb-5 border border-gray-100">
+            <div class="flex flex-col">
+                <div class="flex items-center gap-3 overflow-x-auto whitespace-nowrap mb-4">
+                    <button class="shrink-0 px-5 py-2.5 bg-blue-100 text-blue-700 text-sm font-semibold rounded-lg hover:bg-blue-200 transition duration-300">
+                        <i class="fas fa-sliders-h mr-2"></i> Lọc
+                    </button>
+                    <label class="shrink-0 flex items-center gap-2 text-gray-700 text-sm border border-gray-300 rounded-lg px-3 py-1 cursor-pointer hover:border-blue-400 transition-colors peer-checked:border-blue-600 peer-checked:bg-blue-50 select-none mt-2">
+                        <input type="checkbox" name="options[]" value="Đã thu tiền" class="peer h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+                        <span>Hóa đơn đã thu tiền</span>
+                    </label>
+                    <label class="shrink-0 flex items-center gap-2 text-gray-700 text-sm border border-gray-300 rounded-lg px-3 py-1 cursor-pointer hover:border-blue-400 transition-colors peer-checked:border-blue-600 peer-checked:bg-blue-50 select-none mt-2">
+                        <input type="checkbox" name="options[]" value="Chưa thu tiền" class="peer h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+                        <span>Hóa đơn chưa thu tiền</span>
+                    </label>
+                    <label class="shrink-0 flex items-center gap-2 text-gray-700 text-sm border border-gray-300 rounded-lg px-3 py-1 cursor-pointer hover:border-blue-400 transition-colors peer-checked:border-blue-600 peer-checked:bg-blue-50 select-none mt-2">
+                        <input type="checkbox" name="options[]" value="Đang nợ" class="peer h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+                        <span>Hóa đơn đang nợ</span>
+                    </label>
+                    <label class="shrink-0 flex items-center gap-2 text-gray-700 text-sm border border-gray-300 rounded-lg px-3 py-1 cursor-pointer hover:border-blue-400 transition-colors peer-checked:border-blue-600 peer-checked:bg-blue-50 select-none mt-2">
+                        <input type="checkbox" name="options[]" value="Đã hủy" class="peer h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+                        <span>Hóa đơn đã hủy</span>
+                    </label>
+                </div>
+                <div class="flex justify-end gap-3">
+                    <select class="w-36 px-3 py-2 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-300 shadow-sm">
+                        <option value="asc">Số phòng tăng dần</option>
+                        <option value="desc">Số phòng giảm dần</option>
+                    </select>
+                    <select class="w-36 px-3 py-2 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-300 shadow-sm">
+                        <option value="">Tất cả loại hóa đơn</option>
+                        <option value="dien">Hóa đơn điện</option>
+                        <option value="nuoc">Hóa đơn nước</option>
+                        <option value="khac">Hóa đơn khác</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table Section -->
+        <div class="w-full overflow-x-auto">
+            <table class="w-full table-auto border-collapse text-sm font-sans" id="table_khachthue">
+                <thead class="sticky top-0 bg-blue-50 text-blue-800">
+                    <tr class="bg-blue-100 text-blue-900">
+                        <th class="p-3 font-semibold text-center text-xs md:text-sm w-[12%]">Tên phòng</th>
+                        <th class="p-3 font-semibold text-center text-xs md:text-sm w-[10%]">Tiền phòng</th>
+                        <th class="p-3 font-semibold text-center text-xs md:text-sm w-[8%]">Tiền điện</th>
+                        <th class="p-3 font-semibold text-center text-xs md:text-sm w-[8%]">Tiền nước</th>
+                        <th class="p-3 font-semibold text-center text-xs md:text-sm w-[12%]">Dịch vụ khác</th>
+                        <th class="p-3 font-semibold text-center text-xs md:text-sm w-[10%]">Thu/trả cọc</th>
+                        <th class="p-3 font-semibold text-center text-xs md:text-sm w-[12%]">Cộng thêm/Giảm trừ</th>
+                        <th class="p-3 font-semibold text-center text-xs md:text-sm w-[10%]">Tổng cộng</th>
+                        <th class="p-3 font-semibold text-center text-xs md:text-sm w-[10%]">Cần thu</th>
+                        <th class="p-3 font-semibold text-center text-xs md:text-sm w-[10%]">Trạng thái</th>
+                        <th class="p-3 font-semibold text-center text-xs md:text-sm w-[8%]"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for hoa_don in hoa_dons %}
+                        <tr class="hover:bg-gray-100 transition duration-200 border-b border-gray-200">
+                            <td class="text-center p-3">
+                                <strong class="text-gray-800 text-sm md:text-base block">{{ hoa_don.MA_PHONG.TEN_PHONG }}</strong>
+                                <span class="text-green-600 font-medium text-xs md:text-sm">{{ hoa_don.LOAI_HOA_DON }}</span><br>
+                                <span class="text-gray-500 text-xs">({{ hoa_don.NGAY_LAP_HDON|date:"d/m/Y" }})</span>
+                            </td>
+                            <td class="text-center p-3 text-gray-800 text-sm md:text-base">{{ hoa_don.TIEN_PHONG|floatformat:0 }} đ</td>
+                            <td class="text-center p-3 text-gray-800 text-sm md:text-base">{{ hoa_don.tien_dien|floatformat:0 }} đ</td>
+                            <td class="text-center p-3 text-gray-800 text-sm md:text-base">{{ hoa_don.tien_nuoc|floatformat:0 }} đ</td>
+                            <td class="text-center p-3 text-gray-800 text-sm md:text-base">{{ hoa_don.tien_dich_vu_khac|floatformat:0 }} đ</td>
+                            <td class="text-center p-3 text-gray-800 text-sm md:text-base">{{ hoa_don.TIEN_COC|floatformat:0 }} đ</td>
+                            <td class="text-center p-3 text-gray-800 text-sm md:text-base">{{ hoa_don.tong_khau_tru|floatformat:0 }} đ</td>
+                            <td class="text-center p-3 text-gray-800 font-semibold text-sm md:text-base">{{ hoa_don.TONG_TIEN|floatformat:0 }} đ</td>
+                            <td class="text-center p-3 text-gray-800 font-semibold text-sm md:text-base">{{ hoa_don.TONG_TIEN|floatformat:0 }} đ</td>
+                            <td class="text-center p-3">
+                                <span class="{{ status_mapping.hoa_don.TRANG_THAI_HDON.color }} text-white font-medium px-3 py-1.5 rounded-full text-xs md:text-sm min-w-[120px] inline-block transition duration-300 hover:shadow-sm">
+                                    {{ status_mapping.hoa_don.TRANG_THAI_HDON.text }}
+                                </span>
+                            </td>
+                            <td class="relative p-3">
+                                <div class="tooltipHoaDon cursor-pointer p-2 hover:bg-gray-200 rounded-lg transition duration-200" onclick="toggleMenuHoaDon({{ hoa_don.MA_HOA_DON }})">
+                                    <i class="fa fa-ellipsis-v text-blue-600 text-base" aria-hidden="true"></i>
+                                </div>
+                                <div id="menuHoaDon-{{ hoa_don.MA_HOA_DON }}" class="absolute right-0 mt-2 w-64 origin-top-right bg-white border border-gray-200 rounded-xl shadow-lg z-20 hidden">
+                                    <a href="#" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 transition" onclick="showChucNangHoaDon('chitiet', {{ hoa_don.MA_HOA_DON }})">
+                                        <i class="fa fa-eye mr-2 text-blue-600"></i> Xem chi tiết hóa đơn
+                                    </a>
+                                    <a href="#" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 transition" onclick="showChucNangHoaDon('chinhsua', {{ hoa_don.MA_HOA_DON }})">
+                                        <i class="fa fa-edit mr-2 text-blue-600"></i> Chỉnh sửa hóa đơn
+                                    </a>
+                                    <a href="#" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 transition" onclick="thanhToanHoaDon({{ hoa_don.MA_HOA_DON }})">
+                                        <i class="fa fa-credit-card mr-2 text-blue-600"></i> Thanh toán
+                                    </a>
+                                    <a href="#" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 transition" onclick="thanhToanHoaDon({{ hoa_don.MA_HOA_DON }})">
+                                        <i class="fa fa-print mr-2 text-blue-600"></i> In hóa đơn
+                                    </a>
+                                    <a href="#" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 transition" onclick="thanhToanHoaDon({{ hoa_don.MA_HOA_DON }})">
+                                        <i class="fa fa-share-alt mr-2 text-blue-600"></i> Chia sẻ hóa đơn
+                                    </a>
+                                    <a href="#" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 transition" onclick="huyHoaDon({{ hoa_don.MA_HOA_DON }})">
+                                        <i class="fa fa-paper-plane mr-2 text-blue-600"></i> Gửi cho khách thuê
+                                    </a>
+                                    <a href="#" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 transition" onclick="huyHoaDon({{ hoa_don.MA_HOA_DON }})">
+                                        <i class="fa fa-ban mr-2 text-blue-600"></i> Hủy hóa đơn
+                                    </a>
+                                    <a href="#" class="flex items-center px-4 py-2 text-red-600 hover:bg-red-50 transition" onclick="XoaHopDong({{ hoa_don.MA_HOA_DON }})">
+                                        <i class="fa fa-trash mr-2 text-red-600"></i> Xóa
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <!-- Phân trang -->
+            <div class="mt-4 flex justify-center items-center space-x-2">
+                {% if hoa_dons.has_previous %}
+                    <a href="?page={{ hoa_dons.previous_page_number }}" class="px-4 py-2 text-sm bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition duration-200">Trước</a>
+                {% endif %}
+                <span class="px-4 py-2 text-sm bg-blue-50 text-blue-800 rounded-lg">Trang {{ hoa_dons.number }} / {{ hoa_dons.paginator.num_pages }}</span>
+                {% if hoa_dons.has_next %}
+                    <a href="?page={{ hoa_dons.next_page_number }}" class="px-4 py-2 text-sm bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition duration-200">Sau</a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Modal -->
+        <div id="hoaDonModal" tabindex="-1" role="dialog" aria-modal="true" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50 hidden transition-opacity duration-300 ease-in-out" onclick="if(event.target === this) toggleHoaDonModal(false)">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl mx-4 max-h-[90vh] overflow-y-auto">
+                <div class="flex items-center justify-center relative px-6 py-4 bg-blue-600 rounded-t-xl">
+                    <h4 id="hoaDonModalLabel" class="text-white text-xl font-semibold text-center flex-grow">
+                        Chỉnh sửa hóa đơn
+                    </h4>
+                    <button type="button" aria-label="Đóng" class="absolute right-6 top-1/2 transform -translate-y-1/2 text-white text-3xl font-bold hover:text-blue-300 focus:outline-none" onclick="toggleHoaDonModal(false)">
+                        ×
+                    </button>
+                </div>
+                <div id="modalContentHoaDon" class="px-8 py-6">
+                    <div class="text-center">
+                        <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-700 mx-auto mb-4"></div>
+                        <p class="text-blue-700">Đang tải thông tin hóa đơn...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script src="{% static 'js/admin/hoadon/hoadon.js' %}"></script>
+{% endblock %}

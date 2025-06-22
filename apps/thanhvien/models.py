@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.hashers import make_password, check_password
 import re
+import uuid
 
 # Model for taikhoan
 class TaiKhoan(models.Model):
@@ -10,14 +11,14 @@ class TaiKhoan(models.Model):
     TRANG_THAI_TK = models.CharField(max_length=50, null=True, blank=True)
     QUYEN_HAN = models.CharField(max_length=50, null=True, blank=True)
 
+    class Meta:
+        db_table = 'taikhoan'
+
     def set_mat_khau(self, password):
         self.MAT_KHAU = make_password(password)
 
     def check_mat_khau(self, password):
         return check_password(password, self.MAT_KHAU)
-
-    def __str__(self):
-        return self.TAI_KHOAN or f"Tài khoản {self.MA_TAI_KHOAN}"
     @staticmethod
     def validate_tai_khoan(tai_khoan):
         if not tai_khoan or not re.match(r'^[a-zA-Z0-9]{6,20}$', tai_khoan):
@@ -42,7 +43,15 @@ class TaiKhoan(models.Model):
             TRANG_THAI_TK='Hoạt động',
             QUYEN_HAN='Khách thuê'
         )
-
+    @classmethod
+    def create_tai_khoan_mac_dinh(cls, tai_khoan=None, mat_khau=None):
+        if tai_khoan and mat_khau:
+            return cls.create_tai_khoan(tai_khoan=tai_khoan, mat_khau=mat_khau)
+        else:
+            unique_suffix = str(uuid.uuid4())[:8]
+            default_tai_khoan = f"khachthue_{unique_suffix}"
+            default_mat_khau = "KhachThue@123"
+            return cls.create_tai_khoan(tai_khoan=default_tai_khoan, mat_khau=default_mat_khau)
     def update_tai_khoan(self, tai_khoan=None, mat_khau=None):
         if tai_khoan and tai_khoan != self.TAI_KHOAN:
             self.validate_tai_khoan(tai_khoan)
@@ -53,8 +62,6 @@ class TaiKhoan(models.Model):
             self.validate_mat_khau(mat_khau)
             self.MAT_KHAU = make_password(mat_khau)
         self.save()
-    class Meta:
-        db_table = 'taikhoan'
 
 # Model for nguoiquanly
 class NguoiQuanLy(models.Model):

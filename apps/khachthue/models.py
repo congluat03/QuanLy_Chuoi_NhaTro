@@ -34,10 +34,19 @@ class KhachThue(models.Model):
     def validate_required_fields(ho_ten_kt, sdt_kt):
         if not ho_ten_kt or not sdt_kt:
             raise ValueError('Vui lòng điền đầy đủ các trường bắt buộc.')
-
+    def check_duplicate(cls, sdt_kt, email_kt=None):
+        """Kiểm tra trùng lặp dựa trên số điện thoại hoặc email."""
+        if cls.objects.filter(SDT_KT=sdt_kt).exists():
+            raise ValueError(f'Số điện thoại {sdt_kt} đã được sử dụng.')
+        if email_kt and cls.objects.filter(EMAIL_KT=email_kt).exists():
+            raise ValueError(f'Email {email_kt} đã được sử dụng.')
+    def __str__(self):
+        return self.TAI_KHOAN or f"Tài khoản {self.MA_TAI_KHOAN}"
+    
     @classmethod
     def create_khach_thue(cls, tai_khoan_obj, ho_ten_kt, sdt_kt, email_kt=None, nghe_nghiep=None, avatar=None):
         cls.validate_required_fields(ho_ten_kt, sdt_kt)
+        cls.check_duplicate(sdt_kt, email_kt)
         return cls.objects.create(
             MA_TAI_KHOAN=tai_khoan_obj,
             HO_TEN_KT=ho_ten_kt,
@@ -50,9 +59,14 @@ class KhachThue(models.Model):
 
     def update_khach_thue(self, ho_ten_kt=None, sdt_kt=None, ngay_sinh_kt=None, email_kt=None, nghe_nghiep=None,
                           avatar=None, gioi_tinh_kt=None, noi_sinh_kt=None):
-        """Cập nhật thông tin khách thuê."""
-        if ho_ten_kt and sdt_kt and ngay_sinh_kt:
+        """Cập nhật thông tin khách thuê và kiểm tra trùng lặp."""
+        if ho_ten_kt and sdt_kt:
             self.validate_required_fields(ho_ten_kt, sdt_kt)
+        # Sửa lỗi: Sử dụng KhachThue.objects thay vì self.objects
+        if sdt_kt and sdt_kt != self.SDT_KT and KhachThue.objects.filter(SDT_KT=sdt_kt).exclude(pk=self.pk).exists():
+            raise ValueError(f'Số điện thoại {sdt_kt} đã được sử dụng.')
+        if email_kt and email_kt != self.EMAIL_KT and KhachThue.objects.filter(EMAIL_KT=email_kt).exclude(pk=self.pk).exists():
+            raise ValueError(f'Email {email_kt} đã được sử dụng.')
         self.HO_TEN_KT = ho_ten_kt or self.HO_TEN_KT
         self.SDT_KT = sdt_kt or self.SDT_KT
         self.NGAY_SINH_KT = ngay_sinh_kt or self.NGAY_SINH_KT
