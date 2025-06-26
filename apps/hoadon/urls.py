@@ -4,9 +4,11 @@ from . import views, admin_views
 app_name = 'hoadon'
 urlpatterns = [
     path('hoadon', admin_views.hoadon_list, name='hoadon_list'),
-    path('hoa-don/them/', admin_views.them_hoa_don, name='them_hoa_don'),
+    path('hoadon/them/', admin_views.them_hoa_don, name='them_hoa_don'),
     # Chỉnh sửa hóa đơn
-    path('hoa-don/<int:ma_hoa_don>/sua/', admin_views.sua_hoa_don, name='sua_hoa_don'),
+    path('hoadon/sua/<int:ma_hoa_don>', admin_views.sua_hoa_don, name='sua_hoa_don'),
+
+    path('hoadon/lay-thong-tin-phong/<int:ma_phong>/', admin_views.lay_thong_tin_phong, name='lay_thong_tin_phong'),
 
     # # Quản lý dịch vụ và khấu trừ
     # path('hoa-don/<int:ma_hoa_don>/dich-vu/', views.hoa_don_dich_vu, name='hoa_don_dich_vu'),

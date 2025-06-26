@@ -60,6 +60,15 @@ class PhongTro(models.Model):
     @classmethod
     def lay_phong_theo_ma_khu_vuc(cls, ma_khu_vuc):
         return cls.objects.filter(MA_KHU_VUC=ma_khu_vuc)
+    @staticmethod
+    def get_tien_coc(ma_phong):
+        try:
+            phong = PhongTro.objects.get(MA_PHONG=ma_phong)
+            return float(phong.SO_TIEN_CAN_COC or 0.00), []
+        except PhongTro.DoesNotExist:
+            return 0.00, ['Phòng không tồn tại']
+        except Exception as e:
+            return 0.00, [f'Lỗi khi lấy tiền cọc: {str(e)}']
 
 # Model for cocphong
 class CocPhong(models.Model):

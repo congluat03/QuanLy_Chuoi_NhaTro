@@ -1,4 +1,6 @@
 from django.db import models
+from dateutil.relativedelta import relativedelta
+from datetime import datetime
 
 # Create your models here.
 # Model for dichvu
@@ -42,6 +44,15 @@ class LichSuApDungDichVu(models.Model):
 
     class Meta:
         db_table = 'lichsuapdungdichvu'
+    @staticmethod
+    def get_dich_vu_ap_dung(khu_vuc):
+        try:
+            return LichSuApDungDichVu.objects.filter(
+                MA_KHU_VUC=khu_vuc,
+                NGAY_HUY_DV__isnull=True
+            ).select_related('MA_DICH_VU'), []
+        except Exception as e:
+            return None, [f'Lỗi khi lấy dịch vụ áp dụng: {str(e)}']
 
 # Model for chisodichvu
 class ChiSoDichVu(models.Model):
@@ -67,3 +78,144 @@ class ChiSoDichVu(models.Model):
 
     class Meta:
         db_table = 'chisodichvu'
+    @staticmethod
+    def get_applied_services(khu_vuc):
+        return LichSuApDungDichVu.objects.filter(
+            MA_KHU_VUC=khu_vuc,
+        ).select_related('MA_DICH_VU')
+
+    @staticmethod
+    def validate_chi_so_data(chi_so, index):
+        errors = []
+        try:
+            chi_so_cu = float(chi_so.get('CHI_SO_CU', 0)) if chi_so.get('CHI_SO_CU') else 0.0
+            chi_so_moi = float(chi_so.get('CHI_SO_MOI', 0)) if chi_so.get('CHI_SO_MOI') else None
+            so_dich_vu = float(chi_so.get('SO_DICH_VU', 0)) if chi_so.get('SO_DICH_VU') else 0.0
+            thanh_tien = float(chi_so.get('THANH_TIEN', 0))
+
+            if chi_so_moi is not None and chi_so_cu is not None and chi_so_moi < chi_so_cu:
+                errors.append(f'Dịch vụ thứ {index+1}: Chỉ số mới phải lớn hơn hoặc bằng chỉ số cũ.')
+            if thanh_tien < 0:
+                errors.append(f'Dịch vụ thứ {index+1}: Thành tiền không được âm.')
+
+            return {
+                'CHI_SO_CU': chi_so_cu,
+                'CHI_SO_MOI': chi_so_moi,
+                'SO_DICH_VU': so_dich_vu,
+                'THANH_TIEN': thanh_tien
+            }, errors
+        except (ValueError, TypeError) as e:
+            errors.append(f'Lỗi dữ liệu dịch vụ thứ {index+1}: {str(e)}')
+            return None, errors
+
+    @staticmethod
+    def create_chi_so_dich_vu(phong, dich_vu, chi_so_data, ngay_ghi_cs):
+        return ChiSoDichVu(
+            MA_DICH_VU=dich_vu,
+            MA_PHONG=phong,
+            CHI_SO_CU=int(chi_so_data['CHI_SO_CU']),
+            CHI_SO_MOI=int(chi_so_data['CHI_SO_MOI']),
+            NGAY_GHI_CS=ngay_ghi_cs
+        )
+    @staticmethod
+    def update_chi_so_dich_vu(chi_so_dv, chi_so_data, ngay_ghi_cs):
+        chi_so_dv.CHI_SO_MOI = int(float(chi_so_data['CHI_SO_MOI']))
+        chi_so_dv.NGAY_GHI_CS = ngay_ghi_cs
+        return chi_so_dv
+    @staticmethod
+    def save_chi_so_dich_vu(phong, chi_so_dich_vu_list, ngay_ghi_cs):
+        errors = []
+        for chi_so in chi_so_dich_vu_list:
+            ma_dich_vu = int(chi_so.get('MA_DICH_VU'))
+            ma_chi_so = chi_so.get('MA_CHI_SO', '')
+            dich_vu = DichVu.objects.filter(MA_DICH_VU=ma_dich_vu).first()
+
+            # Kiểm tra MA_DICH_VU
+            if not ma_dich_vu:
+                errors.append(f'Dịch vụ với MA_DICH_VU={ma_dich_vu} không hợp lệ.')
+                continue
+
+            # Xác thực dữ liệu
+            chi_so_data, chi_so_errors = ChiSoDichVu.validate_chi_so_data(chi_so, index=0)
+            errors.extend(chi_so_errors)
+            if not chi_so_data:
+                continue
+
+            # Kiểm tra bản ghi hiện có
+            if ma_chi_so:
+                chi_so_hien_co = ChiSoDichVu.objects.filter(MA_CHI_SO=ma_chi_so).first()
+                if chi_so_hien_co:
+                    # Cập nhật bản ghi hiện có
+                    chi_so_dv = ChiSoDichVu.update_chi_so_dich_vu(chi_so_hien_co, chi_so_data, ngay_ghi_cs)
+                    chi_so_dv.save()
+                else:
+                    errors.append(f'Bản ghi với MA_CHI_SO={ma_chi_so} không tồn tại.')
+                    continue
+            else:
+                # return dich_vu.TEN_DICH_VU
+                # Tạo bản ghi mới
+                chi_so_dv = ChiSoDichVu.create_chi_so_dich_vu(phong, dich_vu, chi_so_data, ngay_ghi_cs)
+                chi_so_dv.save()
+
+        return errors
+
+    @staticmethod
+    def get_chi_so_moi_nhat(ma_dich_vu, ma_phong, current_month, next_month):
+        try:
+            return ChiSoDichVu.objects.filter(
+                MA_DICH_VU=ma_dich_vu,
+                MA_PHONG=ma_phong,
+                NGAY_GHI_CS__gte=current_month,
+                NGAY_GHI_CS__lt=next_month
+            ).order_by('-NGAY_GHI_CS').first()
+        except Exception:
+            return None
+
+    @staticmethod
+    def get_chi_so_truoc(ma_dich_vu, ma_phong, current_month):
+        try:
+            return ChiSoDichVu.objects.filter(
+                MA_DICH_VU=ma_dich_vu,
+                MA_PHONG=ma_phong,
+                NGAY_GHI_CS__lt=current_month
+            ).order_by('-NGAY_GHI_CS').first()
+        except Exception:
+            return None
+
+    @staticmethod
+    def tinh_chi_so_dich_vu(dich_vu_ap_dung, ma_phong, current_month, next_month):
+        errors = []
+        try:
+            chi_so = ChiSoDichVu.get_chi_so_moi_nhat(dich_vu_ap_dung.MA_DICH_VU, ma_phong, current_month, next_month)
+            so_dich_vu = 0
+            thanh_tien = 0
+            chi_so_cu = 0
+            chi_so_moi = None
+
+            if dich_vu_ap_dung.MA_DICH_VU.LOAI_DICH_VU != 'Cố định':
+                if chi_so:
+                    chi_so_cu = chi_so.CHI_SO_CU or 0
+                    chi_so_moi = chi_so.CHI_SO_MOI
+                    so_dich_vu = (chi_so_moi - chi_so_cu) if chi_so_moi is not None else 0
+                    thanh_tien = so_dich_vu * dich_vu_ap_dung.GIA_DICH_VU_AD
+                else:
+                    chi_so_truoc = ChiSoDichVu.get_chi_so_truoc(dich_vu_ap_dung.MA_DICH_VU, ma_phong, current_month)
+                    chi_so_cu = chi_so_truoc.CHI_SO_MOI if chi_so_truoc else 0
+            else:
+                so_dich_vu = 1
+                thanh_tien = dich_vu_ap_dung.GIA_DICH_VU_AD
+
+            return {
+                'MA_CHI_SO': chi_so.MA_CHI_SO if chi_so else None,
+                'MA_DICH_VU': dich_vu_ap_dung.MA_DICH_VU.MA_DICH_VU,
+                'TEN_DICH_VU': dich_vu_ap_dung.MA_DICH_VU.TEN_DICH_VU,
+                'LOAI_DICH_VU': dich_vu_ap_dung.MA_DICH_VU.LOAI_DICH_VU,
+                'GIA_DICH_VU': float(dich_vu_ap_dung.GIA_DICH_VU_AD),
+                'CHI_SO_CU': float(chi_so_cu),
+                'CHI_SO_MOI': float(chi_so_moi) if chi_so_moi is not None else None,
+                'SO_DICH_VU': float(so_dich_vu),
+                'THANH_TIEN': float(thanh_tien)
+            }, errors
+        except Exception as e:
+            errors.append(f'Lỗi khi tính chi tiết dịch vụ {dich_vu_ap_dung.MA_DICH_VU.TEN_DICH_VU}: {str(e)}')
+            return None, errors

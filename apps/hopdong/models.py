@@ -41,7 +41,17 @@ class HopDong(models.Model):
             raise ValidationError('Ngày nhận phòng phải trước ngày trả phòng.')
         if self.SO_THANH_VIEN <= 0:
             raise ValidationError('Số thành viên phải lớn hơn 0.')
-
+    def get_hop_dong_hieu_luc(ma_phong):
+        try:
+            hop_dong = HopDong.objects.filter(
+                MA_PHONG=ma_phong,
+                TRANG_THAI_HD__in=['Đang hoạt động', 'Đang báo kết thúc', 'Sắp kết thúc', 'Đã xác nhận']
+            ).first()
+            if hop_dong:
+                return {'GIA_THUE': float(hop_dong.GIA_THUE or 0.00)}, []
+            return None, []
+        except Exception as e:
+            return None, [f'Lỗi khi lấy hợp đồng: {str(e)}']
     @classmethod
     def tao_hop_dong(cls, data):
         with transaction.atomic():

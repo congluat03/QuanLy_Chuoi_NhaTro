@@ -113,7 +113,7 @@
                         <span>Hóa đơn đã hủy</span>
                     </label>
                 </div>
-                <div class="flex justify-end gap-3">
+                <div class="flex justify-end w-full gap-3">
                     <select class="w-36 px-3 py-2 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-300 shadow-sm">
                         <option value="asc">Số phòng tăng dần</option>
                         <option value="desc">Số phòng giảm dần</option>
@@ -129,7 +129,7 @@
         </div>
 
         <!-- Table Section -->
-        <div class="w-full overflow-x-auto">
+        <div class="w-full">
             <table class="w-full table-auto border-collapse text-sm font-sans" id="table_khachthue">
                 <thead class="sticky top-0 bg-blue-50 text-blue-800">
                     <tr class="bg-blue-100 text-blue-900">
@@ -175,7 +175,7 @@
                                     <a href="#" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 transition" onclick="showChucNangHoaDon('chitiet', {{ hoa_don.MA_HOA_DON }})">
                                         <i class="fa fa-eye mr-2 text-blue-600"></i> Xem chi tiết hóa đơn
                                     </a>
-                                    <a href="#" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 transition" onclick="showChucNangHoaDon('chinhsua', {{ hoa_don.MA_HOA_DON }})">
+                                    <a href="{% url 'hoadon:sua_hoa_don' hoa_don.MA_HOA_DON %}" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 transition">
                                         <i class="fa fa-edit mr-2 text-blue-600"></i> Chỉnh sửa hóa đơn
                                     </a>
                                     <a href="#" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 transition" onclick="thanhToanHoaDon({{ hoa_don.MA_HOA_DON }})">

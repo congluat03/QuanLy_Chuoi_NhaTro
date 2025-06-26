@@ -2,261 +2,284 @@
 {% load static %}
 
 {% block content_body %}
-<!-- Hóa đơn dịch vụ -->
-<div class="bg-white shadow-lg rounded-lg p-6 mb-6">
-    <h4 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-        <i class="fas fa-cog mr-2 text-blue-600"></i> Thông tin thiết lập dịch vụ
-    </h4>
-    <div class="overflow-x-auto">
-        {% if chi_so_dich_vu %}
-            <table class="w-full table-auto border-collapse text-sm font-sans">
-                <thead class="bg-blue-50 text-blue-800">
-                    <tr>
-                        <th class="p-3 font-semibold text-center text-xs md:text-sm w-[5%]">#</th>
-                        <th class="p-3 font-semibold text-center text-xs md:text-sm w-[15%]">Tên dịch vụ</th>
-                        <th class="p-3 font-semibold text-center text-xs md:text-sm w-[15%]">Chỉ số cũ</th>
-                        <th class="p-3 font-semibold text-center text-xs md:text-sm w-[15%]">Chỉ số mới</th>
-                        <th class="p-3 font-semibold text-center text-xs md:text-sm w-[15%]">Số dịch vụ</th>
-                        <th class="p-3 font-semibold text-center text-xs md:text-sm w-[15%]">Thành tiền</th>
-                        <th class="p-3 font-semibold text-center text-xs md:text-sm w-[20%]">Chức năng</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for dich_vu in chi_so_dich_vu %}
-                        <tr id="dichvu-{{ dich_vu.MA_CHI_SO }}" class="hover:bg-gray-100 transition duration-200 border-b border-gray-200">
-                            <td class="p-3 text-center text-gray-800 text-sm">{{ forloop.counter }}</td>
-                            <td class="p-3 text-center text-gray-800 text-sm">{{ dich_vu.MA_DICH_VU.TEN_DICH_VU }}</td>
-                            <td class="p-3 text-center">
-                                <input type="number" name="CHISOCU[{{ dich_vu.MA_CHI_SO }}]" value="{{ dich_vu.CHI_SO_CU|default:'0' }}"
-                                    class="form-control w-full text-center border border-gray-300 rounded-md py-1 px-2 text-sm bg-gray-50"
-                                    id="CHISOCU-{{ dich_vu.MA_CHI_SO }}" step="0.01" disabled>
-                            </td>
-                            <td class="p-3 text-center">
-                                <input type="number" name="CHISOMOI[{{ dich_vu.MA_CHI_SO }}]" value="{{ dich_vu.CHI_SO_MOI|default:'0' }}"
-                                    class="form-control w-full text-center border border-gray-300 rounded-md py-1 px-2 text-sm"
-                                    id="CHISOMOI-{{ dich_vu.MA_CHI_SO }}" step="0.01" disabled>
-                            </td>
-                            <td class="p-3 text-center">
-                                <input type="number" name="SODICHVUTONG[{{ dich_vu.MA_CHI_SO }}]" value="{{ dich_vu.so_dich_vu|default:'0' }}"
-                                    class="form-control w-full text-center border border-gray-300 rounded-md py-1 px-2 text-sm bg-gray-50"
-                                    id="SODICHVUTONG-{{ dich_vu.MA_CHI_SO }}" step="0.01" disabled>
-                            </td>
-                            <td class="p-3 text-center">
-                                <input type="number" name="TIENDICHVUGHIDUOC[{{ dich_vu.MA_CHI_SO }}]" value="{{ dich_vu.thanh_tien|default:'0' }}"
-                                    class="form-control w-full text-center border border-gray-300 rounded-md py-1 px-2 text-sm bg-gray-50"
-                                    id="TIENDICHVUGHIDUOC-{{ dich_vu.MA_CHI_SO }}" step="0.01" disabled>
-                            </td>
-                            <td class="p-3 text-center">
-                                <button type="button" class="btn-toggle-status bg-blue-600 text-white text-xs font-medium px-3 py-1.5 rounded-md hover:bg-blue-700 transition duration-200"
-                                    id="button-{{ dich_vu.MA_CHI_SO }}" data-status="1"
-                                    onclick="chinhSuaChiSoDichVu({{ dich_vu.MA_CHI_SO }}, {{ dich_vu.gia_dich_vu|default:'0' }})">
-                                    Chỉnh sửa
-                                </button>
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        {% else %}
-            <p class="text-gray-600 text-center py-4">Không có thông tin dịch vụ.</p>
-        {% endif %}
+<div id="deduction-data" data-deduction-index="{{ khau_tru|length }}"></div>
+<div class="container mx-auto px-4 py-8 bg-gray-50 min-h-screen font-sans">
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-2xl md:text-3xl font-bold text-gray-900 flex items-center gap-2">
+            <i class="fas fa-file-invoice text-blue-600"></i> Quản lý hóa đơn nhà trọ
+        </h1>
+        <p class="text-gray-500 text-sm mt-1">Tạo và quản lý hóa đơn một cách dễ dàng, chuyên nghiệp</p>
     </div>
-</div>
-
-<!-- Khấu trừ -->
-<div class="bg-white shadow-lg rounded-lg p-6">
-    <h4 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-        <i class="fas fa-minus-circle mr-2 text-red-600"></i> Quản lý khấu trừ
-    </h4>
-    <form id="discount-form" method="POST" action="{% url 'hoadon:them_hoa_don' %}" class="mb-6">
-        {% csrf_token %}
-        <input type="hidden" name="MA_HOA_DON" value="{{ hoa_don.MA_HOA_DON }}">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Cột 1 -->
-            <div>
-                <div class="mb-4">
-                    <label for="NGAYKHAUTRU" class="block text-sm font-medium text-gray-700 mb-1">Ngày khấu trừ</label>
-                    <input name="NGAYKHAUTRU" id="NGAYKHAUTRU" type="date" class="w-full border border-gray-300 rounded-md py-2 px-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        value="{{ form_data.NGAYKHAUTRU|default:'' }}" required>
+    <!-- Thông báo -->
+    {% if messages %}
+        <div class="mb-4">
+            {% for message in messages %}
+                <div class="p-4 mb-2 rounded {% if message.tags == 'error' %}bg-red-100 text-red-800{% else %}bg-green-100 text-green-800{% endif %}">
+                    {{ message }}
                 </div>
-                <div class="mb-4">
-                    <label for="LOAI_KHAU_TRU" class="block text-sm font-medium text-gray-700 mb-1">Loại điều chỉnh</label>
-                    <select name="LOAI_KHAU_TRU" id="LOAI_KHAU_TRU" class="w-full border border-gray-300 rounded-md py-2 px-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
-                        <option value="" disabled selected>Chọn loại điều chỉnh</option>
-                        <option value="Cộng" {% if form_data.LOAI_KHAU_TRU == 'Cộng' %}selected{% endif %}>Cộng</option>
-                        <option value="Trừ" {% if form_data.LOAI_KHAU_TRU == 'Trừ' %}selected{% endif %}>Trừ</option>
+            {% endfor %}
+        </div>
+    {% endif %}
+    <!-- Main Form -->
+    <form id="invoice-form" method="POST" 
+      action="{% if hoa_don %}{% url 'hoadon:sua_hoa_don' ma_hoa_don=hoa_don.MA_HOA_DON %}{% else %}{% url 'hoadon:them_hoa_don' %}{% endif %}" 
+      class="bg-white shadow-lg rounded-xl p-6 md:p-8">
+    {% csrf_token %}
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Invoice Details -->
+            <div class="lg:col-span-1 space-y-5 bg-gray-100 p-5 rounded-lg">
+                <h2 class="text-lg font-semibold text-gray-800">Thông tin hóa đơn</h2>
+                <div>
+                    <label for="MA_PHONG" class="block text-sm font-medium text-gray-700 mb-1">Phòng</label>
+                    {% if hoa_don %}
+                        <!-- Trường hợp sửa hóa đơn: hiển thị phòng cố định -->
+                        <input type="hidden" name="MA_PHONG" value="{{ hoa_don.MA_PHONG.MA_PHONG }}">
+                        <div class="w-full border border-gray-200 rounded-lg py-2 px-3 text-sm bg-gray-50 text-gray-700 shadow-sm">
+                            {{ hoa_don.MA_PHONG.TEN_PHONG|default:'Không xác định' }}
+                        </div>
+                    {% else %}
+                        <!-- Trường hợp thêm hóa đơn: hiển thị select để chọn phòng -->
+                        <select name="MA_PHONG" id="MA_PHONG" class="w-full border border-gray-200 rounded-lg py-2 px-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white shadow-sm" required>
+                            <option value="" disabled selected>Chọn phòng</option>
+                            {% for phong in phong_tro %}
+                                <option value="{{ phong.MA_PHONG }}">{{ phong.TEN_PHONG }}</option>
+                            {% endfor %}
+                        </select>
+                    {% endif %}
+                </div>
+                <div>
+                    <label for="LOAI_HOA_DON" class="block text-sm font-medium text-gray-700 mb-1">Loại hóa đơn</label>
+                    <select name="LOAI_HOA_DON" id="LOAI_HOA_DON" class="w-full border border-gray-200 rounded-lg py-2 px-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white shadow-sm">
+                        <option value="">-- Chọn loại hóa đơn --</option>
+                        <option value="bat_dau_hd" {% if form_data.LOAI_HOA_DON == 'bat_dau_hd' %}selected{% endif %}>Hóa đơn bắt đầu hợp đồng</option>
+                        <option value="hang_thang" {% if form_data.LOAI_HOA_DON == 'hang_thang' %}selected{% endif %}>Hóa đơn hàng tháng</option>
+                        <option value="theo_chu_ky" {% if form_data.LOAI_HOA_DON == 'theo_chu_ky' %}selected{% endif %}>Hóa đơn theo chu kỳ</option>
+                        <option value="ket_thuc_hd" {% if form_data.LOAI_HOA_DON == 'ket_thuc_hd' %}selected{% endif %}>Hóa đơn kết thúc hợp đồng</option>
                     </select>
                 </div>
-                <div class="text-center">
-                    <button type="submit" class="bg-blue-600 text-white font-medium px-4 py-2 rounded-md hover:bg-blue-700 transition duration-200">Lưu thông tin</button>
+                <div>
+                    <label for="NGAY_LAP_HDON" class="block text-sm font-medium text-gray-700 mb-1">Ngày lập hóa đơn</label>
+                    <input name="NGAY_LAP_HDON" id="NGAY_LAP_HDON" type="date" class="w-full border border-gray-200 rounded-lg py-2 px-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white shadow-sm" value="{{ form_data.NGAY_LAP_HDON|default:'' }}" required>
+                </div>
+                <div>
+                    <label for="TRANG_THAI_HDON" class="block text-sm font-medium text-gray-700 mb-1">Trạng thái hóa đơn</label>
+                    <select name="TRANG_THAI_HDON" id="TRANG_THAI_HDON" class="w-full border border-gray-200 rounded-lg py-2 px-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white shadow-sm">
+                        <option value="" disabled selected>Chọn trạng thái</option>
+                        <option value="Chưa thanh toán" {% if form_data.TRANG_THAI_HDON == 'Chưa thanh toán' %}selected{% endif %}>Chưa thanh toán</option>
+                        <option value="Đã thanh toán" {% if form_data.TRANG_THAI_HDON == 'Đã thanh toán' %}selected{% endif %}>Đã thanh toán</option>
+                    </select>
                 </div>
             </div>
-            <!-- Cột 2 -->
-            <div>
-                <div class="mb-4">
-                    <label for="SO_TIEN_KT" class="block text-sm font-medium text-gray-700 mb-1">Tiền khấu trừ</label>
-                    <input name="SO_TIEN_KT" id="SO_TIEN_KT" type="number" step="1000" class="w-full border border-gray-300 rounded-md py-2 px-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        value="{{ form_data.SO_TIEN_KT|default:'' }}" required>
+            <!-- Deduction and Payment -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Service Invoice -->
+                <div class="bg-gray-100 p-5 rounded-lg">
+                    <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                        <i class="fas fa-cog text-blue-600"></i> Hóa đơn dịch vụ
+                    </h2>
+                    <div class="max-h-60 overflow-y-auto rounded-lg">
+                        <table class="w-full table-auto border-collapse text-sm bg-white rounded-lg">
+                            <thead class="bg-blue-100 text-blue-900 sticky top-0">
+                                <tr>
+                                    <th class="p-2 font-semibold text-center text-xs md:text-sm w-[5%]">#</th>
+                                    <th class="p-2 font-semibold text-center text-xs md:text-sm w-[15%]">Tên dịch vụ</th>
+                                    <th class="p-2 font-semibold text-center text-xs md:text-sm w-[15%]">Chỉ số cũ</th>
+                                    <th class="p-2 font-semibold text-center text-xs md:text-sm w-[15%]">Chỉ số mới</th>
+                                    <th class="p-2 font-semibold text-center text-xs md:text-sm w-[15%]">Số dịch vụ</th>
+                                    <th class="p-2 font-semibold text-center text-xs md:text-sm w-[15%]">Thành tiền</th>
+                                    <th class="p-2 font-semibold text-center text-xs md:text-sm w-[20%]">Chức năng</th>
+                                </tr>
+                            </thead>
+                            <tbody id="service-details">
+                                {% for dich_vu in chi_so_dich_vu %}
+                                    <tr id="dichvu-{{ dich_vu.MA_CHI_SO }}" class="hover:bg-gray-50 transition duration-200 border-b border-gray-100">
+                                        <td class="p-2 text-center text-gray-700 text-sm">{{ forloop.counter }}</td>
+                                        <td class="p-2 text-center text-gray-700 text-sm">{{ dich_vu.TEN_DICH_VU }}</td>
+                                        <td class="p-2 text-center">
+                                            <input type="hidden" name="chi_so_dich_vu[{{ forloop.counter0 }}][MA_CHI_SO]" value="{{ dich_vu.MA_CHI_SO }}">
+                                            <input type="hidden" name="chi_so_dich_vu[{{ forloop.counter0 }}][MA_DICH_VU]" value="{{ dich_vu.MA_DICH_VU }}">
+                                            <input type="number" name="chi_so_dich_vu[{{ forloop.counter0 }}][CHI_SO_CU]" 
+                                            value="{{ dich_vu.CHI_SO_CU|default:'0' }}" class="w-full text-center border border-gray-200 rounded-lg py-1 px-2 text-sm bg-gray-50 focus:ring-2 focus:ring-blue-500" 
+                                            id="CHISOCU-{{ forloop.counter0 }}" step="0.01" readonly>
+                                        </td>
+                                        <td class="p-2 text-center">
+                                            <input type="number" name="chi_so_dich_vu[{{ forloop.counter0 }}][CHI_SO_MOI]" value="{{ dich_vu.CHI_SO_MOI|default:'0' }}" class="w-full text-center border border-gray-200 rounded-lg py-1 px-2 text-sm focus:ring-2 focus:ring-blue-500" 
+                                            id="CHISOMOI-{{ forloop.counter0 }}" step="0.01">
+                                        </td>
+                                        <td class="p-2 text-center">
+                                            <input type="number" name="chi_so_dich_vu[{{ forloop.counter0 }}][SO_DICH_VU]" value="{{ dich_vu.SO_DICH_VU|default:'0' }}" 
+                                            class="w-full text-center border border-gray-200 rounded-lg py-1 px-2 text-sm bg-gray-50 focus:ring-2 focus:ring-blue-500" 
+                                            id="SODICHVUTONG-{{ forloop.counter0 }}" step="0.01" readonly>
+                                        </td>
+                                        <td class="p-2 text-center">
+                                            <input type="number" name="chi_so_dich_vu[{{ forloop.counter0 }}][THANH_TIEN]" value="{{ dich_vu.THANH_TIEN|default:'0' }}" 
+                                            class="w-full text-center border border-gray-200 rounded-lg py-1 px-2 text-sm bg-gray-50 focus:ring-2 focus:ring-blue-500" 
+                                            id="TIENDICHVUGHIDUOC-{{ forloop.counter0 }}" step="0.01" readonly>
+                                        </td>
+                                        <td class="p-2 text-center">
+                                            <button type="button" class="bg-blue-600 text-white text-xs font-medium px-2 py-1 rounded-lg hover:bg-blue-700 transition duration-300" id="button-{{ dich_vu.MA_CHI_SO }}" data-status="1" title="Chỉnh sửa">
+                                                <i class="fa fa-edit"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        <div class="text-gray-500 text-center py-4 text-sm {% if chi_so_dich_vu %}hidden{% endif %}">Không có thông tin dịch vụ.</div>
+                    </div>
                 </div>
-                <div class="mb-4">
-                    <label for="LY_DO_KHAU_TRU" class="block text-sm font-medium text-gray-700 mb-1">Lý do khấu trừ</label>
-                    <textarea name="LY_DO_KHAU_TRU" id="LY_DO_KHAU_TRU" class="w-full border border-gray-300 rounded-md py-2 px-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" rows="4" required>{{ form_data.LY_DO_KHAU_TRU|default:'' }}</textarea>
+                <!-- Deduction Management -->
+                <div class="bg-gray-100 p-5 rounded-lg">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                            <i class="fas fa-minus-circle text-red-600"></i> Quản lý khấu trừ
+                        </h2>
+                        <button type="button" id="add-deduction-btn" class="bg-green-600 text-white font-medium px-4 py-2 rounded-lg hover:bg-green-700 transition duration-300 transform hover:scale-105" title="Thêm khấu trừ mới">
+                            <i class="fas fa-plus mr-1"></i> Thêm
+                        </button>
+                    </div>
+                    <div id="discount-info" class="max-h-60 overflow-y-auto rounded-lg">
+                        <table class="w-full table-auto border-collapse text-sm bg-white rounded-lg">
+                            <thead class="bg-blue-100 text-blue-900 sticky top-0">
+                                <tr>
+                                    <th class="p-2 font-semibold text-center text-xs md:text-sm w-[5%]">#</th>
+                                    <th class="p-2 font-semibold text-center text-xs md:text-sm w-[15%]">Loại</th>
+                                    <th class="p-2 font-semibold text-center text-xs md:text-sm w-[20%]">Số tiền</th>
+                                    <th class="p-2 font-semibold text-center text-xs md:text-sm w-[30%]">Lý do</th>
+                                    <th class="p-2 font-semibold text-center text-xs md:text-sm w-[15%]">Ngày</th>
+                                    <th class="p-2 font-semibold text-center text-xs md:text-sm w-[15%]">Chức năng</th>
+                                </tr>
+                            </thead>
+                            <tbody id="discount-details">
+                                {% for item in khau_tru %}
+                                    <tr id="khautru_new_{{ item.MA_KHAU_TRU }}" class="hover:bg-gray-50 transition duration-200 border-b border-gray-100">
+                                        <td class="p-2 text-center text-gray-700 text-sm">{{ forloop.counter }}</td>
+                                        <td class="p-2 text-center">
+                                            <select id="loai_khau_tru_new_{{ forloop.counter0 }}" name="khautru[{{ forloop.counter0 }}][LOAI_KHAU_TRU]" class="w-full text-center border border-gray-200 rounded-lg py-1 px-2 text-sm bg-transparent focus:ring-2 focus:ring-blue-500" disabled>
+                                                <option value="Cộng" {% if item.LOAI_KHAU_TRU == 'Cộng' %}selected{% endif %}>Cộng</option>
+                                                <option value="Trừ" {% if item.LOAI_KHAU_TRU == 'Trừ' %}selected{% endif %}>Trừ</option>
+                                            </select>
+                                        </td>
+                                        <td class="p-2 text-center">
+                                            <input type="hidden" name="khautru[{{ forloop.counter0 }}][MA_KHAU_TRU]" value="{{ item.MA_KHAU_TRU }}">
+                                            <input id="so_tien_kt_new_{{ forloop.counter0 }}" name="khautru[{{ forloop.counter0 }}][SO_TIEN_KT]" type="number" step="1000" value="{{ item.SO_TIEN_KT|floatformat:2 }}" class="w-full text-center border border-gray-200 rounded-lg py-1 px-2 text-sm bg-transparent focus:ring-2 focus:ring-blue-500" readonly>
+                                        </td>
+                                        <td class="p-2 text-center">
+                                            <input id="ly_do_khau_tru_new_{{ forloop.counter0 }}" name="khautru[{{ forloop.counter0 }}][LY_DO_KHAU_TRU]" type="text" value="{{ item.LY_DO_KHAU_TRU }}" class="w-full text-center border border-gray-200 rounded-lg py-1 px-2 text-sm bg-transparent focus:ring-2 focus:ring-blue-500" readonly>
+                                        </td>
+                                        <td class="p-2 text-center">
+                                            <input id="ngay_khau_tru_new_{{ forloop.counter0 }}" name="khautru[{{ forloop.counter0 }}][NGAYKHAUTRU]" type="date" value="{{ item.NGAYKHAUTRU|date:'Y-m-d' }}" class="w-full text-center border border-gray-200 rounded-lg py-1 px-2 text-sm bg-transparent focus:ring-2 focus:ring-blue-500" readonly>
+                                        </td>
+                                        <td class="p-2 text-center flex justify-center gap-1">
+                                            <a href="javascript:void(0);" 
+                                               class="bg-blue-600 text-white text-xs font-medium px-3 py-1 rounded-lg hover:bg-blue-700 transition duration-300" 
+                                               id="edit-{{ forloop.counter0 }}" 
+                                               onclick="editDiscount({{ item.MA_KHAU_TRU }})">
+                                                <i class="fa fa-edit"></i>
+                                            </a>
+                                            <a href="javascript:void(0);" 
+                                               class="bg-red-600 text-white text-xs font-medium px-3 py-1 rounded-lg hover:bg-red-700 transition duration-300 ml-1" 
+                                               onclick="deleteDeduction('{{ item.MA_KHAU_TRU }}')">
+                                                <i class="fa fa-trash"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        <div id="no-deduction-message" class="text-gray-500 text-center py-4 text-sm {% if khau_tru %}hidden{% endif %}">Không có thông tin khấu trừ.</div>
+                    </div>
                 </div>
             </div>
         </div>
+        <div class="grid grid-cols-1 p-6 lg:grid-cols-1">
+            <!-- Tổng kết hóa đơn -->
+            <div class="bg-gray-100 p-5 rounded-lg border border-gray-200">
+                <h2 class="text-xl font-bold text-blue-700 mb-6 flex items-center gap-3">
+                    <i class="fas fa-file-invoice-dollar text-green-500 text-2xl"></i>
+                    Tổng kết hóa đơn
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="TIEN_PHONG" class="block text-sm font-medium text-gray-600 mb-1">Tiền phòng</label>
+                        <input name="TIEN_PHONG" id="TIEN_PHONG" type="number" step="0.01"
+                               class="w-full border border-gray-300 rounded-xl py-2 px-4 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white shadow-inner"
+                               value="{{ form_data.TIEN_PHONG|default:'0.00' }}">
+                    </div>
+                    <div>
+                        <label for="TIEN_DICH_VU" class="block text-sm font-medium text-gray-600 mb-1">Tiền dịch vụ</label>
+                        <input name="TIEN_DICH_VU" id="TIEN_DICH_VU" type="number" step="0.01"
+                               class="w-full border border-gray-300 rounded-xl py-2 px-4 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white shadow-inner"
+                               value="{{ form_data.TIEN_DICH_VU|default:'0.00' }}" readonly>
+                    </div>
+                    <div>
+                        <label for="TIEN_COC" class="block text-sm font-medium text-gray-600 mb-1">Tiền cọc</label>
+                        <input name="TIEN_COC" id="TIEN_COC" type="number" step="0.01"
+                               class="w-full border border-gray-300 rounded-xl py-2 px-4 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white shadow-inner"
+                               value="{{ form_data.TIEN_COC|default:'0.00' }}">
+                    </div>
+                    <div>
+                        <label for="TIEN_KHAU_TRU" class="block text-sm font-medium text-gray-600 mb-1">Tiền khấu trừ</label>
+                        <input name="TIEN_KHAU_TRU" id="TIEN_KHAU_TRU" type="number" step="0.01"
+                               class="w-full border border-gray-200 bg-gray-100 rounded-xl py-2 px-4 text-sm text-gray-500 cursor-not-allowed shadow-inner"
+                               value="{{ form_data.TIEN_KHAU_TRU|default:'0.00' }}" readonly>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label for="TONG_TIEN" class="block text-sm font-medium text-gray-600 mb-1">Tổng tiền</label>
+                        <input name="TONG_TIEN" id="TONG_TIEN" type="number" step="0.01"
+                               class="w-full border border-gray-200 bg-gray-100 rounded-xl py-3 px-4 text-base font-semibold text-gray-700 cursor-not-allowed shadow-inner"
+                               value="{{ form_data.TONG_TIEN|default:'0.00' }}" readonly>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="text-center mt-6">
+            <button type="submit" class="bg-blue-600 text-white font-medium px-6 py-3 rounded-lg hover:bg-blue-700 transition duration-300 transform hover:scale-105 shadow-md flex items-center justify-center mx-auto">
+                <i class="fas fa-save mr-2"></i> Lưu hóa đơn
+            </button>
+        </div>
     </form>
 
-    <!-- Bảng khấu trừ -->
-    <div id="discount-info">
-        {% if khau_tru %}
-            <table class="w-full table-auto border-collapse text-sm font-sans">
-                <thead class="bg-blue-50 text-blue-800">
-                    <tr>
-                        <th class="p-3 font-semibold text-center text-xs md:text-sm w-[5%]">#</th>
-                        <th class="p-3 font-semibold text-center text-xs md:text-sm w-[15%]">Loại điều chỉnh</th>
-                        <th class="p-3 font-semibold text-center text-xs md:text-sm w-[20%]">Tiền khấu trừ</th>
-                        <th class="p-3 font-semibold text-center text-xs md:text-sm w-[30%]">Lý do</th>
-                        <th class="p-3 font-semibold text-center text-xs md:text-sm w-[15%]">Ngày khấu trừ</th>
-                        <th class="p-3 font-semibold text-center text-xs md:text-sm w-[15%]">Chức năng</th>
-                    </tr>
-                </thead>
-                <tbody id="discount-details">
-                    {% for item in khau_tru %}
-                        <tr id="khautru-{{ item.MA_KHAU_TRU }}" class="hover:bg-gray-100 transition duration-200 border-b border-gray-200">
-                            <td class="p-3 text-center text-gray-800 text-sm">{{ forloop.counter }}</td>
-                            <td class="p-3 text-center">
-                                <select id="loai_khau_tru_{{ item.MA_KHAU_TRU }}" class="w-full text-center border border-gray-300 rounded-md py-1 px-2 text-sm bg-transparent" disabled>
-                                    <option value="Cộng" {% if item.LOAI_KHAU_TRU == 'Cộng' %}selected{% endif %}>Cộng</option>
-                                    <option value="Trừ" {% if item.LOAI_KHAU_TRU == 'Trừ' %}selected{% endif %}>Trừ</option>
-                                </select>
-                            </td>
-                            <td class="p-3 text-center">
-                                <input id="so_tien_kt_{{ item.MA_KHAU_TRU }}" type="number" step="1000" value="{{ item.SO_TIEN_KT|floatformat:2 }}"
-                                    class="w-full text-center border border-gray-300 rounded-md py-1 px-2 text-sm bg-transparent" readonly>
-                            </td>
-                            <td class="p-3 text-center">
-                                <input id="ly_do_khau_tru_{{ item.MA_KHAU_TRU }}" type="text" value="{{ item.LY_DO_KHAU_TRU }}"
-                                    class="w-full text-center border border-gray-300 rounded-md py-1 px-2 text-sm bg-transparent" readonly>
-                            </td>
-                            <td class="p-3 text-center">
-                                <input id="ngay_khau_tru_{{ item.MA_KHAU_TRU }}" type="date" value="{{ item.NGAYKHAUTRU|date:'Y-m-d' }}"
-                                    class="w-full text-center border border-gray-300 rounded-md py-1 px-2 text-sm bg-transparent" readonly>
-                            </td>
-                            <td class="p-3 text-center">
-                                <button class="bg-blue-600 text-white text-xs font-medium px-3 py-1.5 rounded-md hover:bg-blue-700 transition duration-200"
-                                    id="edit-{{ item.MA_KHAU_TRU }}" onclick="editDiscount({{ item.MA_KHAU_TRU }})">
-                                    <i class="fa fa-edit mr-1"></i> <span id="action-btn-{{ item.MA_KHAU_TRU }}">Chỉnh sửa</span>
-                                </button>
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        {% else %}
-            <p class="text-gray-600 text-center py-4">Không có thông tin khấu trừ.</p>
-        {% endif %}
+    <!-- Deduction Modal -->
+    <div id="deduction-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center hidden transition-opacity duration-300">
+        <div class="bg-white rounded-xl p-6 w-full max-w-lg shadow-2xl">
+            <h3 id="modal-title" class="text-lg font-semibold text-gray-800 mb-4">Thêm khấu trừ</h3>
+            <div class="space-y-4">
+                <div>
+                    <label for="modal_NGAYKHAUTRU" class="block text-sm font-medium text-gray-700 mb-1">Ngày khấu trừ <span class="text-red-500">*</span></label>
+                    <input id="modal_NGAYKHAUTRU" type="date" class="w-full border border-gray-200 rounded-lg py-2 px-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" required>
+                    <p id="error_NGAYKHAUTRU" class="text-red-500 text-xs mt-1 hidden">Vui lòng chọn ngày khấu trừ.</p>
+                </div>
+                <div>
+                    <label for="modal_LOAI_KHAU_TRU" class="block text-sm font-medium text-gray-700 mb-1">Loại điều chỉnh <span class="text-red-500">*</span></label>
+                    <select id="modal_LOAI_KHAU_TRU" class="w-full border border-gray-200 rounded-lg py-2 px-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" required>
+                        <option value="" disabled selected>Chọn loại</option>
+                        <option value="Cộng">Cộng</option>
+                        <option value="Trừ">Trừ</option>
+                    </select>
+                    <p id="error_LOAI_KHAU_TRU" class="text-red-500 text-xs mt-1 hidden">Vui lòng chọn loại điều chỉnh.</p>
+                </div>
+                <div>
+                    <label for="modal_SO_TIEN_KT" class="block text-sm font-medium text-gray-700 mb-1">Số tiền <span class="text-red-500">*</span></label>
+                    <input id="modal_SO_TIEN_KT" type="number" step="1000" min="0" class="w-full border border-gray-200 rounded-lg py-2 px-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" required>
+                    <p id="error_SO_TIEN_KT" class="text-red-500 text-xs mt-1 hidden">Vui lòng nhập số tiền hợp lệ.</p>
+                </div>
+                <div>
+                    <label for="modal_LY_DO_KHAU_TRU" class="block text-sm font-medium text-gray-700 mb-1">Lý do <span class="text-red-500">*</span></label>
+                    <input id="modal_LY_DO_KHAU_TRU" type="text" class="w-full border border-gray-200 rounded-lg py-2 px-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" required>
+                    <p id="error_LY_DO_KHAU_TRU" class="text-red-500 text-xs mt-1 hidden">Vui lòng nhập lý do khấu trừ.</p>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end space-x-2">
+                <button type="button" id="cancel-deduction" class="bg-gray-200 text-gray-700 font-medium px-4 py-2 rounded-lg hover:bg-gray-300 transition duration-200">Hủy</button>
+                <button type="button" id="save-deduction" class="bg-blue-600 text-white font-medium px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-200 flex items-center">
+                    <i class="fas fa-save mr-2"></i> Lưu
+                </button>
+            </div>
+        </div>
     </div>
 </div>
-
-<script>
-    function chinhSuaChiSoDichVu(maChiSo, giaDichVu) {
-        const button = document.getElementById(`button-${maChiSo}`);
-        const chiSoCuInput = document.getElementById(`CHISOCU-${maChiSo}`);
-        const chiSoMoiInput = document.getElementById(`CHISOMOI-${maChiSo}`);
-        const soDichVuInput = document.getElementById(`SODICHVUTONG-${maChiSo}`);
-        const thanhTienInput = document.getElementById(`TIENDICHVUGHIDUOC-${maChiSo}`);
-        const status = button.getAttribute('data-status');
-
-        if (status === '1') {
-            chiSoMoiInput.disabled = false;
-            chiSoMoiInput.focus();
-            button.innerText = 'Lưu';
-            button.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-            button.classList.add('bg-green-600', 'hover:bg-green-700');
-            button.setAttribute('data-status', '0');
-
-            chiSoMoiInput.addEventListener('input', () => {
-                const chiSoCu = parseFloat(chiSoCuInput.value) || 0;
-                const chiSoMoi = parseFloat(chiSoMoiInput.value) || 0;
-                const soDichVu = chiSoMoi - chiSoCu;
-                soDichVuInput.value = soDichVu.toFixed(2);
-                thanhTienInput.value = (soDichVu * giaDichVu).toFixed(2);
-            });
-        } else {
-            chiSoMoiInput.disabled = true;
-            button.innerText = 'Chỉnh sửa';
-            button.classList.remove('bg-green-600', 'hover:bg-green-700');
-            button.classList.add('bg-blue-600', 'hover:bg-blue-700');
-            button.setAttribute('data-status', '1');
-
-            // Gửi AJAX để lưu
-            fetch(`/api/chi-so-dich-vu/${maChiSo}/update`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                },
-                body: JSON.stringify({
-                    CHI_SO_MOI: chiSoMoiInput.value,
-                    SO_DICH_VU: soDichVuInput.value,
-                    THANH_TIEN: thanhTienInput.value
-                })
-            }).then(response => response.json()).then(data => {
-                if (data.success) {
-                    alert('Cập nhật chỉ số dịch vụ thành công!');
-                } else {
-                    alert('Lỗi: ' + data.message);
-                }
-            });
-        }
-    }
-
-    function editDiscount(maKhauTru) {
-        const button = document.getElementById(`edit-${maKhauTru}`);
-        const loaiInput = document.getElementById(`loai_khau_tru_${maKhauTru}`);
-        const tienInput = document.getElementById(`so_tien_kt_${maKhauTru}`);
-        const lyDoInput = document.getElementById(`ly_do_khau_tru_${maKhauTru}`);
-        const ngayInput = document.getElementById(`ngay_khau_tru_${maKhauTru}`);
-        const actionSpan = document.getElementById(`action-btn-${maKhauTru}`);
-
-        if (loaiInput.disabled) {
-            loaiInput.disabled = false;
-            tienInput.readOnly = false;
-            lyDoInput.readOnly = false;
-            ngayInput.readOnly = false;
-            actionSpan.innerText = 'Lưu';
-            button.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-            button.classList.add('bg-green-600', 'hover:bg-green-700');
-        } else {
-            loaiInput.disabled = true;
-            tienInput.readOnly = true;
-            lyDoInput.readOnly = true;
-            ngayInput.readOnly = true;
-            actionSpan.innerText = 'Chỉnh sửa';
-            button.classList.remove('bg-green-600', 'hover:bg-green-700');
-            button.classList.add('bg-blue-600', 'hover:bg-blue-700');
-
-            // Gửi AJAX để lưu
-            fetch(`/api/khau-tru/${maKhauTru}/update`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                },
-                body: JSON.stringify({
-                    LOAI_KHAU_TRU: loaiInput.value,
-                    SO_TIEN_KT: tienInput.value,
-                    LY_DO_KHAU_TRU: lyDoInput.value,
-                    NGAYKHAUTRU: ngayInput.value
-                })
-            }).then(response => response.json()).then(data => {
-                if (data.success) {
-                    alert('Cập nhật khấu trừ thành công!');
-                } else {
-                    alert('Lỗi: ' + data.message);
-                }
-            });
-        }
-    }
-</script>
+<script src="{% static 'js/admin/hoadon/themsua_hoadon.js' %}"></script>
+<script src="{% static 'js/admin/hoadon/chon_phong.js' %}"></script>
 {% endblock %}

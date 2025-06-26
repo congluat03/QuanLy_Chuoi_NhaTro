@@ -1,287 +1,198 @@
-// Hàm quản lý quá trình chỉnh sửa và lưu chỉ số dịch vụ
-function ChinhSuaChiSoDichVU(madichvukhucvuc, giaDichVu) {
-    const button = document.getElementById(`button-${madichvukhucvuc}`);
-    const inputChiSoMoi = document.getElementById(
-        `CHISOMOI-${madichvukhucvuc}`
-    );
-    const inputChiSoCu = document.getElementById(`CHISOCU-${madichvukhucvuc}`);
-    const inputSoDichVuTong = document.getElementById(
-        `SODICHVUTONG-${madichvukhucvuc}`
-    );
-    const inputTienDichVuGhiDuoc = document.getElementById(
-        `TIENDICHVUGHIDUOC-${madichvukhucvuc}`
-    );
 
-    // Kiểm tra trạng thái nút
-    if (button.dataset.status === "1") {
-        // Trạng thái chỉnh sửa
-        inputChiSoMoi.disabled = false;
-        button.textContent = "Lưu";
-        button.classList.remove("btn-danger");
-        button.classList.add("btn-success");
-        button.dataset.status = "2"; // Đặt trạng thái là lưu
+const deductionModal = document.getElementById('deduction-modal');
+const modalTitle = document.getElementById('modal-title');
+const addDeductionBtn = document.getElementById('add-deduction-btn');
+const cancelDeductionBtn = document.getElementById('cancel-deduction');
+const saveDeductionBtn = document.getElementById('save-deduction');
+const discountDetails = document.getElementById('discount-details');
+const noDeductionMessage = document.getElementById('no-deduction-message');
+const deductionData = document.getElementById('deduction-data');
+let deductionIndex = parseInt(deductionData.dataset.deductionIndex);
+let editingDeductionId = null;
 
-        // Lắng nghe sự kiện khi thay đổi giá trị CHISOMOI
-        inputChiSoMoi.addEventListener("input", function () {
-            const chisocu = parseFloat(inputChiSoCu.value) || 0;
-            const chisomoi = parseFloat(inputChiSoMoi.value) || 0;
+addDeductionBtn.addEventListener('click', () => {
+    modalTitle.textContent = 'Thêm khấu trừ';
+    editingDeductionId = null;
+    document.getElementById('modal_NGAYKHAUTRU').value = '';
+    document.getElementById('modal_LOAI_KHAU_TRU').value = '';
+    document.getElementById('modal_SO_TIEN_KT').value = '';
+    document.getElementById('modal_LY_DO_KHAU_TRU').value = '';
+    document.querySelectorAll('.text-red-500').forEach(el => el.classList.add('hidden'));
+    deductionModal.classList.remove('hidden');
+});
 
-            // Tính số dịch vụ tổng
-            const sodichvuTong = Math.max(chisomoi - chisocu, 0);
-            inputSoDichVuTong.value = sodichvuTong.toFixed(2);
+cancelDeductionBtn.addEventListener('click', () => {
+    deductionModal.classList.add('hidden');
+    editingDeductionId = null;
+});
 
-            // Tính thành tiền dịch vụ
-            const tiendichvu = sodichvuTong * parseFloat(giaDichVu);
-            inputTienDichVuGhiDuoc.value = tiendichvu.toFixed(2);
-        });
-    } else {
-        // Trạng thái lưu
-        const chisomoi = inputChiSoMoi.value;
-        const sodichvuTong = inputSoDichVuTong.value;
-        const tiendichvuGhiDuoc = inputTienDichVuGhiDuoc.value;
+saveDeductionBtn.addEventListener('click', () => {
+    const ngayKhauTru = document.getElementById('modal_NGAYKHAUTRU').value;
+    const loaiKhauTru = document.getElementById('modal_LOAI_KHAU_TRU').value;
+    const soTienKt = document.getElementById('modal_SO_TIEN_KT').value;
+    const lyDoKhauTru = document.getElementById('modal_LY_DO_KHAU_TRU').value;
 
-        // Gửi yêu cầu cập nhật giá trị chỉ số mới vào cơ sở dữ liệu
-        capNhatCoSoDuLieu(
-            madichvukhucvuc,
-            chisomoi,
-            sodichvuTong,
-            tiendichvuGhiDuoc
-        )
-            .then((data) => {
-                if (data.success) {
-                    // Cập nhật trạng thái nút khi cập nhật thành công
-                    inputChiSoMoi.disabled = true;
-                    button.textContent = "Chỉnh sửa";
-                    button.classList.remove("btn-success");
-                    button.classList.add("btn-danger");
-                    button.dataset.status = "1"; // Đặt trạng thái là chỉnh sửa
-                } else {
-                    alert("Cập nhật thất bại");
-                }
-            })
-            .catch((error) => {
-                alert("Đã xảy ra lỗi khi cập nhật: " + error.message); // Hiển thị lỗi chi tiết
-            });
-    }
-}
+    // Validation
+    let hasError = false;
+    document.getElementById('error_NGAYKHAUTRU').classList.toggle('hidden', !!ngayKhauTru);
+    document.getElementById('error_LOAI_KHAU_TRU').classList.toggle('hidden', !!loaiKhauTru);
+    document.getElementById('error_SO_TIEN_KT').classList.toggle('hidden', soTienKt && soTienKt >= 0);
+    document.getElementById('error_LY_DO_KHAU_TRU').classList.toggle('hidden', !!lyDoKhauTru);
 
-//Khau Trừ
-
-// 1. Hàm để thu thập dữ liệu từ form
-function collectFormData() {
-    const form = document.getElementById("discount-form");
-    return new FormData(form);
-}
-
-// 2. Hàm kiểm tra dữ liệu đã được nhập đầy đủ chưa
-function validateFormData(formData) {
-    // Duyệt qua các trường trong formData để kiểm tra
-    let isValid = true;
-    let missingFields = [];
-
-    formData.forEach((value, key) => {
-        if (!value) {
-            // Nếu có trường nào chưa nhập
-            missingFields.push(key);
-            isValid = false;
-        }
-    });
-
-    if (!isValid) {
-        alert("Các trường sau chưa được nhập: " + missingFields.join(", "));
+    if (!ngayKhauTru || !loaiKhauTru || !soTienKt || soTienKt < 0 || !lyDoKhauTru) {
+        hasError = true;
     }
 
-    return isValid; // Trả về true nếu hợp lệ, false nếu có trường thiếu
-}
+    if (!hasError) {
+        const form = document.getElementById('invoice-form');
+        if (editingDeductionId) {
+            // Edit existing deduction
+            const row = document.getElementById(`khautru_${editingDeductionId}`);
+            if (row) {
+                row.querySelector(`#loai_khau_tru_${editingDeductionId}`).value = loaiKhauTru;
+                row.querySelector(`#so_tien_kt_${editingDeductionId}`).value = parseFloat(soTienKt).toFixed(2);
+                row.querySelector(`#ly_do_khau_tru_${editingDeductionId}`).value = lyDoKhauTru;
+                row.querySelector(`#ngay_khau_tru_${editingDeductionId}`).value = ngayKhauTru;
 
-// 3. Hàm để gửi yêu cầu POST đến server
-function sendDiscountData(formData) {
-    return fetch("/hoadon/khautru/themKhauTru/", {
-        method: "POST",
-        body: formData,
-    }).then((response) => response.json());
-}
+                // Update hidden inputs
+                const inputs = [
+                    { name: `khautru[${editingDeductionId.replace('new_', '')}][NGAYKHAUTRU]`, value: ngayKhauTru },
+                    { name: `khautru[${editingDeductionId.replace('new_', '')}][LOAI_KHAU_TRU]`, value: loaiKhauTru },
+                    { name: `khautru[${editingDeductionId.replace('new_', '')}][SO_TIEN_KT]`, value: soTienKt },
+                    { name: `khautru[${editingDeductionId.replace('new_', '')}][LY_DO_KHAU_TRU]`, value: lyDoKhauTru }
+                ];
 
-// 4. Hàm để xử lý kết quả từ server và cập nhật giao diện
-function handleSaveResponse(data) {
-    if (data.success) {
-        addDiscountRow(data.khautru);
-    } else {
-        alert("Có lỗi trong dữ liệu: " + JSON.stringify(data.errors));
-    }
-}
-
-// 5. Hàm để thêm dòng mới vào bảng khấu trừ
-function addDiscountRow(khautru) {
-    const newRow = createDiscountRow(khautru);
-    document
-        .getElementById("discount-details")
-        .insertAdjacentHTML("afterbegin", newRow);
-}
-
-// 6. Hàm để tạo HTML cho dòng mới trong bảng
-function createDiscountRow(khautru) {
-    return `
-        <tr id="khautru-${khautru.MAKHAUTRU}" style="text-align: center;">
-            <td>1</td>
-            <td>${khautru.LOAIDIEUCHINH}</td>
-            <td>${khautru.TIENKHAUTRU} đ</td>
-            <td>${khautru.LYDOKHAUTRU}</td>
-            <td>
-                <a href="javascript:void(0);" class="btn btn-primary btn-sm"
-                   style="border-radius: 20px; padding: 5px 10px; transition: all 0.3s;"
-                   id="edit-${khautru.MACHISODICHVU}" data-status="1"
-                   onclick="editDiscount(${khautru.MACHISODICHVU}, ${khautru.TIENKHAUTRU})">
-                    <i class="fa fa-edit"></i> Chỉnh sửa
-                </a>
-            </td>
-        </tr>
-    `;
-}
-
-// 7. Hàm chính để lưu khấu trừ
-function saveDiscount() {
-    const formData = collectFormData();
-
-    // Kiểm tra dữ liệu trước khi gửi lên server
-    if (!validateFormData(formData)) {
-        return; // Nếu có trường thiếu, dừng lại và không gửi dữ liệu
-    }
-
-    // Chuyển formData thành chuỗi để hiển thị trong alert
-    let formDataValues = "";
-    formData.forEach((value, key) => {
-        formDataValues += `${key}: ${value}\n`; // Xây dựng chuỗi key-value
-    });
-    alert(formDataValues);
-
-    // Gửi dữ liệu lên server
-    sendDiscountData(formData)
-        .then((data) => handleSaveResponse(data))
-        .catch((error) => alert("Có lỗi xảy ra: " + error));
-}
-
-// CHỉnh sửa
-function editDiscount(maKhauTru) {
-    var btnText = document.getElementById("action-btn-" + maKhauTru).innerText;
-    var isEditable = btnText === "Chỉnh sửa";
-
-    // Toggle read-only status of inputs
-    document.getElementById("loaidi_chinh_" + maKhauTru).disabled = !isEditable;
-    document.getElementById("tienkhau_tru_" + maKhauTru).readOnly = !isEditable;
-    document.getElementById("lydo_khautru_" + maKhauTru).readOnly = !isEditable;
-    document.getElementById("ngay_khautru_" + maKhauTru).readOnly = !isEditable;
-
-    if (!isEditable) {
-        // If the button is "Lưu", update the data
-        saveDiscountData(maKhauTru);
-    } else {
-        // Change button text to "Lưu" or "Chỉnh sửa"
-        document.getElementById("action-btn-" + maKhauTru).innerText = "Lưu";
-    }
-}
-
-function saveDiscountData(maKhauTru) {
-    // Get the updated values from inputs
-    const loaidi_chinh = document.getElementById(
-        "loaidi_chinh_" + maKhauTru
-    ).value;
-    const tienkhau_tru = document.getElementById(
-        "tienkhau_tru_" + maKhauTru
-    ).value;
-    const lydo_khautru = document.getElementById(
-        "lydo_khautru_" + maKhauTru
-    ).value;
-    const ngay_khautru = document.getElementById(
-        "ngay_khautru_" + maKhauTru
-    ).value;
-
-    // Prepare data for the request
-    const data = {
-        LOAIDIEUCHINH: loaidi_chinh,
-        TIENKHAUTRU: tienkhau_tru,
-        LYDOKHAUTRU: lydo_khautru,
-        NGAYKHAUTRU: ngay_khautru,
-    };
-
-    // Send the data via fetch to update in the database
-    fetch(`/hoadon/khautru/capNhatKhauTru/${maKhauTru}`, {
-        method: "PUT",
-        headers: {
-            "Content-Type": "application/json",
-            "X-CSRF-TOKEN": document
-                .querySelector('meta[name="csrf-token"]')
-                .getAttribute("content"), // Fetch CSRF token dynamically
-        },
-        body: JSON.stringify(data),
-    })
-        .then((response) => response.json())
-        .then((result) => {
-            if (result.success) {
-                alert("Cập nhật thành công!");
-                // Change button text to "Lưu" or "Chỉnh sửa"
-                document.getElementById("action-btn-" + maKhauTru).innerText =
-                    "Chỉnh sửa";
-            } else {
-                alert("Có lỗi xảy ra, vui lòng thử lại!");
+                inputs.forEach(input => {
+                    const hiddenInput = document.getElementById(`hidden_${input.name.replace(/[\[\]]/g, '_')}`);
+                    if (hiddenInput) {
+                        hiddenInput.value = input.value;
+                    }
+                });
             }
-        })
-        .catch((error) => {
-            alert("Có lỗi xảy ra, vui lòng thử lại!" + error);
-        });
+        } else {
+            // Add new deduction
+            const rowCount = discountDetails.children.length + 1;
+            const newRow = document.createElement('tr');
+            newRow.id = `khautru_new_${deductionIndex}`;
+            newRow.className = 'hover:bg-gray-50 transition duration-200 border-b border-gray-100';
+            newRow.innerHTML = `
+                <td class="p-2 text-center text-gray-700 text-sm">${rowCount}</td>
+                <td class="p-2 text-center">
+                    <select id="loai_khau_tru_new_${deductionIndex}" class="w-full text-center border border-gray-200 rounded-lg py-1 px-2 text-sm bg-transparent focus:ring-2 focus:ring-blue-500" disabled>
+                        <option value="Cộng" ${loaiKhauTru === 'Cộng' ? 'selected' : ''}>Cộng</option>
+                        <option value="Trừ" ${loaiKhauTru === 'Trừ' ? 'selected' : ''}>Trừ</option>
+                    </select>
+                </td>
+                <td class="p-2 text-center">
+                    <input id="so_tien_kt_new_${deductionIndex}" type="number" step="1000" value="${parseFloat(soTienKt).toFixed(2)}" class="w-full text-center border border-gray-200 rounded-lg py-1 px-2 text-sm bg-transparent focus:ring-2 focus:ring-blue-500" readonly>
+                </td>
+                <td class="p-2 text-center">
+                    <input id="ly_do_khau_tru_new_${deductionIndex}" type="text" value="${lyDoKhauTru}" class="w-full text-center border border-gray-200 rounded-lg py-1 px-2 text-sm bg-transparent focus:ring-2 focus:ring-blue-500" readonly>
+                </td>
+                <td class="p-2 text-center">
+                    <input id="ngay_khau_tru_new_${deductionIndex}" type="date" value="${ngayKhauTru}" class="w-full text-center border border-gray-200 rounded-lg py-1 px-2 text-sm bg-transparent focus:ring-2 focus:ring-blue-500" readonly>
+                </td>
+                <td class="p-2 text-center flex justify-center gap-1">
+
+                    <a href="javascript:void(0);" class="bg-blue-600 text-white text-xs font-medium px-2 py-1 rounded-lg hover:bg-blue-700 transition duration-300" id="edit-new-${deductionIndex}" onclick="editDiscount('new_${deductionIndex}')" title="Chỉnh sửa">
+                        <i class="fa fa-edit"></i>
+                    </a>
+                    <a href="javascript:void(0);" class="bg-red-600 text-white text-xs font-medium px-2 py-1 rounded-lg hover:bg-red-700 transition duration-300" onclick="deleteDeduction('new_${deductionIndex}')" title="Xóa">
+                        <i class="fa fa-trash"></i>
+                    </a>
+                </td>
+            `;
+            discountDetails.appendChild(newRow);
+            noDeductionMessage.classList.add('hidden');
+
+            // Add hidden inputs
+            const inputs = [
+                { name: `khautru[${deductionIndex}][NGAYKHAUTRU]`, value: ngayKhauTru },
+                { name: `khautru[${deductionIndex}][LOAI_KHAU_TRU]`, value: loaiKhauTru },
+                { name: `khautru[${deductionIndex}][SO_TIEN_KT]`, value: soTienKt },
+                { name: `khautru[${deductionIndex}][LY_DO_KHAU_TRU]`, value: lyDoKhauTru }
+            ];
+
+            inputs.forEach(input => {
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = input.name;
+                hiddenInput.value = input.value;
+                hiddenInput.id = `hidden_${input.name.replace(/[\[\]]/g, '_')}`;
+                form.appendChild(hiddenInput);
+            });
+
+            deductionIndex++;
+        }
+
+        calculateTotalDeduction();
+        deductionModal.classList.add('hidden');
+        editingDeductionId = null;
+    }
+});
+
+function editDiscount(id) {
+    const row = document.getElementById(`khautru_${id}`);
+    if (row) {
+        const ngayKhauTru = row.querySelector(`#ngay_khau_tru_${id}`).value;
+        const loaiKhauTru = row.querySelector(`#loai_khau_tru_${id}`).value;
+        const soTienKt = row.querySelector(`#so_tien_kt_${id}`).value;
+        const lyDoKhauTru = row.querySelector(`#ly_do_khau_tru_${id}`).value;
+
+        modalTitle.textContent = 'Chỉnh sửa khấu trừ';
+        document.getElementById('modal_NGAYKHAUTRU').value = ngayKhauTru;
+        document.getElementById('modal_LOAI_KHAU_TRU').value = loaiKhauTru;
+        document.getElementById('modal_SO_TIEN_KT').value = soTienKt;
+        document.getElementById('modal_LY_DO_KHAU_TRU').value = lyDoKhauTru;
+        document.querySelectorAll('.text-red-500').forEach(el => el.classList.add('hidden'));
+        editingDeductionId = id;
+        deductionModal.classList.remove('hidden');
+    }
 }
 
-//Hũy hóa đơn
-function huyHoaDon(maHoaDon) {
-    if (confirm("Bạn có chắc chắn muốn hủy hóa đơn này?")) {
-        fetch(`/hoadon/huyHoaDon/${maHoaDon}`, {
-            method: "PUT",
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRF-TOKEN": document
-                    .querySelector('meta[name="csrf-token"]')
-                    .getAttribute("content"), // Fetch CSRF token dynamically
-            },
-        })
-            .then((response) => response.json())
-            .then((result) => {
-                if (result.success) {
-                    alert(result.message); // Hiển thị thông báo thành công
-                    // Cập nhật giao diện nếu cần (ví dụ: thay đổi trạng thái)
-                    location.reload(); // Tải lại trang để cập nhật trạng thái
-                } else {
-                    alert(result.message); // Hiển thị thông báo lỗi
-                }
-            })
-            .catch((error) => {
-                alert("Có lỗi xảy ra, vui lòng thử lại!");
-            });
+function deleteDeduction(id) {
+    const row = document.getElementById(`khautru_${id}`);
+    if (row) {
+        row.remove();
+        // Remove hidden inputs
+        const form = document.getElementById('invoice-form');
+        const inputs = form.querySelectorAll(`input[id^="hidden_khautru_${id.replace('new-', '')}_"]`);
+        inputs.forEach(input => input.remove());
+        // Update row numbers
+        const rows = discountDetails.children;
+        for (let i = 0; i < rows.length; i++) {
+            rows[i].children[0].textContent = i + 1;
+        }
+        if (rows.length === 0) {
+            noDeductionMessage.classList.remove('hidden');
+        }
+        calculateTotalDeduction();
     }
 }
-// Thanh toán hóa đơn
-function thanhToanHoaDon(maHoaDon) {
-    if (confirm("Bạn có chắc chắn muốn thanh toán hóa đơn này?")) {
-        fetch(`/hoadon/thanhToanHoaDon/${maHoaDon}`, {
-            method: "PUT",
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRF-TOKEN": document
-                    .querySelector('meta[name="csrf-token"]')
-                    .getAttribute("content"), // Fetch CSRF token dynamically
-            },
-        })
-            .then((response) => response.json())
-            .then((result) => {
-                if (result.success) {
-                    alert(result.message); // Hiển thị thông báo thành công
-                    // Cập nhật giao diện nếu cần (ví dụ: thay đổi trạng thái)
-                    location.reload(); // Tải lại trang để cập nhật trạng thái
-                } else {
-                    alert(result.message); // Hiển thị thông báo lỗi
-                }
-            })
-            .catch((error) => {
-                alert("Có lỗi xảy ra, vui lòng thử lại!" + error);
-            });
+
+function calculateTotalDeduction() {
+    let totalDeduction = 0;
+    const rows = discountDetails.children;
+    for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const type = row.querySelector('select').value;
+        const amount = parseFloat(row.querySelector('input[type="number"]').value) || 0;
+        totalDeduction += (type === 'Cộng' ? amount : -amount);
     }
+    document.getElementById('TIEN_KHAU_TRU').value = totalDeduction.toFixed(2);
+    calculateTotalInvoice();
 }
+
+function calculateTotalInvoice() {
+    const tienPhong = parseFloat(document.getElementById('TIEN_PHONG').value) || 0;
+    const tienDichVu = parseFloat(document.getElementById('TIEN_DICH_VU').value) || 0;
+    const tienCoc = parseFloat(document.getElementById('TIEN_COC').value) || 0;
+    const tienKhauTru = parseFloat(document.getElementById('TIEN_KHAU_TRU').value) || 0;
+    const tongTien = tienPhong + tienDichVu - tienCoc + tienKhauTru;
+    document.getElementById('TONG_TIEN').value = tongTien.toFixed(2);
+}
+
+['TIEN_PHONG', 'TIEN_DICH_VU', 'TIEN_COC'].forEach(id => {
+    document.getElementById(id).addEventListener('input', calculateTotalInvoice);
+});
+
