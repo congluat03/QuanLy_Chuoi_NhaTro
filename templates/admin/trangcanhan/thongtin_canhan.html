@@ -1,0 +1,167 @@
+{% load static %}
+{% extends 'admin/admin_layout.html' %}
+{% block content_body %}
+<div class="container">
+    <div class="profile-grid">
+        <!-- Hồ sơ quản lý -->
+        <div class="profile-card">
+            <h2 class="card-title">Hồ sơ quản lý</h2>
+            {% if request.user.nguoi_quan_ly.ANH_QL %}
+                <img src="data:image/jpeg;base64,{{ request.user.nguoi_quan_ly.ANH_QL }}" alt="Ảnh quản lý" class="profile-image">
+            {% else %}
+                <img src="{% static 'images/default_profile.png' %}" alt="Ảnh mặc định" class="profile-image">
+            {% endif %}
+            <h3 class="profile-name">{{ request.user.nguoi_quan_ly.TEN_QUAN_LY }}</h3>
+            <p class="profile-role">Quản lý hệ thống nhà trọ</p>
+
+            <div class="profile-details">
+                <div class="detail-item">
+                    <span class="detail-label">Ngày sinh:</span>
+                    <span>{{ request.user.nguoi_quan_ly.NGAY_SINH_QL|date:'d/m/Y'|default:'N/A' }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Email:</span>
+                    <span>{{ request.user.email|default:'N/A' }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Số điện thoại:</span>
+                    <span>{{ request.user.nguoi_quan_ly.SDT_QUAN_LY|default:'N/A' }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Địa chỉ:</span>
+                    <span>{{ request.user.nguoi_quan_ly.DIA_CHI_QL|default:'N/A' }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Giới tính:</span>
+                    <span>{{ request.user.nguoi_quan_ly.GIOI_TINH_QL|default:'N/A' }}</span>
+                </div>
+            </div>
+
+            <div class="account-info">
+                <h3 class="section-title">Thông tin tài khoản</h3>
+                <div class="detail-item">
+                    <span class="detail-label">Tên tài khoản:</span>
+                    <span class="detail-value">{{ request.user.username }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Trạng thái tài khoản:</span>
+                    <span class="detail-value">{{ request.user.is_active|yesno:'Hoạt động,Không hoạt động' }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Quyền hạn:</span>
+                    <span class="detail-value">{{ request.user.get_user_permissions|join:', '|default:'Quản lý' }}</span>
+                </div>
+                <button class="change-password-btn" data-modal-toggle="changePasswordModal">Đổi mật khẩu</button>
+            </div>
+        </div>
+
+        <!-- Thông tin nhà trọ -->
+        <div class="info-card">
+            <div class="info-section">
+                <h2 class="section-title">🏠 Thông tin nhà trọ</h2>
+                {% if request.user.nguoi_quan_ly.ds_nhatro.exists %}
+                    {% with nt=request.user.nguoi_quan_ly.ds_nhatro.first %}
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">Tên nhà trọ:</span>
+                            <span>{{ nt.TEN_NHA_TRO|default:'N/A' }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Vùng miền:</span>
+                            <span>{{ nt.VUNG_MIEN|default:'N/A' }}</span>
+                        </div>
+                    </div>
+                    {% endwith %}
+                {% else %}
+                    <p class="no-data">Chưa có thông tin nhà trọ.</p>
+                {% endif %}
+            </div>
+
+            <div class="info-section">
+                <h2 class="section-title">📍 Khu vực quản lý</h2>
+                {% if request.user.nguoi_quan_ly.ds_nhatro.exists and request.user.nguoi_quan_ly.ds_nhatro.first.ds_khuvuc.exists %}
+                    <div class="area-list">
+                        {% for kv in request.user.nguoi_quan_ly.ds_nhatro.first.ds_khuvuc.all %}
+                        <div class="area-item">
+                            <div class="info-grid">
+                                <div class="info-item">
+                                    <span class="info-label">Khu vực:</span>
+                                    <span>{{ kv.TEN_KHU_VUC|default:'N/A' }}</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Đơn vị hành chính cấp 1:</span>
+                                    <span>{{ kv.DV_HANH_CHINH_CAP1|default:'N/A' }}</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Đơn vị hành chính cấp 2:</span>
+                                    <span>{{ kv.DV_HANH_CHINH_CAP2|default:'N/A' }}</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Đơn vị hành chính cấp 3:</span>
+                                    <span>{{ kv.DV_HANH_CHINH_CAP3|default:'N/A' }}</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Trạng thái:</span>
+                                    <span>{{ kv.TRANG_THAI_KV|default:'N/A' }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="no-data">Không có khu vực quản lý nào.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal đổi mật khẩu -->
+    <div id="changePasswordModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Đổi mật khẩu</h3>
+                <button class="modal-close" data-modal-toggle="changePasswordModal">×</button>
+            </div>
+            <form action="{% url 'thanhvien:doi_mat_khau' %}" method="POST" class="modal-form">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="current_password" class="form-label">Mật khẩu hiện tại</label>
+                    <input type="password" id="current_password" name="current_password" required class="form-input">
+                </div>
+                <div class="form-group">
+                    <label for="new_password" class="form-label">Mật khẩu mới</label>
+                    <input type="password" id="new_password" name="new_password" required class="form-input">
+                </div>
+                <div class="form-group">
+                    <label for="new_password_confirmation" class="form-label">Xác nhận mật khẩu mới</label>
+                    <input type="password" id="new_password_confirmation" name="new_password_confirmation" required class="form-input">
+                </div>
+                <button type="submit" class="submit-btn">Đổi mật khẩu</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.querySelectorAll('[data-modal-toggle]').forEach(button => {
+        const modalId = button.getAttribute('data-modal-toggle');
+        const modal = document.getElementById(modalId);
+        button.addEventListener('click', () => {
+            modal.classList.remove('hidden');
+        });
+    });
+    document.querySelectorAll('.modal-close').forEach(button => {
+        button.addEventListener('click', () => {
+            const modal = button.closest('.modal');
+            modal.classList.add('hidden');
+        });
+    });
+    document.querySelectorAll('.modal').forEach(modal => {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.classList.add('hidden');
+            }
+        });
+    });
+</script>
+{% endblock %}

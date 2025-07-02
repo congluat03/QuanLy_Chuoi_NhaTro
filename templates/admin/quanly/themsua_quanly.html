@@ -1,0 +1,131 @@
+{% extends 'admin/admin_layout.html' %}
+{% load static %}
+
+{% block content_body %}
+<div class="max-w-3xl mx-auto p-6 bg-white rounded-xl shadow-lg">
+    <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">
+        {% if manager %}Chỉnh sửa thông tin quản lý{% else %}Thêm quản lý mới{% endif %}
+    </h2>
+     <!-- Thông báo -->
+            {% if messages %}
+                <div class="mb-4">
+                    {% for message in messages %}
+                        <div class="p-4 mb-2 rounded {% if message.tags == 'error' %}bg-red-100 text-red-800{% else %}bg-green-100 text-green-800{% endif %}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+    <form action="{% if manager %}{% url 'thanhvien:edit_manager' manager.MA_QUAN_LY %}{% else %}{% url 'thanhvien:add_manager' %}{% endif %}" 
+          method="POST" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {% csrf_token %}
+        {% if manager %}
+            <input type="hidden" name="_method" value="PUT">
+        {% endif %}
+        <!-- Họ tên quản lý -->
+        <div>
+            <label for="TEN_QUAN_LY" class="block text-sm font-medium text-gray-700 mb-2">Họ Tên Quản Lý</label>
+            <input type="text" name="TEN_QUAN_LY" id="TEN_QUAN_LY"
+                   value="{% if form_data.TEN_QUAN_LY %}{{ form_data.TEN_QUAN_LY }}{% elif manager %}{{ manager.TEN_QUAN_LY|default_if_none:'' }}{% endif %}"
+                   required
+                   class="block w-full rounded-lg border border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 p-3 text-gray-900 placeholder-gray-400"
+                   placeholder="Nhập họ tên">
+            {% if form_errors.TEN_QUAN_LY %}
+                <p class="text-sm text-red-600 mt-1">{{ form_errors.TEN_QUAN_LY }}</p>
+            {% endif %}
+        </div>
+
+        <!-- Ngày sinh -->
+        <div>
+            <label for="NGAY_SINH_QL" class="block text-sm font-medium text-gray-700 mb-2">Ngày Sinh</label>
+            <input type="date" name="NGAY_SINH_QL" id="NGAY_SINH_QL"
+                   value="{% if form_data.NGAY_SINH_QL %}{{ form_data.NGAY_SINH_QL }}{% elif manager %}{{ manager.NGAY_SINH_QL|date:'Y-m-d'|default_if_none:'' }}{% endif %}"
+                   required
+                   class="block w-full rounded-lg border border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 p-3 text-gray-900">
+            {% if form_errors.NGAY_SINH_QL %}
+                <p class="text-sm text-red-600 mt-1">{{ form_errors.NGAY_SINH_QL }}</p>
+            {% endif %}
+        </div>
+
+        <!-- Giới tính -->
+        <div>
+            <label for="GIOI_TINH_QL" class="block text-sm font-medium text-gray-700 mb-2">Giới Tính</label>
+            <select name="GIOI_TINH_QL" id="GIOI_TINH_QL" required
+                    class="block w-full rounded-lg border border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 p-3 text-gray-900">
+                <option value="" disabled {% if not form_data.GIOI_TINH_QL and not manager %}selected{% endif %}>Chọn giới tính</option>
+                <option value="Nam" {% if form_data.GIOI_TINH_QL == 'Nam' or manager and manager.GIOI_TINH_QL == 'Nam' %}selected{% endif %}>Nam</option>
+                <option value="Nữ" {% if form_data.GIOI_TINH_QL == 'Nữ' or manager and manager.GIOI_TINH_QL == 'Nữ' %}selected{% endif %}>Nữ</option>
+            </select>
+            {% if form_errors.GIOI_TINH_QL %}
+                <p class="text-sm text-red-600 mt-1">{{ form_errors.GIOI_TINH_QL }}</p>
+            {% endif %}
+        </div>
+
+        <!-- Số điện thoại -->
+        <div>
+            <label for="SDT_QUAN_LY" class="block text-sm font-medium text-gray-700 mb-2">Số Điện Thoại</label>
+            <input type="text" name="SDT_QUAN_LY" id="SDT_QUAN_LY"
+                   value="{% if form_data.SDT_QUAN_LY %}{{ form_data.SDT_QUAN_LY }}{% elif manager %}{{ manager.SDT_QUAN_LY|default_if_none:'' }}{% endif %}"
+                   placeholder="Nhập số điện thoại (10-11 chữ số)"
+                   pattern="[0-9]{10,11}" maxlength="11"
+                   title="Số điện thoại phải gồm 10-11 chữ số" required
+                   class="block w-full rounded-lg border border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 p-3 text-gray-900 placeholder-gray-400">
+            {% if form_errors.SDT_QUAN_LY %}
+                <p class="text-sm text-red-600 mt-1">{{ form_errors.SDT_QUAN_LY }}</p>
+            {% endif %}
+        </div>
+
+        <!-- Địa chỉ -->
+        <div class="col-span-1 md:col-span-2">
+            <label for="DIA_CHI_QL" class="block text-sm font-medium text-gray-700 mb-2">Địa Chỉ</label>
+            <textarea name="DIA_CHI_QL" id="DIA_CHI_QL"
+                      class="block w-full rounded-lg border border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 p-3 text-gray-900 placeholder-gray-400"
+                      rows="4" placeholder="Nhập địa chỉ">{% if form_data.DIA_CHI_QL %}{{ form_data.DIA_CHI_QL }}{% elif manager %}{{ manager.DIA_CHI_QL|default_if_none:'' }}{% endif %}</textarea>
+            {% if form_errors.DIA_CHI_QL %}
+                <p class="text "text-sm text-red-600 mt-1">{{ form_errors.DIA_CHI_QL }}</p>
+            {% endif %}
+        </div>
+
+        <!-- Tài khoản (chỉ hiển thị khi thêm mới) -->
+        {% if not manager %}
+        <div>
+            <label for="TAI_KHOAN" class="block text-sm font-medium text-gray-700 mb-2">Tài Khoản</label>
+            <input type="text" name="TAI_KHOAN" id="TAI_KHOAN"
+                   value="{% if form_data.TAI_KHOAN %}{{ form_data.TAI_KHOAN }}{% endif %}"
+                   required
+                   class="block w-full rounded-lg border border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 p-3 text-gray-900 placeholder-gray-400"
+                   placeholder="Nhập tên tài khoản">
+            {% if form_errors.TAI_KHOAN %}
+                <p class="text-sm text-red-600 mt-1">{{ form_errors.TAI_KHOAN }}</p>
+            {% endif %}
+        </div>
+
+        <!-- Mật khẩu (chỉ hiển thị khi thêm mới) -->
+        <div>
+            <label for="MAT_KHAU" class="block text-sm font-medium text-gray-700 mb-2">Mật Khẩu</label>
+            <input type="password" name="MAT_KHAU" id="MAT_KHAU"
+                   required
+                   class="block w-full喧0w-full rounded-lg border border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 p-3 text-gray-900 placeholder-gray-400"
+                   placeholder="Nhập mật khẩu">
+            {% if form_errors.MAT_KHAU %}
+                <p class="text-sm text-red-600 mt-1">{{ form_errors.MAT_KHAU }}</p>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Nút Lưu và Hủy -->
+        <div class="col-span-1 md:col-span-2 flex justify-end gap-4 mt-6">
+            <button type="button" onclick="window.history.back()"
+                    class="inline-flex items-center justify-center px-6 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition">
+                Hủy
+            </button>
+            <button type="submit"
+                    class="inline-flex items-center justify-center px-6 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition">
+                {% if manager %}Cập Nhật{% else %}Lưu{% endif %}
+            </button>
+        </div>
+    </form>
+    
+</div>
+{% endblock %}

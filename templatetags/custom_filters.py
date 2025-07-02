@@ -16,3 +16,6 @@ def map(iterable, key):
         return [item[key] for item in iterable]
     except (TypeError, KeyError):
         return []
+@register.filter
+def filter_dich_vu(lich_su_qs, ma_dich_vu):
+    return lich_su_qs.filter(MA_DICH_VU__MA_DICH_VU=ma_dich_vu, NGAY_HUY_DV__isnull=True).first()

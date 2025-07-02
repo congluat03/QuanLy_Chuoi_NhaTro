@@ -1,0 +1,133 @@
+{% extends 'admin/admin_layout.html' %}
+{% load static %}
+
+{% block content_body %}
+<div class="max-w-7xl mx-auto">
+    <div class="bg-white shadow-xl rounded-xl p-6 sm:p-8">
+        <!-- Header -->
+        <div class="flex flex-col sm:flex-row justify-between items-center mb-10 gap-4 sm:gap-6">
+            <h4 class="text-3xl font-extrabold text-blue-900 flex items-center whitespace-nowrap">
+                <i class="fas fa-users mr-3 text-blue-700 text-2xl" aria-hidden="true"></i>
+                Quản lý Nhân viên
+            </h4>
+            <div class="flex flex-wrap sm:flex-nowrap items-center gap-3">
+                <a href="{% url 'thanhvien:add_manager' %}" class="inline-flex items-center px-5 py-2.5 bg-blue-700 text-white text-sm font-semibold rounded-lg hover:bg-blue-800 transition duration-300 shadow-md whitespace-nowrap" data-toggle="modal" data-target="#addManagerModal">
+                    <i class="fas fa-user-plus mr-2" aria-hidden="true"></i> Thêm nhân viên mới
+                </a>
+            </div>
+        </div>
+        <!-- Filter and Search Section -->
+        <div class="bg-white shadow-md rounded-xl p-4 mb-5 border border-gray-100">
+            <form method="GET" action="{% url 'thanhvien:nhanvien_list' %}">
+                <div class="flex flex-col gap-1">
+                    <!-- Filters -->
+                    <div class="flex flex-wrap items-center gap-3 overflow-x-auto scrollbar-thin scrollbar-thumb-rounded scrollbar-thumb-gray-300">
+                        <button type="submit" class="shrink-0 px-5 py-2.5 bg-blue-100 text-blue-700 text-sm font-semibold rounded-lg hover:bg-blue-200 transition duration-300 whitespace-nowrap">
+                            <i class="fas fa-sliders-h mr-2"></i> Lọc
+                        </button>
+                        <label class="flex items-center gap-2 text-gray-700 text-sm border border-gray-300 rounded-lg px-3 py-1 cursor-pointer hover:border-blue-400 transition-colors select-none peer-checked:border-blue-600 peer-checked:bg-blue-50 whitespace-nowrap mt-2">
+                            <input type="checkbox" name="employee_filter" value="active" {% if 'active' in employee_filter %}checked{% endif %} class="peer h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+                            <span>Đang làm việc</span>
+                        </label>
+                        <label class="flex items-center gap-2 text-gray-700 text-sm border border-gray-300 rounded-lg px-3 py-1 cursor-pointer hover:border-blue-400 transition-colors select-none peer-checked:border-blue-600 peer-checked:bg-blue-50 whitespace-nowrap mt-2">
+                            <input type="checkbox" name="employee_filter" value="resigned" {% if 'resigned' in employee_filter %}checked{% endif %} class="peer h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+                            <span>Đã nghỉ việc</span>
+                        </label>
+                        <label class="flex items-center gap-2 text-gray-700 text-sm border border-gray-300 rounded-lg px-3 py-1 cursor-pointer hover:border-blue-400 transition-colors select-none peer-checked:border-blue-600 peer-checked:bg-blue-50 whitespace-nowrap mt-2">
+                            <input type="checkbox" name="employee_filter" value="probation" {% if 'probation' in employee_filter %}checked{% endif %} class="peer h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+                            <span>Thử việc</span>
+                        </label>
+                    </div>
+                    <!-- Search -->
+                    <div class="flex justify-end w-full">
+                        <div class="relative w-full sm:w-56">
+                            <input type="text" name="search" value="{{ search_query }}" placeholder="Tìm kiếm nhân viên..." class="w-full pl-4 pr-10 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-300 shadow-sm" />
+                            <button type="submit" class="absolute right-0 top-0 mt-2.5 mr-3 text-gray-500 hover:text-blue-700 transition" aria-label="Tìm kiếm">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Manager List -->
+        <div class="w-full">
+            <table class="w-full table-auto border-collapse text-sm font-sans">
+                <thead class="bg-gray-50 text-gray-700 font-semibold">
+                    <tr class="bg-blue-100 text-blue-900">
+                        <th class="py-2 px-3">STT</th>
+                        <th class="py-2 px-3">Họ tên</th>
+                        <th class="py-2 px-3">Ngày sinh</th>
+                        <th class="py-2 px-3">Giới tính</th>
+                        <th class="py-2 px-3">SĐT</th>
+                        <th class="py-2 px-3">Địa chỉ</th>
+                        <th class="py-2 px-3">Hành động</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    {% for manager in quan_lys %}
+                    <tr>
+                        <td class="py-2 px-3">{{ forloop.counter }}</td>
+                        <td class="py-2 px-3">{{ manager.TEN_QUAN_LY|default:"Chưa cập nhật" }}</td>
+                        <td class="py-2 px-3">{{ manager.NGAY_SINH_QL|date:"d/m/Y"|default:"Chưa cập nhật" }}</td>
+                        <td class="py-2 px-3">{{ manager.GIOI_TINH_QL|default:"Chưa cập nhật" }}</td>
+                        <td class="py-2 px-3">{{ manager.SDT_QUAN_LY|default:"Chưa cập nhật" }}</td>
+                        <td class="py-2 px-3">{{ manager.DIA_CHI_QL|default:"Chưa cập nhật" }}</td>
+                        <td class="relative p-3">
+                            <div class="inline-flex items-center justify-center w-8 h-8 bg-gray-100 rounded-full hover:bg-gray-200 cursor-pointer" onclick="toggleMenuQuanLy({{ manager.MA_QUAN_LY }})">
+                                <i class="fa fa-ellipsis-v text-gray-600"></i>
+                            </div>
+                            <div id="menuQuanLy-{{ manager.MA_QUAN_LY }}" class="absolute right-0 mt-2 w-64 origin-top-right bg-white border border-gray-200 rounded-xl shadow-lg z-20 hidden"
+                             onmouseleave="hideMenuQuanLy({{ manager.MA_QUAN_LY }})">                             
+                                <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100" onclick="showChucNangQuanLy('thietlaptaikhoan', {{ manager.MA_QUAN_LY }})">
+                                    <i class="fa fa-cogs mr-2 text-green-500"></i>Thiết lập TK
+                                </a>
+                                <a href="{% url 'thanhvien:edit_manager' manager.MA_QUAN_LY %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100" onclick="showChucNangQuanLy('chinhsua', {{ manager.MA_QUAN_LY }})">
+                                    <i class="fa fa-edit mr-2 text-yellow-500"></i>Chỉnh sửa
+                                </a>
+                                <form action="{% url 'thanhvien:delete_manager' manager.MA_QUAN_LY%}" method="post" class="block">
+                                    {% csrf_token %}
+                                    <button type="submit" class="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50">
+                                        <i class="fa fa-trash-o mr-2"></i>Xóa
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="py-2 px-3 text-gray-500">Không có dữ liệu</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if quan_lys.has_other_pages %}
+        <div class="mt-4">
+            <ul class="flex justify-center gap-2">
+                {% if quan_lys.has_previous %}
+                <li>
+                    <a href="?{% if employee_filter %}employee_filter={{ employee_filter|join:'&employee_filter=' }}&{% endif %}{% if search_query %}search={{ search_query }}&{% endif %}page={{ quan_lys.previous_page_number }}" class="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200">Trước</a>
+                </li>
+                {% endif %}
+                {% for num in quan_lys.paginator.page_range %}
+                <li>
+                    <a href="?{% if employee_filter %}employee_filter={{ employee_filter|join:'&employee_filter=' }}&{% endif %}{% if search_query %}search={{ search_query }}&{% endif %}page={{ num }}" class="{% if quan_lys.number == num %}bg-blue-700 text-white{% else %}bg-gray-100 text-gray-700{% endif %} px-3 py-1 rounded hover:bg-blue-200">{{ num }}</a>
+                </li>
+                {% endfor %}
+                {% if quan_lys.has_next %}
+                <li>
+                    <a href="?{% if employee_filter %}employee_filter={{ employee_filter|join:'&employee_filter=' }}&{% endif %}{% if search_query %}search={{ search_query }}&{% endif %}page={{ quan_lys.next_page_number }}" class="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200">Sau</a>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script src="{% static 'js/admin/quanly/quanly.js' %}"></script>
+{% endblock %}

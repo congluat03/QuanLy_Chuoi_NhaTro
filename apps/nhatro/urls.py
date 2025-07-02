@@ -12,6 +12,10 @@ urlpatterns = [
     path('khuvuc/them/', admin_views.khuvuc_them, name='khuvuc_them'),
     path('khuvuc/xoa/<int:ma_khu_vuc>/', admin_views.xoa_khuvuc, name='xoa_khuvuc'),
 
-    path('khuvuc/thiet-lap-dich-vu/<int:khuVucId>/', admin_views.khuvuc_thiet_lap_dich_vu, name='khuvuc_thiet_lap_dich_vu'),
-    path('khuvuc/thiet-lap-nguoi-quan-ly/<int:khuVucId>/', admin_views.khuvuc_thiet_lap_nguoi_quan_ly, name='khuvuc_thiet_lap_nguoi_quan_ly'),
+    path("khuvuc/thiet-lap-dich-vu/<int:khu_vuc_id>/", admin_views.thiet_lap_dich_vu, name="thiet_lap_dich_vu"),
+    path("khuvuc/thiet-lap-dich-vu/<int:khu_vuc_id>/<int:dich_vu_id>/", admin_views.thiet_lap_dich_vu, name="capnhat_dichvu_khuvuc"),
+    
+    path('khuvuc/thiet-lap-nguoi-quan-ly/<int:khuVucId>/', admin_views.thietlap_nguoiquanly, name='khuvuc_thiet_lap_nguoi_quan_ly'),
+    path('khuvuc/thiet-lap-nguoi-quan-ly/', admin_views.thietlap_nguoiquanly, name='thietlap_nguoiquanly'),
+    path('khuvuc/dung_quanly/<int:khuVucId>/', admin_views.dung_quanly, name='dung_quanly'),
 ]

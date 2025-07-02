@@ -65,11 +65,21 @@ document.addEventListener("click", function (event) {
         });
     }
 });
-
 function showModalKhuvuc(type, khuVucId = null) {
     let url = "";
     let initFunction = null;
-
+    // Đặt kích thước modal
+    const modalContainer = document.getElementById("modalContainer");
+    if (modalContainer) {
+        // Mặc định là max-w-2xl (khoảng 672px)
+        modalContainer.classList.remove("max-w-2xl", "max-w-4xl");
+        if (type === "thietLapDichVu") {
+            // Tăng kích thước cho thiết lập dịch vụ (max-w-4xl ≈ 896px)
+            modalContainer.classList.add("max-w-4xl");
+        } else {
+            modalContainer.classList.add("max-w-2xl");
+        }
+    }
     switch (type) {
         case "thongTin":
             url = `/admin/khuvuc/thong-tin/${khuVucId}/`;
@@ -78,10 +88,13 @@ function showModalKhuvuc(type, khuVucId = null) {
         case "chiSua":
             url = `/admin/khuvuc/sua/${khuVucId}/`;
             break;
-        
+
         case "thietLapDichVu":
             url = `/admin/khuvuc/thiet-lap-dich-vu/${khuVucId}/`;
-            initFunction = initThietLapDichVu;
+            initFunction = intThietLapDichVu;
+            break;
+        case "dungQuanLy":
+            url = `/admin/khuvuc/dung_quanly/${khuVucId}/`;
             break;
         case "thietLapNguoiQuanLy":
             url = `/admin/khuvuc/thiet-lap-nguoi-quan-ly/${khuVucId}/`;
@@ -90,7 +103,6 @@ function showModalKhuvuc(type, khuVucId = null) {
             url = "/admin/khuvuc/them/";
             break;
     }
-
     // Ẩn menu nếu đang mở
     const menu = document.getElementById(`menuKhuVuc-${khuVucId}`);
     if (menu) {
@@ -139,3 +151,4 @@ function toggleKhuVucModal(show) {
         modal.classList.toggle("hidden", !show);
     }
 }
+
