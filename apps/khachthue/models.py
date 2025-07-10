@@ -40,13 +40,12 @@ class KhachThue(models.Model):
             raise ValueError(f'Số điện thoại {sdt_kt} đã được sử dụng.')
         if email_kt and cls.objects.filter(EMAIL_KT=email_kt).exists():
             raise ValueError(f'Email {email_kt} đã được sử dụng.')
-    def __str__(self):
-        return self.TAI_KHOAN or f"Tài khoản {self.MA_TAI_KHOAN}"
+
     
     @classmethod
     def create_khach_thue(cls, tai_khoan_obj, ho_ten_kt, sdt_kt, email_kt=None, nghe_nghiep=None, avatar=None):
-        cls.validate_required_fields(ho_ten_kt, sdt_kt)
-        cls.check_duplicate(sdt_kt, email_kt)
+        # cls.validate_required_fields(ho_ten_kt, sdt_kt)
+        # cls.check_duplicate(sdt_kt, email_kt)
         return cls.objects.create(
             MA_TAI_KHOAN=tai_khoan_obj,
             HO_TEN_KT=ho_ten_kt,

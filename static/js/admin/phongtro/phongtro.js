@@ -1,13 +1,4 @@
 document.addEventListener("DOMContentLoaded", function () {
-    // Chọn tab khu vực đầu tiên và kích hoạt nó
-    const firstTab = document.querySelector(".khuvuc-tab");
-    if (firstTab) {
-        firstTab.classList.add("bg-blue-600", "text-white", "shadow-md");
-        firstTab.classList.remove("bg-gray-100", "text-gray-700");
-        const maKhuVuc = firstTab.getAttribute("data-makhuvuc");
-        loadPhongTro(maKhuVuc);
-    }
-
     // Thêm sự kiện click vào các liên kết phân trang
     const paginationLinks = document.querySelectorAll(".pagination a");
     paginationLinks.forEach((link) => {
@@ -28,27 +19,10 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 });
-function handleKhuVucClick(event, button) {
-    event.preventDefault();
-    const contentDiv = document.getElementById("phong-tro-content");
-    contentDiv.innerHTML = `
-        <div class="flex flex-col items-center justify-center text-gray-500 py-10 animate-pulse">
-            <i class="fas fa-spinner fa-spin text-3xl mb-2"></i>
-            <p class="italic text-sm">Đang tải dữ liệu phòng trọ...</p>
-        </div>
-    `;
-    document.querySelectorAll(".khuvuc-tab").forEach((tab) => {
-        tab.classList.remove("bg-blue-600", "text-white", "shadow-md");
-        tab.classList.add("bg-gray-100", "text-gray-700", "hover:bg-blue-50", "hover:text-blue-600");
-    });
-    button.classList.remove("bg-gray-100", "text-gray-700", "hover:bg-blue-50", "hover:text-blue-600");
-    button.classList.add("bg-blue-600", "text-white", "shadow-md");
-    const maKhuVuc = button.getAttribute("data-makhuvuc");
-    loadPhongTro(maKhuVuc);
-}
+
 
 function loadPhongTro(maKhuVuc, page = 1) {
-    const url = `/admin/phong-tro/${maKhuVuc}/${page}`;
+    const url = `/admin/phongtro/?${maKhuVuc}&${page}`;
     fetch(url)
         .then((response) => response.text())
         .then((html) => {
@@ -129,10 +103,12 @@ function showModalPhongTro(type, maPhongTro = null, khuVucId = null, tenPhong = 
         console.error("Invalid modal type:", type);
         return;
     }
+    
     modalLabel.innerText = getModalTitle(type, maPhongTro, tenPhong);
     hidePhongTroMenu(khuVucId, maPhongTro);
     
     showLoadingSpinner(modalContentId);
+    
     openModal("phongTroModal");
     loadModalContent(url, modalContentId, type);
 }
@@ -141,7 +117,7 @@ function getModalUrl(type, khuVucId, maPhongTro) {
     return {
         HopDong: `/admin/hopdong/create/${maPhongTro}`,
         ChonHoaDon: `/admin/hoadon/viewLuaChonHoaDon/${maPhongTro}`,
-        CoPhong: `/admin/phongtro/${maPhongTro}/coc-giu-cho/`,
+        CoPhong: `/admin/phongtro/coc-giu-cho/${maPhongTro}/`,
         info: `/admin/phongtro/viewInfo/${maPhongTro}`,
         chinhsua: `/admin/phongtro/view-themsua-phongtro/${khuVucId}/edit/${maPhongTro}`,
         them: `/admin/phongtro/view-themsua-phongtro/${khuVucId}/single`,
@@ -150,7 +126,6 @@ function getModalUrl(type, khuVucId, maPhongTro) {
 }
 // Hàm tải và hiển thị nội dung modal
 function loadModalContent(url, containerId, type) {
-   
     fetch(url)
         .then(response => response.ok ? response.text() : Promise.reject(new Error(`HTTP error! Status: ${response.status}`)))
         .then(data => {

@@ -6,30 +6,41 @@ from .models import PhongTro, CocPhong
 from apps.nhatro.models import KhuVuc
 from apps.khachthue.models import KhachThue
 from apps.hopdong.models import HopDong
+from apps.thanhvien.models import TaiKhoan
+from django.core.exceptions import ValidationError
+from django.http import JsonResponse
 from django.db import transaction
 from django.views.decorators.http import require_POST
+from datetime import date
+from django.db.models import Q
+
+
 
 def phongtro_list(request):
-    # Lấy danh sách khu vực thuộc nhà trọ có MA_NHA_TRO=1
-    khu_vucs = KhuVuc.objects.filter(MA_NHA_TRO=1)
-    return render(request, 'admin/phongtro/danhsach_phongtro.html', {'khu_vucs': khu_vucs})
+    # Lấy ma_khu_vuc và page_number từ query string (?ma_khu_vuc=...&page_number=...)
+    ma_khu_vuc = request.GET.get('ma_khu_vuc')
+    page_number = request.GET.get('page_number', 1)
 
-def phong_tro_theo_khu_vuc(request, ma_khu_vuc, page_number=1):
-    # Kiểm tra xem khu vực có tồn tại không
-    khu_vuc = get_object_or_404(KhuVuc, MA_KHU_VUC=ma_khu_vuc)
+    # Nếu không có mã khu vực → trả về danh sách khu vực nhà trọ có MA_NHA_TRO = 1
+    # Kiểm tra khu vực có tồn tại không
+    khu_vucs = KhuVuc.objects.filter(MA_NHA_TRO=1)
+    
 
     # Lấy tham số tìm kiếm và bộ lọc từ request
     keyword = request.GET.get('keyword', '')
     trang_thai_filters = request.GET.getlist('options[]', [])
+    if not ma_khu_vuc and khu_vucs.exists():
+        ma_khu_vuc = khu_vucs.first().MA_KHU_VUC
+        # Lấy danh sách phòng trọ theo mã khu vực
+    phong_tros = PhongTro.objects.filter(MA_KHU_VUC=ma_khu_vuc)\
+        .select_related('MA_LOAI_PHONG')\
+        .prefetch_related('cocphong', 'hopdong')
 
-    # Lấy danh sách phòng trọ theo mã khu vực
-    phong_tros = PhongTro.objects.filter(MA_KHU_VUC=ma_khu_vuc)
-
-    # Áp dụng bộ lọc tìm kiếm nếu có
+    # Áp dụng bộ lọc từ khóa nếu có
     if keyword:
         phong_tros = phong_tros.filter(
             Q(TEN_PHONG__icontains=keyword) |
-            Q(LOAI_PHONG__icontains=keyword)
+            Q(MA_LOAI_PHONG__TEN_LOAI_PHONG__icontains=keyword)
         )
 
     # Áp dụng bộ lọc trạng thái nếu có
@@ -40,29 +51,21 @@ def phong_tro_theo_khu_vuc(request, ma_khu_vuc, page_number=1):
     paginator = Paginator(phong_tros, 8)
     phong_tros_page = paginator.get_page(page_number)
 
-    trang_thai_options = [
-        'Đang ở',
-        'Đang trống',
-        'Sắp kết thúc hợp đồng',
-        'Đã quá hạn hợp đồng',
-        'Đang cọc dự trọ',
-        'Đang nợ tiền',
-    ]
+    # Danh sách trạng thái
+    trang_thai_phong_choices = ['Đang ở', 'Đang trống', 'Đang cọc dự trọ']
+    trang_thai_hd_choices = ['Sắp kết thúc hợp đồng', 'Đã quá hạn hợp đồng', 'Đang nợ tiền']
 
     context = {
         'phong_tros': phong_tros_page,
         'ma_khu_vuc': ma_khu_vuc,
-        'trang_thai_options': trang_thai_options,
-        'keyword': keyword,  # Truyền lại keyword để hiển thị trong input tìm kiếm
-        'selected_filters': trang_thai_filters,  # Truyền lại các bộ lọc đã chọn
+        'trang_thai_phong_choices': trang_thai_phong_choices,
+        'trang_thai_hd_choices': trang_thai_hd_choices,
+        'keyword': keyword,
+        'selected_filters': trang_thai_filters,
+        'khu_vucs': khu_vucs,
     }
-
-    # Nếu là request AJAX, trả về template phần nội dung phòng trọ
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return render(request, 'admin/hoadon/danhsach_phongtro.html', context)
-
-    # Nếu không phải AJAX, trả về toàn bộ trang
-    return render(request, 'admin/phongtro/phongtro.html', context)
+    
+    return render(request, 'admin/phongtro/phongtro.html', context)    
 
 
 
@@ -196,68 +199,63 @@ def xoa_phong_tro(request, ma_phong_tro):
         messages.error(request, f"Lỗi khi xóa phòng trọ: {str(e)}")
 
     return redirect('phongtro:phongtro_list')  # Đổi lại route phù hợp
+
 def view_coc_giu_cho(request, ma_phong):
     phong_tro = get_object_or_404(PhongTro, MA_PHONG=ma_phong)
     
     if request.method == 'POST':
-        # Lấy dữ liệu từ form
-        ngay_coc_phong = request.POST.get('NGAY_COC_PHONG')
-        ngay_du_kien_vao = request.POST.get('NGAY_DU_KIEN_VAO')
-        tien_coc_phong = request.POST.get('TIEN_COC_PHONG')
-        ghi_chu_cp = request.POST.get('GHI_CHU_CP')
-        ho_ten_kt = request.POST.get('HO_TEN_KT')
-        sdt_kt = request.POST.get('SDT_KT')
-        email_kt = request.POST.get('EMAIL_KT')
-
-        # Kiểm tra dữ liệu bắt buộc
-        errors = []
-        if not ngay_coc_phong:
-            errors.append('Ngày cọc giữ chỗ là bắt buộc.')
-        if not ngay_du_kien_vao:
-            errors.append('Ngày vào ở là bắt buộc.')
-        if not ho_ten_kt:
-            errors.append('Họ tên khách thuê là bắt buộc.')
-        if not sdt_kt:
-            errors.append('Số điện thoại khách thuê là bắt buộc.')
-
-        if errors:
-            for error in errors:
-                messages.error(request, error)
-            return render(request, 'admin/phongtro/coc_giu_cho.html', {
-                'phong_tro': phong_tro,
-                'form_data': request.POST,
-            })
-
         try:
-            # Tìm hoặc tạo khách thuê
-            khach_thue, created = KhachThue.objects.get_or_create(
-                HO_TEN_KT=ho_ten_kt,
-                defaults={
-                    'SDT_KT': sdt_kt,
-                    'EMAIL_KT': email_kt,
-                }
-            )
-
-            # Tạo cọc phòng
-            coc_phong = CocPhong(
-                MA_PHONG=phong_tro,
-                MA_KHACH_THUE=khach_thue,
-                NGAY_COC_PHONG=ngay_coc_phong,
-                NGAY_DU_KIEN_VAO=ngay_du_kien_vao,
-                TIEN_COC_PHONG=tien_coc_phong or phong_tro.GIA_PHONG,
-                TRANG_THAI_CP='Pending',
-                GHI_CHU_CP=ghi_chu_cp,
-            )
-            coc_phong.save()
-            messages.success(request, 'Thêm cọc giữ chỗ thành công!')
-            return redirect('phongtro_list')  # Điều hướng sau khi thành công
-        except Exception as e:
-            messages.error(request, f'Lỗi khi lưu dữ liệu: {str(e)}')
-            return render(request, 'admin/phongtro/coc_giu_cho.html', {
+            with transaction.atomic():
+                # Lấy dữ liệu từ form
+                ngay_coc_phong = request.POST.get('NGAY_COC_PHONG')
+                ngay_du_kien_vao = request.POST.get('NGAY_DU_KIEN_VAO')
+                tien_coc_phong = request.POST.get('TIEN_COC_PHONG')
+                ho_ten_kt = request.POST.get('HO_TEN_KT')
+                sdt_kt = request.POST.get('SDT_KT')
+                email_kt = request.POST.get('EMAIL_KT') or None
+                ghi_chu_cp = request.POST.get('GHI_CHU_CP') or None
+                
+                # Kiểm tra các trường bắt buộc
+                if not all([ngay_coc_phong, ngay_du_kien_vao, ho_ten_kt, sdt_kt]):
+                    raise ValueError('Vui lòng điền đầy đủ các trường bắt buộc.')
+                
+                # Tạo tài khoản mặc định
+                tai_khoan = TaiKhoan.create_tai_khoan_mac_dinh()
+                
+                # Tạo khách thuê
+                khach_thue = KhachThue.create_khach_thue(
+                    tai_khoan_obj=tai_khoan,
+                    ho_ten_kt=ho_ten_kt,
+                    sdt_kt=sdt_kt,
+                    email_kt=email_kt
+                )
+                # return JsonResponse(dict(request.POST))
+                # Tạo cọc phòng
+                coc_phong = CocPhong.tao_coc_phong(
+                    phong=phong_tro,
+                    khach_thue=khach_thue,
+                    tien_coc_phong=float(tien_coc_phong),
+                    ngay_coc_phong=ngay_coc_phong
+                )
+                
+                # Cập nhật thêm thông tin cọc phòng
+                coc_phong.cap_nhat_coc_phong(
+                    ngay_du_kien_vao=ngay_du_kien_vao,
+                    ghi_chu_cp=ghi_chu_cp
+                )
+                
+                messages.success(request, 'Thêm cọc phòng thành công!')
+                return redirect('phongtro:phongtro_list') # Điều hướng đến trang danh sách phòng trọ
+                
+        except (ValueError, ValidationError) as e:
+            messages.error(request, str(e))
+            form_data = request.POST
+            # return JsonResponse(str(e), safe=False)
+            # return JsonResponse(dict(request.POST))
+            return render(request, 'admin/phongtro/cocphong.html', {
                 'phong_tro': phong_tro,
-                'form_data': request.POST,
+                'form_data': form_data
             })
-
     return render(request, 'admin/phongtro/cocphong.html', {
         'phong_tro': phong_tro,
         'form_data': {'TIEN_COC_PHONG': phong_tro.GIA_PHONG},

@@ -1,5 +1,5 @@
 {% load widget_tweaks %}
-<form method="POST">
+<form action="{% url 'phongtro:coc_giu_cho' ma_phong=phong_tro.MA_PHONG %}" method="POST">
   {% csrf_token %}
   <input type="hidden" name="MAPHONGTRO" id="MAPHONGTRO" value="{{ phong_tro.MA_PHONG }}" />
 

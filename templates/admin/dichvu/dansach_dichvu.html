@@ -2,140 +2,236 @@
 {% load static %}
 {% load widget_tweaks %}
 {% block content_body %}
-<div class="w-full px-4 py-6 bg-gray-100 min-h-screen">
-    <div class="max-w-7xl mx-auto">
-        <div class="bg-white shadow-lg rounded-lg p-6 space-y-6">
-            <!-- Header -->
-            <div class="flex flex-col sm:flex-row justify-between items-center mb-10 gap-4 sm:gap-6">
-                <h4 class="text-3xl font-extrabold text-gray-800 flex items-center">
-                    <svg class="w-8 h-8 text-blue-700 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    Quản lý Dịch vụ
-                </h4>
-                <div class="flex flex-wrap sm:flex-nowrap items-center gap-3">
-                    <button onclick="showModalDichVu('themMoi')"
-                            class="inline-flex items-center px-5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition duration-300 shadow">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                        Thêm dịch vụ mới
-                    </button>
-                </div>
+<div class="w-full px-4 sm:px-8">
+  <div class="bg-white shadow-xl rounded-2xl p-6 sm:p-8">
+        <!-- Header -->
+        <div class="flex flex-col sm:flex-row justify-between items-center mb-10 gap-4 sm:gap-6">
+            <h4 class="text-3xl font-extrabold text-gray-800 flex items-center">
+                <svg class="w-8 h-8 text-blue-700 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                Quản lý Dịch vụ
+            </h4>
+            <div class="flex flex-wrap sm:flex-nowrap items-center gap-3">
+                <button onclick="showModalDichVu('themMoi')"
+                        class="inline-flex items-center px-5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition duration-300 shadow">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    Thêm dịch vụ mới
+                </button>
             </div>
+        </div>
 
-            <!-- Thông báo -->
-            {% if messages %}
-                <div class="mb-4">
-                    {% for message in messages %}
-                        <div class="p-4 mb-2 rounded {% if message.tags == 'error' %}bg-red-100 text-red-800{% else %}bg-green-100 text-green-800{% endif %}">
-                            {{ message }}
+        <!-- Thông báo -->
+        {% if messages %}
+            <div class="mb-4">
+                {% for message in messages %}
+                    <div class="p-4 mb-2 rounded {% if message.tags == 'error' %}bg-red-100 text-red-800{% else %}bg-green-100 text-green-800{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Danh sách dịch vụ và thống kê -->
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
+            <!-- Danh sách dịch vụ -->
+            <div class="md:col-span-1">
+                <h4 class="text-lg font-semibold text-gray-700 mb-3">Danh sách dịch vụ</h4>
+                <div class="space-y-4 max-h-[500px] overflow-y-auto">
+                    {% for service in dich_vus %}
+                        <div class="border rounded-lg p-4 shadow flex gap-4 items-start">
+                            <div class="text-2xl text-indigo-500">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            </div>
+                            <div class="flex-1">
+                                <div class="font-medium">{{ service.TEN_DICH_VU }}</div>
+                                <p class="text-sm text-gray-600">
+                                    {{ service.GIA_DICH_VU|floatformat:0 }} ₫ / {{ service.DON_VI_TINH }}
+                                </p>
+                            </div>
+                            <div class="flex flex-col space-y-2">
+                                <button onclick="showModalDichVu('chiSua', {{ service.MA_DICH_VU }})"
+                                        class="text-blue-500 hover:text-blue-700">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                                </button>
+                                <form action="{% url 'dichvu:xoa_dich_vu' service.MA_DICH_VU %}" method="POST" 
+                                    onsubmit="return confirm('Dịch vụ này {% if service.is_applied %}đang được áp dụng vào khu vực. {% endif %}Bạn có chắc muốn xóa dịch vụ và tất cả các áp dụng liên quan không?')">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="confirm_delete" value="true">
+                                    <button type="submit" class="text-red-500 hover:text-red-700">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5-4h4m-4 4v12m4-12v12"></path>
+                                        </svg>
+                                    </button>
+                                </form>
+                            </div>
                         </div>
                     {% endfor %}
                 </div>
-            {% endif %}
+            </div>
 
-            <!-- Danh sách dịch vụ và thống kê -->
-            <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
-                <!-- Danh sách dịch vụ -->
-                <div class="md:col-span-1">
-                    <h4 class="text-lg font-semibold text-gray-700 mb-3">Danh sách dịch vụ</h4>
-                    <div class="space-y-4 max-h-[500px] overflow-y-auto">
-                        {% for service in dich_vus %}
-                            <div class="border rounded-lg p-4 shadow flex gap-4 items-start">
-                                <div class="text-2xl text-indigo-500">
-                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                </div>
-                                <div class="flex-1">
-                                    <div class="font-medium">{{ service.TEN_DICH_VU }}</div>
-                                    <p class="text-sm text-gray-600">
-                                        {{ service.GIA_DICH_VU|floatformat:0 }} ₫ / {{ service.DON_VI_TINH }}
-                                    </p>
-                                </div>
-                                <div class="flex flex-col space-y-2">
-                                    <button onclick="showModalDichVu('chiSua', {{ service.MA_DICH_VU }})"
-                                            class="text-blue-500 hover:text-blue-700">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                                    </button>
-                                    <form action="{% url 'dichvu:xoa_dich_vu' service.MA_DICH_VU %}" method="POST" 
-                                        onsubmit="return confirm('Dịch vụ này {% if service.is_applied %}đang được áp dụng vào khu vực. {% endif %}Bạn có chắc muốn xóa dịch vụ và tất cả các áp dụng liên quan không?')">
-                                        {% csrf_token %}
-                                        <input type="hidden" name="confirm_delete" value="true">
-                                        <button type="submit" class="text-red-500 hover:text-red-700">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5-4h4m-4 4v12m4-12v12"></path>
-                                            </svg>
-                                        </button>
-                                    </form>
-                                </div>
-                            </div>
-                        {% endfor %}
-                    </div>
+            <!-- Thống kê -->
+            <div class="md:col-span-4 md:pl-1">
+                <div class="flex justify-between items-center mb-4">
+                    <h4 class="text-lg font-semibold text-gray-700">Thống kê mỗi tháng</h4>
                 </div>
 
-                <!-- Thống kê -->
-                <div class="md:col-span-4 md:pl-8">
-                    <div class="flex justify-between items-center mb-4">
-                        <h4 class="text-lg font-semibold text-gray-700">Thống kê mỗi tháng</h4>
+                <div class="bg-white p-6 rounded-xl shadow-md border border-gray-200 w-full">
+                    <!-- Tiêu đề và nút ở cùng hàng -->
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                        <h2 class="text-lg font-semibold text-gray-800">🔍 Bộ lọc thống kê dịch vụ</h2>
+
+                        <div class="flex gap-3">
+                        <button type="button"
+                                class="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-medium hover:bg-blue-700 transition duration-300 shadow"
+                                onclick="fetchThongKeDichVu()">
+                            📊 Thống kê
+                        </button>
+
+                        <button type="button"
+                                class="bg-green-600 text-white px-6 py-2.5 rounded-lg font-medium hover:bg-green-700 transition duration-300 shadow flex items-center"
+                                onclick="exportExcel()">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            Xuất Excel
+                        </button>
+                        </div>
                     </div>
 
-                    <div class="flex flex-wrap items-center gap-4 mb-4">
+                    <!-- Bộ lọc -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-5 mb-6">
+                        <!-- Khu vực -->
+                        <div>
+                        <label for="khuVuc" class="block text-sm font-medium text-gray-700 mb-1">Khu vực</label>
                         <select id="khuVuc" name="khuVuc"
-                                class="border border-gray-300 rounded px-4 py-2 w-48 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm">
                             <option value="" disabled selected>Chọn khu vực</option>
                             <option value="all">Tất cả khu vực</option>
                             {% for khu_vuc in khu_vucs %}
-                                <option value="{{ khu_vuc.MA_KHU_VUC }}">{{ khu_vuc.TEN_KHU_VUC }}</option>
+                            <option value="{{ khu_vuc.MA_KHU_VUC }}">{{ khu_vuc.TEN_KHU_VUC }}</option>
                             {% endfor %}
                         </select>
+                        </div>
+                        <div>
+                        <label for="phongTro" class="block text-sm font-medium text-gray-700 mb-1">Phòng trọ</label>
+                        <select id="phongTro" name="phongTro"
+                                class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm">
+                            <option value="all">Tất cả phòng</option>
+                            {% for phong in phong_tros %}
+                            <option value="{{ phong.MA_PHONG }}">{{ phong.TEN_PHONG }}</option>
+                            {% endfor %}
+                        </select>
+                        </div>
 
-                        <input type="month" id="month" name="month"
-                               class="border border-gray-300 rounded px-4 py-2 w-40 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                               value="{% now 'Y-m' %}">
+                        <!-- Tháng -->
+                        <!-- Tháng -->
+                        <div>
+                            <label for="month" class="block text-sm font-medium text-gray-700 mb-1">Tháng</label>
 
-                        <button type="button"
-                                class="bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-700 transition-shadow shadow"
-                                onclick="fetchThongKeDichVu()">
-                            Thống kê
-                        </button>
+                            <div class="flex items-center rounded-lg border border-gray-300 overflow-hidden shadow-sm focus-within:ring-2 focus-within:ring-blue-500">
+                                <!-- Input tháng -->
+                                <input type="month" id="month" name="month"
+                                class="w-full px-4 py-2 text-sm text-gray-700 focus:outline-none focus:ring-0 border-r border-gray-300"
+                                value="{% now 'Y-m' %}">
 
-                        <button type="button"
-                                class="bg-green-600 text-white px-5 py-2 rounded hover:bg-green-700 transition-shadow shadow ml-auto"
-                                onclick="exportExcel()">
-                            <svg class="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                            Xuất Excel
-                        </button>
+                                <!-- Checkbox tất cả tháng -->
+                                <label for="all_months"
+                                class="flex items-center px-3 py-2 bg-gray-50 text-sm text-gray-600 whitespace-nowrap"
+                                    title="Tất cả các tháng">
+                                <input type="checkbox" id="all_months" onchange="toggleMonthInput(this)"
+                                        class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                </label>
+                            </div>
+                        </div>
+
+
+
+                        <!-- Loại dịch vụ -->
+                        <div>
+                            <label for="loaiDichVu" class="block text-sm font-medium text-gray-700 mb-1">Loại dịch vụ</label>
+                            <select id="loaiDichVu" name="loaiDichVu"
+                                    class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm">
+                                <option value="" disabled selected>Chọn loại dịch vụ</option>
+                                <option value="all">Tất cả loại dịch vụ</option>
+                                <option value="Cố định">Cố định</option>
+                                <option value="Tính theo chỉ số">Tính theo chỉ số</option>
+                            </select>
+                        </div>
+                        <!-- Phòng trọ -->
+                        
                     </div>
 
-                    <div id="table_thongke_dichvu" class="overflow-auto max-h-[440px]">
+                    <!-- Kết quả thống kê -->
+                    <div id="table_thongke_dichvu" class="overflow-auto max-h-[440px] rounded-lg border border-gray-100 shadow-inner bg-gray-50">
                         <!-- Nội dung thống kê sẽ được render ở đây -->
                     </div>
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- Modal Thêm/Sửa dịch vụ -->
-    <div id="serviceModal" tabindex="-1" aria-modal="true" role="dialog"
-         class="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50 hidden transition-opacity duration-300 ease-in-out"
-         onclick="if(event.target === this) toggleServiceModal(false)">
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
-            <!-- Header -->
-            <div class="flex items-center justify-center relative px-6 py-4 bg-blue-600 rounded-t-xl">
-                <h5 id="serviceModalLabel" class="text-white text-xl font-semibold text-center flex-grow">
-                    <!-- Tiêu đề sẽ thay đổi theo mode -->
-                </h5>
-                <button type="button" aria-label="Close"
-                        class="absolute right-6 top-1/2 transform -translate-y-1/2 text-white text-3xl font-bold leading-none hover:text-blue-300 focus:outline-none"
-                        onclick="toggleServiceModal(false)">
-                    ×
-                </button>
-            </div>
-            <!-- Body -->
-            <div id="serviceModalContent" class="px-10 py-8">
-                <!-- Nội dung sẽ load động ở đây -->
-            </div>
+</div>
+<!-- Modal Thêm/Sửa dịch vụ -->
+<div id="serviceModal" tabindex="-1" aria-modal="true" role="dialog"
+    class="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50 hidden transition-opacity duration-300 ease-in-out"
+    onclick="if(event.target === this) toggleServiceModal(false)">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-4xl mx-4 max-h-[92vh] overflow-y-auto">
+        <!-- Header -->
+        <div class="flex items-center justify-center relative px-6 py-4 bg-blue-600 rounded-t-xl">
+            <h5 id="serviceModalLabel" class="text-white text-xl font-semibold text-center flex-grow">
+                <!-- Tiêu đề sẽ thay đổi theo mode -->
+            </h5>
+            <button type="button" aria-label="Close"
+                    class="absolute right-6 top-1/2 transform -translate-y-1/2 text-white text-3xl font-bold leading-none hover:text-blue-300 focus:outline-none"
+                    onclick="toggleServiceModal(false)">
+                ×
+            </button>
+        </div>
+        <!-- Body -->
+        <div id="serviceModalContent" class="px-10 py-8">
+            <!-- Nội dung sẽ load động ở đây -->
         </div>
     </div>
 </div>
-
+   
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    new Choices('#phongTro1', {
+      removeItemButton: true,
+      placeholder: true,
+      placeholderValue: 'Chọn phòng trọ',
+      searchEnabled: true
+    });
+    new Choices('#dichVu1', {
+      removeItemButton: true,
+      placeholder: true,
+      placeholderValue: 'Chọn dịch vụ',
+      searchEnabled: true
+    });
+  });
+  function toggleMonthInput(checkbox) {
+    const monthInput = document.getElementById('month');
+    if (checkbox.checked) {
+      monthInput.disabled = true;
+      monthInput.name = ""; // để không submit giá trị tháng
+      // Bạn có thể thêm hidden input nếu muốn gửi giá trị "all"
+      if (!document.getElementById("month_hidden")) {
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.id = "month_hidden";
+        input.name = "month";
+        input.value = "all";
+        monthInput.parentNode.appendChild(input);
+      }
+    } else {
+      monthInput.disabled = false;
+      monthInput.name = "month";
+      const hidden = document.getElementById("month_hidden");
+      if (hidden) hidden.remove();
+    }
+  }
+</script>
 <script src="{% static 'js/admin/dichvu/dichvu.js' %}"></script>
 <script src="{% static 'js/admin/dichvu/themsua_dichvu.js' %}"></script>
 {% endblock %}

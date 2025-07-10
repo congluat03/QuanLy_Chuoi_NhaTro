@@ -5,6 +5,7 @@
       >
     {% csrf_token %}
     <input type="hidden" name="loai" value="{{ loai }}">
+    <input type="hidden" name="MA_KHU_VUC" value="{{ khu_vuc.MA_KHU_VUC }}">
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <!-- Cột trái -->
         <div class="space-y-4">

@@ -17,6 +17,7 @@ from collections import defaultdict
 from django.core.paginator import Paginator
 from django.db import transaction
 from datetime import date
+from django.http import JsonResponse
 
 def dichvu_list(request):
     # Lấy toàn bộ danh sách dịch vụ (không phân trang)
@@ -61,31 +62,61 @@ def _prepare_thong_ke_data(request):
     """Hàm chung để chuẩn bị dữ liệu thống kê dịch vụ."""
     khu_vuc_id = request.GET.get('khuVuc')
     thang = request.GET.get('thang')
+    phong_tro_id = request.GET.get('phongTro')
+    loai_dich_vu = request.GET.get('loaiDichVu')
 
     # Xử lý ngày tháng
-    try:
-        start_of_month = datetime.strptime(thang, '%Y-%m').replace(day=1)
-        end_of_month = start_of_month + relativedelta(months=1) - relativedelta(days=1)
-    except (ValueError, TypeError):
-        start_of_month = datetime.now().replace(day=1)
-        end_of_month = start_of_month + relativedelta(months=1) - relativedelta(days=1)
+    start_of_month = None
+    end_of_month = None
+    if thang == 'all':
+        # Nếu chọn tất cả khoảng thời gian, không giới hạn NGAY_GHI_CS
+        pass
+    else:
+        try:
+            start_of_month = datetime.strptime(thang, '%Y-%m').replace(day=1)
+            end_of_month = start_of_month + relativedelta(months=1) - relativedelta(days=1)
+        except (ValueError, TypeError):
+            start_of_month = datetime.now().replace(day=1)
+            end_of_month = start_of_month + relativedelta(months=1) - relativedelta(days=1)
 
-    # Truy vấn phòng trọ và dịch vụ
-    phong_tros_qs = PhongTro.objects.filter(
-        chisodichvu__NGAY_GHI_CS__range=[start_of_month, end_of_month]
-    ).distinct()
+    # Truy vấn phòng trọ
+    phong_tros_qs = PhongTro.objects.all().distinct()
+    if start_of_month and end_of_month:
+        phong_tros_qs = phong_tros_qs.filter(
+            chisodichvu__NGAY_GHI_CS__range=[start_of_month, end_of_month]
+        ).distinct()
+    
+    # Áp dụng bộ lọc khu vực
     if khu_vuc_id and khu_vuc_id != 'all':
         phong_tros_qs = phong_tros_qs.filter(MA_KHU_VUC_id=khu_vuc_id)
+    
+    # Áp dụng bộ lọc phòng trọ
+    if phong_tro_id and phong_tro_id != 'all':
+        phong_tros_qs = phong_tros_qs.filter(MA_PHONG=phong_tro_id)
 
     phong_tros = phong_tros_qs.values('MA_PHONG', 'TEN_PHONG')
-    dich_vus = DichVu.objects.order_by('MA_DICH_VU').values(
-        'MA_DICH_VU', 'TEN_DICH_VU', 'DON_VI_TINH', 'GIA_DICH_VU'
-    )
+    
+    # Truy vấn dịch vụ
+    dich_vus_qs = DichVu.objects.order_by('MA_DICH_VU')
+    
+    # Áp dụng bộ lọc loại dịch vụ
+    if loai_dich_vu and loai_dich_vu != 'all':
+        dich_vus_qs = dich_vus_qs.filter(LOAI_DICH_VU=loai_dich_vu)
+    
+    dich_vus = dich_vus_qs.values('MA_DICH_VU', 'TEN_DICH_VU', 'DON_VI_TINH', 'GIA_DICH_VU')
 
     # Truy vấn chỉ số dịch vụ
-    chi_so_dich_vus = ChiSoDichVu.objects.filter(
-        NGAY_GHI_CS__range=[start_of_month, end_of_month]
-    ).select_related('MA_DICH_VU').values(
+    chi_so_dich_vus_qs = ChiSoDichVu.objects.select_related('MA_DICH_VU')
+    if start_of_month and end_of_month:
+        chi_so_dich_vus_qs = chi_so_dich_vus_qs.filter(
+            NGAY_GHI_CS__range=[start_of_month, end_of_month]
+        )
+    
+    # Áp dụng bộ lọc loại dịch vụ cho chỉ số dịch vụ
+    if loai_dich_vu and loai_dich_vu != 'all':
+        chi_so_dich_vus_qs = chi_so_dich_vus_qs.filter(MA_DICH_VU__LOAI_DICH_VU=loai_dich_vu)
+
+    chi_so_dich_vus = chi_so_dich_vus_qs.values(
         'MA_PHONG_id', 'MA_DICH_VU_id', 'CHI_SO_CU', 'CHI_SO_MOI',
         'MA_DICH_VU__DON_VI_TINH', 'MA_DICH_VU__GIA_DICH_VU'
     )
@@ -119,7 +150,7 @@ def _prepare_thong_ke_data(request):
                 service_total = chi_so['MA_DICH_VU__GIA_DICH_VU'] if chi_so else dich_vu['GIA_DICH_VU'] or 0
                 if chi_so:
                     total_so_lan_su_dung[dich_vu['TEN_DICH_VU']] += 1
-                excel_row[f'{dich_vu["TEN_DICH_VU"]}_Sử_dụng'] = 1
+                excel_row[f'{dich_vu["TEN_DICH_VU"]}_Sử_dụng'] = 1 if chi_so else 0
                 excel_row[f'{dich_vu["TEN_DICH_VU"]}_Thành_tiền'] = service_total
             else:
                 chi_so_cu = chi_so['CHI_SO_CU'] if chi_so else 0
@@ -155,10 +186,10 @@ def _prepare_thong_ke_data(request):
         'start_of_month': start_of_month,
         'end_of_month': end_of_month
     }
-
 def thong_ke_dich_vu(request):
     """Hiển thị bảng thống kê dịch vụ trên giao diện."""
     data = _prepare_thong_ke_data(request)
+    # return JsonResponse(dict(request.GET))
     context = {
         'phong_tros': data['phong_data'],
         'dich_vus': data['dich_vus'],
@@ -167,6 +198,7 @@ def thong_ke_dich_vu(request):
         'total_so_lan_su_dung': data['total_so_lan_su_dung']
     }
     return render(request, 'admin/dichvu/bang_thongke.html', context)
+
 
 def export_thong_ke_dich_vu(request):
     """Xuất thống kê dịch vụ ra file Excel."""

@@ -126,12 +126,16 @@ function XoaDichVu(dichVuId) {
 }
 function fetchThongKeDichVu() {
     let khuVuc = document.getElementById("khuVuc").value || "all"; // Nếu không chọn, mặc định là "all"
-    let thang = document.getElementById("month").value;
+    const monthHidden = document.getElementById("month_hidden");
+    const thang = monthHidden ? monthHidden.value : document.getElementById("month").value;
+    const phongTro = document.getElementById('phongTro').value;
+    
+    const loaiDichVu = document.getElementById('loaiDichVu').value;
     if (!thang) {
         alert("Vui lòng chọn tháng!");
         return;
     }
-    let url = `/admin/dichvu/thongke-dichvu?khuVuc=${khuVuc}&thang=${thang}`;
+    let url = `/admin/dichvu/thongke-dichvu?khuVuc=${khuVuc}&thang=${thang}&phongTro=${phongTro}&loaiDichVu=${loaiDichVu}`;
     fetch(url)
         .then((response) => {
             if (!response.ok) {

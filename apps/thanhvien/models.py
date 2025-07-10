@@ -49,7 +49,7 @@ class TaiKhoan(models.Model):
             return cls.create_tai_khoan(tai_khoan=tai_khoan, mat_khau=mat_khau)
         else:
             unique_suffix = str(uuid.uuid4())[:8]
-            default_tai_khoan = f"khachthue_{unique_suffix}"
+            default_tai_khoan = f"khachthue{unique_suffix}"
             default_mat_khau = "KhachThue@123"
             return cls.create_tai_khoan(tai_khoan=default_tai_khoan, mat_khau=default_mat_khau)
     def update_tai_khoan(self, tai_khoan=None, mat_khau=None):
