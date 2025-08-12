@@ -1,10 +1,11 @@
 document.addEventListener('DOMContentLoaded', function () {
-    const phongSelect = document.getElementById('MA_PHONG');
+    var phongSelect = document.getElementById('MA_PHONG');
     
     if (phongSelect) {
         phongSelect.addEventListener('change', function () {
+
             const maPhong = this.value;
-            
+            alert(maPhong);
             if (maPhong) {
                 // Gửi yêu cầu AJAX để kiểm tra cọc phòng
                 fetch(`/admin/hopdong/kiem-tra-coc-phong/${maPhong}/`, {

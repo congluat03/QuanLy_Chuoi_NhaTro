@@ -1,16 +1,8 @@
-{% extends 'admin/admin_layout.html' %}
+
 {% load static %}
 
-{% block content_body %}
 <div id="deduction-data" data-deduction-index="{{ khau_tru|length }}"></div>
 <div class="container mx-auto px-4 py-8 bg-gray-50 min-h-screen font-sans">
-    <!-- Header -->
-    <div class="mb-8">
-        <h1 class="text-2xl md:text-3xl font-bold text-gray-900 flex items-center gap-2">
-            <i class="fas fa-file-invoice text-blue-600"></i> Quản lý hóa đơn nhà trọ
-        </h1>
-        <p class="text-gray-500 text-sm mt-1">Tạo và quản lý hóa đơn một cách dễ dàng, chuyên nghiệp</p>
-    </div>
     <!-- Thông báo -->
     {% if messages %}
         <div class="mb-4">
@@ -23,9 +15,10 @@
     {% endif %}
     <!-- Main Form -->
     <form id="invoice-form" method="POST" 
-      action="{% if hoa_don %}{% url 'hoadon:sua_hoa_don' ma_hoa_don=hoa_don.MA_HOA_DON %}{% else %}{% url 'hoadon:them_hoa_don' %}{% endif %}" 
+      action="{% if hoa_don %}{% url 'hoadon:sua_hoa_don' ma_hoa_don=hoa_don.MA_HOA_DON %}{% else %}{% url 'hoadon:them_hoa_don_post'%}{% endif %}" 
       class="bg-white shadow-lg rounded-xl p-6 md:p-8">
     {% csrf_token %}
+    <input type="hidden" name="MA_HOP_DONG" value="{{ hop_dong_hieu_luc.MA_HOP_DONG }}">
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <!-- Invoice Details -->
             <div class="lg:col-span-1 space-y-5 bg-gray-100 p-5 rounded-lg">
@@ -39,13 +32,10 @@
                             {{ hoa_don.MA_PHONG.TEN_PHONG|default:'Không xác định' }}
                         </div>
                     {% else %}
-                        <!-- Trường hợp thêm hóa đơn: hiển thị select để chọn phòng -->
-                        <select name="MA_PHONG" id="MA_PHONG" class="w-full border border-gray-200 rounded-lg py-2 px-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white shadow-sm" required>
-                            <option value="" disabled selected>Chọn phòng</option>
-                            {% for phong in phong_tro %}
-                                <option value="{{ phong.MA_PHONG }}">{{ phong.TEN_PHONG }}</option>
-                            {% endfor %}
-                        </select>
+                        <input type="hidden" name="MA_PHONG" value="{{ phong.MA_PHONG }}">
+                        <div class="w-full border border-gray-200 rounded-lg py-2 px-3 text-sm bg-gray-50 text-gray-700 shadow-sm">
+                            {{ phong.TEN_PHONG|default:'Không xác định' }}
+                        </div>
                     {% endif %}
                 </div>
                 <div>
@@ -87,46 +77,60 @@
                                     <th class="p-2 font-semibold text-center text-xs md:text-sm w-[15%]">Chỉ số cũ</th>
                                     <th class="p-2 font-semibold text-center text-xs md:text-sm w-[15%]">Chỉ số mới</th>
                                     <th class="p-2 font-semibold text-center text-xs md:text-sm w-[15%]">Số dịch vụ</th>
-                                    <th class="p-2 font-semibold text-center text-xs md:text-sm w-[15%]">Thành tiền</th>
-                                    <th class="p-2 font-semibold text-center text-xs md:text-sm w-[20%]">Chức năng</th>
+                                    <th class="p-2 font-semibold text-center text-xs md:text-sm w-[15%]">Thành tiền</th>                                 
                                 </tr>
                             </thead>
-                            <tbody id="service-details">
-                                {% for dich_vu in chi_so_dich_vu %}
-                                    <tr id="dichvu-{{ dich_vu.MA_CHI_SO }}" class="hover:bg-gray-50 transition duration-200 border-b border-gray-100">
-                                        <td class="p-2 text-center text-gray-700 text-sm">{{ forloop.counter }}</td>
-                                        <td class="p-2 text-center text-gray-700 text-sm">{{ dich_vu.TEN_DICH_VU }}</td>
-                                        <td class="p-2 text-center">
-                                            <input type="hidden" name="chi_so_dich_vu[{{ forloop.counter0 }}][MA_CHI_SO]" value="{{ dich_vu.MA_CHI_SO }}">
-                                            <input type="hidden" name="chi_so_dich_vu[{{ forloop.counter0 }}][MA_DICH_VU]" value="{{ dich_vu.MA_DICH_VU }}">
-                                            <input type="number" name="chi_so_dich_vu[{{ forloop.counter0 }}][CHI_SO_CU]" 
-                                            value="{{ dich_vu.CHI_SO_CU|default:'0' }}" class="w-full text-center border border-gray-200 rounded-lg py-1 px-2 text-sm bg-gray-50 focus:ring-2 focus:ring-blue-500" 
-                                            id="CHISOCU-{{ forloop.counter0 }}" step="0.01" readonly>
-                                        </td>
-                                        <td class="p-2 text-center">
-                                            <input type="number" name="chi_so_dich_vu[{{ forloop.counter0 }}][CHI_SO_MOI]" value="{{ dich_vu.CHI_SO_MOI|default:'0' }}" class="w-full text-center border border-gray-200 rounded-lg py-1 px-2 text-sm focus:ring-2 focus:ring-blue-500" 
-                                            id="CHISOMOI-{{ forloop.counter0 }}" step="0.01">
-                                        </td>
-                                        <td class="p-2 text-center">
-                                            <input type="number" name="chi_so_dich_vu[{{ forloop.counter0 }}][SO_DICH_VU]" value="{{ dich_vu.SO_DICH_VU|default:'0' }}" 
-                                            class="w-full text-center border border-gray-200 rounded-lg py-1 px-2 text-sm bg-gray-50 focus:ring-2 focus:ring-blue-500" 
-                                            id="SODICHVUTONG-{{ forloop.counter0 }}" step="0.01" readonly>
-                                        </td>
-                                        <td class="p-2 text-center">
-                                            <input type="number" name="chi_so_dich_vu[{{ forloop.counter0 }}][THANH_TIEN]" value="{{ dich_vu.THANH_TIEN|default:'0' }}" 
-                                            class="w-full text-center border border-gray-200 rounded-lg py-1 px-2 text-sm bg-gray-50 focus:ring-2 focus:ring-blue-500" 
-                                            id="TIENDICHVUGHIDUOC-{{ forloop.counter0 }}" step="0.01" readonly>
-                                        </td>
-                                        <td class="p-2 text-center">
-                                            <button type="button" class="bg-blue-600 text-white text-xs font-medium px-2 py-1 rounded-lg hover:bg-blue-700 transition duration-300" id="button-{{ dich_vu.MA_CHI_SO }}" data-status="1" title="Chỉnh sửa">
-                                                <i class="fa fa-edit"></i>
-                                            </button>
+                            
+                            {% if dich_vu_list %}
+                                <tbody id="service-details">
+                                    {% for dich_vu in dich_vu_list %}
+                                        <tr id="dichvu-{{ dich_vu.MA_CHI_SO }}" class="hover:bg-gray-50 transition duration-200 border-b border-gray-100" data-gia-dich-vu="{{ dich_vu.GIA_DICH_VU|default:'0' }}" ... >
+                                            <td class="p-2 text-center text-gray-700 text-sm">{{ forloop.counter }}</td>
+                                            <td class="p-2 text-center text-gray-700 text-sm">{{ dich_vu.TEN_DICH_VU }}</td>
+                                            
+                                            <td class="p-2 text-center">
+                                                {% if dich_vu.MA_CHI_SO %}
+                                                    <input type="hidden" name="chi_so_dich_vu[{{ forloop.counter0 }}][MA_CHI_SO]" value="{{ dich_vu.MA_CHI_SO }}">
+                                                {% endif %}
+                                                <input type="hidden" name="chi_so_dich_vu[{{ forloop.counter0 }}][MA_DICH_VU]" value="{{ dich_vu.MA_DICH_VU }}">
+                                                <input type="number" name="chi_so_dich_vu[{{ forloop.counter0 }}][CHI_SO_CU]" 
+                                                    value="{{ dich_vu.CHI_SO_CU|default:'0' }}" 
+                                                    class="w-full text-center border border-gray-200 rounded-lg py-1 px-2 text-sm bg-gray-50 focus:ring-2 focus:ring-blue-500" 
+                                                    id="CHISOCU-{{ forloop.counter0 }}" step="0.01" readonly>
+                                            </td>
+                                            <td class="p-2 text-center">
+                                                <input type="number" name="chi_so_dich_vu[{{ forloop.counter0 }}][CHI_SO_MOI]" 
+                                                    value="{{ dich_vu.CHI_SO_MOI|default:'0' }}" 
+                                                    class="w-full text-center border border-gray-200 rounded-lg py-1 px-2 text-sm focus:ring-2 focus:ring-blue-500" 
+                                                    id="CHISOMOI-{{ forloop.counter0 }}" step="0.01">
+                                            </td>
+                                            <td class="p-2 text-center">
+                                                <input type="number" name="chi_so_dich_vu[{{ forloop.counter0 }}][SO_DICH_VU]" 
+                                                    value="{{ dich_vu.SO_DICH_VU|default:'0' }}" 
+                                                    class="w-full text-center border border-gray-200 rounded-lg py-1 px-2 text-sm bg-gray-50 focus:ring-2 focus:ring-blue-500" 
+                                                    id="SODICHVUTONG-{{ forloop.counter0 }}" step="0.01" readonly>
+                                            </td>
+                                            <td class="p-2 text-center">
+                                                <input type="number" name="chi_so_dich_vu[{{ forloop.counter0 }}][THANH_TIEN]" 
+                                                    value="{{ dich_vu.THANH_TIEN|default:'0' }}" 
+                                                    class="w-full text-center border border-gray-200 rounded-lg py-1 px-2 text-sm bg-gray-50 focus:ring-2 focus:ring-blue-500" 
+                                                    id="TIENDICHVUGHIDUOC-{{ forloop.counter0 }}" step="0.01" readonly>
+                                            </td>                                       
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            {% else %}
+                                <tbody id="service-details">
+                                    <tr>
+                                        <td colspan="7" class="text-gray-500 text-center py-4 text-sm {% if chi_so_dich_vu %}hidden{% endif %}">
+                                            Không có thông tin dịch vụ.
                                         </td>
                                     </tr>
-                                {% endfor %}
-                            </tbody>
+                                </tbody>
+                            {% endif %}
+
+                            
                         </table>
-                        <div class="text-gray-500 text-center py-4 text-sm {% if chi_so_dich_vu %}hidden{% endif %}">Không có thông tin dịch vụ.</div>
                     </div>
                 </div>
                 <!-- Deduction Management -->
@@ -193,6 +197,7 @@
                 </div>
             </div>
         </div>
+        
         <div class="grid grid-cols-1 p-6 lg:grid-cols-1">
             <!-- Tổng kết hóa đơn -->
             <div class="bg-gray-100 p-5 rounded-lg border border-gray-200">
@@ -205,7 +210,7 @@
                         <label for="TIEN_PHONG" class="block text-sm font-medium text-gray-600 mb-1">Tiền phòng</label>
                         <input name="TIEN_PHONG" id="TIEN_PHONG" type="number" step="0.01"
                                class="w-full border border-gray-300 rounded-xl py-2 px-4 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white shadow-inner"
-                               value="{{ form_data.TIEN_PHONG|default:'0.00' }}">
+                               value="{{ hop_dong_hieu_luc.GIA_THUE|default:'0.00' }}">
                     </div>
                     <div>
                         <label for="TIEN_DICH_VU" class="block text-sm font-medium text-gray-600 mb-1">Tiền dịch vụ</label>
@@ -217,7 +222,7 @@
                         <label for="TIEN_COC" class="block text-sm font-medium text-gray-600 mb-1">Tiền cọc</label>
                         <input name="TIEN_COC" id="TIEN_COC" type="number" step="0.01"
                                class="w-full border border-gray-300 rounded-xl py-2 px-4 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white shadow-inner"
-                               value="{{ form_data.TIEN_COC|default:'0.00' }}">
+                               value="{{ hop_dong_hieu_luc.GIA_COC_HD|default:'0.00' }}">
                     </div>
                     <div>
                         <label for="TIEN_KHAU_TRU" class="block text-sm font-medium text-gray-600 mb-1">Tiền khấu trừ</label>
@@ -280,6 +285,5 @@
         </div>
     </div>
 </div>
-<script src="{% static 'js/admin/hoadon/themsua_hoadon.js' %}"></script>
 <script src="{% static 'js/admin/hoadon/chon_phong.js' %}"></script>
-{% endblock %}
+<script src="{% static 'js/admin/hoadon/themsua_hoadon.js' %}"></script>

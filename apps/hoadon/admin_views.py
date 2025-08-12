@@ -14,6 +14,7 @@ from django.views.decorators.csrf import csrf_exempt
 from dateutil.relativedelta import relativedelta
 from django.db import transaction
 from django.contrib import messages
+from django.forms.models import model_to_dict
 
 
 
@@ -127,7 +128,7 @@ def hoadon_list(request):
     }
     return render(request, 'admin/hoadon/danhsach_hoadon.html', context)
 
-def them_hoa_don(request):
+def them_hoa_don(request, ma_phong=None):
     
     if request.method == 'POST':
         try:
@@ -142,13 +143,14 @@ def them_hoa_don(request):
                     'TIEN_DICH_VU': request.POST.get('TIEN_DICH_VU'),
                     'TIEN_COC': request.POST.get('TIEN_COC'),
                     'TIEN_KHAU_TRU': request.POST.get('TIEN_KHAU_TRU'),
-                    'TONG_TIEN': request.POST.get('TONG_TIEN')
+                    'TONG_TIEN': request.POST.get('TONG_TIEN'),
+                    'MA_HOP_DONG': request.POST.get('MA_HOP_DONG', None)  # Lấy MA_HOP_DONG nếu có
                 }
                 
 
                 chi_so_dich_vu_list = []
                 index = 0
-                while f'chi_so_dich_vu[{index}][MA_CHI_SO]' in request.POST:
+                while f'chi_so_dich_vu[{index}][CHI_SO_CU]' in request.POST:
                     chi_so = {
                         'MA_DICH_VU': request.POST.get(f'chi_so_dich_vu[{index}][MA_DICH_VU]', ''),
                         'MA_CHI_SO': request.POST.get(f'chi_so_dich_vu[{index}][MA_CHI_SO]', ''),
@@ -202,11 +204,23 @@ def them_hoa_don(request):
 
     # Hiển thị form thêm
     phong_tro = get_phongtro_list()
-    
+    # Lấy phòng để truy xuất khu vực
+    phong = PhongTro.objects.get(MA_PHONG=ma_phong)
+    hop_dong_hieu_luc = phong.get_hop_dong_con_hieu_luc()
+    # Lấy danh sách dịch vụ áp dụng
+    dich_vu_list, dich_vu_errors = get_dich_vu_ap_dung(phong.MA_KHU_VUC, ma_phong)
+    if dich_vu_errors:
+        return JsonResponse({'success': False, 'error': dich_vu_errors[0]}, status=500)
+    # return JsonResponse(model_to_dict(hop_dong_hieu_luc))
+    # return JsonResponse(dict(hop_dong_hieu_luc))
     context = {
         'phong_tro': phong_tro,
         'trang_thai_choices': ['Đã thu tiền', 'Chưa thu tiền', 'Đang nợ', 'Đã hủy'],
         'loai_hoa_don_choices': ['Hóa đơn phòng', 'Hóa đơn điện', 'Hóa đơn nước', 'Hóa đơn khác'],
+        'ma_phong': ma_phong,
+        'phong': phong,
+        'dich_vu_list': dich_vu_list,
+        'hop_dong_hieu_luc': hop_dong_hieu_luc,
     }
     return render(request, 'admin/hoadon/themsua_hoadon.html', context)
 
@@ -375,3 +389,11 @@ def xoa_hoa_don(request, ma_hoa_don):
 
     messages.error(request, 'Phương thức không hợp lệ.')
     return redirect('hoadon:hoadon_list')
+
+
+
+
+
+def hoadon_detail(request, ma_hoa_don):
+    hoadon = get_object_or_404(HoaDon, MA_HOA_DON=ma_hoa_don)
+    return render(request, 'admin/hoadon/chitiet_hoadon.html', {'hoadon': hoadon})

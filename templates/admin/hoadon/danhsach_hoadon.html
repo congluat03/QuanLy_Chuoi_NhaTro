@@ -2,58 +2,6 @@
 {% load static %}
 
 {% block content_body %}
-<style>
-    /* Giữ nguyên CSS từ Blade */
-    .menu-items {
-        position: absolute;
-        top: 100%;
-        right: 0;
-        background-color: #ffffff;
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        min-width: 220px;
-        max-height: 300px;
-        overflow-y: auto;
-        z-index: 9999;
-        padding: 8px 0;
-        opacity: 0;
-        transform: translateY(-10px);
-        transition: opacity 0.2s ease, transform 0.2s ease;
-    }
-    .menu-items.show {
-        opacity: 1;
-        transform: translateY(0);
-    }
-    .menu-items a {
-        display: flex;
-        align-items: center;
-        padding: 10px 15px;
-        color: #333333;
-        font-size: 14px;
-        text-decoration: none;
-    }
-    .menu-items a:hover {
-        background-color: #f1f5f9;
-    }
-    td, .tooltipHoaDon {
-        position: relative;
-    }
-    #table_khachthue th {
-        position: sticky;
-        top: 0;
-        z-index: 10;
-        background-color: #e0f2fe;
-    }
-    .rental-theme-bg {
-        background: linear-gradient(45deg, #f8fafc 25%, transparent 25%),
-                    linear-gradient(-45deg, #f8fafc 25%, transparent 25%),
-                    linear-gradient(45deg, transparent 75%, #f8fafc 75%),
-                    linear-gradient(-45deg, transparent 75%, #f8fafc 75%);
-        background-size: 20px 20px;
-        background-color: #f1f5f9;
-    }
-</style>
 
 <div class="max-w-7xl mx-auto">
     <div class="bg-white shadow-xl rounded-xl p-6 sm:p-8">
@@ -63,7 +11,7 @@
                 Quản lý Hóa đơn
             </h4>
             <div class="flex flex-wrap sm:flex-nowrap items-center gap-3">
-                <a href="{% url 'hoadon:them_hoa_don' %}" class="inline-flex items-center px-5 py-2.5 bg-blue-700 text-white text-sm font-semibold rounded-lg hover:bg-blue-800 transition duration-300 shadow-md whitespace-nowrap">
+                <a href="{% url 'hoadon:them_hoa_don' 1 %}" class="inline-flex items-center px-5 py-2.5 bg-blue-700 text-white text-sm font-semibold rounded-lg hover:bg-blue-800 transition duration-300 shadow-md whitespace-nowrap">
                     <i class="fas fa-plus-circle mr-2" aria-hidden="true"></i> Thêm hóa đơn mới
                 </a>
                 <button class="inline-flex items-center px-5 py-2.5 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 transition duration-300 shadow-md whitespace-nowrap" type="button">
@@ -167,37 +115,53 @@
                                     {{ status_mapping.hoa_don.TRANG_THAI_HDON.text }}
                                 </span>
                             </td>
-                            <td class="relative p-3">
-                                <div class="tooltipHoaDon cursor-pointer p-2 hover:bg-gray-200 rounded-lg transition duration-200" onclick="toggleMenuHoaDon({{ hoa_don.MA_HOA_DON }})">
-                                    <i class="fa fa-ellipsis-v text-blue-600 text-base" aria-hidden="true"></i>
-                                </div>
-                                <div id="menuHoaDon-{{ hoa_don.MA_HOA_DON }}" class="absolute right-0 mt-2 w-64 origin-top-right bg-white border border-gray-200 rounded-xl shadow-lg z-20 hidden">
-                                    <a href="#" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 transition" onclick="showChucNangHoaDon('chitiet', {{ hoa_don.MA_HOA_DON }})">
-                                        <i class="fa fa-eye mr-2 text-blue-600"></i> Xem chi tiết hóa đơn
-                                    </a>
-                                    <a href="{% url 'hoadon:sua_hoa_don' hoa_don.MA_HOA_DON %}" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 transition">
-                                        <i class="fa fa-edit mr-2 text-blue-600"></i> Chỉnh sửa hóa đơn
-                                    </a>
-                                    <a href="#" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 transition" onclick="thanhToanHoaDon({{ hoa_don.MA_HOA_DON }})">
-                                        <i class="fa fa-credit-card mr-2 text-blue-600"></i> Thanh toán
-                                    </a>
-                                    <a href="#" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 transition" onclick="thanhToanHoaDon({{ hoa_don.MA_HOA_DON }})">
-                                        <i class="fa fa-print mr-2 text-blue-600"></i> In hóa đơn
-                                    </a>
-                                    <a href="#" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 transition" onclick="thanhToanHoaDon({{ hoa_don.MA_HOA_DON }})">
-                                        <i class="fa fa-share-alt mr-2 text-blue-600"></i> Chia sẻ hóa đơn
-                                    </a>
-                                    <a href="#" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 transition" onclick="huyHoaDon({{ hoa_don.MA_HOA_DON }})">
-                                        <i class="fa fa-paper-plane mr-2 text-blue-600"></i> Gửi cho khách thuê
-                                    </a>
-                                    <a href="#" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 transition" onclick="huyHoaDon({{ hoa_don.MA_HOA_DON }})">
-                                        <i class="fa fa-ban mr-2 text-blue-600"></i> Hủy hóa đơn
-                                    </a>
-                                    <a href="#" class="flex items-center px-4 py-2 text-red-600 hover:bg-red-50 transition" onclick="XoaHopDong({{ hoa_don.MA_HOA_DON }})">
-                                        <i class="fa fa-trash mr-2 text-red-600"></i> Xóa
-                                    </a>
-                                </div>
-                            </td>
+                           <td class="p-3 relative">
+                            <!-- Nút mở menu -->
+                            <div class="inline-flex items-center justify-center w-8 h-8 bg-gray-200 rounded-full cursor-pointer hover:bg-gray-300 transition tooltipHoaDon" 
+                                onclick="toggleMenuHoaDon({{ hoa_don.MA_HOA_DON }})">
+                                <i class="fas fa-ellipsis-v text-gray-600" aria-hidden="true"></i>
+                            </div>
+
+                            <!-- Menu -->
+                            <div id="menuHoaDon-{{ hoa_don.MA_HOA_DON }}" 
+                                onmouseleave="hideMenuHoaDon({{ hoa_don.MA_HOA_DON }})" 
+                                class="absolute right-0 mt-2 w-64 origin-top-right bg-white border border-gray-200 rounded-xl shadow-lg z-20 hidden">
+                                
+                                <a href="{% url 'hoadon:hoadon_detail' hoa_don.MA_HOA_DON %}" 
+                                class="block px-4 py-2 text-gray-700 text-sm hover:bg-gray-100 rounded flex items-center">
+                                    <i class="fas fa-file-invoice mr-2"></i> Xem chi tiết hóa đơn
+                                </a>                          
+                                <a href="#" 
+                                class="block px-4 py-2 text-gray-700 text-sm hover:bg-gray-100 rounded flex items-center"
+                                onclick="toggleShareInvoiceModal(true, '/admin/hoadon/chitiet-hoadon/{{ hoa_don.MA_HOA_DON }}')">
+                                    <i class="fas fa-share-alt mr-2"></i> Chia sẻ hóa đơn
+                                </a>
+
+                                <a href="#" 
+                                class="block px-4 py-2 text-gray-700 text-sm hover:bg-gray-100 rounded flex items-center"
+                                onclick="guiHoaDonChoKhach({{ hoa_don.MA_HOA_DON }})">
+                                    <i class="fas fa-paper-plane mr-2"></i> Gửi cho khách thuê
+                                </a>
+
+                                <a href="#" 
+                                class="block px-4 py-2 text-gray-700 text-sm hover:bg-gray-100 rounded flex items-center"
+                                onclick="thanhToanHoaDon({{ hoa_don.MA_HOA_DON }})">
+                                    <i class="fas fa-credit-card mr-2"></i> Thanh toán
+                                </a>
+
+                                <a href="{% url 'hoadon:sua_hoa_don' hoa_don.MA_HOA_DON %}" 
+                                class="block px-4 py-2 text-gray-700 text-sm hover:bg-gray-100 rounded flex items-center">
+                                    <i class="fas fa-edit mr-2"></i> Chỉnh sửa hóa đơn
+                                </a>
+
+                                <a href="#" 
+                                    class="block px-4 py-2 text-red-600 text-sm hover:bg-red-50 rounded flex items-center" 
+                                    onclick="xoaHoaDon({{ hoa_don.MA_HOA_DON }})">
+                                    <i class="fas fa-trash mr-2 text-red-600"></i> Xóa hóa đơn
+                                </a>
+                            </div>
+                        </td>
+
                         </tr>
                     {% endfor %}
                 </tbody>
@@ -234,6 +198,52 @@
             </div>
         </div>
     </div>
+<div id="shareInvoiceModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+  <div class="bg-white w-full max-w-lg rounded-lg shadow-lg p-6 relative">
+    <!-- Nút đóng -->
+    <button onclick="toggleShareInvoiceModal(false)" class="absolute top-2 right-3 text-gray-500 hover:text-black">
+      <i class="fas fa-times"></i>
+    </button>
 
+    <h2 class="text-xl font-semibold mb-4">Chia sẻ hóa đơn</h2>
+
+    <!-- Link chia sẻ & nút sao chép -->
+    <div class="flex items-center bg-gray-100 rounded px-3 py-2 mb-4">
+      <input id="shareInvoiceLink" type="text" readonly class="w-full border rounded px-3 py-1 text-sm" />
+      <button onclick="copyInvoiceShareLink()" 
+              class="text-blue-600 hover:text-blue-800 text-sm font-medium ml-3">Sao chép</button>
+    </div>
+
+    <!-- Mã QR -->
+    <div class="text-center mb-4">
+      <img id="invoiceQRCode" src="" alt="QR Code" class="mx-auto border rounded" />
+    </div>
+  </div>
+</div>
+<script>
+  function toggleShareInvoiceModal(show, url = '') {
+    const modal = document.getElementById('shareInvoiceModal');
+    if (show) {
+      const shareLink = url.startsWith('http') ? url : window.location.origin + url;
+      document.getElementById('shareInvoiceLink').value = shareLink;
+      generateInvoiceQRCode(shareLink);
+      modal.classList.remove('hidden');
+    } else {
+      modal.classList.add('hidden');
+    }
+  }
+
+  function copyInvoiceShareLink() {
+    const input = document.getElementById('shareInvoiceLink');
+    input.select();
+    document.execCommand('copy');
+    alert('Đã sao chép liên kết hóa đơn!');
+  }
+
+  function generateInvoiceQRCode(link) {
+    const qrImg = document.getElementById('invoiceQRCode');
+    qrImg.src = `https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=${encodeURIComponent(link)}`;
+  }
+</script>
 <script src="{% static 'js/admin/hoadon/hoadon.js' %}"></script>
 {% endblock %}

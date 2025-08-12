@@ -1,6 +1,7 @@
 from django.db import models
 from django.core.exceptions import ValidationError
 from apps.nhatro.models import KhuVuc
+from datetime import date
 
 # Create your models here.
 # Hằng số trạng thái
@@ -69,6 +70,12 @@ class PhongTro(models.Model):
             return 0.00, ['Phòng không tồn tại']
         except Exception as e:
             return 0.00, [f'Lỗi khi lấy tiền cọc: {str(e)}']
+    def get_hop_dong_con_hieu_luc(self):
+        today = date.today()
+        return self.hopdong.filter(
+            NGAY_NHAN_PHONG__lte=today,
+            NGAY_TRA_PHONG__gte=today
+        ).order_by('-NGAY_LAP_HD').first()
 
 # Model for cocphong
 class CocPhong(models.Model):
@@ -141,3 +148,62 @@ class CocPhong(models.Model):
         coc_phong.full_clean()
         coc_phong.save()
         return coc_phong
+
+class TAISAN(models.Model):
+    MA_TAI_SAN = models.IntegerField(primary_key=True)
+    TEN_TAI_SAN = models.CharField(max_length=100, null=True, blank=True)
+    MO_TA = models.TextField(null=True, blank=True)
+    DON_VI_TS = models.CharField(max_length=20, default='cái', null=True, blank=True)
+    GIA_TS = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+
+    class Meta:
+        db_table = 'taisan'
+
+class TAISANPHONG(models.Model):
+    MA_TAI_SAN_PHONG = models.IntegerField(primary_key=True)
+    MA_PHONG = models.ForeignKey(
+        'PhongTro',
+        on_delete=models.CASCADE,
+        db_column='MA_PHONG',
+        related_name='taisanphong'
+    )
+    MA_TAI_SAN = models.ForeignKey(TAISAN, on_delete=models.SET_NULL, null=True, db_column='MA_TAI_SAN')
+    SO_LUONG = models.IntegerField(null=True, blank=True)
+    TINH_TRANG = models.CharField(max_length=50, null=True, blank=True)
+    NGAY_KIEM_KE = models.DateField(null=True, blank=True)
+    GHI_CHU = models.TextField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'taisanphong'
+
+class TAISANBANGIAO(models.Model):
+    MA_BAN_GIAO = models.IntegerField(primary_key=True)
+    MA_HOP_DONG = models.ForeignKey(
+        'hopdong.HopDong',
+        on_delete=models.CASCADE,
+        db_column='MA_HOP_DONG',
+        related_name='taisanbangiao'
+    )
+    MA_TAI_SAN = models.ForeignKey(TAISAN, on_delete=models.SET_NULL, null=True, db_column='MA_TAI_SAN')
+    SO_LUONG = models.IntegerField(null=True, blank=True)
+    TINH_TRANG_GIAO = models.CharField(max_length=100, null=True, blank=True)
+    GHI_CHU = models.TextField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'taisanbangiao'
+    @classmethod
+    def tao_danh_sach_tai_san_ban_giao(cls, hop_dong, ds_tai_san: list):
+        danh_sach = []
+        for item in ds_tai_san:
+            if not item.get('MA_TAI_SAN'):
+                continue
+            ts = cls(
+                MA_HOP_DONG=hop_dong,
+                MA_TAI_SAN_id=item['MA_TAI_SAN'],
+                SO_LUONG=item.get('SO_LUONG') or 1,
+                TINH_TRANG_GIAO='Tốt',  # hoặc để None
+                GHI_CHU=''
+            )
+            danh_sach.append(ts)
+        cls.objects.bulk_create(danh_sach)
+

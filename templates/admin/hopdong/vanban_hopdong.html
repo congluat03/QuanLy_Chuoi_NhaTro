@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hợp đồng thuê phòng</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @media print {
+            .no-print { display: none; }
+        }
+    </style>
+</head>
+<body class="font-sans bg-gray-100">
+    <div class="max-w-4xl mx-auto bg-white p-8 my-8 shadow-lg print:shadow-none">
+        <div class="text-center">
+            <h1 class="text-2xl font-bold uppercase">Cộng hòa xã hội chủ nghĩa Việt Nam</h1>
+            <h3 class="text-lg italic">Độc lập - Tự do - Hạnh phúc</h3>
+            <hr class="my-4 border-gray-400">
+            <h2 class="text-xl font-bold uppercase">Hợp đồng thuê phòng trọ</h2>
+            <p class="text-base">Số: {{ hopdong.MA_HOP_DONG }}/{{ hopdong.NGAY_LAP_HD|date:"Y" }}</p>
+        </div>
+
+        <div class="mt-6">
+            <p class="text-base">Hôm nay, ngày {{ hopdong.NGAY_LAP_HD|date:"d" }} tháng {{ hopdong.NGAY_LAP_HD|date:"m" }} năm {{ hopdong.NGAY_LAP_HD|date:"Y" }}, tại {{ dia_chi_phong_tro|default:"Địa chỉ phòng trọ" }}, chúng tôi gồm có:</p>
+        </div>
+
+        <div class="mt-6">
+            <h3 class="text-lg font-semibold uppercase">Bên cho thuê (Bên A):</h3>
+            <ul class="list-disc ml-6">
+                <li><span class="font-medium">Họ và tên:</span> {{ ten_chu_nha|default:"Tên chủ nhà" }}</li>
+                <li><span class="font-medium">Địa chỉ:</span> {{ dia_chi_chu_nha|default:"Địa chỉ chủ nhà" }}</li>
+                <li><span class="font-medium">Số CMND/CCCD:</span> {{ so_cmnd_chu_nha|default:"Số CMND/CCCD" }}</li>
+                <li><span class="font-medium">Điện thoại:</span> {{ sdt_chu_nha|default:"Số điện thoại" }}</li>
+            </ul>
+        </div>
+
+        <div class="mt-6">
+            <h3 class="text-lg font-semibold uppercase">Bên thuê (Bên B):</h3>
+            <ul class="list-disc ml-6">
+                <li><span class="font-medium">Họ và tên:</span> {{ khachthue.HO_TEN_KT|default:"Tên khách thuê" }}</li>
+                <li><span class="font-medium">Ngày sinh:</span> {{ khachthue.NGAY_SINH_KT|date:"d/m/Y"|default:"Không có" }}</li>
+                <li><span class="font-medium">Số CMND/CCCD:</span> {{ cccdcmnd.SO_CMND_CCCD|default:"Không có" }}</li>
+                <li><span class="font-medium">Ngày cấp:</span> {{ cccdcmnd.NGAY_CAP|date:"d/m/Y"|default:"Không có" }}</li>
+                <li><span class="font-medium">Địa chỉ thường trú:</span> {{ cccdcmnd.DIA_CHI_THUONG_TRU|default:"Không có" }}</li>
+                <li><span class="font-medium">Số điện thoại:</span> {{ khachthue.SDT_KT|default:"Không có" }}</li>
+                <li><span class="font-medium">Email:</span> {{ khachthue.EMAIL_KT|default:"Không có" }}</li>
+            </ul>
+        </div>
+
+        <div class="mt-6">
+            <p class="text-base italic">Hai bên cùng thỏa thuận ký kết hợp đồng thuê phòng trọ với các điều khoản sau:</p>
+        </div>
+
+        <div class="mt-6">
+            <h3 class="text-lg font-semibold uppercase">Điều 1: Đối tượng hợp đồng</h3>
+            <ol class="list-decimal ml-6">
+                <li>Bên A đồng ý cho bên B thuê phòng trọ số {{ hopdong.MA_PHONG }} thuộc địa chỉ {{ dia_chi_phong_tro|default:"Địa chỉ phòng trọ" }}.</li>
+                <li>Mục đích sử dụng: Để ở.</li>
+                <li>Số lượng người ở: {{ hopdong.SO_THANH_VIEN|default:"Không xác định" }} người.</li>
+                <li>Danh sách tài sản bàn giao kèm theo phòng trọ:
+                    <ul class="list-disc ml-6 mt-2">
+                        {% for taisan in taisanbangiao %}
+                        <li>{{ taisan.MA_TAI_SAN.TEN_TAI_SAN }}: {{ taisan.SO_LUONG }} {{ taisan.MA_TAI_SAN.DON_VI_TS }}, tình trạng: {{ taisan.TINH_TRANG_GIAO|default:"Tốt" }}</li>
+                        {% empty %}
+                        <li>Không có tài sản bàn giao.</li>
+                        {% endfor %}
+                    </ul>
+                </li>
+                <li>Tình trạng phòng trọ: Đảm bảo đủ điều kiện sử dụng, sạch sẽ, không hư hỏng.</li>
+            </ol>
+        </div>
+
+        <div class="mt-6">
+            <h3 class="text-lg font-semibold uppercase">Điều 2: Thời hạn thuê và ngày nhận/trả phòng</h3>
+            <ol class="list-decimal ml-6">
+                <li>Thời hạn thuê: {{ hopdong.THOI_HAN_HD|default:"Không xác định" }}.</li>
+                <li>Ngày nhận phòng: {{ hopdong.NGAY_NHAN_PHONG|date:"d/m/Y"|default:"Không xác định" }}.</li>
+                <li>Ngày trả phòng: {{ hopdong.NGAY_TRA_PHONG|date:"d/m/Y"|default:"Không xác định" }}.</li>
+                <li>Trường hợp bên B muốn gia hạn hợp đồng, phải thông báo trước cho bên A ít nhất 30 ngày trước khi hợp đồng hết hạn.</li>
+            </ol>
+        </div>
+
+        <div class="mt-6">
+            <h3 class="text-lg font-semibold uppercase">Điều 3: Giá thuê và phương thức thanh toán</h3>
+            <ol class="list-decimal ml-6">
+                <li>Giá thuê phòng: {{ hopdong.GIA_THUE|floatformat:2 }} VNĐ/tháng.</li>
+                <li>Tiền đặt cọc: {{ hopdong.GIA_COC_HD|floatformat:2|default:"0" }} VNĐ, được hoàn trả khi hết hợp đồng nếu không có thiệt hại xảy ra.</li>
+                <li>Chu kỳ thanh toán: {{ hopdong.CHU_KY_THANH_TOAN|default:"Không xác định" }}.</li>
+                <li>Ngày thu tiền: {{ hopdong.NGAY_THU_TIEN|default:"Không xác định" }} mỗi tháng.</li>
+                <li>Phương thức thanh toán: {{ hopdong.PHUONG_THUC_THANH_TOAN|default:"Không xác định" }}.</li>
+                <li>Các dịch vụ sử dụng kèm theo:
+                    <ul class="list-disc ml-6 mt-2">
+                        {% for dv in dichvu_list %}
+                        <li>
+                            {{ dv.dichvu.TEN_DICH_VU }}: 
+                            Giá {{ dv.gia|floatformat:2 }} VNĐ/{{ dv.don_vi|default:"Không xác định" }}
+                            {% if dv.nguon == "ChiSoDichVu" %}
+                            , chỉ số cũ: {{ dv.chi_so_cu|default:"0" }}, chỉ số mới: {{ dv.chi_so_moi|default:"0" }}, ngày ghi: {{ dv.ngay_ghi_cs|date:"d/m/Y"|default:"Không xác định" }}
+                            {% else %}
+                            , áp dụng từ: {{ dv.ngay_ghi_cs|date:"d/m/Y"|default:"Không xác định" }}
+                            {% endif %}
+                        </li>
+                        {% empty %}
+                        <li>Không sử dụng dịch vụ.</li>
+                        {% endfor %}
+                    </ul>
+                </li>
+            </ol>
+        </div>
+
+        <div class="mt-6">
+            <h3 class="text-lg font-semibold uppercase">Điều 4: Quyền và nghĩa vụ của bên A</h3>
+            <ol class="list-decimal ml-6">
+                <li>Giao phòng trọ và tài sản bàn giao đúng thời gian, tình trạng như đã thỏa thuận.</li>
+                <li>Đảm bảo quyền sử dụng hợp pháp của bên B trong thời hạn hợp đồng.</li>
+                <li>Cung cấp đầy đủ các dịch vụ như đã cam kết.</li>
+                <li>Hoàn trả tiền cọc cho bên B khi hết hợp đồng nếu không có vi phạm.</li>
+            </ol>
+        </div>
+
+        <div class="mt-6">
+            <h3 class="text-lg font-semibold uppercase">Điều 5: Quyền và nghĩa vụ của bên B</h3>
+            <ol class="list-decimal ml-6">
+                <li>Thanh toán tiền thuê và các chi phí dịch vụ đúng hạn.</li>
+                <li>Sử dụng phòng trọ đúng mục đích, giữ gìn tài sản và không tự ý sửa chữa, thay đổi kết cấu phòng.</li>
+                <li>Chấp hành các quy định về an ninh, trật tự, vệ sinh môi trường.</li>
+                <li>Bồi thường thiệt hại nếu làm hư hỏng tài sản hoặc phòng trọ.</li>
+            </ol>
+        </div>
+
+        <div class="mt-6">
+            <h3 class="text-lg font-semibold uppercase">Điều 6: Điều khoản chung</h3>
+            <ol class="list-decimal ml-6">
+                <li>Trong thời gian hợp đồng có hiệu lực, nếu một trong hai bên muốn chấm dứt hợp đồng trước thời hạn, phải thông báo trước cho bên còn lại ít nhất 30 ngày và thỏa thuận về các chi phí liên quan.</li>
+                <li>Mọi sửa đổi, bổ sung hợp đồng phải được lập thành văn bản và có chữ ký của cả hai bên.</li>
+                <li>Hợp đồng có hiệu lực từ ngày {{ hopdong.NGAY_LAP_HD|date:"d/m/Y"|default:"Không xác định" }} đến ngày {{ hopdong.NGAY_TRA_PHONG|date:"d/m/Y"|default:"Không xác định" }}.</li>
+                <li>Ghi chú: {{ hopdong.GHI_CHU_HD|default:"Không có" }}.</li>
+            </ol>
+        </div>
+
+        <div class="mt-6">
+            <h3 class="text-lg font-semibold uppercase">Điều 7: Cam kết của hai bên</h3>
+            <p>Hai bên cam kết thực hiện đúng các điều khoản trong hợp đồng. Mọi tranh chấp phát sinh sẽ được giải quyết trên tinh thần thương lượng, nếu không đạt được thỏa thuận sẽ đưa ra tòa án có thẩm quyền tại {{ dia_phuong|default:"Địa phương" }}.</p>
+            <p class="mt-2"><strong>Hợp đồng được lập thành 02 bản, mỗi bên giữ 01 bản có giá trị pháp lý như nhau.</strong></p>
+        </div>
+
+        <div class="mt-8 flex justify-between">
+            <div class="text-center">
+                <p class="font-semibold">Đại diện bên A</p>
+                <p class="mt-12">(Ký, ghi rõ họ tên)</p>
+                <p>{{ ten_chu_nha|default:"Tên chủ nhà" }}</p>
+            </div>
+            <div class="text-center">
+                <p class="font-semibold">Đại diện bên B</p>
+                <p class="mt-12">(Ký, ghi rõ họ tên)</p>
+                <p>{{ khachthue.HO_TEN_KT|default:"Tên khách thuê" }}</p>
+            </div>
+        </div>
+
+        <div class="mt-8 text-center no-print">
+            <button onclick="window.print()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">In hợp đồng</button>
+        </div>
+
+    </div>
+</body>
+</html>

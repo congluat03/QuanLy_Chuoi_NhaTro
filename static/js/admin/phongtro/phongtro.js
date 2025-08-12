@@ -103,25 +103,27 @@ function showModalPhongTro(type, maPhongTro = null, khuVucId = null, tenPhong = 
         console.error("Invalid modal type:", type);
         return;
     }
-    
+    // alert(url);
     modalLabel.innerText = getModalTitle(type, maPhongTro, tenPhong);
     hidePhongTroMenu(khuVucId, maPhongTro);
     
     showLoadingSpinner(modalContentId);
+   
+    openModal("phongTroModal", type);
     
-    openModal("phongTroModal");
     loadModalContent(url, modalContentId, type);
 }
 // Hàm lấy URL tương ứng theo loại modal
 function getModalUrl(type, khuVucId, maPhongTro) {
     return {
-        HopDong: `/admin/hopdong/create/${maPhongTro}`,
-        ChonHoaDon: `/admin/hoadon/viewLuaChonHoaDon/${maPhongTro}`,
+        HopDong: `/admin/phongtro/lap-hop-dong/${maPhongTro}`,
+        ChonHoaDon: `/admin/hoadon/them/${maPhongTro}/`,
         CoPhong: `/admin/phongtro/coc-giu-cho/${maPhongTro}/`,
         info: `/admin/phongtro/viewInfo/${maPhongTro}`,
         chinhsua: `/admin/phongtro/view-themsua-phongtro/${khuVucId}/edit/${maPhongTro}`,
         them: `/admin/phongtro/view-themsua-phongtro/${khuVucId}/single`,
-        themnhieu: `/admin/phongtro/view-themsua-phongtro/${khuVucId}/multiple`
+        themnhieu: `/admin/phongtro/view-themsua-phongtro/${khuVucId}/multiple`,
+        ghi_so_dich_vu: `/admin/phongtro/ghi-so-dich-vu/${maPhongTro}`,
     }[type] || null;
 }
 // Hàm tải và hiển thị nội dung modal
@@ -129,7 +131,27 @@ function loadModalContent(url, containerId, type) {
     fetch(url)
         .then(response => response.ok ? response.text() : Promise.reject(new Error(`HTTP error! Status: ${response.status}`)))
         .then(data => {
-            document.getElementById(containerId).innerHTML = data;
+            const container = document.getElementById(containerId);
+            container.innerHTML = data;
+            // Tìm tất cả thẻ <script> trong HTML mới
+            const scripts = container.querySelectorAll("script");
+
+            scripts.forEach((script) => {
+                const newScript = document.createElement("script");
+
+                // Nếu là script có src (file js)
+                if (script.src) {
+                    newScript.src = script.src;
+                } else {
+                    newScript.textContent = script.textContent;
+                }
+
+                // Sao chép các thuộc tính khác (nếu cần)
+                if (script.type) newScript.type = script.type;
+
+                // Gắn vào DOM để thực thi
+                document.head.appendChild(newScript);
+            });
             // const initFn = initFunctions[type];
             // if (typeof initFn === "function") {
             //     initFn(); // gọi hàm khởi tạo nếu có
@@ -141,10 +163,22 @@ function loadModalContent(url, containerId, type) {
         });
 }
 // Hàm tiện ích mở modal
-function openModal(modalId) {
+function openModal(modalId, type) {  
     const modal = document.getElementById(modalId);
+    const modalContainer = document.getElementById("modalContainerPT");
+    if (modalContainer) {
+        // Mặc định là max-w-2xl (khoảng 672px)
+        modalContainer.classList.remove("max-w-3xl", "max-w-6xl");
+        if (type === "HopDong" || type === "ChonHoaDon") {
+            modalContainer.classList.add("max-w-6xl");
+        } else {
+            modalContainer.classList.add("max-w-3xl");
+        }
+    }
+
+
     modal.classList.remove("hidden");
-    modal.classList.add("flex");
+    // modal.classList.add("flex");
 }
 
 // Hàm hiển thị spinner loading

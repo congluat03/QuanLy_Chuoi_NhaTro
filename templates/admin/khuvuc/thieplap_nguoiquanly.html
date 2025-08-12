@@ -20,7 +20,7 @@
             <option value="">-- Chọn người quản lý --</option>
             {% for nguoi_quan_ly in nguoi_quan_lys %}
             <option value="{{ nguoi_quan_ly.MA_QUAN_LY }}">
-                {{ nguoi_quan_ly.TEN_QUAN_LY|default:"Quản lý "|add:nguoi_quan_ly.MA_QUAN_LY }}
+                {{ nguoi_quan_ly.TEN_QUAN_LY }}
             </option>
             {% endfor %}
         </select>

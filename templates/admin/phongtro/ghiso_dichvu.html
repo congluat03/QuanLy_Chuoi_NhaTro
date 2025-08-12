@@ -1,0 +1,64 @@
+<!-- DỊCH VỤ -->
+<div>
+    <h4 class="text-lg font-medium text-gray-700 flex items-center mb-4">
+        <i class="fas fa-concierge-bell mr-2 text-blue-500"></i>Dịch vụ đang sử dụng
+    </h4>
+
+    <div class="space-y-4">
+        {% for item in lichsu_dichvu_with_chiso %}
+        {% with lichsu=item.lichsu dich_vu=item.lichsu.MA_DICH_VU latest_chiso=item.latest_chiso %}
+        {% with forloop.counter as index %}
+        <div class="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm hover:shadow-md transition">
+            <div class="flex flex-col sm:flex-row justify-between gap-4">
+
+                <!-- Tên dịch vụ + checkbox -->
+                <div class="flex gap-3 items-start">
+                    <input type="checkbox" name="dichvu[{{ index }}][MA_DICH_VU]" value="{{ dich_vu.MA_DICH_VU }}"
+                        checked
+                        class="mt-1 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 transition">
+
+                    <div>
+                        <p class="text-base font-semibold text-gray-800">{{ dich_vu.TEN_DICH_VU }}</p>
+                        <p class="text-sm text-gray-600 mt-1">
+                            Giá: <span class="text-blue-600 font-medium">{{ lichsu.GIA_DICH_VU_AD|floatformat:2 }} đ</span> / {{ dich_vu.DON_VI_TINH }}
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Nhập chỉ số hoặc số lượng -->
+                <div class="w-full sm:w-auto flex flex-col gap-2">
+                    {% if dich_vu.LOAI_DICH_VU == 'Tính theo chỉ số' %}
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">Chỉ số cũ</label>
+                            <input type="text" name="dichvu[{{ index }}][CHI_SO_CU]" placeholder="Nhập chỉ số cũ"
+                                value="{{ latest_chiso.CHI_SO_MOI|default_if_none:'0' }}"
+                                class="w-full px-3 py-2 border rounded-lg text-sm shadow-sm focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">Chỉ số mới</label>
+                            <input type="text" name="dichvu[{{ index }}][CHI_SO_MOI]" placeholder="Nhập chỉ số mới"
+                                value="0"
+                                class="w-full px-3 py-2 border rounded-lg text-sm shadow-sm focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+                    {% else %}
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">Số lượng</label>
+                        <input type="text" name="dichvu[{{ index }}][SO_LUONG]" placeholder="Nhập số lượng"
+                            value="{{ latest_chiso.SO_LUONG|default_if_none:'1' }}"
+                            class="w-full px-3 py-2 border rounded-lg text-sm shadow-sm focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endwith %}
+        {% endwith %}
+        {% empty %}
+        <div class="p-4 bg-gray-50 text-center text-sm text-gray-500 italic rounded-xl">
+            Không có dịch vụ nào được áp dụng cho phòng này.
+        </div>
+        {% endfor %}
+    </div>
+</div>

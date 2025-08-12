@@ -95,10 +95,10 @@ class HoaDon(models.Model):
         return hoa_don
 
     @staticmethod
-    def save_related_data(hoa_don, phong, ngay_lap_hdon, chi_so_dich_vu_list=None, khau_tru_list=None):
+    def save_related_data(hoa_don, phong, hop_dong, ngay_lap_hdon, chi_so_dich_vu_list=None, khau_tru_list=None):
         errors = []
         if chi_so_dich_vu_list:
-            chi_so_errors = ChiSoDichVu.save_chi_so_dich_vu(phong, chi_so_dich_vu_list, ngay_lap_hdon)
+            chi_so_errors = ChiSoDichVu.save_chi_so_dich_vu(phong, chi_so_dich_vu_list, ngay_lap_hdon, hop_dong)
             errors.extend(chi_so_errors)
         if khau_tru_list:
             khau_tru_errors = KhauTru.save_khau_tru(hoa_don, khau_tru_list)
@@ -111,19 +111,17 @@ class HoaDon(models.Model):
         errors.extend(HoaDon.validate_required_fields(data))
         if errors:
             return None, errors
-        # phong, phong_errors = HoaDon.validate_phong_and_hop_dong(data['MA_PHONG'])
         phong = PhongTro.objects.get(MA_PHONG=data['MA_PHONG'])
-        # errors.extend(phong_errors)
+        hop_dong = HopDong.objects.get(MA_HOP_DONG=data['MA_HOP_DONG'])
         if not phong:
             return None, errors
         ngay_lap_hdon = datetime.strptime(data['NGAY_LAP_HDON'], '%Y-%m-%d')
-        # ngay_lap_hdon, ngay_errors = HoaDon.validate_ngay_lap(data['NGAY_LAP_HDON'])
-        # errors.extend(ngay_errors)
+   
         if not ngay_lap_hdon:
             return None, errors
         hoa_don = HoaDon.create_hoa_don(data, phong, ngay_lap_hdon)
         hoa_don.save()
-        related_errors = HoaDon.save_related_data(hoa_don, phong, ngay_lap_hdon, chi_so_dich_vu_list, khau_tru_list)
+        related_errors = HoaDon.save_related_data(hoa_don, phong, hop_dong, ngay_lap_hdon, chi_so_dich_vu_list, khau_tru_list)
         errors.extend(related_errors)
         return hoa_don, errors
 
@@ -295,3 +293,52 @@ class KhauTru(models.Model):
             khau_tru.save()
         
         return errors
+class PHIEUTHU(models.Model):
+    MA_PHIEU_THU = models.IntegerField(primary_key=True)
+    MA_HOA_DON = models.ForeignKey(
+        'HoaDon',
+        on_delete=models.CASCADE,
+        db_column='MA_HOA_DON',
+        related_name='phieuthu'
+    )
+    MA_KHACH = models.ForeignKey(
+        'khachthue.KhachThue',
+        on_delete=models.CASCADE,
+        db_column='MA_KHACH_THUE',
+        related_name='phieuthu'
+    )
+    NGAY_THU = models.DateField()
+    SO_TIEN = models.DecimalField(max_digits=12, decimal_places=2)
+    HINH_THUC = models.CharField(max_length=50, null=True, blank=True)
+    GHI_CHU = models.TextField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'phieu_thu'
+
+class CHITIETHOADON(models.Model):
+    MA_CHI_TIET = models.IntegerField(primary_key=True)
+    MA_HOA_DON = models.ForeignKey(
+        'HoaDon',
+        on_delete=models.CASCADE,
+        db_column='MA_HOA_DON',
+        related_name='chitiethoadon'
+    )
+    LOAI_KHOAN = models.CharField(
+        max_length=10,
+        choices=[
+            ('PHONG', 'PHONG'),
+            ('DICH_VU', 'DICH_VU'),
+            ('KHAU_TRU', 'KHAU_TRU'),
+            ('COC', 'COC'),
+            ('HOAN_COC', 'HOAN_COC')
+        ],
+        null=True, blank=True
+    )
+    NOI_DUNG = models.CharField(max_length=200, null=True, blank=True)
+    SO_LUONG = models.IntegerField(null=True, blank=True)
+    DON_GIA = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    THANH_TIEN = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    GHI_CHU_CTHD = models.TextField()
+
+    class Meta:
+        db_table = 'chitiethoadon'

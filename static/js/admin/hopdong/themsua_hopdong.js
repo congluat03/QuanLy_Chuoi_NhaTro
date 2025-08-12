@@ -2,7 +2,7 @@
 // Danh sách thời hạn hợp đồng (1 tháng đến 60 tháng)
 const durations = Array.from({ length: 60 }, (_, i) => i + 1).map(n => ({
   display: n % 12 === 0 ? `${n / 12} năm` : `${n} tháng`,
-  value: n
+  value: n % 12 === 0 ? `${n / 12} năm` : `${n} tháng`
 }));
 
 // Danh sách ngày thu tiền (1 đến 31)
@@ -14,7 +14,7 @@ const days = Array.from({ length: 31 }, (_, i) => i + 1).map(n => ({
 // Danh sách kỳ thanh toán (1 tháng đến 12 tháng)
 const paymentTerms = Array.from({ length: 12 }, (_, i) => i + 1).map(n => ({
   display: n === 12 ? `1 năm` : `${n} tháng`,
-  value: n
+  value: n === 12 ? `1 năm` : `${n} tháng`
 }));
 
 // Elements cho thời hạn hợp đồng

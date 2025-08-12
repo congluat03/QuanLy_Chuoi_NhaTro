@@ -51,20 +51,6 @@ function toggleMenuHopDong(khachThueId) {
     };
 }
 
-
-document.addEventListener("click", function (event) {
-    var isClickInsideMenu = event.target.closest(".tooltipHopDong"); // Biểu tượng 3 chấm
-    var isClickInsideBox = event.target.closest(".khuvuc-card");
-
-    // Nếu click không phải vào .khuvuc-card hoặc .menu-icon thì ẩn tất cả các menu
-    if (!isClickInsideMenu && !isClickInsideBox) {
-        var menus = document.querySelectorAll(".menu-items");
-        menus.forEach(function (menu) {
-            menu.style.display = "none";
-        });
-    }
-});
-
 function showChucNangHopDong(type, khachThueId) {
     let url = "";
     let initFunction = null;

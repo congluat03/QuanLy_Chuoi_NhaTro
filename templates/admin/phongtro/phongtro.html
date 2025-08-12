@@ -235,7 +235,7 @@
                       </p>
                       <p class="flex items-center gap-1 text-[11px] text-slate-500 font-medium">
                         <i class="fas fa-hourglass text-yellow text-xs sm-sm"></i>
-                        Thời hạn: {{ hop_dong.THOI_HAN_H|default:"-" }}
+                        Thời hạn: {{ hop_dong.NGAY_TRA_PHONG|date:"d/m/Y" }}
                     </p>
                     </div>
                     <p class="flex items-center gap-1 text-[11px] text-slate-500">
@@ -285,6 +285,12 @@
                 class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:bg-indigo-50 hover:text-indigo-600">
                 <i class="fas fa-door-closed w-3"></i> Kết thúc hợp đồng
               </a>
+              <a href="#"
+                onclick="showModalPhongTro('ghi_so_dich_vu', {{ phong_tro.MA_PHONG }})"
+                class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:bg-indigo-50 hover:text-indigo-600">
+                  <i class="fas fa-pen w-3"></i> Ghi số dịch vụ
+              </a>
+
               <hr class="border-gray-100">
               <form method="POST" action="{% url 'phongtro:xoa_phongtro' phong_tro.MA_PHONG %}" onsubmit="return confirm('Bạn có chắc muốn xóa phòng này không?');">
                 {% csrf_token %}

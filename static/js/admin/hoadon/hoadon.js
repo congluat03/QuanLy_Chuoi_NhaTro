@@ -21,61 +21,60 @@ nextYearButton.addEventListener("click", function () {
     const currentYear = parseInt(activeMonthButton.dataset.year);
     window.location.href = "/hoadon/allHoaDon?month=1&year=" + (currentYear + 1);
 });
-document.addEventListener('click', function (e) {
-    if (!e.target.closest('.tooltipHoaDon') && !e.target.closest('.menu-items')) {
-        document.querySelectorAll('.menu-items').forEach(menu => {
-            menu.classList.add('hidden');
-        });
-    }
-});
-function toggleMenuHoaDon(maHoaDon) {
-    const menu = document.getElementById(`menuHoaDon-${maHoaDon}`);
-    const isVisible = !menu.classList.contains('hidden');
+function toggleMenuHoaDon(khachThueId) {
+    const menu = document.getElementById("menuHoaDon-" + khachThueId);
 
-    // Đóng tất cả các menu khác
-    document.querySelectorAll('.menu-items').forEach(m => {
-        m.classList.add('hidden');
-        m.classList.remove('show');
+    // Ẩn tất cả các menu khác
+    const allMenus = document.querySelectorAll("[id^='menuHoaDon-']");
+    allMenus.forEach((m) => {
+        if (!m.classList.contains("hidden")) {
+            m.classList.add("hidden");
+            // Đồng thời bỏ luôn sự kiện mouseleave cũ để tránh bị dính nhiều lần
+            m.onmouseleave = null;
+        }
     });
 
-    if (!isVisible) {
-        // Tính toán vị trí menu
-        const rect = menu.getBoundingClientRect();
-        const windowHeight = window.innerHeight;
-        const isOverflowing = rect.bottom > windowHeight - 20; // 20px khoảng đệm
-
-        // Điều chỉnh vị trí hiển thị
-        if (isOverflowing) {
-            menu.style.top = 'auto';
-            menu.style.bottom = '100%';
-            menu.style.marginTop = '0';
-            menu.style.marginBottom = '8px'; // Tương đương với mb-2
-        } else {
-            menu.style.top = '100%';
-            menu.style.bottom = 'auto';
-            menu.style.marginTop = '8px'; // mt-2
-            menu.style.marginBottom = '0';
-        }
-
-        // Hiển thị menu
-        menu.classList.remove('hidden');
-        setTimeout(() => menu.classList.add('show'), 10); // Hiệu ứng chuyển mượt
+    // Nếu menu đang hiển thị => ẩn
+    if (!menu.classList.contains("hidden")) {
+        menu.classList.add("hidden");
+        menu.onmouseleave = null;
+        return;
     }
+
+    // Xử lý vị trí nếu bị tràn màn hình
+    menu.classList.remove("top-8");
+    menu.classList.remove("bottom-full");
+
+    // Reset lại vị trí để đo đúng
+    menu.style.top = "";
+    menu.style.bottom = "";
+
+    // Tạm thời hiển thị để đo vị trí
+    menu.classList.remove("hidden");
+
+    const rect = menu.getBoundingClientRect();
+    const windowHeight = window.innerHeight;
+
+    // Nếu bị tràn dưới thì hiển thị menu lên trên
+    if (rect.bottom > windowHeight) {
+        menu.classList.add("bottom-full");
+        menu.classList.remove("top-8");
+    } else {
+        menu.classList.add("top-8");
+        menu.classList.remove("bottom-full");
+    }
+
+    // Hiển thị menu
+    menu.classList.remove("hidden");
+
+    // Thêm sự kiện khi chuột rời khỏi menu thì ẩn menu
+    menu.onmouseleave = () => {
+        menu.classList.add("hidden");
+        menu.onmouseleave = null; // gỡ sự kiện sau khi ẩn menu
+    };
 }
 
 
-document.addEventListener("click", function (event) {
-    var isClickInsideMenu = event.target.closest(".tooltipHoaDon"); // Biểu tượng 3 chấm
-    var isClickInsideBox = event.target.closest(".khuvuc-card");
-
-    // Nếu click không phải vào .khuvuc-card hoặc .menu-icon thì ẩn tất cả các menu
-    if (!isClickInsideMenu && !isClickInsideBox) {
-        var menus = document.querySelectorAll(".menu-items");
-        menus.forEach(function (menu) {
-            menu.style.display = "none";
-        });
-    }
-});
 
 function getUrlForType(type, khachThueId) {
     switch (type) {

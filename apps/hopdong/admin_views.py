@@ -7,7 +7,9 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib import messages
 from django.views.decorators.http import require_http_methods
-from apps.khachthue.models import CccdCmnd
+from apps.khachthue.models import CccdCmnd, KhachThue
+from apps.phongtro.models import TAISANBANGIAO
+from apps.dichvu.models import ChiSoDichVu, LichSuApDungDichVu
 
 
 def hopdong_list(request):
@@ -124,21 +126,42 @@ def them_hop_dong(request):
                 'SO_THANH_VIEN_TOI_DA': request.POST.get('SO_THANH_VIEN_TOI_DA'),
                 'GIA_THUE': request.POST.get('GIA_THUE'),
                 'NGAY_THU_TIEN': request.POST.get('NGAY_THU_TIEN'),
-                'PHUONG_THUC_THANH_TOAN': request.POST.get('PHUONG_THUC_THANH_TOAN'),
+                'CHU_KY_THANH_TOAN': request.POST.get('KY_THANH_TOAN'),
                 'THOI_DIEM_THANH_TOAN': request.POST.get('THOI_DIEM_THANH_TOAN'),
                 'GHI_CHU_HD': request.POST.get('GHI_CHU_HD'),
-
                 'TIEN_COC_PHONG': request.POST.get('TIEN_COC_PHONG'),
-
                 'HO_TEN_KT': request.POST.get('HO_TEN_KT'),
                 'GIOI_TINH_KT': request.POST.get('GIOI_TINH_KT'),
                 'NGAY_SINH_KT': request.POST.get('NGAY_SINH_KT'),
                 'SDT_KT': request.POST.get('SDT_KT'),
-                'SO_CMND_CCCD': request.POST.get('SO_CMND_CCCD'),
-                
+                'SO_CMND_CCCD': request.POST.get('SO_CMND_CCCD'), 
+                'GIA_COC_HD' : request.POST.get('GIA_COC_HD', 0.00),
             }
-            
-            HopDong.tao_hop_dong(data)
+            dich_vu_su_dung = []
+            index = 1
+            while f'dichvu[{index}][MA_DICH_VU]' in request.POST:
+                dich_vu = {
+                    'MA_DICH_VU': request.POST.get(f'dichvu[{index}][MA_DICH_VU]', ''),
+                    'CHI_SO_MOI': request.POST.get(f'dichvu[{index}][CHI_SO_MOI]', ''),
+                    'SO_LUONG': request.POST.get(f'dichvu[{index}][SO_LUONG]', ''),
+                }
+                dich_vu_su_dung.append(dich_vu)
+                index += 1
+            taisan_list = []
+            index = 1
+            while f'taisan[{index}][MA_TAI_SAN]' in request.POST:
+                ts = {
+                    'MA_TAI_SAN': request.POST.get(f'taisan[{index}][MA_TAI_SAN]', ''),
+                    'SO_LUONG': request.POST.get(f'taisan[{index}][so_luong]', ''),
+                }
+                taisan_list.append(ts)
+                index += 1
+            # return JsonResponse({'chi_so_dich_vu': dich_vu_su_dung})
+            # return JsonResponse(dict(request.POST))
+            hopdong_obj = HopDong.tao_hop_dong(data)
+            ChiSoDichVu.tao_danh_sach_chi_so(hop_dong=hopdong_obj, ds_dich_vu=dich_vu_su_dung)
+            TAISANBANGIAO.tao_danh_sach_tai_san_ban_giao(hop_dong=hopdong_obj, ds_tai_san=taisan_list)
+
             messages.success(request, 'Thêm hợp đồng thành công!')
             return redirect('hopdong:hopdong_list')
         except ValueError as e:
@@ -208,3 +231,79 @@ def xoa_hop_dong(request, ma_hop_dong):
     except Exception as e:
         messages.error(request, f'Lỗi hệ thống: {str(e)}')
     return redirect('hopdong:hopdong_list')
+
+
+
+
+
+
+
+
+
+def view_contract(request, hopdong_id):
+    hopdong = get_object_or_404(HopDong, MA_HOP_DONG=hopdong_id)
+    khachthue = KhachThue.objects.filter(lichsuhopdong__MA_HOP_DONG=hopdong).first()
+    cccdcmnd = CccdCmnd.objects.filter(MA_KHACH_THUE=khachthue).first() if khachthue else None
+    taisanbangiao = TAISANBANGIAO.objects.filter(MA_HOP_DONG=hopdong)
+    
+    # Lấy danh sách MA_DICH_VU duy nhất từ ChiSoDichVu và bản ghi đầu tiên
+    chisodichvu_ids = ChiSoDichVu.objects.filter(MA_HOP_DONG=hopdong).values('MA_DICH_VU').distinct()
+    chisodichvu = []
+    for item in chisodichvu_ids:
+        first_chisodichvu = ChiSoDichVu.objects.filter(
+            MA_HOP_DONG=hopdong, 
+            MA_DICH_VU=item['MA_DICH_VU']
+        ).order_by('NGAY_GHI_CS').first()  # Lấy bản ghi đầu tiên theo NGAY_GHI_CS
+        if first_chisodichvu:
+            chisodichvu.append(first_chisodichvu)
+
+    # Lấy danh sách dịch vụ từ LichSuApDungDichVu theo khu vực của phòng trọ
+    phongtro = PhongTro.objects.get(MA_PHONG=hopdong.MA_PHONG_id)
+    lichsu_dichvu, _ = LichSuApDungDichVu.get_dich_vu_ap_dung(phongtro.MA_KHU_VUC)
+
+    # Tạo danh sách dịch vụ hợp nhất (loại bỏ trùng lặp MA_DICH_VU)
+    dichvu_set = set()
+    dichvu_list = []
+    
+    # Thêm dịch vụ từ ChiSoDichVu
+    for csdv in chisodichvu:
+        if csdv.MA_DICH_VU_id not in dichvu_set:
+            dichvu_set.add(csdv.MA_DICH_VU_id)
+            dichvu_list.append({
+                'dichvu': csdv.MA_DICH_VU,
+                'chi_so_cu': csdv.CHI_SO_CU,
+                'chi_so_moi': csdv.CHI_SO_MOI,
+                'ngay_ghi_cs': csdv.NGAY_GHI_CS,
+                'gia': csdv.MA_DICH_VU.GIA_DICH_VU,
+                'don_vi': csdv.MA_DICH_VU.DON_VI_TINH,
+                'nguon': 'ChiSoDichVu'
+            })
+
+    # Thêm dịch vụ từ LichSuApDungDichVu
+    for lsdv in lichsu_dichvu:
+        if lsdv.MA_DICH_VU_id not in dichvu_set:
+            dichvu_set.add(lsdv.MA_DICH_VU_id)
+            dichvu_list.append({
+                'dichvu': lsdv.MA_DICH_VU,
+                'chi_so_cu': None,
+                'chi_so_moi': None,
+                'ngay_ghi_cs': lsdv.NGAY_AP_DUNG_DV,
+                'gia': lsdv.GIA_DICH_VU_AD or lsdv.MA_DICH_VU.GIA_DICH_VU,
+                'don_vi': lsdv.MA_DICH_VU.DON_VI_TINH,
+                'nguon': 'LichSuApDungDichVu'
+            })
+
+    context = {
+        'hopdong': hopdong,
+        'khachthue': khachthue,
+        'cccdcmnd': cccdcmnd,
+        'taisanbangiao': taisanbangiao,
+        'dichvu_list': dichvu_list,  # Danh sách dịch vụ hợp nhất
+        'ten_chu_nha': 'Tên chủ nhà',  # Thay bằng dữ liệu thực tế
+        'dia_chi_phong_tro': f"{phongtro.MA_KHU_VUC.DV_HANH_CHINH_CAP3}, {phongtro.MA_KHU_VUC.DV_HANH_CHINH_CAP2}, {phongtro.MA_KHU_VUC.DV_HANH_CHINH_CAP1}",
+        'dia_chi_chu_nha': 'Địa chỉ chủ nhà',  # Thay bằng dữ liệu thực tế
+        'so_cmnd_chu_nha': 'Số CMND/CCCD chủ nhà',  # Thay bằng dữ liệu thực tế
+        'sdt_chu_nha': 'Số điện thoại chủ nhà',  # Thay bằng dữ liệu thực tế
+        'dia_phuong': f"{phongtro.MA_KHU_VUC.DV_HANH_CHINH_CAP1}",  # Lấy từ KhuVuc
+    }
+    return render(request, 'admin/hopdong/vanban_hopdong.html', context)

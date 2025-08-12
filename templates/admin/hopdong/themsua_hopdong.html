@@ -1,259 +1,344 @@
-{% extends 'admin/admin_layout.html' %}
+
 {% load static %}
-{% block content_body %}
-<style>
-    .notification-enter {
-        opacity: 0;
-        transform: translateX(100%);
-    }
-    .notification-enter-active {
-        opacity: 1;
-        transform: translateX(0);
-        transition: all 300ms ease-in-out;
-    }
-    .notification-exit {
-        opacity: 1;
-        transform: translateX(0);
-    }
-    .notification-exit-active {
-        opacity: 0;
-        transform: translateX(100%);
-        transition: all 300ms ease-in-out;
-    }
-</style>
-
-<div class="max-w-7xl mx-auto py-6">
-    <div class="bg-white shadow-lg rounded-2xl p-6 sm:p-8">
-        <!-- Header -->
-        <div class="flex items-center justify-between mb-6">
-            <h2 class="text-2xl font-bold text-gray-900 flex items-center">
-                <i class="fas fa-file-contract mr-3 text-blue-600"></i>
-                {% if hop_dong %}Chỉnh sửa hợp đồng{% else %}Thêm hợp đồng mới{% endif %}
-            </h2>
-            <a href="{% url 'hopdong:hopdong_list' %}" class="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center">
-                <i class="fas fa-arrow-left mr-2"></i>Quay lại danh sách
-            </a>
-        </div>
-
-        <div id="notification-container" class="fixed top-4 right-4 space-y-2 z-50"></div>
-
-        <form action="{% if hop_dong %}{% url 'hopdong:chinh_sua_hop_dong' hop_dong.MA_HOP_DONG %}{% else %}{% url 'hopdong:them_hop_dong' %}{% endif %}" 
-              method="POST" enctype="multipart/form-data" class="space-y-6" id="hopDongForm">
-            {% csrf_token %}
-            {% if hop_dong %}
-                <input type="hidden" name="_method" value="PUT">
-            {% endif %}
-
-            <div class="flex flex-col lg:flex-row gap-8">
-                <!-- Left Section: Contract Information -->
-                <div class="w-full lg:w-2/3">
-                    <div class="border-t border-gray-200 pt-6">
-                        <h3 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-                            <i class="fas fa-home mr-2 text-blue-600"></i>Thông tin hợp đồng
-                        </h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div class="space-y-4">
-                               <!-- Trường hợp tạo mới hợp đồng -->
-                                {% if not hop_dong %}
-                                    <div>
-                                        <label for="MA_PHONG" class="block text-sm font-medium text-gray-700 mb-1">
-                                            Chọn phòng
-                                        </label>
-                                        <select name="MA_PHONG" id="MA_PHONG" required
-                                                class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition">
-                                            <option value="" disabled selected>-- Chọn phòng --</option>
-                                            {% for phong in phong_tros %}
-                                                <option value="{{ phong.MA_PHONG }}">{{ phong.TEN_PHONG }}</option>
-                                            {% endfor %}
-                                        </select>
-                                    </div>
-                                {% else %}
-                                    <!-- Trường hợp sửa hợp đồng: hiển thị tên phòng và input ẩn -->
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">
-                                            Phòng trọ
-                                        </label>
-                                        <p class="px-4 py-2 border border-gray-200 bg-gray-100 rounded-lg text-sm text-gray-800">
-                                            {{ hop_dong.MA_PHONG.TEN_PHONG }}
-                                        </p>
-                                        <input type="hidden" name="MA_PHONG" value="{{ hop_dong.MA_PHONG.MA_PHONG }}">
-                                    </div>
-                                {% endif %}
-
-                                <div>
-                                    <label for="NGAY_LAP_HD" class="block mb-1 text-sm font-medium text-gray-700">Ngày lập hợp đồng</label>
-                                    <input name="NGAY_LAP_HD" id="NGAY_LAP_HD" type="date" required
-                                           class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all duration-200"
-                                           value="{{ hop_dong.NGAY_LAP_HD|date:'Y-m-d'|default_if_none:'' }}">
-                                </div>
-                                <div>
-                                    <label for="NGAY_NHAN_PHONG" class="block mb-1 text-sm font-medium text-gray-700">Ngày nhận phòng</label>
-                                    <input name="NGAY_NHAN_PHONG" id="NGAY_NHAN_PHONG" type="date" required
-                                           class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all duration-200"
-                                           value="{{ hop_dong.NGAY_NHAN_PHONG|date:'Y-m-d'|default_if_none:'' }}">
-                                </div>
-                                <div>
-                                    <label for="GIA_THUE" class="block mb-1 text-sm font-medium text-gray-700">Giá thuê (VNĐ)</label>
-                                    <input name="GIA_THUE" id="GIA_THUE" type="number" placeholder="Nhập giá thuê" required
-                                           class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all duration-200"
-                                           value="{{ hop_dong.GIA_THUE|floatformat:2|default_if_none:'' }}">
-                                </div>
-                                <div>
-                                    <label for="SO_THANH_VIEN_TOI_DA" class="block mb-1 text-sm font-medium text-gray-700">Số thành viên tối đa</label>
-                                    <input name="SO_THANH_VIEN_TOI_DA" type="number" placeholder="Nhập số thành viên tối đa" required
-                                           class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all duration-200"
-                                           value="{{ hop_dong.SO_THANH_VIEN|default_if_none:'' }}">
-                                </div>
-                            </div>
-                            <div class="space-y-4">
-                                <div>
-                                    <label for="thoi-han-hd" class="block mb-1 text-sm font-medium text-gray-700">Thời hạn hợp đồng</label>
-                                    <div class="relative">
-                                        <input id="thoi-han-hd" type="text" autocomplete="off" required
-                                               placeholder="Nhập thời hạn (ví dụ: 6 tháng, 1 năm)"
-                                               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all duration-200"
-                                               value="{% if hop_dong.THOI_HAN_HD %}{{ hop_dong.THOI_HAN_HD }} tháng{% endif %}"
-                                               oninput="filterDurations(this.value)" onclick="toggleDurationDropdown()">
-                                        <input type="hidden" id="thoi-han-hd-value" name="THOI_HAN_HD" value="{{ hop_dong.THOI_HAN_HD|default_if_none:'' }}">
-                                        <div id="duration-dropdown" class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto hidden">
-                                            <ul id="duration-list" class="divide-y divide-gray-200"></ul>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div>
-                                    <label for="NGAY_TRA_PHONG" class="block mb-1 text-sm font-medium text-gray-700">Ngày trả phòng</label>
-                                    <input name="NGAY_TRA_PHONG" id="NGAY_TRA_PHONG" type="date" required
-                                           class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all duration-200"
-                                           value="{{ hop_dong.NGAY_TRA_PHONG|date:'Y-m-d'|default_if_none:'' }}">
-                                </div>
-                                <div>
-                                    <label for="ngay-thu-tien" class="block mb-1 text-sm font-medium text-gray-700">Ngày thu tiền hàng tháng</label>
-                                    <div class="relative">
-                                        <input id="ngay-thu-tien" type="text" autocomplete="off" required
-                                               placeholder="Nhập ngày (1-31)"
-                                               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all duration-200"
-                                               value="{{ hop_dong.NGAY_THU_TIEN|default_if_none:'' }}"
-                                               oninput="filterDays(this.value)" onclick="toggleDayDropdown()">
-                                        <input type="hidden" id="ngay-thu-tien-value" name="NGAY_THU_TIEN" value="{{ hop_dong.NGAY_THU_TIEN|default_if_none:'' }}">
-                                        <div id="day-dropdown" class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto hidden">
-                                            <ul id="day-list" class="divide-y divide-gray-200"></ul>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div>
-                                    <label for="THOI_DIEM_THANH_TOAN" class="block mb-1 text-sm font-medium text-gray-700">Thời điểm thanh toán</label>
-                                    <select name="THOI_DIEM_THANH_TOAN" id="THOI_DIEM_THANH_TOAN" required
-                                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all duration-200">
-                                        <option value="" disabled {% if not hop_dong %}selected{% endif %}>-- Chọn thời điểm --</option>
-                                        <option value="Đầu kỳ" {% if hop_dong.THOI_DIEM_THANH_TOAN == "Đầu kỳ" %}selected{% endif %}>Đầu kỳ thanh toán</option>
-                                        <option value="Cuối kỳ" {% if hop_dong.THOI_DIEM_THANH_TOAN == "Cuối kỳ" %}selected{% endif %}>Cuối kỳ thanh toán</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label for="ky-thanh-toan" class="block mb-1 text-sm font-medium text-gray-700">Kỳ thanh toán</label>
-                                    <div class="relative">
-                                        <input id="ky-thanh-toan" type="text" autocomplete="off" required
-                                               placeholder="Nhập kỳ (ví dụ: 3 tháng, 1 năm)"
-                                               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all duration-200"
-                                               value="{{ hop_dong.PHUONG_THUC_THANH_TOAN|default_if_none:'' }}"
-                                               oninput="filterPaymentTerms(this.value)" onclick="togglePaymentTermDropdown()">
-                                        <input type="hidden" id="ky-thanh-toan-value" name="PHUONG_THUC_THANH_TOAN" value="{{ hop_dong.PHUONG_THUC_THANH_TOAN|default_if_none:'' }}">
-                                        <div id="payment-term-dropdown" class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto hidden">
-                                            <ul id="payment-term-list" class="divide-y divide-gray-200"></ul>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Right Section: Tenant Information -->
-                <div class="w-full lg:w-1/3">
-                    <div class="border-t border-gray-200 pt-6">
-                        <h3 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-                            <i class="fas fa-user mr-2 text-blue-600"></i>Thông tin khách thuê
-                        </h3>
-                        <input type="hidden" name="MA_KHACH_THUE" id="MA_KHACH_THUE" value="{{ khach_thue.MA_KHACH_THUE|default_if_none:'' }}">
-                        <div class="space-y-4">
+<form action="{% if hop_dong %}{% url 'hopdong:chinh_sua_hop_dong' hop_dong.MA_HOP_DONG %}{% else %}{% url 'hopdong:them_hop_dong' %}{% endif %}" 
+    method="POST" enctype="multipart/form-data" class="space-y-6" id="hopDongForm">
+    {% csrf_token %}
+    {% if hop_dong %}
+        <input type="hidden" name="_method" value="PUT">
+    {% endif %}
+    {% if messages %}
+  <div class="p-4">
+    {% for message in messages %}
+      <div 
+        class="mb-4 p-3 rounded 
+               {% if message.tags == 'error' %}bg-red-100 text-red-700 border border-red-400
+               {% elif message.tags == 'success' %}bg-green-100 text-green-700 border border-green-400
+               {% elif message.tags == 'warning' %}bg-yellow-100 text-yellow-700 border border-yellow-400
+               {% else %}bg-blue-100 text-blue-700 border border-blue-400{% endif %}">
+        {{ message }}
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+    <div class="flex flex-col lg:flex-row gap-8">
+        <!-- Left Section: Contract Information -->
+        <div class="w-full lg:w-2/3">
+            <div class="">
+                <h3 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                    <i class="fas fa-home mr-2 text-blue-600"></i>Thông tin hợp đồng
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-4">
+                    <!-- Trường hợp tạo mới hợp đồng -->
+                        {% if not hop_dong %}
                             <div>
-                                <label for="HO_TEN_KT" class="block mb-1 text-sm font-medium text-gray-700">Họ và tên</label>
-                                <input name="HO_TEN_KT" id="HO_TEN_KT" type="text" placeholder="Nhập họ và tên"
-                                       class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all duration-200"
-                                       value="{{ khach_thue.HO_TEN_KT|default_if_none:'' }}" required>
-                            </div>
-                            <div>
-                                <label for="GIOI_TINH_KT" class="block mb-1 text-sm font-medium text-gray-700">Giới tính</label>
-                                <select name="GIOI_TINH_KT" id="GIOI_TINH_KT"
-                                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all duration-200"
-                                        required>
-                                    <option value="" {% if not khach_thue.GIOI_TINH_KT %}selected{% endif %}>-- Chọn giới tính --</option>
-                                    <option value="Nam" {% if khach_thue.GIOI_TINH_KT == "Nam" %}selected{% endif %}>Nam</option>
-                                    <option value="Nữ" {% if khach_thue.GIOI_TINH_KT == "Nữ" %}selected{% endif %}>Nữ</option>
-                                    <option value="Khác" {% if khach_thue.GIOI_TINH_KT == "Khác" %}selected{% endif %}>Khác</option>
+                                <label for="MA_PHONG" class="block text-sm font-medium text-gray-700 mb-1">
+                                    Chọn phòng
+                                </label>
+                                <select name="MA_PHONG" id="MA_PHONG" required
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition">
+                                    <option value="" disabled selected>-- Chọn phòng --</option>
+                                    {% for phong in phong_tros %}
+                                        <option value="{{ phong.MA_PHONG }}">{{ phong.TEN_PHONG }}</option>
+                                    {% endfor %}
                                 </select>
                             </div>
+                        {% else %}                                
                             <div>
-                                <label for="NGAY_SINH_KT" class="block mb-1 text-sm font-medium text-gray-700">Ngày sinh</label>
-                                <input name="NGAY_SINH_KT" id="NGAY_SINH_KT" type="date"
-                                       class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all duration-200"
-                                       value="{{ khach_thue.NGAY_SINH_KT|date:'Y-m-d'|default_if_none:'' }}" required>
-                            </div>                          
-                            <div>
-                                <label for="SDT_KT" class="block mb-1 text-sm font-medium text-gray-700">Số điện thoại</label>
-                                <input name="SDT_KT" id="SDT_KT" type="text" placeholder="Nhập số điện thoại"
-                                       class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all duration-200"
-                                       value="{{ khach_thue.SDT_KT|default_if_none:'' }}" required>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    Phòng trọ
+                                </label>
+                                <p class="px-4 py-2 border border-gray-200 bg-gray-100 rounded-lg text-sm text-gray-800">
+                                    {{ hop_dong.MA_PHONG.TEN_PHONG }}
+                                </p>
+                                <input type="hidden" name="MA_PHONG" value="{{ hop_dong.MA_PHONG.MA_PHONG }}">
                             </div>
-                      
-                            <div>
-                                <label for="SO_CMND_CCCD" class="block mb-1 text-sm font-medium text-gray-700">Số CCCD/CMND</label>
-                                <input name="SO_CMND_CCCD" id="SO_CMND_CCCD" type="text" placeholder="Nhập số CCCD/CMND"
-                                       class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all duration-200"
-                                       value="{{ cccd_cmnd.SO_CMND_CCCD|default_if_none:'' }}" required>
-                            </div>                      
+                        {% endif %}
+
+                        <div>
+                            <label for="NGAY_LAP_HD" class="block mb-1 text-sm font-medium text-gray-700">Ngày lập hợp đồng</label>
+                            <input name="NGAY_LAP_HD" id="NGAY_LAP_HD" type="date" required
+                                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all duration-200"
+                                value="{{ hop_dong.NGAY_LAP_HD|date:'Y-m-d'|default_if_none:'' }}">
+                        </div>
+                        <div>
+                            <label for="NGAY_NHAN_PHONG" class="block mb-1 text-sm font-medium text-gray-700">Ngày nhận phòng</label>
+                            <input name="NGAY_NHAN_PHONG" id="NGAY_NHAN_PHONG" type="date" required
+                                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all duration-200"
+                                value="{{ hop_dong.NGAY_NHAN_PHONG|date:'Y-m-d'|default_if_none:'' }}">
+                        </div>
+                        <div>
+                            <label for="GIA_THUE" class="block mb-1 text-sm font-medium text-gray-700">Giá thuê (VNĐ)</label>
+                            <input name="GIA_THUE" id="GIA_THUE" type="number" placeholder="Nhập giá thuê" required
+                                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all duration-200"
+                                value="{{ hop_dong.GIA_THUE|floatformat:2|default_if_none:'' }}">
+                        </div>
+                        <div>
+                            <label for="SO_THANH_VIEN_TOI_DA" class="block mb-1 text-sm font-medium text-gray-700">Số thành viên tối đa</label>
+                            <input name="SO_THANH_VIEN_TOI_DA" type="number" placeholder="Nhập số thành viên tối đa" required
+                                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all duration-200"
+                                value="{{ hop_dong.SO_THANH_VIEN|default_if_none:'' }}">
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="thoi-han-hd" class="block mb-1 text-sm font-medium text-gray-700">Thời hạn hợp đồng</label>
+                            <div class="relative">
+                                <input id="thoi-han-hd" type="text" autocomplete="off" required
+                                    placeholder="Nhập thời hạn (ví dụ: 6 tháng, 1 năm)"
+                                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all duration-200"
+                                    value="{% if hop_dong.THOI_HAN_HD %}{{ hop_dong.THOI_HAN_HD }} tháng{% endif %}"
+                                    oninput="filterDurations(this.value)" onclick="toggleDurationDropdown()">
+                                <input type="hidden" id="thoi-han-hd-value" name="THOI_HAN_HD" value="{{ hop_dong.THOI_HAN_HD|default_if_none:'' }}">
+                                <div id="duration-dropdown" class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto hidden">
+                                    <ul id="duration-list" class="divide-y divide-gray-200"></ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="NGAY_TRA_PHONG" class="block mb-1 text-sm font-medium text-gray-700">Ngày trả phòng</label>
+                            <input name="NGAY_TRA_PHONG" id="NGAY_TRA_PHONG" type="date" required
+                                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all duration-200"
+                                value="{{ hop_dong.NGAY_TRA_PHONG|date:'Y-m-d'|default_if_none:'' }}">
+                        </div>
+                        <div>
+                            <label for="ngay-thu-tien" class="block mb-1 text-sm font-medium text-gray-700">Ngày thu tiền hàng tháng</label>
+                            <div class="relative">
+                                <input id="ngay-thu-tien" type="text" autocomplete="off" required
+                                    placeholder="Nhập ngày (1-31)"
+                                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all duration-200"
+                                    value="{{ hop_dong.NGAY_THU_TIEN|default_if_none:'' }}"
+                                    oninput="filterDays(this.value)" onclick="toggleDayDropdown()">
+                                <input type="hidden" id="ngay-thu-tien-value" name="NGAY_THU_TIEN" value="{{ hop_dong.NGAY_THU_TIEN|default_if_none:'' }}">
+                                <div id="day-dropdown" class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto hidden">
+                                    <ul id="day-list" class="divide-y divide-gray-200"></ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="THOI_DIEM_THANH_TOAN" class="block mb-1 text-sm font-medium text-gray-700">Thời điểm thanh toán</label>
+                            <select name="THOI_DIEM_THANH_TOAN" id="THOI_DIEM_THANH_TOAN" required
+                                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all duration-200">
+                                <option value="" disabled {% if not hop_dong %}selected{% endif %}>-- Chọn thời điểm --</option>
+                                <option value="Đầu kỳ" {% if hop_dong.THOI_DIEM_THANH_TOAN == "Đầu kỳ" %}selected{% endif %}>Đầu kỳ thanh toán</option>
+                                <option value="Cuối kỳ" {% if hop_dong.THOI_DIEM_THANH_TOAN == "Cuối kỳ" %}selected{% endif %}>Cuối kỳ thanh toán</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="ky-thanh-toan" class="block mb-1 text-sm font-medium text-gray-700">Kỳ thanh toán</label>
+                            <div class="relative">
+                                <input id="ky-thanh-toan" type="text" autocomplete="off" required
+                                    placeholder="Nhập kỳ (ví dụ: 3 tháng, 1 năm)"
+                                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all duration-200"
+                                    value="{{ hop_dong.CHU_KY_THANH_TOAN|default_if_none:'' }}"
+                                    oninput="filterPaymentTerms(this.value)" onclick="togglePaymentTermDropdown()">
+                                <input type="hidden" id="ky-thanh-toan-value" name="KY_THANH_TOAN" value="{{ hop_dong.CHU_KY_THANH_TOAN|default_if_none:'' }}">
+                                <div id="payment-term-dropdown" class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto hidden">
+                                    <ul id="payment-term-list" class="divide-y divide-gray-200"></ul>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Additional Information -->
-            <div class="border-t-2 border-gray-200 pt-8">
-                <h3 class="text-2xl font-bold text-gray-900 mb-6 flex items-center">
-                    <i class="fas fa-info-circle mr-3 text-blue-700"></i>Thông tin bổ sung
+        <!-- Right Section: Tenant Information -->
+        <div class="w-full lg:w-1/3">
+            <div class="border-gray-200 pt-6">
+                <h3 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                    <i class="fas fa-user mr-2 text-blue-600"></i>Thông tin khách thuê
                 </h3>
-                <div class="space-y-6">
+                <input type="hidden" name="MA_KHACH_THUE" id="MA_KHACH_THUE" value="{{ coc_phong.MA_KHACH_THUE.MA_KHACH_THUE|default_if_none:'' }}">
+                <div class="space-y-4">
                     <div>
-                        <label for="TIEN_COC_PHONG" class="block mb-2 text-sm font-semibold text-gray-700">Tiền cọc (VNĐ)</label>
-                        <input name="TIEN_COC_PHONG" id="TIEN_COC_PHONG" type="number" placeholder="Nhập tiền cọc" required
-                               class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 shadow-sm transition-all duration-200"
-                               value="{{ coc_phong.TIEN_COC_PHONG|floatformat:2|default_if_none:'' }}">
-                        <input type="hidden" id="MA_COC_PHONG" name="MA_COC_PHONG" value="{{ coc_phong.MA_COC_PHONG|default_if_none:'' }}">
+                        <label for="HO_TEN_KT" class="block mb-1 text-sm font-medium text-gray-700">Họ và tên</label>
+                        <input name="HO_TEN_KT" id="HO_TEN_KT" type="text" placeholder="Nhập họ và tên"
+                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all duration-200"
+                            value="{{ coc_phong.MA_KHACH_THUE.HO_TEN_KT|default_if_none:'' }}" required>
                     </div>
                     <div>
-                        <label for="GHI_CHU_HD" class="block mb-2 text-sm font-semibold text-gray-700">Ghi chú hợp đồng</label>
-                        <textarea name="GHI_CHU_HD" id="GHI_CHU_HD" placeholder="Nhập ghi chú"
-                                  class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 shadow-sm transition-all duration-200"
-                                  rows="6">{{ hop_dong.GHI_CHU_HD|default_if_none:'' }}</textarea>
+                        <label for="GIOI_TINH_KT" class="block mb-1 text-sm font-medium text-gray-700">Giới tính</label>
+                        <select name="GIOI_TINH_KT" id="GIOI_TINH_KT"
+                                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all duration-200"
+                                required>
+                            <option value="Nam" {% if coc_phong.MA_KHACH_THUE.GIOI_TINH_KT == "Nam" %}selected{% endif %}>Nam</option>
+                            <option value="Nữ" {% if coc_phong.MA_KHACH_THUE.GIOI_TINH_KT == "Nữ" %}selected{% endif %}>Nữ</option>
+                            <option value="Khác" {% if coc_phong.MA_KHACH_THUE.GIOI_TINH_KT == "Khác" %}selected{% endif %}>Khác</option>
+                        </select>
                     </div>
+                    <div>
+                        <label for="NGAY_SINH_KT" class="block mb-1 text-sm font-medium text-gray-700">Ngày sinh</label>
+                        <input name="NGAY_SINH_KT" id="NGAY_SINH_KT" type="date"
+                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all duration-200"
+                            value="{{ coc_phong.MA_KHACH_THUE.NGAY_SINH_KT|date:'Y-m-d'|default_if_none:'' }}" required>
+                    </div>                          
+                    <div>
+                        <label for="SDT_KT" class="block mb-1 text-sm font-medium text-gray-700">Số điện thoại</label>
+                        <input name="SDT_KT" id="SDT_KT" type="text" placeholder="Nhập số điện thoại"
+                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all duration-200"
+                            value="{{ coc_phong.MA_KHACH_THUE.SDT_KT|default_if_none:'' }}" required>
+                    </div>
+            
+                    <div>
+                        <label for="SO_CMND_CCCD" class="block mb-1 text-sm font-medium text-gray-700">Số CCCD/CMND</label>
+                        <input name="SO_CMND_CCCD" id="SO_CMND_CCCD" type="text" placeholder="Nhập số CCCD/CMND"
+                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all duration-200"
+                            value="{{ coc_phong.MA_KHACH_THUE.cccd_cmnd.SO_CMND_CCCD|default_if_none:'' }}" required>
+                    </div>                      
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Additional Information -->
+    <div class="border-t-2 border-gray-200 pt-8">
+        <h5 class="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+            <i class="fas fa-info-circle mr-3 text-blue-700"></i>Thông tin bổ sung
+        </h5>
+        <div class="space-y-6">
+            <div>
+                <label for="TIEN_COC_PHONG" class="block mb-2 text-sm font-semibold text-gray-700">Tiền cọc (VNĐ)</label>
+                <input name="GIA_COC_HD" id="TIEN_COC_PHONG" type="number" placeholder="Nhập tiền cọc" required
+                    class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 shadow-sm transition-all duration-200"
+                    value="{{ hop_dong.GIA_COC_HD|floatformat:2|default_if_none:'' }}">
+                <input type="hidden" id="MA_COC_PHONG" name="MA_COC_PHONG" value="{{ coc_phong.MA_COC_PHONG|default_if_none:'' }}">
+            </div>
+            <div>
+                <label for="GHI_CHU_HD" class="block mb-2 text-sm font-semibold text-gray-700">Ghi chú hợp đồng</label>
+                <textarea name="GHI_CHU_HD" id="GHI_CHU_HD" placeholder="Nhập ghi chú"
+                        class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 shadow-sm transition-all duration-200"
+                        rows="6">{{ hop_dong.GHI_CHU_HD|default_if_none:'' }}</textarea>
+            </div>
+        </div>
+    </div>
+    <div class="mt-8 border-t border-gray-200 pt-6">
+        <h3 class="text-xl font-semibold text-gray-800 flex items-center mb-6">
+            <i class="fas fa-tools mr-2 text-blue-600"></i>Quản lý dịch vụ và tài sản
+        </h3>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            
+            <!-- DỊCH VỤ -->
+            <div>
+                <h4 class="text-lg font-medium text-gray-700 flex items-center mb-4">
+                    <i class="fas fa-concierge-bell mr-2 text-blue-500"></i>Dịch vụ đang sử dụng
+                </h4>
+
+                <div class="space-y-4">
+                    {% for item in lichsu_dichvu_with_chiso %}
+                    {% with lichsu=item.lichsu dich_vu=item.lichsu.MA_DICH_VU latest_chiso=item.latest_chiso %}
+                    {% with forloop.counter as index %}
+                    <div class="bg-white border border-gray-300 rounded-2xl p-4 shadow-sm hover:shadow-md transition">
+                        <div class="flex flex-col sm:flex-row justify-between gap-4">
+                        
+                        <!-- Tên & checkbox -->
+                        <div class="flex gap-3">
+                            <input type="checkbox" name="dichvu[{{ index }}][MA_DICH_VU]" value="{{ dich_vu.MA_DICH_VU }}"
+                            checked
+                            class="mt-1 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 transition">
+
+                            <div>
+                            <p class="text-base font-semibold text-gray-800">{{ dich_vu.TEN_DICH_VU }}</p>
+                            <p class="text-sm text-gray-600 mt-1">
+                                Giá: <span class="text-blue-600 font-medium">{{ lichsu.GIA_DICH_VU_AD|floatformat:2 }} VNĐ</span> / {{ dich_vu.DON_VI_TINH }}
+                            </p>
+                            </div>
+                        </div>
+
+                        <!-- Input theo loại -->
+                        <div class="w-full sm:w-48 relative">
+                            {% if dich_vu.LOAI_DICH_VU == 'Tính theo chỉ số' %}
+                            <input type="text" name="dichvu[{{ index }}][CHI_SO_MOI]" placeholder="Nhập chỉ số mới"
+                                value="{{ latest_chiso.CHI_SO_MOI|default_if_none:'0' }}"
+                                class="w-full px-3 py-2 border rounded-lg text-sm shadow-sm focus:ring-2 focus:ring-blue-500">
+                            <span class="absolute top-1/2 right-2 -translate-y-1/2 text-xs text-gray-500">Chỉ số</span>
+                            {% else %}
+                            <input type="text" name="dichvu[{{ index }}][SO_LUONG]" placeholder="Nhập số lượng"
+                                value="{{ latest_chiso.SO_LUONG|default_if_none:'1' }}"
+                                class="w-full px-3 py-2 border rounded-lg text-sm shadow-sm focus:ring-2 focus:ring-blue-500">
+                            <span class="absolute top-1/2 right-2 -translate-y-1/2 text-xs text-gray-500">Số lượng</span>
+                            {% endif %}
+                        </div>
+                        </div>
+                    </div>
+                    {% endwith %}
+                    {% endwith %}
+                    {% empty %}
+                    <div class="p-4 bg-gray-50 text-center text-sm text-gray-500 italic rounded-xl">
+                    Không có dịch vụ nào được áp dụng cho phòng này.
+                    </div>
+                    {% endfor %}
                 </div>
             </div>
 
-            <!-- Action Buttons -->
-            <div class="mt-8 flex justify-end gap-4">
-                <a href="{% url 'hopdong:hopdong_list' %}"
-                   class="px-5 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 font-medium">
-                    <i class="fas fa-times mr-2"></i>Hủy
-                </a>
-                <button type="submit"
-                        class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium">
-                    <i class="fas fa-save mr-2"></i>{% if hop_dong %}Cập nhật{% else %}Thêm mới{% endif %}
-                </button>
+            <!-- TÀI SẢN -->
+            <div>
+            <h4 class="text-lg font-medium text-gray-700 flex items-center mb-4">
+                <i class="fas fa-cube mr-2 text-blue-500"></i>Tài sản trong phòng
+            </h4>
+
+            <div class="space-y-4">
+                {% for item in taisanphong_list %}
+                {% with taisanphong=item %}
+                {% with forloop.counter as index %}
+                <div class="bg-white border border-gray-300 rounded-2xl p-4 shadow-sm hover:shadow-md transition">
+                    <div class="flex flex-col sm:flex-row justify-between gap-4">
+                    
+                    <!-- Tên & checkbox -->
+                    <div class="flex gap-3">
+                        <input type="checkbox" name="taisan[{{ index }}][MA_TAI_SAN]" value="{{ taisanphong.MA_TAI_SAN.MA_TAI_SAN }}"
+                        checked
+                        class="mt-1 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 transition">
+                        <div>
+                        <p class="text-base font-semibold text-gray-800">{{ taisanphong.MA_TAI_SAN.TEN_TAI_SAN }}</p>
+                        <p class="text-sm text-gray-600 mt-1">
+                            Giá: <span class="text-blue-600 font-medium">{{ taisanphong.MA_TAI_SAN.GIA_TS|floatformat:2 }} VNĐ</span> / {{ taisanphong.MA_TAI_SAN.DON_VI_TS }}
+                        </p>
+                        {% if taisanphong.TINH_TRANG %}
+                        <p class="text-sm text-gray-600 mt-1">
+                            Tình trạng: <span class="text-blue-600 font-medium">{{ taisanphong.TINH_TRANG }}</span>
+                        </p>
+                        {% endif %}
+                        </div>
+                    </div>
+                    <!-- Số lượng -->
+                    <div class="w-full sm:w-48 relative">
+                        <input type="text" name="taisan[{{ index }}][so_luong]" placeholder="Nhập số lượng"
+                        value="{{ taisanphong.SO_LUONG|default_if_none:'1' }}"
+                        class="w-full px-3 py-2 border rounded-lg text-sm shadow-sm focus:ring-2 focus:ring-blue-500">
+                        <span class="absolute top-1/2 right-2 -translate-y-1/2 text-xs text-gray-500">Số lượng</span>
+                    </div>
+                    </div>
+                </div>
+                {% endwith %}
+                {% endwith %}
+                {% empty %}
+                <div class="p-4 bg-gray-50 text-center text-sm text-gray-500 italic rounded-xl">
+                Không có tài sản nào được ghi nhận cho phòng này.
+                </div>
+                {% endfor %}
             </div>
-        </form>
+            </div>
+
+        </div>
     </div>
-</div>
+
+
+    
+
+    <!-- Action Buttons -->
+    <div class="mt-8 flex justify-end gap-4">
+        <a href="{% url 'hopdong:hopdong_list' %}"
+        class="px-5 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 font-medium">
+            <i class="fas fa-times mr-2"></i>Hủy
+        </a>
+        <button type="submit"
+                class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium">
+            <i class="fas fa-save mr-2"></i>{% if hop_dong %}Cập nhật{% else %}Thêm mới{% endif %}
+        </button>
+    </div>
+</form>
 
 <script src="{% static 'js/admin/hopdong/themsua_hopdong.js' %}"></script>
 <script src="{% static 'js/admin/hopdong/chucnang_chonphong.js' %}"></script>
-{% endblock %}

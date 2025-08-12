@@ -1,14 +1,14 @@
 
-const deductionModal = document.getElementById('deduction-modal');
-const modalTitle = document.getElementById('modal-title');
-const addDeductionBtn = document.getElementById('add-deduction-btn');
-const cancelDeductionBtn = document.getElementById('cancel-deduction');
-const saveDeductionBtn = document.getElementById('save-deduction');
-const discountDetails = document.getElementById('discount-details');
-const noDeductionMessage = document.getElementById('no-deduction-message');
-const deductionData = document.getElementById('deduction-data');
-let deductionIndex = parseInt(deductionData.dataset.deductionIndex);
-let editingDeductionId = null;
+var deductionModal = document.getElementById('deduction-modal');
+var modalTitle = document.getElementById('modal-title');
+var addDeductionBtn = document.getElementById('add-deduction-btn');
+var cancelDeductionBtn = document.getElementById('cancel-deduction');
+var saveDeductionBtn = document.getElementById('save-deduction');
+var discountDetails = document.getElementById('discount-details');
+var noDeductionMessage = document.getElementById('no-deduction-message');
+var deductionData = document.getElementById('deduction-data');
+var deductionIndex = parseInt(deductionData.dataset.deductionIndex);
+var editingDeductionId = null;
 
 addDeductionBtn.addEventListener('click', () => {
     modalTitle.textContent = 'Thêm khấu trừ';
@@ -188,7 +188,7 @@ function calculateTotalInvoice() {
     const tienDichVu = parseFloat(document.getElementById('TIEN_DICH_VU').value) || 0;
     const tienCoc = parseFloat(document.getElementById('TIEN_COC').value) || 0;
     const tienKhauTru = parseFloat(document.getElementById('TIEN_KHAU_TRU').value) || 0;
-    const tongTien = tienPhong + tienDichVu - tienCoc + tienKhauTru;
+    const tongTien = tienPhong + tienDichVu + tienCoc + tienKhauTru;
     document.getElementById('TONG_TIEN').value = tongTien.toFixed(2);
 }
 

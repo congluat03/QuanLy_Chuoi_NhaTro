@@ -2,7 +2,6 @@ function intThietLapDichVu() {
     const forms = document.querySelectorAll('form[method="POST"]');
     forms.forEach((form) => {
         form.addEventListener("submit", function (e) {
-            alert('jsjs');
             e.preventDefault();
             const submitButton = form.querySelector('button[type="submit"]');
             submitButton.disabled = true;

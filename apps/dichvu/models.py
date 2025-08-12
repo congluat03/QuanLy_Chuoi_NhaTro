@@ -53,7 +53,7 @@ class LichSuApDungDichVu(models.Model):
             ).select_related('MA_DICH_VU'), []
         except Exception as e:
             return None, [f'Lỗi khi lấy dịch vụ áp dụng: {str(e)}']
-
+    
 # Model for chisodichvu
 class ChiSoDichVu(models.Model):
     MA_CHI_SO = models.AutoField(primary_key=True)
@@ -69,9 +69,16 @@ class ChiSoDichVu(models.Model):
         db_column='MA_PHONG',
         related_name='chisodichvu'
     )
+    MA_HOP_DONG = models.ForeignKey(
+        'hopdong.HopDong',
+        on_delete=models.CASCADE,
+        db_column='MA_HOP_DONG',
+        related_name='chisodichvu'
+    )
     CHI_SO_CU = models.IntegerField(null=True, blank=True)
     CHI_SO_MOI = models.IntegerField(null=True, blank=True)
     NGAY_GHI_CS = models.DateField(null=True, blank=True)
+    SO_LUONG = models.IntegerField(default=1, null=True, blank=True)
 
     def __str__(self):
         return f"Chỉ số dịch vụ {self.MA_CHI_SO} - Phòng {self.MA_PHONG_id}"
@@ -109,25 +116,42 @@ class ChiSoDichVu(models.Model):
             return None, errors
 
     @staticmethod
-    def create_chi_so_dich_vu(phong, dich_vu, chi_so_data, ngay_ghi_cs):
+    def create_chi_so_dich_vu(phong, dich_vu, chi_so_data, ngay_ghi_cs, hop_dong):
         return ChiSoDichVu(
+            MA_HOP_DONG=hop_dong,
             MA_DICH_VU=dich_vu,
             MA_PHONG=phong,
             CHI_SO_CU=int(chi_so_data['CHI_SO_CU']),
             CHI_SO_MOI=int(chi_so_data['CHI_SO_MOI']),
             NGAY_GHI_CS=ngay_ghi_cs
         )
+    @classmethod
+    def tao_danh_sach_chi_so(cls, hop_dong, ds_dich_vu: list):
+        danh_sach = []
+        for item in ds_dich_vu:
+            if not item.get('MA_DICH_VU'):
+                continue
+            chisodv = cls(
+                MA_DICH_VU_id=item['MA_DICH_VU'],
+                MA_HOP_DONG=hop_dong,
+                CHI_SO_CU=None,  # Có thể tính nếu cần
+                CHI_SO_MOI=item.get('CHI_SO_MOI') or None,
+                SO_LUONG = item.get('SO_LUONG') or 0,
+                NGAY_GHI_CS=hop_dong.NGAY_LAP_HD or datetime.now().date()
+            )
+            danh_sach.append(chisodv)
+        cls.objects.bulk_create(danh_sach)
     @staticmethod
     def update_chi_so_dich_vu(chi_so_dv, chi_so_data, ngay_ghi_cs):
         chi_so_dv.CHI_SO_MOI = int(float(chi_so_data['CHI_SO_MOI']))
         chi_so_dv.NGAY_GHI_CS = ngay_ghi_cs
         return chi_so_dv
     @staticmethod
-    def save_chi_so_dich_vu(phong, chi_so_dich_vu_list, ngay_ghi_cs):
+    def save_chi_so_dich_vu(phong, chi_so_dich_vu_list, ngay_ghi_cs, hop_dong):
         errors = []
         for chi_so in chi_so_dich_vu_list:
             ma_dich_vu = int(chi_so.get('MA_DICH_VU'))
-            ma_chi_so = chi_so.get('MA_CHI_SO', '')
+            ma_chi_so = chi_so.get('MA_CHI_SO')
             dich_vu = DichVu.objects.filter(MA_DICH_VU=ma_dich_vu).first()
 
             # Kiểm tra MA_DICH_VU
@@ -140,6 +164,7 @@ class ChiSoDichVu(models.Model):
             errors.extend(chi_so_errors)
             if not chi_so_data:
                 continue
+            
 
             # Kiểm tra bản ghi hiện có
             if ma_chi_so:
@@ -152,9 +177,8 @@ class ChiSoDichVu(models.Model):
                     errors.append(f'Bản ghi với MA_CHI_SO={ma_chi_so} không tồn tại.')
                     continue
             else:
-                # return dich_vu.TEN_DICH_VU
                 # Tạo bản ghi mới
-                chi_so_dv = ChiSoDichVu.create_chi_so_dich_vu(phong, dich_vu, chi_so_data, ngay_ghi_cs)
+                chi_so_dv = ChiSoDichVu.create_chi_so_dich_vu(phong, dich_vu, chi_so_data, ngay_ghi_cs, hop_dong)
                 chi_so_dv.save()
 
         return errors

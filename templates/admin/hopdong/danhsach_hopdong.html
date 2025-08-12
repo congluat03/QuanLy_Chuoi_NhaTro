@@ -124,17 +124,17 @@
                                         <i class="fas fa-ellipsis-v text-gray-600" aria-hidden="true"></i>
                                     </div>
                                     <div onmouseleave="hideMenuHopDong({{ contract.MA_HOP_DONG }})" class="absolute right-0 mt-2 w-64 origin-top-right bg-white border border-gray-200 rounded-xl shadow-lg z-20 hidden" id="menuHopDong-{{ contract.MA_HOP_DONG }}">
-                                        <a href="#" class="block px-4 py-2 text-gray-700 text-sm hover:bg-gray-100 rounded flex items-center" onclick="showChucNangHopDong('chitiet', {{ contract.MA_HOP_DONG }})">
+                                        <a href="{% url 'hopdong:view_hopdong' hopdong_id=contract.MA_HOP_DONG %}" class="block px-4 py-2 text-gray-700 text-sm hover:bg-gray-100 rounded flex items-center" >
                                             <i class="fas fa-file-text mr-2"></i> Xem văn bản hợp đồng
-                                        </a>
-                                        <a href="#" class="block px-4 py-2 text-gray-700 text-sm hover:bg-gray-100 rounded flex items-center" onclick="showChucNangHopDong('chitiet', {{ contract.MA_HOP_DONG }})">
-                                            <i class="fas fa-print mr-2"></i> In văn bản hợp đồng
-                                        </a>
-                                        <a href="#" class="block px-4 py-2 text-gray-700 text-sm hover:bg-gray-100 rounded flex items-center" onclick="showChucNangHopDong('chitiet', {{ contract.MA_HOP_DONG }})">
+                                        </a>                                     
+                                        <a href="#" class="block px-4 py-2 text-gray-700 text-sm hover:bg-gray-100 rounded flex items-center" 
+                                        onclick="toggleShareModal(true, url='/admin/hopdong/{{ contract.MA_HOP_DONG }}')">
                                             <i class="fas fa-share-alt mr-2"></i> Chia sẻ văn bản hợp đồng
                                         </a>
-                                        <a href="/admin/hopdong/viewsua/{{ contract.MA_HOP_DONG }}" class="block px-4 py-2 text-gray-700 text-sm hover:bg-gray-100 rounded flex items-center">
-                                            <i class="fas fa-edit mr-2"></i> Chỉnh sửa hợp đồng
+                                        <a href="/admin/hopdong/viewsua/{{ contract.MA_HOP_DONG }}" class="block px-4 py-2 text-gray-700 text-sm hover:bg-gray-100 rounded flex items-center"
+                                       >
+                                            <i class="fas fa-edit mr-2"
+                                            ></i> Chỉnh sửa hợp đồng
                                         </a>
                                         <a href="#" class="block px-4 py-2 text-gray-700 text-sm hover:bg-gray-100 rounded flex items-center" onclick="huyHopDong({{ contract.MA_HOP_DONG }})">
                                             <i class="fas fa-check-circle mr-2"></i> Khách Ký hợp đồng
@@ -158,7 +158,30 @@
         </div>
     </div>
 </div>
+    <!-- Modal chia sẻ -->
+<div id="shareModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+  <div class="bg-white w-full max-w-lg rounded-lg shadow-lg p-6 relative">
+    <!-- Đóng -->
+    <button onclick="toggleShareModal(false)" class="absolute top-2 right-3 text-gray-500 hover:text-black">
+      <i class="fas fa-times"></i>
+    </button>
 
+    <h2 class="text-xl font-semibold mb-4">Chia sẻ hợp đồng thuê phòng</h2>
+
+    <!-- Link chia sẻ và nút sao chép -->
+    <div class="flex items-center bg-gray-100 rounded px-3 py-2 mb-4">
+      <input id="shareLink" type="text" readonly class="w-full border rounded px-3 py-1 text-sm" />
+      <button onclick="copyShareLink()" 
+              class="text-blue-600 hover:text-blue-800 text-sm font-medium ml-3">Sao chép</button>
+    </div>
+
+    {% comment %} <!-- Mã QR -->
+    <div class="text-center mb-4">
+      <img src="https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl={{ share_url }}" 
+           alt="QR Code" class="mx-auto border rounded" />
+    </div> {% endcomment %}
+  </div>
+</div>
 <!-- Modal -->
 <div id="hopDongModal" tabindex="-1" role="dialog" aria-modal="true" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-60 hidden transition-opacity duration-300 ease-in-out" onclick="if(event.target === this) toggleHopDongModal(false)">
     <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl mx-4 max-h-[90vh] overflow-y-auto transform transition-all duration-300">
@@ -180,6 +203,36 @@
         </div>
     </div>
 </div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+<script>
+  function toggleShareModal(show, url = '') {
+    const modal = document.getElementById('shareModal');
+    if (show) {
+      const shareLink = url.startsWith('http') ? url : window.location.origin + url;
+      document.getElementById('shareLink').value = shareLink;
+      generateQRCode(shareLink);
+      modal.classList.remove('hidden');
+    } else {
+      modal.classList.add('hidden');
+    }
+  }
 
+  function copyShareLink() {
+    const input = document.getElementById('shareLink');
+    input.select();
+    document.execCommand('copy');
+    alert('Đã sao chép liên kết!');
+  }
+
+  function generateQRCode(text) {
+    const qr = new QRious({
+      element: document.getElementById('qrcode'),
+      value: text,
+      size: 160,
+      background: 'white',
+      foreground: 'black',
+    });
+  }
+</script>
 <script src="{% static 'js/admin/hopdong/hopdong.js' %}"></script>
 {% endblock %}

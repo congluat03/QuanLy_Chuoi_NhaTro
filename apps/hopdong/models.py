@@ -28,8 +28,8 @@ class HopDong(models.Model):
     TRANG_THAI_HD = models.CharField(max_length=50, null=True, blank=True)
     GHI_CHU_HD = models.TextField(null=True, blank=True)
     CHU_KY_THANH_TOAN = models.CharField(max_length=20, null=True, blank=True)
+    GIA_COC_HD = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     
-
     def __str__(self):
         return f"Hợp đồng {self.MA_HOP_DONG} - Phòng {self.MA_PHONG_id}"
 
@@ -55,9 +55,8 @@ class HopDong(models.Model):
     @classmethod
     def tao_hop_dong(cls, data):
         with transaction.atomic():
-            phong = cls._get_phong(data.get('MA_PHONG'))
-            khach_thue, coc_phong = cls._xu_ly_coc_va_khach_thue(phong, data)
-
+            phong = PhongTro.objects.get(MA_PHONG = data.get('MA_PHONG')) 
+            khach_thue = cls._xu_ly_khach_thue(data)
             # Tạo hợp đồng
             hop_dong = cls(
                 MA_PHONG=phong,
@@ -68,10 +67,11 @@ class HopDong(models.Model):
                 SO_THANH_VIEN=data.get('SO_THANH_VIEN_TOI_DA'),
                 GIA_THUE=data.get('GIA_THUE'),
                 NGAY_THU_TIEN=data.get('NGAY_THU_TIEN'),
-                PHUONG_THUC_THANH_TOAN=data.get('PHUONG_THUC_THANH_TOAN'),
+                PHUONG_THUC_THANH_TOAN=data.get('THOI_DIEM_THANH_TOAN'),
                 TRANG_THAI_HD= 'Chờ xác nhận',
                 GHI_CHU_HD=data.get('GHI_CHU_HD'),
-                CHU_KY_THANH_TOAN=data.get('THOI_DIEM_THANH_TOAN')
+                CHU_KY_THANH_TOAN=data.get('CHU_KY_THANH_TOAN'),
+                GIA_COC_HD=data.get('GIA_COC_HD', 0.00)
             )
             hop_dong.full_clean()  # Validate trước khi lưu
             hop_dong.save()
@@ -86,90 +86,40 @@ class HopDong(models.Model):
 
             return hop_dong
     @classmethod
-    def _get_phong(cls, ma_phong):
-        try:
-            return PhongTro.objects.get(MA_PHONG=ma_phong)
-        except PhongTro.DoesNotExist:
-            raise ValidationError(f'Phòng {ma_phong} không tồn tại.')
-
-    @classmethod
-    def _xu_ly_coc_va_khach_thue(cls, phong, data):
-        with transaction.atomic():
-            # Kiểm tra xem đã có cọc phòng với trạng thái 'Đã cọc' hoặc 'Chờ xác nhận' chưa
-            coc_phong = CocPhong.objects.filter(
-                MA_PHONG=phong,
-                TRANG_THAI_CP__in=['Đã cọc', 'Chờ xác nhận']
-            ).select_related('MA_KHACH_THUE').first()
-
-            if coc_phong:
-                # Cập nhật trạng thái cọc phòng
-                CocPhong.cap_nhat_trang_thai_coc(phong, 'Đã lập hợp đồng')
-
-                # Cập nhật thông tin khách thuê
-                khach_thue = coc_phong.MA_KHACH_THUE
+    def _xu_ly_khach_thue(cls, data):
+        with transaction.atomic():         
+            khach_thue = KhachThue.kiem_tra_khach_thue(data.get('MA_KHACH_THUE'))
+            if khach_thue:
+                # Cập nhật thông tin khách thu            
                 khach_thue.update_khach_thue(
                     ho_ten_kt=data.get('HO_TEN_KT'),
                     sdt_kt=data.get('SDT_KT'),
                     ngay_sinh_kt=data.get('NGAY_SINH_KT'),
-                    gioi_tinh_kt=data.get('GIOI_TINH_KT'),
-                    email_kt=data.get('EMAIL_KT'),
-                    nghe_nghiep=data.get('NGHE_NGHIEP'),
-                    avatar=data.get('avatar')
-                )
-                # Cập nhật thông tin cọc phòng
-                coc_phong.cap_nhat_coc_phong(
-                    tien_coc_phong=data.get('TIEN_COC_PHONG'),
-                    ngay_coc_phong=data.get('NGAY_NHAN_PHONG'),
-                    ngay_du_kien_vao=data.get('NGAY_NHAN_PHONG'),
-                    ghi_chu_cp=data.get('GHI_CHU_CP')
-                )
-
-                return khach_thue, coc_phong
-
+                    gioi_tinh_kt=data.get('GIOI_TINH_KT'),               
+                )    
+                return khach_thue
             # Nếu chưa có cọc phòng, tạo tài khoản mặc định
             try:
                 tai_khoan = TaiKhoan.create_tai_khoan_mac_dinh(
                     tai_khoan=data.get('TAI_KHOAN'),
                     mat_khau=data.get('MAT_KHAU')
                 )
-            except ValueError as e:
-                raise ValueError(f"Lỗi khi tạo tài khoản: {str(e)}")
-
-            # Tạo khách thuê
-            try:
                 khach_thue = KhachThue.create_khach_thue(
                     tai_khoan_obj=tai_khoan,
                     ho_ten_kt=data.get('HO_TEN_KT'),
                     sdt_kt=data.get('SDT_KT'),
-                    email_kt=data.get('EMAIL_KT'),
-                    nghe_nghiep=data.get('NGHE_NGHIEP'),
-                    avatar=data.get('avatar')
+                    ngay_sinh_kt=data.get('NGAY_SINH_KT'),
+                    gioi_tinh_kt=data.get('GIOI_TINH_KT'),
                 )
             except ValueError as e:
-                # Xóa tài khoản nếu tạo khách thuê thất bại
-                if tai_khoan:
-                    tai_khoan.delete()
-                raise ValueError(f"Lỗi khi tạo khách thuê: {str(e)}")
-
-            # Tạo cọc phòng
-            try:
-                coc_phong = CocPhong.tao_coc_phong(
-                    phong=phong,
-                    khach_thue=khach_thue,
-                    tien_coc_phong=data.get('TIEN_COC_PHONG'),
-                    ngay_coc_phong=data.get('NGAY_NHAN_PHONG'),
-                    ngay_du_kien_vao=data.get('NGAY_NHAN_PHONG'),
-                )
-            except ValidationError as e:
-                # Xóa khách thuê và tài khoản nếu tạo cọc phòng thất bại
-                khach_thue.delete_khach_thue()
-                raise ValidationError(f"Lỗi khi tạo cọc phòng: {str(e)}")
-
-            return khach_thue, coc_phong
+                raise ValueError(f"Lỗi khi tạo tài khoản hoặc khách thuê: {str(e)}")
+            # Tạo khách thuê
+                
+            return khach_thue
         
     def cap_nhat_hop_dong(self, data):
         with transaction.atomic():
-            phong = self._get_phong(data.get('MA_PHONG'))
+            phong = PhongTro.objects.get(MA_PHONG = data.get('MA_PHONG')) 
             khach_thue = self._get_khach_thue(data.get('MA_KHACH_THUE'))
             coc_phong = CocPhong.objects.get(MA_COC_PHONG=data.get('MA_COC_PHONG'))
             # Cập nhật hợp đồng

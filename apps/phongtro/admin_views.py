@@ -2,11 +2,12 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
 from django.core.paginator import Paginator
 from django.contrib import messages
-from .models import PhongTro, CocPhong
+from .models import PhongTro, CocPhong, TAISANPHONG, TAISAN
 from apps.nhatro.models import KhuVuc
 from apps.khachthue.models import KhachThue
 from apps.hopdong.models import HopDong
 from apps.thanhvien.models import TaiKhoan
+from apps.dichvu.models import LichSuApDungDichVu, ChiSoDichVu
 from django.core.exceptions import ValidationError
 from django.http import JsonResponse
 from django.db import transaction
@@ -260,3 +261,76 @@ def view_coc_giu_cho(request, ma_phong):
         'phong_tro': phong_tro,
         'form_data': {'TIEN_COC_PHONG': phong_tro.GIA_PHONG},
     })
+def view_lap_hop_dong(request, ma_phong):
+    # Ví dụ: lấy danh sách phòng thuộc nhà trọ có mã là 1
+    phong_tros = PhongTro.lay_phong_theo_ma_nha_tro(1)
+    phong_tro = get_object_or_404(PhongTro, MA_PHONG=ma_phong)
+    
+     # Get all applied services for the room
+    # Lấy danh sách dịch vụ áp dụng cho khu vực của phòng
+    lichsu_dichvu = LichSuApDungDichVu.objects.filter(
+        MA_KHU_VUC=phong_tro.MA_KHU_VUC,
+        NGAY_HUY_DV__isnull=True
+    ).select_related('MA_DICH_VU')
+    taisanphong_list = TAISANPHONG.objects.filter(MA_PHONG__MA_PHONG=ma_phong).select_related('MA_TAI_SAN')
+
+    # Tạo danh sách dịch vụ với chỉ số mới nhất
+    lichsu_dichvu_with_chiso = []
+    for lichsu in lichsu_dichvu:
+        latest_chiso = ChiSoDichVu.objects.filter(
+            MA_DICH_VU=lichsu.MA_DICH_VU,
+            MA_PHONG=phong_tro
+        ).order_by('-NGAY_GHI_CS').first()
+        lichsu_dichvu_with_chiso.append({
+            'lichsu': lichsu,
+            'latest_chiso': latest_chiso
+        })
+    coc_phong = CocPhong.objects.filter(
+            MA_PHONG_id=ma_phong,
+            TRANG_THAI_CP__in=['Đã cọc', 'Chờ xác nhận']  # Điều chỉnh trạng thái theo yêu cầu
+        ).select_related('MA_KHACH_THUE').first()
+
+    # return JsonResponse(dict(lichsu_dichvu))
+
+
+    return render(request, 'admin/hopdong/themsua_hopdong.html', {
+        'phong_tros': phong_tros,
+        'phong_tro': phong_tro,
+        'lichsu_dichvu_with_chiso': lichsu_dichvu_with_chiso,
+        'taisanphong_list': taisanphong_list,
+        'coc_phong': coc_phong,
+        })
+
+
+
+
+
+
+
+
+def ghi_so_dich_vu(request, ma_phong_tro):
+    phong_tro = get_object_or_404(PhongTro, MA_PHONG=ma_phong_tro)
+    lichsu_dichvu = LichSuApDungDichVu.objects.filter(
+            MA_KHU_VUC=phong_tro.MA_KHU_VUC,
+            NGAY_HUY_DV__isnull=True
+        ).select_related('MA_DICH_VU')
+    taisanphong_list = TAISANPHONG.objects.filter(MA_PHONG__MA_PHONG=ma_phong_tro).select_related('MA_TAI_SAN')
+
+    # Tạo danh sách dịch vụ với chỉ số mới nhất
+    lichsu_dichvu_with_chiso = []
+    for lichsu in lichsu_dichvu:
+        latest_chiso = ChiSoDichVu.objects.filter(
+            MA_DICH_VU=lichsu.MA_DICH_VU,
+            MA_PHONG=phong_tro
+        ).order_by('-NGAY_GHI_CS').first()
+        lichsu_dichvu_with_chiso.append({
+            'lichsu': lichsu,
+            'latest_chiso': latest_chiso
+        })
+    context = {    
+        'phong_tro': phong_tro,
+        'lichsu_dichvu_with_chiso': lichsu_dichvu_with_chiso,
+        'taisanphong_list': taisanphong_list,
+    }
+    
+    return render(request, 'admin/phongtro/ghiso_dichvu.html', context)

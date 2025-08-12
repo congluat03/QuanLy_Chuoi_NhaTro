@@ -40,10 +40,18 @@ class KhachThue(models.Model):
             raise ValueError(f'Số điện thoại {sdt_kt} đã được sử dụng.')
         if email_kt and cls.objects.filter(EMAIL_KT=email_kt).exists():
             raise ValueError(f'Email {email_kt} đã được sử dụng.')
+    @classmethod
+    def kiem_tra_khach_thue(cls, ma_khach):
+        if not ma_khach or not str(ma_khach).strip():
+            return None
 
+        try:
+            return cls.objects.get(MA_KHACH_THUE=ma_khach)
+        except cls.DoesNotExist:
+            return None
     
     @classmethod
-    def create_khach_thue(cls, tai_khoan_obj, ho_ten_kt, sdt_kt, email_kt=None, nghe_nghiep=None, avatar=None):
+    def create_khach_thue(cls, tai_khoan_obj, ho_ten_kt, sdt_kt, email_kt=None, nghe_nghiep=None, avatar=None, ngay_sinh_kt = None, gioi_tinh_kt=None, noi_sinh_kt=None):
         # cls.validate_required_fields(ho_ten_kt, sdt_kt)
         # cls.check_duplicate(sdt_kt, email_kt)
         return cls.objects.create(
@@ -53,7 +61,11 @@ class KhachThue(models.Model):
             EMAIL_KT=email_kt,
             NGHE_NGHIEP=nghe_nghiep,
             TRANG_THAI_KT='Hoạt động',
+            GIOI_TINH_KT=gioi_tinh_kt,
+            NGAY_SINH_KT=ngay_sinh_kt,
+            NOI_SINH_KT=noi_sinh_kt,
             ANH_KT=avatar
+
         )
 
     def update_khach_thue(self, ho_ten_kt=None, sdt_kt=None, ngay_sinh_kt=None, email_kt=None, nghe_nghiep=None,
