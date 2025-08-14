@@ -1,0 +1,283 @@
+{% extends 'index/index_layout.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block content %}
+<div class="pt-20 pb-16 bg-gray-50 min-h-screen">
+  <div class="max-w-6xl mx-auto px-6">
+    <!-- Breadcrumb -->
+    <nav class="flex mb-6" aria-label="Breadcrumb">
+      <ol class="inline-flex items-center space-x-1 md:space-x-3">
+        <li class="inline-flex items-center">
+          <a href="{% url 'user_phongtro:tim_phong' %}" class="text-gray-700 hover:text-blue-600 inline-flex items-center">
+            <i class="fas fa-home mr-2"></i>
+            Tìm phòng
+          </a>
+        </li>
+        <li>
+          <div class="flex items-center">
+            <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+            <span class="text-gray-500">{{ phong.TEN_PHONG }}</span>
+          </div>
+        </li>
+      </ol>
+    </nav>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <!-- Main Content -->
+      <div class="lg:col-span-2 space-y-6">
+        <!-- Room Images -->
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+          <div class="h-64 md:h-80 bg-gradient-to-br from-blue-400 to-blue-600 relative overflow-hidden">
+            <div class="absolute inset-0 flex items-center justify-center text-white">
+              <i class="fas fa-home text-6xl opacity-50"></i>
+            </div>
+            <!-- Status Badge -->
+            <div class="absolute top-4 left-4">
+              <span class="px-4 py-2 rounded-full text-sm font-semibold flex items-center
+                {% if phong.TRANG_THAI_P == 'Trống' %}bg-green-500 text-white
+                {% elif phong.TRANG_THAI_P == 'Đã thuê' %}bg-red-500 text-white
+                {% elif phong.TRANG_THAI_P == 'Đã cọc' %}bg-yellow-500 text-white
+                {% elif phong.TRANG_THAI_P == 'Bảo trì' %}bg-gray-500 text-white
+                {% else %}bg-blue-500 text-white{% endif %}">
+                <i class="fas {% if phong.TRANG_THAI_P == 'Trống' %}fa-check-circle{% elif phong.TRANG_THAI_P == 'Đã thuê' %}fa-times-circle{% elif phong.TRANG_THAI_P == 'Đã cọc' %}fa-clock{% elif phong.TRANG_THAI_P == 'Bảo trì' %}fa-tools{% else %}fa-info-circle{% endif %} mr-2"></i>
+                {{ phong.TRANG_THAI_P }}
+              </span>
+            </div>
+            <!-- Price Badge -->
+            <div class="absolute top-4 right-4">
+              <div class="bg-white bg-opacity-90 px-3 py-2 rounded-lg">
+                <div class="text-lg font-bold text-blue-600">{{ phong.GIA_PHONG|currency_vn }}</div>
+                <div class="text-xs text-gray-600">/tháng</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Room Info -->
+        <div class="bg-white rounded-xl shadow-lg p-6">
+          <div class="flex items-start justify-between mb-6">
+            <div>
+              <h1 class="text-3xl font-bold text-gray-800 mb-2">{{ phong.TEN_PHONG }}</h1>
+              <p class="text-gray-600 flex items-center">
+                <i class="fas fa-map-marker-alt mr-2 text-blue-500"></i>
+                {{ phong.MA_KHU_VUC.TEN_KHU_VUC }}, {{ phong.MA_KHU_VUC.MA_NHA_TRO.TEN_NHA_TRO }}
+              </p>
+            </div>
+          </div>
+
+          <!-- Quick Stats -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div class="text-center p-4 bg-gray-50 rounded-lg">
+              <i class="fas fa-expand-arrows-alt text-2xl text-blue-500 mb-2"></i>
+              <div class="font-semibold text-gray-800">{{ phong.DIEN_TICH|default:"N/A" }}</div>
+              <div class="text-sm text-gray-600">m²</div>
+            </div>
+            <div class="text-center p-4 bg-gray-50 rounded-lg">
+              <i class="fas fa-users text-2xl text-blue-500 mb-2"></i>
+              <div class="font-semibold text-gray-800">{{ phong.SO_NGUOI_TOI_DA|default:"N/A" }}</div>
+              <div class="text-sm text-gray-600">người</div>
+            </div>
+            <div class="text-center p-4 bg-gray-50 rounded-lg">
+              <i class="fas fa-tag text-2xl text-blue-500 mb-2"></i>
+              <div class="font-semibold text-gray-800">{{ phong.MA_LOAI_PHONG.TEN_LOAI_PHONG|default:"N/A" }}</div>
+              <div class="text-sm text-gray-600">Loại phòng</div>
+            </div>
+            <div class="text-center p-4 bg-gray-50 rounded-lg">
+              <i class="fas fa-hand-holding-usd text-2xl text-blue-500 mb-2"></i>
+              <div class="font-semibold text-gray-800">{{ phong.SO_TIEN_CAN_COC|currency_vn_short }}</div>
+              <div class="text-sm text-gray-600">Tiền cọc</div>
+            </div>
+          </div>
+
+          <!-- Description -->
+          {% if phong.MO_TA_P %}
+          <div>
+            <h3 class="text-lg font-semibold text-gray-800 mb-3">Mô tả phòng</h3>
+            <div class="text-gray-600 prose prose-sm max-w-none">
+              {{ phong.MO_TA_P|linebreaks }}
+            </div>
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Room Details -->
+        <div class="bg-white rounded-xl shadow-lg p-6">
+          <h3 class="text-lg font-semibold text-gray-800 mb-4">Thông tin chi tiết</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-3">
+              <div class="flex justify-between py-2 border-b border-gray-100">
+                <span class="text-gray-600">Mã phòng:</span>
+                <span class="font-medium text-gray-800">#{{ phong.MA_PHONG }}</span>
+              </div>
+              <div class="flex justify-between py-2 border-b border-gray-100">
+                <span class="text-gray-600">Loại phòng:</span>
+                <span class="font-medium text-gray-800">{{ phong.MA_LOAI_PHONG.TEN_LOAI_PHONG|default:"Chưa phân loại" }}</span>
+              </div>
+              <div class="flex justify-between py-2 border-b border-gray-100">
+                <span class="text-gray-600">Diện tích:</span>
+                <span class="font-medium text-gray-800">{{ phong.DIEN_TICH|default:"Chưa cập nhật" }} m²</span>
+              </div>
+              <div class="flex justify-between py-2 border-b border-gray-100">
+                <span class="text-gray-600">Sức chứa:</span>
+                <span class="font-medium text-gray-800">{{ phong.SO_NGUOI_TOI_DA|default:"Chưa cập nhật" }} người</span>
+              </div>
+            </div>
+            <div class="space-y-3">
+              <div class="flex justify-between py-2 border-b border-gray-100">
+                <span class="text-gray-600">Giá thuê:</span>
+                <span class="font-medium text-blue-600">{{ phong.GIA_PHONG|currency_vn }}/tháng</span>
+              </div>
+              <div class="flex justify-between py-2 border-b border-gray-100">
+                <span class="text-gray-600">Tiền cọc:</span>
+                <span class="font-medium text-green-600">{{ phong.SO_TIEN_CAN_COC|currency_vn }}</span>
+              </div>
+              <div class="flex justify-between py-2 border-b border-gray-100">
+                <span class="text-gray-600">Trạng thái:</span>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                  {% if phong.TRANG_THAI_P == 'Trống' %}bg-green-100 text-green-800
+                  {% elif phong.TRANG_THAI_P == 'Đã thuê' %}bg-red-100 text-red-800
+                  {% elif phong.TRANG_THAI_P == 'Đã cọc' %}bg-yellow-100 text-yellow-800
+                  {% else %}bg-gray-100 text-gray-800{% endif %}">
+                  {{ phong.TRANG_THAI_P }}
+                </span>
+              </div>
+              <div class="flex justify-between py-2 border-b border-gray-100">
+                <span class="text-gray-600">Khu vực:</span>
+                <span class="font-medium text-gray-800">{{ phong.MA_KHU_VUC.TEN_KHU_VUC }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Similar Rooms -->
+        <div class="bg-white rounded-xl shadow-lg p-6">
+          <h3 class="text-lg font-semibold text-gray-800 mb-4">Phòng tương tự</h3>
+          <div class="text-center text-gray-500 py-8">
+            <i class="fas fa-home text-4xl text-gray-300 mb-2"></i>
+            <p>Đang cập nhật thông tin phòng tương tự...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sidebar -->
+      <div class="lg:col-span-1">
+        <div class="sticky top-24 space-y-6">
+          <!-- Booking Card -->
+          <div class="bg-white rounded-xl shadow-lg p-6">
+            <div class="text-center mb-6">
+              <div class="text-3xl font-bold text-blue-600 mb-1">
+                {{ phong.GIA_PHONG|currency_vn }}
+              </div>
+              <div class="text-gray-600">/ tháng</div>
+            </div>
+
+            {% if phong.TRANG_THAI_P == 'Trống' %}
+            <div class="space-y-4">
+              <a href="{% url 'user_phongtro:dat_phong' phong.MA_PHONG %}" 
+                 class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg transition duration-300 font-medium text-center block">
+                <i class="fas fa-calendar-check mr-2"></i>
+                Đặt phòng ngay
+              </a>
+              
+              <button class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 px-6 rounded-lg transition duration-300 font-medium">
+                <i class="fas fa-phone mr-2"></i>
+                Liên hệ tư vấn
+              </button>
+            </div>
+
+            <div class="mt-6 pt-6 border-t border-gray-100">
+              <div class="space-y-3 text-sm">
+                <div class="flex items-center text-gray-600">
+                  <i class="fas fa-check text-green-500 mr-2"></i>
+                  Không phí môi giới
+                </div>
+                <div class="flex items-center text-gray-600">
+                  <i class="fas fa-check text-green-500 mr-2"></i>
+                  Xem phòng miễn phí
+                </div>
+                <div class="flex items-center text-gray-600">
+                  <i class="fas fa-check text-green-500 mr-2"></i>
+                  Hỗ trợ 24/7
+                </div>
+              </div>
+            </div>
+            {% else %}
+            <div class="text-center py-4">
+              <div class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium
+                {% if phong.TRANG_THAI_P == 'Đã thuê' %}bg-red-100 text-red-800
+                {% elif phong.TRANG_THAI_P == 'Đã cọc' %}bg-yellow-100 text-yellow-800
+                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                <i class="fas fa-info-circle mr-2"></i>
+                {{ phong.TRANG_THAI_P }}
+              </div>
+              <p class="text-gray-600 text-sm mt-2">
+                {% if phong.TRANG_THAI_P == 'Đã thuê' %}
+                  Phòng này đã có người thuê
+                {% elif phong.TRANG_THAI_P == 'Đã cọc' %}
+                  Phòng này đã được đặt cọc
+                {% else %}
+                  Phòng này không còn trống
+                {% endif %}
+              </p>
+              <a href="{% url 'user_phongtro:tim_phong' %}" 
+                 class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg transition duration-300 font-medium text-center block mt-4">
+                <i class="fas fa-search mr-2"></i>
+                Tìm phòng khác
+              </a>
+            </div>
+            {% endif %}
+          </div>
+
+          <!-- Contact Info -->
+          <div class="bg-white rounded-xl shadow-lg p-6">
+            <h4 class="font-semibold text-gray-800 mb-4">Thông tin liên hệ</h4>
+            <div class="space-y-3">
+              <div class="flex items-center">
+                <i class="fas fa-phone text-blue-500 mr-3"></i>
+                <div>
+                  <div class="font-medium text-gray-800">0123 456 789</div>
+                  <div class="text-sm text-gray-600">Hotline hỗ trợ</div>
+                </div>
+              </div>
+              <div class="flex items-center">
+                <i class="fas fa-envelope text-blue-500 mr-3"></i>
+                <div>
+                  <div class="font-medium text-gray-800">support@nhatro.com</div>
+                  <div class="text-sm text-gray-600">Email hỗ trợ</div>
+                </div>
+              </div>
+              <div class="flex items-center">
+                <i class="fas fa-clock text-blue-500 mr-3"></i>
+                <div>
+                  <div class="font-medium text-gray-800">8:00 - 22:00</div>
+                  <div class="text-sm text-gray-600">Giờ hỗ trợ</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Share -->
+          <div class="bg-white rounded-xl shadow-lg p-6">
+            <h4 class="font-semibold text-gray-800 mb-4">Chia sẻ phòng này</h4>
+            <div class="flex space-x-3">
+              <button class="flex-1 bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg transition duration-300">
+                <i class="fab fa-facebook-f"></i>
+              </button>
+              <button class="flex-1 bg-blue-400 hover:bg-blue-500 text-white p-2 rounded-lg transition duration-300">
+                <i class="fab fa-twitter"></i>
+              </button>
+              <button class="flex-1 bg-green-500 hover:bg-green-600 text-white p-2 rounded-lg transition duration-300">
+                <i class="fab fa-whatsapp"></i>
+              </button>
+              <button class="flex-1 bg-gray-400 hover:bg-gray-500 text-white p-2 rounded-lg transition duration-300">
+                <i class="fas fa-link"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

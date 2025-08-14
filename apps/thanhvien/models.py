@@ -32,26 +32,32 @@ class TaiKhoan(models.Model):
         return mat_khau
 
     @classmethod
-    def create_tai_khoan(cls, tai_khoan, mat_khau):
+    def create_tai_khoan(cls, tai_khoan, mat_khau, quyen_han='Khách thuê'):
         cls.validate_tai_khoan(tai_khoan)
         cls.validate_mat_khau(mat_khau)
         if cls.objects.filter(TAI_KHOAN=tai_khoan).exists():
             raise ValueError('Tài khoản đã tồn tại.')
+        
+        # Validate quyền hạn
+        valid_roles = ['Khách thuê', 'Chủ trọ', 'admin']
+        if quyen_han not in valid_roles:
+            quyen_han = 'Khách thuê'
+            
         return cls.objects.create(
             TAI_KHOAN=tai_khoan,
             MAT_KHAU=make_password(mat_khau),
             TRANG_THAI_TK='Hoạt động',
-            QUYEN_HAN='Khách thuê'
+            QUYEN_HAN=quyen_han
         )
     @classmethod
-    def create_tai_khoan_mac_dinh(cls, tai_khoan=None, mat_khau=None):
+    def create_tai_khoan_mac_dinh(cls, tai_khoan=None, mat_khau=None, quyen_han='Khách thuê'):
         if tai_khoan and mat_khau:
-            return cls.create_tai_khoan(tai_khoan=tai_khoan, mat_khau=mat_khau)
+            return cls.create_tai_khoan(tai_khoan=tai_khoan, mat_khau=mat_khau, quyen_han=quyen_han)
         else:
             unique_suffix = str(uuid.uuid4())[:8]
             default_tai_khoan = f"khachthue{unique_suffix}"
             default_mat_khau = "KhachThue@123"
-            return cls.create_tai_khoan(tai_khoan=default_tai_khoan, mat_khau=default_mat_khau)
+            return cls.create_tai_khoan(tai_khoan=default_tai_khoan, mat_khau=default_mat_khau, quyen_han=quyen_han)
     def update_tai_khoan(self, tai_khoan=None, mat_khau=None):
         if tai_khoan and tai_khoan != self.TAI_KHOAN:
             self.validate_tai_khoan(tai_khoan)
@@ -82,6 +88,16 @@ class NguoiQuanLy(models.Model):
 
     def __str__(self):
         return self.TEN_QUAN_LY or f"Quản lý {self.MA_QUAN_LY}"
+    
+    @classmethod
+    def create_chu_tro(cls, tai_khoan_obj, ho_ten, sdt=None, email=None):
+        """Tạo thông tin chủ trọ mới"""
+        return cls.objects.create(
+            MA_TAI_KHOAN=tai_khoan_obj,
+            TEN_QUAN_LY=ho_ten,
+            SDT_QUAN_LY=sdt,
+            EMAIL_QL=email
+        )
 
     class Meta:
         db_table = 'nguoiquanly'

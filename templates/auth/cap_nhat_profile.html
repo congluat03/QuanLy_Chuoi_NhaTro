@@ -1,0 +1,279 @@
+{% extends 'index/index_layout.html' %}
+
+{% block content %}
+<div class="pt-20 pb-16 min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+      <!-- Header -->
+      <div class="bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-8">
+        <div class="flex items-center space-x-4">
+          <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center">
+            {% if khach_thue and khach_thue.ANH_KT %}
+              <img src="{{ khach_thue.ANH_KT.url }}" alt="Avatar" class="w-18 h-18 rounded-full object-cover">
+            {% else %}
+              <svg class="w-12 h-12 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+              </svg>
+            {% endif %}
+          </div>
+          <div class="text-white">
+            <h1 class="text-3xl font-bold">Cập Nhật Thông Tin Cá Nhân</h1>
+            <p class="text-green-100">Cập nhật thông tin và CCCD/CMND</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Messages -->
+      {% if messages %}
+        <div class="px-6 pt-4">
+          {% for message in messages %}
+            <div class="mb-4 p-4 rounded-lg {% if message.tags == 'success' %}bg-green-50 text-green-700 border border-green-200{% elif message.tags == 'error' %}bg-red-50 text-red-700 border border-red-200{% else %}bg-blue-50 text-blue-700 border border-blue-200{% endif %}">
+              {{ message }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <!-- Form Content -->
+      <div class="p-6">
+        <form method="post" enctype="multipart/form-data" class="space-y-8">
+          {% csrf_token %}
+          
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Thông tin cá nhân -->
+            <div class="bg-gray-50 rounded-lg p-6">
+              <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+                <svg class="w-6 h-6 mr-2 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+                </svg>
+                Thông Tin Cá Nhân
+              </h2>
+              
+              <div class="space-y-6">
+                <div>
+                  <label for="ho_ten_kt" class="block text-sm font-medium text-gray-700 mb-2">Họ và tên *</label>
+                  <input type="text" id="ho_ten_kt" name="ho_ten_kt" 
+                         value="{{ khach_thue.HO_TEN_KT|default:'' }}"
+                         class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                         placeholder="Nhập họ và tên">
+                </div>
+
+                <div>
+                  <label for="sdt_kt" class="block text-sm font-medium text-gray-700 mb-2">Số điện thoại *</label>
+                  <input type="tel" id="sdt_kt" name="sdt_kt" 
+                         value="{{ khach_thue.SDT_KT|default:'' }}"
+                         class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                         placeholder="Nhập số điện thoại">
+                </div>
+
+                <div>
+                  <label for="email_kt" class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                  <input type="email" id="email_kt" name="email_kt" 
+                         value="{{ khach_thue.EMAIL_KT|default:'' }}"
+                         class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                         placeholder="Nhập email">
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label for="ngay_sinh_kt" class="block text-sm font-medium text-gray-700 mb-2">Ngày sinh</label>
+                    <input type="date" id="ngay_sinh_kt" name="ngay_sinh_kt" 
+                           value="{{ khach_thue.NGAY_SINH_KT|date:'Y-m-d'|default:'' }}"
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                  </div>
+
+                  <div>
+                    <label for="gioi_tinh_kt" class="block text-sm font-medium text-gray-700 mb-2">Giới tính</label>
+                    <select id="gioi_tinh_kt" name="gioi_tinh_kt"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                      <option value="">Chọn giới tính</option>
+                      <option value="Nam" {% if khach_thue.GIOI_TINH_KT == 'Nam' %}selected{% endif %}>Nam</option>
+                      <option value="Nữ" {% if khach_thue.GIOI_TINH_KT == 'Nữ' %}selected{% endif %}>Nữ</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label for="noi_sinh_kt" class="block text-sm font-medium text-gray-700 mb-2">Nơi sinh / Quê quán</label>
+                  <input type="text" id="noi_sinh_kt" name="noi_sinh_kt" 
+                         value="{{ khach_thue.NOI_SINH_KT|default:'' }}"
+                         class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                         placeholder="Nhập nơi sinh">
+                </div>
+
+                <div>
+                  <label for="nghe_nghiep" class="block text-sm font-medium text-gray-700 mb-2">Nghề nghiệp</label>
+                  <input type="text" id="nghe_nghiep" name="nghe_nghiep" 
+                         value="{{ khach_thue.NGHE_NGHIEP|default:'' }}"
+                         class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                         placeholder="Nhập nghề nghiệp">
+                </div>
+
+                <div>
+                  <label for="avatar" class="block text-sm font-medium text-gray-700 mb-2">Ảnh đại diện</label>
+                  <input type="file" id="avatar" name="avatar" accept="image/*"
+                         class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                  <p class="text-sm text-gray-500 mt-1">Chấp nhận file: JPG, PNG (tối đa 5MB)</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Thông tin CCCD/CMND -->
+            <div class="bg-green-50 rounded-lg p-6">
+              <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+                <svg class="w-6 h-6 mr-2 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 0v12h8V4H6z"/>
+                </svg>
+                Thông Tin CCCD/CMND
+              </h2>
+              
+              <div class="space-y-6">
+                <div>
+                  <label for="so_cmnd_cccd" class="block text-sm font-medium text-gray-700 mb-2">Số CCCD/CMND</label>
+                  <input type="text" id="so_cmnd_cccd" name="so_cmnd_cccd" 
+                         value="{{ cccd_cmnd.SO_CMND_CCCD|default:'' }}"
+                         class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                         placeholder="Nhập số CCCD/CMND (9 hoặc 12 số)">
+                </div>
+
+                <div>
+                  <label for="ngay_cap" class="block text-sm font-medium text-gray-700 mb-2">Ngày cấp</label>
+                  <input type="date" id="ngay_cap" name="ngay_cap" 
+                         value="{{ cccd_cmnd.NGAY_CAP|date:'Y-m-d'|default:'' }}"
+                         class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                </div>
+
+                <div>
+                  <label for="dia_chi_thuong_tru" class="block text-sm font-medium text-gray-700 mb-2">Địa chỉ thường trú</label>
+                  <textarea id="dia_chi_thuong_tru" name="dia_chi_thuong_tru" rows="3"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                            placeholder="Nhập địa chỉ thường trú">{{ cccd_cmnd.DIA_CHI_THUONG_TRU|default:'' }}</textarea>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label for="anh_mat_truoc" class="block text-sm font-medium text-gray-700 mb-2">Ảnh mặt trước CCCD/CMND</label>
+                    <input type="file" id="anh_mat_truoc" name="anh_mat_truoc" accept="image/*"
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                    {% if cccd_cmnd.ANH_MAT_TRUOC %}
+                      <div class="mt-2">
+                        <img src="{{ cccd_cmnd.ANH_MAT_TRUOC.url }}" alt="CCCD mặt trước" 
+                             class="w-24 h-16 object-cover rounded border">
+                        <p class="text-xs text-green-600 mt-1">Ảnh hiện tại</p>
+                      </div>
+                    {% endif %}
+                  </div>
+
+                  <div>
+                    <label for="anh_mat_sau" class="block text-sm font-medium text-gray-700 mb-2">Ảnh mặt sau CCCD/CMND</label>
+                    <input type="file" id="anh_mat_sau" name="anh_mat_sau" accept="image/*"
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                    {% if cccd_cmnd.ANH_MAT_SAU %}
+                      <div class="mt-2">
+                        <img src="{{ cccd_cmnd.ANH_MAT_SAU.url }}" alt="CCCD mặt sau" 
+                             class="w-24 h-16 object-cover rounded border">
+                        <p class="text-xs text-green-600 mt-1">Ảnh hiện tại</p>
+                      </div>
+                    {% endif %}
+                  </div>
+                </div>
+
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div class="flex items-start">
+                    <svg class="w-5 h-5 text-blue-400 mt-0.5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                    </svg>
+                    <div class="text-sm">
+                      <p class="text-blue-800 font-medium">Lưu ý:</p>
+                      <ul class="text-blue-700 mt-1 list-disc list-inside space-y-1">
+                        <li>Số CCCD/CMND phải có 9 hoặc 12 chữ số</li>
+                        <li>Ảnh phải có định dạng JPG, PNG và không quá 5MB</li>
+                        <li>Ảnh phải rõ nét, đầy đủ thông tin</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="flex flex-wrap gap-4 pt-6 border-t border-gray-200">
+            <button type="submit" 
+                    class="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors duration-200 inline-flex items-center">
+              <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+              </svg>
+              Cập nhật thông tin
+            </button>
+            
+            <a href="{% url 'dungchung:profile' %}" 
+               class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 px-8 rounded-lg transition-colors duration-200 inline-flex items-center">
+              <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M9.707 14.707a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 1.414L7.414 9H15a1 1 0 110 2H7.414l2.293 2.293a1 1 0 010 1.414z" clip-rule="evenodd"></path>
+              </svg>
+              Hủy bỏ
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Preview ảnh khi chọn file
+function previewImage(input, previewId) {
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const preview = document.getElementById(previewId);
+      if (preview) {
+        preview.src = e.target.result;
+        preview.classList.remove('hidden');
+      }
+    }
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+// Thêm event listeners cho file inputs
+document.getElementById('avatar').addEventListener('change', function() {
+  previewImage(this, 'avatarPreview');
+});
+
+document.getElementById('anh_mat_truoc').addEventListener('change', function() {
+  previewImage(this, 'matTruocPreview');
+});
+
+document.getElementById('anh_mat_sau').addEventListener('change', function() {
+  previewImage(this, 'matSauPreview');
+});
+
+// Validation form trước khi submit
+document.querySelector('form').addEventListener('submit', function(e) {
+  const hoTen = document.getElementById('ho_ten_kt').value.trim();
+  const sdt = document.getElementById('sdt_kt').value.trim();
+  const soCccd = document.getElementById('so_cmnd_cccd').value.trim();
+  
+  let errors = [];
+  
+  if (hoTen && hoTen.length < 2) {
+    errors.push('Họ tên phải có ít nhất 2 ký tự.');
+  }
+  
+  if (sdt && !/^[0-9]{10,11}$/.test(sdt)) {
+    errors.push('Số điện thoại phải có 10-11 chữ số.');
+  }
+  
+  if (soCccd && !/(^[0-9]{9}$|^[0-9]{12}$)/.test(soCccd)) {
+    errors.push('Số CCCD/CMND phải có 9 hoặc 12 chữ số.');
+  }
+  
+  if (errors.length > 0) {
+    e.preventDefault();
+    alert('Lỗi validation:\n' + errors.join('\n'));
+  }
+});
+</script>
+{% endblock %}

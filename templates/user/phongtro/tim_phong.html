@@ -1,0 +1,264 @@
+{% extends 'index/index_layout.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block content %}
+<div class="pt-20 pb-16">
+  <!-- Hero Section -->
+  <div class="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-16">
+    <div class="max-w-screen-xl mx-auto px-6 text-center">
+      <h1 class="text-4xl font-bold mb-4">Tìm Phòng Trọ Lý Tưởng</h1>
+      <p class="text-xl mb-8">Hơn {{ total_phongs }} phòng trọ chất lượng đang chờ bạn khám phá</p>
+    </div>
+  </div>
+
+  <div class="max-w-screen-xl mx-auto px-6 -mt-8">
+    <!-- Search Filter Card -->
+    <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+      <form method="GET" class="space-y-4" id="searchForm">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- Tên phòng -->
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Tên phòng</label>
+            <input type="text" name="ten_phong" value="{{ filters.ten_phong }}" 
+                   placeholder="Nhập tên phòng..."
+                   class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          </div>
+
+          <!-- Khu vực -->
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Khu vực</label>
+            <select name="khu_vuc" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+              <option value="">Tất cả khu vực</option>
+              {% for kv in khu_vucs %}
+                <option value="{{ kv.MA_KHU_VUC }}" {% if filters.khu_vuc == kv.MA_KHU_VUC|stringformat:"s" %}selected{% endif %}>
+                  {{ kv.TEN_KHU_VUC }} - {{ kv.MA_NHA_TRO.TEN_NHA_TRO }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Loại phòng -->
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Loại phòng</label>
+            <select name="loai_phong" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+              <option value="">Tất cả loại phòng</option>
+              {% for lp in loai_phongs %}
+                <option value="{{ lp.MA_LOAI_PHONG }}" {% if filters.loai_phong == lp.MA_LOAI_PHONG|stringformat:"s" %}selected{% endif %}>
+                  {{ lp.TEN_LOAI_PHONG }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Nút tìm kiếm -->
+          <div class="flex items-end">
+            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-300 flex items-center justify-center">
+              <i class="fas fa-search mr-2"></i>
+              Tìm kiếm
+            </button>
+          </div>
+        </div>
+
+        <!-- Advanced Filters (Collapsible) -->
+        <div x-data="{ open: false }" class="mt-4">
+          <button type="button" @click="open = !open" class="text-blue-600 hover:text-blue-800 font-medium flex items-center">
+            <span x-text="open ? 'Ẩn bộ lọc nâng cao' : 'Hiện bộ lọc nâng cao'"></span>
+            <i class="fas fa-chevron-down ml-2 transform transition-transform" :class="{ 'rotate-180': open }"></i>
+          </button>
+          
+          <div x-show="open" x-transition class="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Trạng thái phòng -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">Trạng thái phòng</label>
+              <select name="trang_thai" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <option value="">Tất cả trạng thái</option>
+                <option value="Trống" {% if filters.trang_thai == 'Trống' %}selected{% endif %}>🟢 Còn trống</option>
+                <option value="Đã thuê" {% if filters.trang_thai == 'Đã thuê' %}selected{% endif %}>🔴 Đã thuê</option>
+                <option value="Đã cọc" {% if filters.trang_thai == 'Đã cọc' %}selected{% endif %}>🟡 Đã cọc</option>
+                <option value="Bảo trì" {% if filters.trang_thai == 'Bảo trì' %}selected{% endif %}>⚫ Bảo trì</option>
+              </select>
+            </div>
+
+            <!-- Giá phòng -->
+            <div class="lg:col-span-2">
+              <label class="block text-sm font-semibold text-gray-700 mb-2">Khoảng giá (VNĐ)</label>
+              <div class="flex space-x-2">
+                <input type="number" name="gia_min" value="{{ filters.gia_min }}" 
+                       placeholder="Từ" min="0" step="100000"
+                       class="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <span class="flex items-center text-gray-500">-</span>
+                <input type="number" name="gia_max" value="{{ filters.gia_max }}" 
+                       placeholder="Đến" min="0" step="100000"
+                       class="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+              </div>
+            </div>
+
+            <!-- Diện tích -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">Diện tích (m²)</label>
+              <div class="flex space-x-2">
+                <input type="number" name="dien_tich_min" value="{{ filters.dien_tich_min }}" 
+                       placeholder="Từ" min="0" step="1"
+                       class="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <span class="flex items-center text-gray-500">-</span>
+                <input type="number" name="dien_tich_max" value="{{ filters.dien_tich_max }}" 
+                       placeholder="Đến" min="0" step="1"
+                       class="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+              </div>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Results Header -->
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-2xl font-bold text-gray-800">
+        Tìm thấy {{ total_phongs }} phòng trọ
+      </h2>
+      
+      <!-- Clear filters if any are active -->
+      {% if filters.ten_phong or filters.khu_vuc or filters.loai_phong or filters.gia_min or filters.gia_max or filters.dien_tich_min or filters.dien_tich_max %}
+        <a href="{% url 'user_phongtro:tim_phong' %}" class="text-blue-600 hover:text-blue-800 font-medium">
+          <i class="fas fa-times mr-1"></i>
+          Xóa bộ lọc
+        </a>
+      {% endif %}
+    </div>
+
+    <!-- Results Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
+      {% for phong in page_obj %}
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 group">
+          <!-- Room Image Placeholder -->
+          <div class="h-48 bg-gradient-to-br from-blue-400 to-blue-600 relative overflow-hidden">
+            <div class="absolute inset-0 flex items-center justify-center text-white">
+              <i class="fas fa-home text-4xl opacity-50"></i>
+            </div>
+            <!-- Status Badge -->
+            <div class="absolute top-3 left-3">
+              <span class="px-3 py-1 rounded-full text-xs font-semibold
+                {% if phong.TRANG_THAI_P == 'Trống' %}bg-green-500 text-white
+                {% elif phong.TRANG_THAI_P == 'Đã thuê' %}bg-red-500 text-white
+                {% elif phong.TRANG_THAI_P == 'Đã cọc' %}bg-yellow-500 text-white
+                {% elif phong.TRANG_THAI_P == 'Bảo trì' %}bg-gray-500 text-white
+                {% else %}bg-blue-500 text-white{% endif %}">
+                <i class="fas {% if phong.TRANG_THAI_P == 'Trống' %}fa-check-circle{% elif phong.TRANG_THAI_P == 'Đã thuê' %}fa-times-circle{% elif phong.TRANG_THAI_P == 'Đã cọc' %}fa-clock{% else %}fa-info-circle{% endif %} mr-1"></i>
+                {{ phong.TRANG_THAI_P }}
+              </span>
+            </div>
+          </div>
+
+          <div class="p-4">
+            <!-- Room Title -->
+            <h3 class="font-bold text-lg text-gray-800 mb-2 group-hover:text-blue-600 transition-colors">
+              {{ phong.TEN_PHONG }}
+            </h3>
+
+            <!-- Location -->
+            <p class="text-gray-600 text-sm mb-3 flex items-center">
+              <i class="fas fa-map-marker-alt mr-2 text-blue-500"></i>
+              {{ phong.MA_KHU_VUC.TEN_KHU_VUC }}, {{ phong.MA_KHU_VUC.MA_NHA_TRO.TEN_NHA_TRO }}
+            </p>
+
+            <!-- Room Details -->
+            <div class="space-y-2 text-sm text-gray-600 mb-4">
+              <div class="flex justify-between">
+                <span>Loại phòng:</span>
+                <span class="font-medium">{{ phong.MA_LOAI_PHONG.TEN_LOAI_PHONG|default:"Chưa phân loại" }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span>Diện tích:</span>
+                <span class="font-medium">{{ phong.DIEN_TICH|default:"N/A" }} m²</span>
+              </div>
+              <div class="flex justify-between">
+                <span>Sức chứa:</span>
+                <span class="font-medium">{{ phong.SO_NGUOI_TOI_DA|default:"N/A" }} người</span>
+              </div>
+            </div>
+
+            <!-- Price -->
+            <div class="text-2xl font-bold text-blue-600 mb-4">
+              {{ phong.GIA_PHONG|currency_vn }}
+              <span class="text-sm font-normal text-gray-500">/tháng</span>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex space-x-2">
+              <a href="{% url 'user_phongtro:chi_tiet_phong' phong.MA_PHONG %}" 
+                 class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-center py-2 px-3 rounded-lg transition duration-300 text-sm font-medium">
+                Chi tiết
+              </a>
+              <a href="{% url 'user_phongtro:dat_phong' phong.MA_PHONG %}" 
+                 class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-center py-2 px-3 rounded-lg transition duration-300 text-sm font-medium">
+                Đặt phòng
+              </a>
+            </div>
+          </div>
+        </div>
+      {% empty %}
+        <div class="lg:col-span-4 text-center py-16">
+          <i class="fas fa-search text-6xl text-gray-300 mb-4"></i>
+          <h3 class="text-xl font-semibold text-gray-600 mb-2">Không tìm thấy phòng trọ nào</h3>
+          <p class="text-gray-500 mb-4">Hãy thử điều chỉnh bộ lọc tìm kiếm của bạn</p>
+          <a href="{% url 'user_phongtro:tim_phong' %}" class="text-blue-600 hover:text-blue-800 font-medium">
+            Xóa tất cả bộ lọc
+          </a>
+        </div>
+      {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+      <div class="flex justify-center">
+        <nav class="inline-flex rounded-md shadow">
+          {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+               class="px-3 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+              <i class="fas fa-chevron-left"></i>
+            </a>
+          {% endif %}
+
+          {% for num in page_obj.paginator.page_range %}
+            {% if page_obj.number == num %}
+              <span class="px-3 py-2 border border-gray-300 bg-blue-600 text-sm font-medium text-white">
+                {{ num }}
+              </span>
+            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+              <a href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                 class="px-3 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                {{ num }}
+              </a>
+            {% endif %}
+          {% endfor %}
+
+          {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+               class="px-3 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+              <i class="fas fa-chevron-right"></i>
+            </a>
+          {% endif %}
+        </nav>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Quick Actions FAB -->
+<div class="fixed bottom-6 right-6 z-10">
+  <div x-data="{ open: false }" class="relative">
+    <button @click="open = !open" class="bg-blue-600 hover:bg-blue-700 text-white rounded-full p-4 shadow-lg transition duration-300">
+      <i class="fas fa-plus text-lg"></i>
+    </button>
+    
+    <div x-show="open" x-transition class="absolute bottom-16 right-0 space-y-2">
+      <a href="{% url 'user_phongtro:tra_cuu_dat_phong' %}" 
+         class="flex items-center bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg shadow-lg transition duration-300 whitespace-nowrap">
+        <i class="fas fa-search mr-2"></i>
+        Tra cứu đặt phòng
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -90,32 +90,37 @@
         <button id="dropdownToggle"
                 class="flex items-center space-x-2 text-white hover:text-blue-200"
                 onclick="toggleDropdown(event)">
-          {% if user.quanly.profile_picture %}
-            <img src="{{ user.quanly.profile_picture.url }}"
+          {% if current_user.avatar %}
+            <img src="data:image/jpeg;base64,{{ current_user.avatar }}"
                  alt="Ảnh quản lý"
                  class="h-8 w-8 rounded-full border-2 border-white object-cover">
           {% else %}
-            <img src="{% static 'img/default-avatar.png' %}"
-                 alt="Ảnh mặc định"
-                 class="h-8 w-8 rounded-full border-2 border-white object-cover">
+            <div class="h-8 w-8 rounded-full border-2 border-white bg-white/20 flex items-center justify-center">
+              <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+              </svg>
+            </div>
           {% endif %}
-          <span class="font-semibold text-sm">{{ user.username }}</span>
+          <div class="text-left">
+            <div class="font-semibold text-sm">{{ current_user.display_name|default:current_user.username }}</div>
+            <div class="text-xs text-blue-300">{{ current_user.vai_tro }}</div>
+          </div>
           <i class="fas fa-chevron-down text-blue-300 text-sm"></i>
         </button>
         <ul id="dropdownList"
             class="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded-lg py-2 hidden z-20 ring-1 ring-black ring-opacity-5">
           <li>
-            <a href="{% url 'index:profile' %}"
+            <a href="{% url 'dungchung:admin_profile' %}"
                class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-blue-100 hover:text-blue-800">
               <i class="fas fa-user-circle w-5"></i> Hồ sơ
             </a>
           </li>
           <li>
-            <form id="logout-form" action="{% url 'index:logout' %}" method="POST">
+            <form id="admin-logout-form" action="{% url 'dungchung:admin_logout' %}" method="POST">
               {% csrf_token %}
               <a href="#"
-                 onclick="event.preventDefault(); document.getElementById('logout-form').submit();"
-                 class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-blue-100 hover:text-blue-800">
+                 onclick="event.preventDefault(); confirmLogout();"
+                 class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-red-100 hover:text-red-800">
                 <i class="fas fa-sign-out-alt w-5"></i> Đăng xuất
               </a>
             </form>
@@ -274,6 +279,13 @@
         dropdownList.classList.add("hidden");
       }
     });
+
+    // Xác nhận đăng xuất
+    function confirmLogout() {
+      if (confirm('Bạn có chắc chắn muốn đăng xuất không?')) {
+        document.getElementById('admin-logout-form').submit();
+      }
+    }
   </script>
 </body>
 </html>

@@ -1,0 +1,197 @@
+{% extends 'admin/admin_layout.html' %}
+
+{% block content_body %}
+<div class="container mx-auto px-6 py-8">
+  <!-- Header -->
+  <div class="mb-8">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">Chỉnh sửa thông tin</h1>
+        <p class="text-gray-600">Cập nhật thông tin cá nhân của bạn</p>
+      </div>
+      <a href="{% url 'dungchung:admin_profile' %}" 
+         class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors duration-200 inline-flex items-center">
+        <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M7.707 14.707a1 1 0 01-1.414 0L3 11.414a1 1 0 010-1.414L6.293 6.707a1 1 0 011.414 1.414L5.414 10l2.293 2.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+        </svg>
+        Quay lại hồ sơ
+      </a>
+    </div>
+  </div>
+
+  <div class="grid lg:grid-cols-3 gap-8">
+    <!-- Profile Summary Card -->
+    <div class="lg:col-span-1">
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="bg-gradient-to-r from-sky-600 to-blue-700 px-6 py-6">
+          <div class="flex flex-col items-center">
+            <!-- Avatar -->
+            <div class="w-16 h-16 mb-3">
+              {% if nguoi_quan_ly and nguoi_quan_ly.ANH_QL %}
+                <img src="data:image/jpeg;base64,{{ nguoi_quan_ly.ANH_QL }}" 
+                     alt="Avatar" 
+                     class="w-16 h-16 rounded-full object-cover border-3 border-white/30">
+              {% else %}
+                <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
+                  <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+                  </svg>
+                </div>
+              {% endif %}
+            </div>
+            
+            <!-- User Info -->
+            <div class="text-center text-white">
+              <h3 class="text-lg font-bold mb-1">{{ tai_khoan.TAI_KHOAN }}</h3>
+              <p class="text-white/80 text-sm">{{ vai_tro }}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-6 space-y-4">
+          <div>
+            <label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Tài khoản</label>
+            <p class="text-gray-900 font-medium">{{ tai_khoan.TAI_KHOAN }}</p>
+          </div>
+          
+          <div>
+            <label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Trạng thái</label>
+            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+              {{ tai_khoan.TRANG_THAI_TK }}
+            </span>
+          </div>
+          
+          <div>
+            <label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Ngày tạo</label>
+            <p class="text-gray-600 text-sm">{{ tai_khoan.NGAY_TAO|date:"d/m/Y H:i" }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Form -->
+    <div class="lg:col-span-2">
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div class="px-6 py-4 border-b border-gray-200">
+          <h2 class="text-lg font-semibold text-gray-900">Thông tin cá nhân</h2>
+          <p class="text-sm text-gray-600 mt-1">Cập nhật thông tin chi tiết của bạn</p>
+        </div>
+
+        <form method="POST" class="p-6">
+          {% csrf_token %}
+          
+          <div class="grid md:grid-cols-2 gap-6">
+            <!-- Họ và tên -->
+            <div class="md:col-span-2">
+              <label for="ten_quan_ly" class="block text-sm font-medium text-gray-700 mb-2">
+                Họ và tên <span class="text-red-500">*</span>
+              </label>
+              <input type="text" 
+                     id="ten_quan_ly" 
+                     name="ten_quan_ly"
+                     value="{{ form_data.ten_quan_ly|default:nguoi_quan_ly.TEN_QUAN_LY|default:'' }}"
+                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-colors duration-200
+                            {% if form_errors.ten_quan_ly %}border-red-500 bg-red-50{% endif %}"
+                     placeholder="Nhập họ và tên đầy đủ">
+              {% if form_errors.ten_quan_ly %}
+                <p class="mt-2 text-sm text-red-600">{{ form_errors.ten_quan_ly }}</p>
+              {% endif %}
+            </div>
+
+            <!-- Email -->
+            <div>
+              <label for="email_ql" class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+              <input type="email" 
+                     id="email_ql" 
+                     name="email_ql"
+                     value="{{ form_data.email_ql|default:nguoi_quan_ly.EMAIL_QL|default:'' }}"
+                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-colors duration-200
+                            {% if form_errors.email_ql %}border-red-500 bg-red-50{% endif %}"
+                     placeholder="example@gmail.com">
+              {% if form_errors.email_ql %}
+                <p class="mt-2 text-sm text-red-600">{{ form_errors.email_ql }}</p>
+              {% endif %}
+            </div>
+
+            <!-- Số điện thoại -->
+            <div>
+              <label for="sdt_quan_ly" class="block text-sm font-medium text-gray-700 mb-2">Số điện thoại</label>
+              <input type="tel" 
+                     id="sdt_quan_ly" 
+                     name="sdt_quan_ly"
+                     value="{{ form_data.sdt_quan_ly|default:nguoi_quan_ly.SDT_QUAN_LY|default:'' }}"
+                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-colors duration-200
+                            {% if form_errors.sdt_quan_ly %}border-red-500 bg-red-50{% endif %}"
+                     placeholder="0123456789">
+              {% if form_errors.sdt_quan_ly %}
+                <p class="mt-2 text-sm text-red-600">{{ form_errors.sdt_quan_ly }}</p>
+              {% endif %}
+              <p class="mt-1 text-xs text-gray-500">Định dạng: 10 số, bắt đầu 03/05/07/08/09</p>
+            </div>
+
+            <!-- Giới tính -->
+            <div>
+              <label for="gioi_tinh_ql" class="block text-sm font-medium text-gray-700 mb-2">Giới tính</label>
+              <select id="gioi_tinh_ql" 
+                      name="gioi_tinh_ql"
+                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-colors duration-200">
+                <option value="">-- Chọn giới tính --</option>
+                <option value="Nam" {% if form_data.gioi_tinh_ql == "Nam" or nguoi_quan_ly.GIOI_TINH_QL == "Nam" %}selected{% endif %}>Nam</option>
+                <option value="Nữ" {% if form_data.gioi_tinh_ql == "Nữ" or nguoi_quan_ly.GIOI_TINH_QL == "Nữ" %}selected{% endif %}>Nữ</option>
+                <option value="Khác" {% if form_data.gioi_tinh_ql == "Khác" or nguoi_quan_ly.GIOI_TINH_QL == "Khác" %}selected{% endif %}>Khác</option>
+              </select>
+            </div>
+
+            <!-- Ngày sinh -->
+            <div>
+              <label for="ngay_sinh_ql" class="block text-sm font-medium text-gray-700 mb-2">Ngày sinh</label>
+              <input type="date" 
+                     id="ngay_sinh_ql" 
+                     name="ngay_sinh_ql"
+                     value="{{ form_data.ngay_sinh_ql|default:nguoi_quan_ly.NGAY_SINH_QL|date:'Y-m-d'|default:'' }}"
+                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-colors duration-200
+                            {% if form_errors.ngay_sinh_ql %}border-red-500 bg-red-50{% endif %}">
+              {% if form_errors.ngay_sinh_ql %}
+                <p class="mt-2 text-sm text-red-600">{{ form_errors.ngay_sinh_ql }}</p>
+              {% endif %}
+            </div>
+
+            <!-- Địa chỉ -->
+            <div class="md:col-span-2">
+              <label for="dia_chi_ql" class="block text-sm font-medium text-gray-700 mb-2">Địa chỉ</label>
+              <textarea id="dia_chi_ql" 
+                        name="dia_chi_ql"
+                        rows="3"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-colors duration-200 resize-none
+                               {% if form_errors.dia_chi_ql %}border-red-500 bg-red-50{% endif %}"
+                        placeholder="Nhập địa chỉ đầy đủ">{{ form_data.dia_chi_ql|default:nguoi_quan_ly.DIA_CHI_QL|default:'' }}</textarea>
+              {% if form_errors.dia_chi_ql %}
+                <p class="mt-2 text-sm text-red-600">{{ form_errors.dia_chi_ql }}</p>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="flex flex-col sm:flex-row gap-4 mt-8 pt-6 border-t border-gray-200">
+            <button type="submit" 
+                    class="flex-1 bg-sky-600 hover:bg-sky-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 inline-flex items-center justify-center">
+              <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+              </svg>
+              Lưu thông tin
+            </button>
+            
+            <a href="{% url 'dungchung:admin_profile' %}" 
+               class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-lg transition-colors duration-200 inline-flex items-center justify-center">
+              <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+              </svg>
+              Hủy bỏ
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

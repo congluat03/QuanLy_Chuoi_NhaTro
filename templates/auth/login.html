@@ -1,93 +1,489 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
-        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.3.1/css/all.css"
-        integrity="sha384-mzrmE5qonljUremFsqc01SB46JvROS7bZs3IO2EmfFsd15uHvIt+Y8vEf7N7fWAU" crossorigin="anonymous">
-    {% load static %}
-</head>
-<body>
-    <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 to-blue-50 px-6">
-        <div class="flex flex-col md:flex-row bg-white shadow-2xl rounded-3xl overflow-hidden max-w-5xl w-full">
-            <!-- Hình ảnh bên trái -->
-            <div class="md:w-1/2 hidden md:block relative">
-                <img src="{% static 'assets/img/login_anh.png' %}" alt="Nhà trọ"
-                     class="h-full w-full object-cover object-right">
-                <div class="absolute inset-0 bg-black bg-opacity-20"></div>
+{% extends 'index/index_layout.html' %}
+
+{% block content %}
+<!-- Main Container với responsive breakpoints - tương thích với navbar fixed -->
+<div class="min-h-screen bg-gray-50 relative overflow-hidden pt-16">
+  <!-- Background Pattern tương thích với theme -->
+  <div class="absolute inset-0 opacity-5">
+    <div class="absolute top-20 left-10 w-32 h-32 bg-blue-800 rounded-full blur-xl animate-pulse"></div>
+    <div class="absolute bottom-10 right-10 w-48 h-48 bg-sky-600 rounded-full blur-xl animate-pulse delay-1000"></div>
+    <div class="absolute top-1/2 left-1/4 w-24 h-24 bg-blue-700 rounded-full blur-xl animate-pulse delay-500"></div>
+  </div>
+
+  <!-- Background Gradient overlay tương thích -->
+  <div class="absolute inset-0 bg-gradient-to-br from-sky-50/50 via-blue-50/30 to-indigo-50/50"></div>
+
+  <!-- Content Container với padding top cho navbar -->
+  <div class="relative z-10 flex items-center justify-center min-h-[calc(100vh-4rem)] px-4 py-8 sm:px-6 lg:px-8">
+    <div class="w-full max-w-md sm:max-w-lg lg:max-w-2xl xl:max-w-4xl">
+      
+      <!-- Card Container -->
+      <div class="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 overflow-hidden">
+        
+        <!-- Desktop Layout (lg+) - Split Screen -->
+        <div class="lg:flex lg:min-h-[600px]">
+          
+          <!-- Left Panel - Hidden on mobile/tablet với màu tương thích -->
+          <div class="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-sky-700 via-blue-800 to-indigo-900 p-12 items-center justify-center relative overflow-hidden">
+            <!-- Background Shapes -->
+            <div class="absolute inset-0 opacity-10">
+              <div class="absolute top-20 left-20 w-40 h-40 bg-white rounded-full"></div>
+              <div class="absolute bottom-20 right-20 w-32 h-32 bg-white rounded-full"></div>
+              <div class="absolute top-1/2 left-10 w-24 h-24 bg-white rounded-full"></div>
+            </div>
+            
+            <!-- Content -->
+            <div class="relative z-10 text-white text-center">
+              <div class="mb-8">
+                <div class="w-24 h-24 mx-auto mb-6 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                  <svg class="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                </div>
+                <h2 class="text-3xl xl:text-4xl font-bold mb-4">Chào Mừng Trở Lại!</h2>
+                <p class="text-lg xl:text-xl text-white/90 leading-relaxed">
+                  Đăng nhập để tiếp tục sử dụng các dịch vụ của chúng tôi
+                </p>
+              </div>
+              
+              <!-- Features -->
+              <div class="space-y-4 text-left">
+                <div class="flex items-center space-x-3">
+                  <div class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                    <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                    </svg>
+                  </div>
+                  <span class="text-white/90">Bảo mật tuyệt đối</span>
+                </div>
+                <div class="flex items-center space-x-3">
+                  <div class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                    <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"></path>
+                    </svg>
+                  </div>
+                  <span class="text-white/90">Quản lý dễ dàng</span>
+                </div>
+                <div class="flex items-center space-x-3">
+                  <div class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                    <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"></path>
+                    </svg>
+                  </div>
+                  <span class="text-white/90">Truy cập nhanh chóng</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Panel - Form -->
+          <div class="w-full lg:w-1/2">
+            <!-- Mobile/Tablet Header với màu tương thích -->
+            <div class="lg:hidden text-center pt-8 pb-6 px-6 sm:px-8">
+              <div class="w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-sky-700 to-blue-800 rounded-2xl flex items-center justify-center transform rotate-3 shadow-lg">
+                <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+              </div>
+              <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Đăng Nhập</h1>
+              <p class="text-gray-600 text-sm sm:text-base">Chào mừng bạn trở lại</p>
             </div>
 
-            <!-- Form đăng nhập bên phải -->
-            <div class="w-full md:w-1/2 p-10 sm:p-12 flex flex-col justify-center">
-                <div class="mb-8 text-center">
-                    <h2 class="text-4xl font-extrabold text-blue-700 tracking-tight">Quản lý nhà trọ</h2>
-                    <p class="text-base text-gray-600 mt-3">Vui lòng đăng nhập để tiếp tục</p>
+            <!-- Desktop Header -->
+            <div class="hidden lg:block text-center pt-12 pb-8 px-12">
+              <h1 class="text-3xl xl:text-4xl font-bold text-gray-900 mb-3">Đăng Nhập</h1>
+              <p class="text-gray-600 text-lg">Chào mừng bạn trở lại</p>
+            </div>
+
+            <!-- Messages -->
+            {% if messages %}
+              <div class="px-6 sm:px-8 lg:px-12 mb-4">
+                {% for message in messages %}
+                  <div class="mb-3 p-4 rounded-2xl border {% if message.tags == 'success' %}bg-green-50 text-green-700 border-green-200{% elif message.tags == 'error' %}bg-red-50 text-red-700 border-red-200{% else %}bg-blue-50 text-blue-700 border-blue-200{% endif %} animate-fadeIn">
+                    {{ message }}
+                  </div>
+                {% endfor %}
+              </div>
+            {% endif %}
+
+            <!-- Form Container -->
+            <div class="px-6 sm:px-8 lg:px-12 pb-8 lg:pb-12">
+              <form method="post" novalidate class="space-y-6">
+                {% csrf_token %}
+                
+                <!-- Username -->
+                <div class="form-group">
+                  <label for="username" class="block text-sm font-semibold text-gray-700 mb-2">
+                    <div class="flex items-center space-x-2">
+                      <svg class="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+                      </svg>
+                      <span>Tên đăng nhập</span>
+                      <span class="text-red-500">*</span>
+                    </div>
+                  </label>
+                  <div class="relative">
+                    <input type="text" id="username" name="username" required
+                      class="w-full px-4 py-4 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-sky-500 focus:border-sky-600 transition-all duration-200 text-base placeholder-gray-400"
+                      placeholder="Nhập tên đăng nhập của bạn">
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-4">
+                      <div class="w-2 h-2 rounded-full bg-gray-300 field-status" data-field="username"></div>
+                    </div>
+                  </div>
+                  <div class="error-message text-sm text-red-600 mt-2 hidden">
+                    <p class="flex items-center space-x-1">
+                      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                      </svg>
+                      <span class="error-text"></span>
+                    </p>
+                  </div>
                 </div>
 
-                <form action="{% url 'index:login' %}" method="POST" class="space-y-7">
-                    {% csrf_token %}
-
-                    <!-- Tên đăng nhập -->
-                    <div>
-                        <label for="TENTAIKHOAN" class="block text-gray-700 font-semibold mb-2">Tên đăng nhập</label>
-                        <div class="relative">
-                            <input type="text" name="TENTAIKHOAN" id="TENTAIKHOAN" required autofocus
-                                   value="{{ form.TENTAIKHOAN.value|default:'' }}"
-                                   class="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-3 focus:ring-blue-400 transition"
-                                   placeholder="Nhập tên đăng nhập">
-                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center text-gray-400 text-lg">
-                                <i class="fas fa-user"></i>
-                            </div>
-                        </div>
+                <!-- Password -->
+                <div class="form-group">
+                  <label for="password" class="block text-sm font-semibold text-gray-700 mb-2">
+                    <div class="flex items-center space-x-2">
+                      <svg class="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"></path>
+                      </svg>
+                      <span>Mật khẩu</span>
+                      <span class="text-red-500">*</span>
                     </div>
-
-                    <!-- Mật khẩu -->
-                    <div>
-                        <label for="MATKHAU" class="block text-gray-700 font-semibold mb-2">Mật khẩu</label>
-                        <div class="relative">
-                            <input type="password" name="MATKHAU" id="MATKHAU" required
-                                   class="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-3 focus:ring-blue-400 transition"
-                                   placeholder="Nhập mật khẩu">
-                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center text-gray-400 text-lg">
-                                <i class="fas fa-lock"></i>
-                            </div>
-                        </div>
+                  </label>
+                  <div class="relative">
+                    <input type="password" id="password" name="password" required
+                      class="w-full px-4 py-4 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-sky-500 focus:border-sky-600 transition-all duration-200 text-base placeholder-gray-400"
+                      placeholder="Nhập mật khẩu của bạn">
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-4 space-x-2">
+                      <button type="button" class="text-gray-400 hover:text-gray-600 toggle-password" data-target="password">
+                        <svg class="w-5 h-5 show-icon" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path>
+                          <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"></path>
+                        </svg>
+                        <svg class="w-5 h-5 hide-icon hidden" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z" clip-rule="evenodd"></path>
+                          <path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.065 7 9.542 7 .847 0 1.669-.105 2.454-.303z"></path>
+                        </svg>
+                      </button>
+                      <div class="w-2 h-2 rounded-full bg-gray-300 field-status" data-field="password"></div>
                     </div>
-
-                    <!-- Hiển thị lỗi -->
-                    {% if form.errors or messages %}
-                        <div class="bg-red-100 border border-red-400 text-red-700 px-5 py-3 rounded-xl text-sm">
-                            {% for field in form %}
-                                {% for error in field.errors %}
-                                    <p>{{ error }}</p>
-                                {% endfor %}
-                            {% endfor %}
-                            {% for message in messages %}
-                                <p>{{ message }}</p>
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-
-                    <!-- Nút đăng nhập -->
-                    <div>
-                        <button type="submit"
-                                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl shadow-lg transition duration-300">
-                            Đăng nhập
-                        </button>
-                    </div>
-
-                    <!-- Link đăng ký -->
-                    <p class="text-center text-sm text-gray-600 mt-3">
-                        Bạn chưa có tài khoản?
-                        <a href="{% url 'index:register' %}" class="text-blue-600 hover:underline font-semibold">Đăng ký ngay</a>
+                  </div>
+                  <div class="error-message text-sm text-red-600 mt-2 hidden">
+                    <p class="flex items-center space-x-1">
+                      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                      </svg>
+                      <span class="error-text"></span>
                     </p>
-                </form>
+                  </div>
+                </div>
+
+                <!-- Remember Me & Forgot Password -->
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center">
+                    <input type="checkbox" id="remember" name="remember" 
+                      class="w-4 h-4 text-sky-600 bg-gray-100 border-gray-300 rounded focus:ring-sky-500 focus:ring-2">
+                    <label for="remember" class="ml-2 text-sm text-gray-600">Ghi nhớ đăng nhập</label>
+                  </div>
+                  <div class="text-sm">
+                    <a href="#" class="font-medium text-sky-700 hover:text-blue-800 transition-colors duration-200 hover:underline">
+                      Quên mật khẩu?
+                    </a>
+                  </div>
+                </div>
+
+                <!-- Submit Button với màu tương thích -->
+                <div class="pt-4">
+                  <button type="submit" class="w-full bg-gradient-to-r from-sky-700 to-blue-800 hover:from-sky-800 hover:to-blue-900 text-white font-semibold py-4 px-6 rounded-2xl transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transform hover:scale-[1.02] active:scale-[0.98] text-base shadow-lg hover:shadow-xl">
+                    <span class="flex items-center justify-center space-x-2">
+                      <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                      </svg>
+                      <span>Đăng Nhập</span>
+                    </span>
+                  </button>
+                </div>
+
+                <!-- Register Link -->
+                <div class="text-center pt-2">
+                  <p class="text-sm text-gray-600">
+                    Chưa có tài khoản? 
+                    <a href="{% url 'dungchung:register' %}" class="font-medium text-sky-700 hover:text-blue-800 transition-colors duration-200 hover:underline">
+                      Đăng ký ngay
+                    </a>
+                  </p>
+                </div>
+              </form>
             </div>
+          </div>
         </div>
+      </div>
     </div>
-</body>
-</html>
+  </div>
+</div>
+
+<style>
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.animate-fadeIn { animation: fadeIn 0.3s ease-out; }
+.animate-slideIn { animation: slideIn 0.3s ease-out; }
+
+/* Enhanced form styling với theme color */
+.form-group input:focus {
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+}
+
+.form-group input.success {
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.form-group input.error {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+/* Password toggle button styling */
+.toggle-password {
+  transition: all 0.2s;
+}
+
+.toggle-password:hover {
+  transform: scale(1.1);
+}
+
+/* Field status indicator */
+.field-status {
+  transition: all 0.3s;
+}
+
+.field-status.success {
+  background-color: #10b981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3);
+}
+
+.field-status.error {
+  background-color: #ef4444;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.3);
+}
+
+.field-status.loading {
+  background-color: #f59e0b;
+  animation: pulse 1.5s infinite;
+}
+
+/* Checkbox styling */
+input[type="checkbox"]:checked {
+  background-color: #0ea5e9;
+  border-color: #0ea5e9;
+}
+</style>
+
+<script>
+// Enhanced validation and UI interactions
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const inputs = form.querySelectorAll('input[type="text"], input[type="password"]');
+    
+    // Initialize
+    inputs.forEach(input => {
+        setupFieldValidation(input);
+        setupFieldAnimations(input);
+    });
+    
+    setupPasswordToggle();
+    setupFormSubmission();
+    
+    function setupFieldValidation(input) {
+        input.addEventListener('blur', () => validateField(input));
+        input.addEventListener('input', () => {
+            clearFieldError(input);
+            if (input.value.trim()) {
+                validateFieldRealTime(input);
+            }
+        });
+        
+        input.addEventListener('focus', () => {
+            input.parentElement.classList.add('ring-2', 'ring-blue-500/20');
+        });
+        
+        input.addEventListener('blur', () => {
+            input.parentElement.classList.remove('ring-2', 'ring-blue-500/20');
+        });
+    }
+    
+    function setupFieldAnimations(input) {
+        input.addEventListener('focus', () => {
+            input.style.transform = 'scale(1.02)';
+            input.style.transition = 'all 0.2s';
+        });
+        
+        input.addEventListener('blur', () => {
+            input.style.transform = 'scale(1)';
+        });
+    }
+    
+    function setupPasswordToggle() {
+        document.querySelectorAll('.toggle-password').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.dataset.target;
+                const targetInput = document.getElementById(targetId);
+                const showIcon = this.querySelector('.show-icon');
+                const hideIcon = this.querySelector('.hide-icon');
+                
+                if (targetInput.type === 'password') {
+                    targetInput.type = 'text';
+                    showIcon.classList.add('hidden');
+                    hideIcon.classList.remove('hidden');
+                } else {
+                    targetInput.type = 'password';
+                    showIcon.classList.remove('hidden');
+                    hideIcon.classList.add('hidden');
+                }
+            });
+        });
+    }
+    
+    function setupFormSubmission() {
+        form.addEventListener('submit', function(e) {
+            const submitButton = form.querySelector('button[type="submit"]');
+            const buttonText = submitButton.querySelector('span:last-child');
+            const originalText = buttonText.textContent;
+            
+            // Add loading state
+            submitButton.disabled = true;
+            submitButton.classList.add('opacity-75', 'cursor-not-allowed');
+            buttonText.textContent = 'Đang xử lý...';
+            
+            // Add spinner
+            const spinner = document.createElement('div');
+            spinner.className = 'w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin';
+            submitButton.querySelector('svg').replaceWith(spinner);
+            
+            // If validation fails, restore button
+            setTimeout(() => {
+                if (!form.checkValidity()) {
+                    submitButton.disabled = false;
+                    submitButton.classList.remove('opacity-75', 'cursor-not-allowed');
+                    buttonText.textContent = originalText;
+                    spinner.replaceWith(createLoginIcon());
+                }
+            }, 100);
+        });
+    }
+    
+    function validateField(field) {
+        const value = field.value.trim();
+        const fieldName = field.name;
+        const statusIndicator = getStatusIndicator(field);
+        
+        // Clear previous state
+        clearFieldError(field);
+        statusIndicator.className = statusIndicator.className.replace(/\b(success|error|loading)\b/g, '');
+        
+        // Basic validation
+        if (!value && field.hasAttribute('required')) {
+            showFieldError(field, 'Trường này là bắt buộc');
+            return false;
+        }
+        
+        // Specific validation
+        let isValid = true;
+        let errorMessage = '';
+        
+        switch (fieldName) {
+            case 'username':
+                if (value.length < 3) {
+                    errorMessage = 'Tên đăng nhập phải có ít nhất 3 ký tự';
+                    isValid = false;
+                }
+                break;
+            case 'password':
+                if (value.length < 6) {
+                    errorMessage = 'Mật khẩu phải có ít nhất 6 ký tự';
+                    isValid = false;
+                }
+                break;
+        }
+        
+        if (!isValid) {
+            showFieldError(field, errorMessage);
+        } else if (value) {
+            showFieldSuccess(field);
+        }
+        
+        return isValid;
+    }
+    
+    function validateFieldRealTime(field) {
+        const statusIndicator = getStatusIndicator(field);
+        statusIndicator.classList.add('loading');
+        
+        // Debounce validation
+        clearTimeout(field.validationTimeout);
+        field.validationTimeout = setTimeout(() => {
+            validateField(field);
+        }, 500);
+    }
+    
+    function showFieldError(field, message) {
+        field.classList.add('error');
+        field.classList.remove('success');
+        
+        const statusIndicator = getStatusIndicator(field);
+        statusIndicator.classList.remove('success', 'loading');
+        statusIndicator.classList.add('error');
+        
+        // Show error message
+        const errorContainer = field.parentElement.parentElement.querySelector('.error-message');
+        const errorText = errorContainer.querySelector('.error-text');
+        errorText.textContent = message;
+        errorContainer.classList.remove('hidden');
+        errorContainer.classList.add('animate-slideIn');
+    }
+    
+    function showFieldSuccess(field) {
+        field.classList.add('success');
+        field.classList.remove('error');
+        
+        const statusIndicator = getStatusIndicator(field);
+        statusIndicator.classList.remove('error', 'loading');
+        statusIndicator.classList.add('success');
+    }
+    
+    function clearFieldError(field) {
+        field.classList.remove('error', 'success');
+        
+        const statusIndicator = getStatusIndicator(field);
+        statusIndicator.classList.remove('success', 'error', 'loading');
+        
+        const errorContainer = field.parentElement.parentElement.querySelector('.error-message');
+        errorContainer.classList.add('hidden');
+        errorContainer.classList.remove('animate-slideIn');
+    }
+    
+    function getStatusIndicator(field) {
+        return field.parentElement.querySelector('.field-status');
+    }
+    
+    function createLoginIcon() {
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('class', 'w-5 h-5');
+        svg.setAttribute('fill', 'currentColor');
+        svg.setAttribute('viewBox', '0 0 20 20');
+        svg.innerHTML = '<path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>';
+        return svg;
+    }
+});
+</script>
+{% endblock %}

@@ -19,3 +19,26 @@ def map(iterable, key):
 @register.filter
 def filter_dich_vu(lich_su_qs, ma_dich_vu):
     return lich_su_qs.filter(MA_DICH_VU__MA_DICH_VU=ma_dich_vu, NGAY_HUY_DV__isnull=True).first()
+
+@register.filter
+def currency_vn(value):
+    """Format currency in Vietnamese style with full amount"""
+    try:
+        value = float(value)
+        return "{:,.0f} ₫".format(value).replace(",", ".")
+    except (ValueError, TypeError):
+        return "0 ₫"
+
+@register.filter
+def currency_vn_short(value):
+    """Format currency in Vietnamese style with short format (K, M)"""
+    try:
+        value = float(value)
+        if value >= 1000000:
+            return "{:.1f} triệu ₫".format(value / 1000000)
+        elif value >= 1000:
+            return "{:.0f}K ₫".format(value / 1000)
+        else:
+            return "{:,.0f} ₫".format(value).replace(",", ".")
+    except (ValueError, TypeError):
+        return "0 ₫"

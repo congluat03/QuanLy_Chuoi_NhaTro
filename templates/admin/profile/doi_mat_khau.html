@@ -1,0 +1,212 @@
+{% extends 'admin/admin_layout.html' %}
+
+{% block content_body %}
+<div class="container mx-auto px-6 py-8">
+  <!-- Header -->
+  <div class="mb-8">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">Đổi mật khẩu</h1>
+        <p class="text-gray-600">Cập nhật mật khẩu cho tài khoản của bạn</p>
+      </div>
+      <a href="{% url 'dungchung:admin_profile' %}" 
+         class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors duration-200 inline-flex items-center">
+        <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M7.707 14.707a1 1 0 01-1.414 0L3 11.414a1 1 0 010-1.414L6.293 6.707a1 1 0 011.414 1.414L5.414 10l2.293 2.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+        </svg>
+        Quay lại hồ sơ
+      </a>
+    </div>
+  </div>
+
+  <div class="grid lg:grid-cols-3 gap-8">
+    <!-- Profile Summary Card -->
+    <div class="lg:col-span-1">
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="bg-gradient-to-r from-sky-600 to-blue-700 px-6 py-6">
+          <div class="flex flex-col items-center">
+            <!-- Avatar -->
+            <div class="w-16 h-16 mb-3">
+              {% if nguoi_quan_ly and nguoi_quan_ly.ANH_QL %}
+                <img src="data:image/jpeg;base64,{{ nguoi_quan_ly.ANH_QL }}" 
+                     alt="Avatar" 
+                     class="w-16 h-16 rounded-full object-cover border-3 border-white/30">
+              {% else %}
+                <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
+                  <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+                  </svg>
+                </div>
+              {% endif %}
+            </div>
+            
+            <!-- User Info -->
+            <div class="text-center text-white">
+              <h3 class="text-lg font-bold mb-1">
+                {% if nguoi_quan_ly %}
+                  {{ nguoi_quan_ly.TEN_QUAN_LY }}
+                {% else %}
+                  {{ tai_khoan.TAI_KHOAN }}
+                {% endif %}
+              </h3>
+              <p class="text-white/80 text-sm">{{ vai_tro }}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-6 space-y-4">
+          <div>
+            <label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Tài khoản</label>
+            <p class="text-gray-900 font-medium">{{ tai_khoan.TAI_KHOAN }}</p>
+          </div>
+          
+          <div>
+            <label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Trạng thái</label>
+            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+              {{ tai_khoan.TRANG_THAI_TK }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Change Password Form -->
+    <div class="lg:col-span-2">
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div class="px-6 py-4 border-b border-gray-200">
+          <h2 class="text-lg font-semibold text-gray-900">Thông tin mật khẩu mới</h2>
+          <p class="text-sm text-gray-600 mt-1">Vui lòng nhập mật khẩu hiện tại và mật khẩu mới</p>
+        </div>
+
+        <form method="POST" class="p-6">
+          {% csrf_token %}
+          
+          <!-- Current Password -->
+          <div class="mb-6">
+            <label for="mat_khau_cu" class="block text-sm font-medium text-gray-700 mb-2">
+              Mật khẩu hiện tại <span class="text-red-500">*</span>
+            </label>
+            <div class="relative">
+              <input type="password" 
+                     id="mat_khau_cu" 
+                     name="mat_khau_cu"
+                     value="{{ form_data.mat_khau_cu|default:'' }}"
+                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-colors duration-200
+                            {% if form_errors.mat_khau_cu %}border-red-500 bg-red-50{% endif %}"
+                     placeholder="Nhập mật khẩu hiện tại">
+              <button type="button" 
+                      class="absolute inset-y-0 right-0 pr-3 flex items-center"
+                      onclick="togglePassword('mat_khau_cu')">
+                <svg id="eye-mat_khau_cu" class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                  <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
+                </svg>
+              </button>
+            </div>
+            {% if form_errors.mat_khau_cu %}
+              <p class="mt-2 text-sm text-red-600">{{ form_errors.mat_khau_cu }}</p>
+            {% endif %}
+          </div>
+
+          <!-- New Password -->
+          <div class="mb-6">
+            <label for="mat_khau_moi" class="block text-sm font-medium text-gray-700 mb-2">
+              Mật khẩu mới <span class="text-red-500">*</span>
+            </label>
+            <div class="relative">
+              <input type="password" 
+                     id="mat_khau_moi" 
+                     name="mat_khau_moi"
+                     value="{{ form_data.mat_khau_moi|default:'' }}"
+                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-colors duration-200
+                            {% if form_errors.mat_khau_moi %}border-red-500 bg-red-50{% endif %}"
+                     placeholder="Nhập mật khẩu mới (tối thiểu 8 ký tự)">
+              <button type="button" 
+                      class="absolute inset-y-0 right-0 pr-3 flex items-center"
+                      onclick="togglePassword('mat_khau_moi')">
+                <svg id="eye-mat_khau_moi" class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                  <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
+                </svg>
+              </button>
+            </div>
+            {% if form_errors.mat_khau_moi %}
+              <p class="mt-2 text-sm text-red-600">{{ form_errors.mat_khau_moi }}</p>
+            {% endif %}
+            <p class="mt-2 text-xs text-gray-500">
+              Mật khẩu phải tối thiểu 8 ký tự, bao gồm chữ và số
+            </p>
+          </div>
+
+          <!-- Confirm Password -->
+          <div class="mb-8">
+            <label for="xac_nhan_mat_khau" class="block text-sm font-medium text-gray-700 mb-2">
+              Xác nhận mật khẩu mới <span class="text-red-500">*</span>
+            </label>
+            <div class="relative">
+              <input type="password" 
+                     id="xac_nhan_mat_khau" 
+                     name="xac_nhan_mat_khau"
+                     value="{{ form_data.xac_nhan_mat_khau|default:'' }}"
+                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-colors duration-200
+                            {% if form_errors.xac_nhan_mat_khau %}border-red-500 bg-red-50{% endif %}"
+                     placeholder="Nhập lại mật khẩu mới">
+              <button type="button" 
+                      class="absolute inset-y-0 right-0 pr-3 flex items-center"
+                      onclick="togglePassword('xac_nhan_mat_khau')">
+                <svg id="eye-xac_nhan_mat_khau" class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                  <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
+                </svg>
+              </button>
+            </div>
+            {% if form_errors.xac_nhan_mat_khau %}
+              <p class="mt-2 text-sm text-red-600">{{ form_errors.xac_nhan_mat_khau }}</p>
+            {% endif %}
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="flex flex-col sm:flex-row gap-4">
+            <button type="submit" 
+                    class="flex-1 bg-sky-600 hover:bg-sky-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 inline-flex items-center justify-center">
+              <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+              </svg>
+              Cập nhật mật khẩu
+            </button>
+            
+            <a href="{% url 'dungchung:admin_profile' %}" 
+               class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-lg transition-colors duration-200 inline-flex items-center justify-center">
+              <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+              </svg>
+              Hủy bỏ
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function togglePassword(fieldId) {
+    const passwordField = document.getElementById(fieldId);
+    const eyeIcon = document.getElementById('eye-' + fieldId);
+    
+    if (passwordField.type === 'password') {
+        passwordField.type = 'text';
+        eyeIcon.innerHTML = `
+            <path d="M17.94 17.94A10.07 10.07 0 01.66 2.06L2.08.64l14.86 14.86-1.42 1.42z"/>
+            <path d="M9.9 4.24A9.12 9.12 0 0110 4c4.41 0 8.16 2.57 9.85 6.36a10.11 10.11 0 01-2.73 3.79l-1.42-1.42A8.16 8.16 0 0018.38 10a8.11 8.11 0 00-16.76 0 8.13 8.13 0 003.06 2.73L3.26 11.31A10.12 10.12 0 01.15 10 10.13 10.13 0 019.9 4.24z"/>
+        `;
+    } else {
+        passwordField.type = 'password';
+        eyeIcon.innerHTML = `
+            <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+            <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
+        `;
+    }
+}
+</script>
+{% endblock %}

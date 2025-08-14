@@ -1,0 +1,225 @@
+{% extends 'index/index_layout.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block content %}
+<div class="pt-20 pb-16 bg-gray-50 min-h-screen">
+  <div class="max-w-3xl mx-auto px-6">
+    <!-- Success Header -->
+    <div class="text-center mb-8">
+      <div class="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-4">
+        <i class="fas fa-check text-green-600 text-3xl"></i>
+      </div>
+      <h1 class="text-3xl font-bold text-gray-800 mb-2">Đặt Phòng Thành Công!</h1>
+      <p class="text-gray-600">Cảm ơn bạn đã đặt phòng. Chúng tôi sẽ liên hệ với bạn sớm nhất.</p>
+    </div>
+
+    <!-- Booking Details Card -->
+    <div class="bg-white rounded-xl shadow-lg overflow-hidden mb-8">
+      <div class="bg-blue-600 text-white p-6">
+        <h2 class="text-xl font-bold mb-2">Thông tin đặt phòng</h2>
+        <p class="text-blue-100">Mã đặt phòng: <span class="font-mono text-lg font-bold">#{{ dat_phong.MA_COC_PHONG }}</span></p>
+      </div>
+
+      <div class="p-6 space-y-6">
+        <!-- Customer Info -->
+        <div>
+          <h3 class="font-semibold text-gray-800 mb-3 flex items-center">
+            <i class="fas fa-user mr-2 text-blue-500"></i>
+            Thông tin khách hàng
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <span class="text-sm text-gray-500">Họ và tên:</span>
+              <p class="font-medium text-gray-800">{{ dat_phong.ten_khach_thue }}</p>
+            </div>
+            <div>
+              <span class="text-sm text-gray-500">Số điện thoại:</span>
+              <p class="font-medium text-gray-800">{{ dat_phong.sdt_khach_thue }}</p>
+            </div>
+            {% if dat_phong.email_khach_thue %}
+            <div class="md:col-span-2">
+              <span class="text-sm text-gray-500">Email:</span>
+              <p class="font-medium text-gray-800">{{ dat_phong.email_khach_thue }}</p>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Room Info -->
+        <div class="border-t pt-6">
+          <h3 class="font-semibold text-gray-800 mb-3 flex items-center">
+            <i class="fas fa-home mr-2 text-blue-500"></i>
+            Thông tin phòng
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <span class="text-sm text-gray-500">Tên phòng:</span>
+              <p class="font-medium text-gray-800">{{ dat_phong.MA_PHONG.TEN_PHONG }}</p>
+            </div>
+            <div>
+              <span class="text-sm text-gray-500">Loại phòng:</span>
+              <p class="font-medium text-gray-800">{{ dat_phong.MA_PHONG.MA_LOAI_PHONG.TEN_LOAI_PHONG|default:"Chưa phân loại" }}</p>
+            </div>
+            <div>
+              <span class="text-sm text-gray-500">Khu vực:</span>
+              <p class="font-medium text-gray-800">{{ dat_phong.MA_PHONG.MA_KHU_VUC.TEN_KHU_VUC }}</p>
+            </div>
+            <div>
+              <span class="text-sm text-gray-500">Nhà trọ:</span>
+              <p class="font-medium text-gray-800">{{ dat_phong.MA_PHONG.MA_KHU_VUC.MA_NHA_TRO.TEN_NHA_TRO }}</p>
+            </div>
+            <div>
+              <span class="text-sm text-gray-500">Giá phòng:</span>
+              <p class="font-medium text-blue-600">{{ dat_phong.MA_PHONG.GIA_PHONG|currency_vn }}/tháng</p>
+            </div>
+            <div>
+              <span class="text-sm text-gray-500">Diện tích:</span>
+              <p class="font-medium text-gray-800">{{ dat_phong.MA_PHONG.DIEN_TICH|default:"N/A" }} m²</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Booking Details -->
+        <div class="border-t pt-6">
+          <h3 class="font-semibold text-gray-800 mb-3 flex items-center">
+            <i class="fas fa-calendar-alt mr-2 text-blue-500"></i>
+            Chi tiết đặt phòng
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <span class="text-sm text-gray-500">Ngày đặt phòng:</span>
+              <p class="font-medium text-gray-800">
+                {% if dat_phong.ngay_tao_display %}
+                  {{ dat_phong.ngay_tao_display|date:"d/m/Y" }}
+                {% else %}
+                  Không xác định
+                {% endif %}
+              </p>
+            </div>
+            <div>
+              <span class="text-sm text-gray-500">Ngày dự kiến nhận phòng:</span>
+              <p class="font-medium text-gray-800">
+                {% if dat_phong.NGAY_DU_KIEN_VAO %}
+                  {{ dat_phong.NGAY_DU_KIEN_VAO|date:"d/m/Y" }}
+                {% else %}
+                  Chưa xác định
+                {% endif %}
+              </p>
+            </div>
+            <div>
+              <span class="text-sm text-gray-500">Số tiền cọc:</span>
+              <p class="font-medium text-green-600 text-lg">{{ dat_phong.TIEN_COC_PHONG|currency_vn }}</p>
+            </div>
+            <div>
+              <span class="text-sm text-gray-500">Trạng thái:</span>
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                {% if dat_phong.TRANG_THAI_CP == 'CHO_XAC_NHAN' %}bg-yellow-100 text-yellow-800
+                {% elif dat_phong.TRANG_THAI_CP == 'DA_XAC_NHAN' %}bg-green-100 text-green-800
+                {% elif dat_phong.TRANG_THAI_CP == 'DA_TU_CHOI' %}bg-red-100 text-red-800
+                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                {{ dat_phong.get_TRANG_THAI_CP_display }}
+              </span>
+            </div>
+          </div>
+          
+          {% if dat_phong.GHI_CHU_CP %}
+          <div class="mt-4">
+            <span class="text-sm text-gray-500">Ghi chú:</span>
+            <p class="font-medium text-gray-800 mt-1">{{ dat_phong.GHI_CHU_CP }}</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Status Timeline -->
+    <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+      <h3 class="font-semibold text-gray-800 mb-4">Quy trình xử lý</h3>
+      <div class="space-y-4">
+        <div class="flex items-center">
+          <div class="flex-shrink-0 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+            <i class="fas fa-check text-white text-sm"></i>
+          </div>
+          <div class="ml-4">
+            <p class="font-medium text-gray-800">Đặt phòng thành công</p>
+            <p class="text-sm text-gray-500">
+              {% if dat_phong.ngay_tao_display %}
+                {{ dat_phong.ngay_tao_display|date:"d/m/Y" }}
+              {% else %}
+                Không xác định
+              {% endif %}
+            </p>
+          </div>
+        </div>
+        
+        <div class="flex items-center">
+          <div class="flex-shrink-0 w-8 h-8 
+            {% if dat_phong.TRANG_THAI_CP == 'CHO_XAC_NHAN' %}bg-yellow-500{% else %}bg-gray-300{% endif %} 
+            rounded-full flex items-center justify-center">
+            <i class="fas fa-clock text-white text-sm"></i>
+          </div>
+          <div class="ml-4">
+            <p class="font-medium text-gray-800">Chờ xác nhận từ quản lý</p>
+            <p class="text-sm text-gray-500">Thường trong vòng 24 giờ</p>
+          </div>
+        </div>
+        
+        <div class="flex items-center">
+          <div class="flex-shrink-0 w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+            <i class="fas fa-handshake text-white text-sm"></i>
+          </div>
+          <div class="ml-4">
+            <p class="font-medium text-gray-800">Liên hệ và hẹn xem phòng</p>
+            <p class="text-sm text-gray-500">Sau khi xác nhận</p>
+          </div>
+        </div>
+        
+        <div class="flex items-center">
+          <div class="flex-shrink-0 w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+            <i class="fas fa-file-signature text-white text-sm"></i>
+          </div>
+          <div class="ml-4">
+            <p class="font-medium text-gray-800">Ký hợp đồng và thanh toán cọc</p>
+            <p class="text-sm text-gray-500">Khi đồng ý thuê phòng</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="flex flex-col sm:flex-row gap-4">
+      <a href="{% url 'user_phongtro:tim_phong' %}" 
+         class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-center py-3 px-6 rounded-lg transition duration-300 font-medium">
+        <i class="fas fa-search mr-2"></i>
+        Tìm phòng khác
+      </a>
+      <a href="{% url 'user_phongtro:tra_cuu_dat_phong' %}" 
+         class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-center py-3 px-6 rounded-lg transition duration-300 font-medium">
+        <i class="fas fa-search mr-2"></i>
+        Tra cứu đặt phòng
+      </a>
+    </div>
+
+    <!-- Contact Info -->
+    <div class="mt-8 text-center">
+      <div class="bg-blue-50 rounded-lg p-6">
+        <h4 class="font-semibold text-blue-900 mb-2">Cần hỗ trợ?</h4>
+        <p class="text-blue-700 text-sm mb-3">
+          Nếu bạn có thắc mắc hoặc cần hỗ trợ, vui lòng liên hệ với chúng tôi:
+        </p>
+        <div class="flex flex-col sm:flex-row justify-center items-center gap-4 text-sm">
+          <span class="flex items-center text-blue-600">
+            <i class="fas fa-phone mr-2"></i>
+            0123 456 789
+          </span>
+          <span class="flex items-center text-blue-600">
+            <i class="fas fa-envelope mr-2"></i>
+            support@nhatro.com
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

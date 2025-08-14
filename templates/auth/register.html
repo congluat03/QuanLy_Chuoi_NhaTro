@@ -1,0 +1,745 @@
+{% extends 'index/index_layout.html' %}
+
+{% block content %}
+<!-- Main Container với responsive breakpoints - tương thích với navbar fixed -->
+<div class="min-h-screen bg-gray-50 relative overflow-hidden pt-16">
+  <!-- Background Pattern tương thích với theme -->
+  <div class="absolute inset-0 opacity-5">
+    <div class="absolute top-20 left-10 w-32 h-32 bg-blue-800 rounded-full blur-xl animate-pulse"></div>
+    <div class="absolute bottom-10 right-10 w-48 h-48 bg-sky-600 rounded-full blur-xl animate-pulse delay-1000"></div>
+    <div class="absolute top-1/2 left-1/4 w-24 h-24 bg-blue-700 rounded-full blur-xl animate-pulse delay-500"></div>
+  </div>
+
+  <!-- Background Gradient overlay tương thích -->
+  <div class="absolute inset-0 bg-gradient-to-br from-sky-50/50 via-blue-50/30 to-indigo-50/50"></div>
+
+  <!-- Content Container với padding top cho navbar -->
+  <div class="relative z-10 flex items-center justify-center min-h-[calc(100vh-4rem)] px-4 py-8 sm:px-6 lg:px-8">
+    <div class="w-full max-w-md sm:max-w-lg lg:max-w-2xl xl:max-w-4xl">
+      
+      <!-- Card Container -->
+      <div class="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 overflow-hidden">
+        
+        <!-- Desktop Layout (lg+) - Split Screen -->
+        <div class="lg:flex lg:min-h-[700px]">
+          
+          <!-- Left Panel - Hidden on mobile/tablet với màu tương thích -->
+          <div class="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-sky-700 via-blue-800 to-indigo-900 p-12 items-center justify-center relative overflow-hidden">
+            <!-- Background Shapes -->
+            <div class="absolute inset-0 opacity-10">
+              <div class="absolute top-20 left-20 w-40 h-40 bg-white rounded-full"></div>
+              <div class="absolute bottom-20 right-20 w-32 h-32 bg-white rounded-full"></div>
+              <div class="absolute top-1/2 left-10 w-24 h-24 bg-white rounded-full"></div>
+            </div>
+            
+            <!-- Content -->
+            <div class="relative z-10 text-white text-center">
+              <div class="mb-8">
+                <div class="w-24 h-24 mx-auto mb-6 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                  <svg class="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+                  </svg>
+                </div>
+                <h2 class="text-3xl xl:text-4xl font-bold mb-4">Chào Mừng!</h2>
+                <p class="text-lg xl:text-xl text-white/90 leading-relaxed">
+                  Tham gia cùng chúng tôi để trải nghiệm dịch vụ quản lý nhà trọ tốt nhất
+                </p>
+              </div>
+              
+              <!-- Features -->
+              <div class="space-y-4 text-left">
+                <div class="flex items-center space-x-3">
+                  <div class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                    <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                    </svg>
+                  </div>
+                  <span class="text-white/90">Tìm kiếm phòng trọ dễ dàng</span>
+                </div>
+                <div class="flex items-center space-x-3">
+                  <div class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                    <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                    </svg>
+                  </div>
+                  <span class="text-white/90">Đặt cọc online an toàn</span>
+                </div>
+                <div class="flex items-center space-x-3">
+                  <div class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                    <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                    </svg>
+                  </div>
+                  <span class="text-white/90">Hỗ trợ 24/7</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Panel - Form -->
+          <div class="w-full lg:w-1/2">
+            <!-- Mobile/Tablet Header với màu tương thích -->
+            <div class="lg:hidden text-center pt-8 pb-6 px-6 sm:px-8">
+              <div class="w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-sky-700 to-blue-800 rounded-2xl flex items-center justify-center transform rotate-3 shadow-lg">
+                <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+                </svg>
+              </div>
+              <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Đăng Ký Tài Khoản</h1>
+              <p class="text-gray-600 text-sm sm:text-base">Tạo tài khoản mới để sử dụng dịch vụ</p>
+            </div>
+
+            <!-- Desktop Header -->
+            <div class="hidden lg:block text-center pt-12 pb-8 px-12">
+              <h1 class="text-3xl xl:text-4xl font-bold text-gray-900 mb-3">Tạo Tài Khoản</h1>
+              <p class="text-gray-600 text-lg">Điền thông tin để bắt đầu</p>
+            </div>
+
+            <!-- Messages -->
+            {% if messages %}
+              <div class="px-6 sm:px-8 lg:px-12 mb-4">
+                {% for message in messages %}
+                  <div class="mb-3 p-4 rounded-2xl border {% if message.tags == 'success' %}bg-green-50 text-green-700 border-green-200{% elif message.tags == 'error' %}bg-red-50 text-red-700 border-red-200{% else %}bg-blue-50 text-blue-700 border-blue-200{% endif %} animate-fadeIn">
+                    {{ message }}
+                  </div>
+                {% endfor %}
+              </div>
+            {% endif %}
+
+            <!-- Form Container -->
+            <div class="px-6 sm:px-8 lg:px-12 pb-8 lg:pb-12">
+              <form method="post" novalidate class="space-y-4 sm:space-y-5">
+                {% csrf_token %}
+                
+                <!-- Loại tài khoản -->
+                <div class="form-group mb-6">
+                  <label class="block text-sm font-semibold text-gray-700 mb-4">
+                    <div class="flex items-center space-x-2">
+                      <svg class="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 00.994-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zM8 6a2 2 0 114 0v1H8V6z" clip-rule="evenodd"></path>
+                      </svg>
+                      <span>Loại tài khoản</span>
+                      <span class="text-red-500">*</span>
+                    </div>
+                  </label>
+                  
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- Khách thuê -->
+                    <div class="relative">
+                      <label class="flex items-center p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-sky-300 transition-all duration-200 group account-type-option">
+                        <input type="radio" name="account_type" value="Khách thuê" checked class="account-type-radio">
+                        <div class="ml-4 flex-1">
+                          <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center group-hover:bg-blue-200 transition-colors">
+                              <svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+                              </svg>
+                            </div>
+                            <div>
+                              <div class="font-medium text-gray-900">Khách thuê</div>
+                              <div class="text-sm text-gray-500">Tìm và thuê phòng</div>
+                            </div>
+                          </div>
+                        </div>
+                      </label>
+                    </div>
+
+                    <!-- Chủ trọ -->
+                    <div class="relative">
+                      <label class="flex items-center p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-sky-300 transition-all duration-200 group account-type-option">
+                        <input type="radio" name="account_type" value="Chủ trọ" class="account-type-radio">
+                        <div class="ml-4 flex-1">
+                          <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center group-hover:bg-green-200 transition-colors">
+                              <svg class="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"></path>
+                              </svg>
+                            </div>
+                            <div>
+                              <div class="font-medium text-gray-900">Chủ trọ</div>
+                              <div class="text-sm text-gray-500">Quản lý nhà trọ</div>
+                            </div>
+                          </div>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Form Grid - 2 columns on desktop -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
+                  
+                  <!-- Họ và tên -->
+                  <div class="form-group lg:col-span-2">
+                    <label for="full_name" class="block text-sm font-semibold text-gray-700 mb-2">
+                      <div class="flex items-center space-x-2">
+                        <svg class="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span>Họ và tên</span>
+                        <span class="text-red-500">*</span>
+                      </div>
+                    </label>
+                    <div class="relative">
+                      <input type="text" id="full_name" name="full_name" required
+                        class="w-full px-4 py-3 sm:py-4 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-sky-500 focus:border-sky-600 transition-all duration-200 text-sm sm:text-base placeholder-gray-400"
+                        placeholder="Nhập họ tên đầy đủ">
+                      <div class="absolute inset-y-0 right-0 flex items-center pr-4">
+                        <div class="w-2 h-2 rounded-full bg-gray-300 field-status" data-field="full_name"></div>
+                      </div>
+                    </div>
+                    <div class="error-message text-sm text-red-600 mt-2 hidden">
+                      <p class="flex items-center space-x-1">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span class="error-text"></span>
+                      </p>
+                    </div>
+                  </div>
+
+                  <!-- Username -->
+                  <div class="form-group">
+                    <label for="username" class="block text-sm font-semibold text-gray-700 mb-2">
+                      <div class="flex items-center space-x-2">
+                        <svg class="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span>Tên đăng nhập</span>
+                        <span class="text-red-500">*</span>
+                      </div>
+                    </label>
+                    <div class="relative">
+                      <input type="text" id="username" name="username" required
+                        class="w-full px-4 py-3 sm:py-4 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-sky-500 focus:border-sky-600 transition-all duration-200 text-sm sm:text-base placeholder-gray-400"
+                        placeholder="Nhập tên đăng nhập (6-20 ký tự)">
+                      <div class="absolute inset-y-0 right-0 flex items-center pr-4">
+                        <div class="w-2 h-2 rounded-full bg-gray-300 field-status" data-field="username"></div>
+                      </div>
+                    </div>
+                    <p class="mt-1 text-xs text-gray-500">Từ 6-20 ký tự, chỉ bao gồm chữ cái và số</p>
+                    <div class="error-message text-sm text-red-600 mt-2 hidden">
+                      <p class="flex items-center space-x-1">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span class="error-text"></span>
+                      </p>
+                    </div>
+                  </div>
+
+                  <!-- Email -->
+                  <div class="form-group">
+                    <label for="email" class="block text-sm font-semibold text-gray-700 mb-2">
+                      <div class="flex items-center space-x-2">
+                        <svg class="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"></path>
+                          <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"></path>
+                        </svg>
+                        <span>Email</span>
+                        <span class="text-red-500">*</span>
+                      </div>
+                    </label>
+                    <div class="relative">
+                      <input type="email" id="email" name="email" required
+                        class="w-full px-4 py-3 sm:py-4 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-sky-500 focus:border-sky-600 transition-all duration-200 text-sm sm:text-base placeholder-gray-400"
+                        placeholder="Nhập email của bạn">
+                      <div class="absolute inset-y-0 right-0 flex items-center pr-4">
+                        <div class="w-2 h-2 rounded-full bg-gray-300 field-status" data-field="email"></div>
+                      </div>
+                    </div>
+                    <div class="error-message text-sm text-red-600 mt-2 hidden">
+                      <p class="flex items-center space-x-1">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span class="error-text"></span>
+                      </p>
+                    </div>
+                  </div>
+
+                  <!-- Số điện thoại -->
+                  <div class="form-group lg:col-span-2">
+                    <label for="phone_number" class="block text-sm font-semibold text-gray-700 mb-2">
+                      <div class="flex items-center space-x-2">
+                        <svg class="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"></path>
+                        </svg>
+                        <span>Số điện thoại</span>
+                        <span class="text-red-500">*</span>
+                      </div>
+                    </label>
+                    <div class="relative">
+                      <input type="tel" id="phone_number" name="phone_number" required
+                        class="w-full px-4 py-3 sm:py-4 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-sky-500 focus:border-sky-600 transition-all duration-200 text-sm sm:text-base placeholder-gray-400"
+                        placeholder="Nhập số điện thoại của bạn">
+                      <div class="absolute inset-y-0 right-0 flex items-center pr-4">
+                        <div class="w-2 h-2 rounded-full bg-gray-300 field-status" data-field="phone_number"></div>
+                      </div>
+                    </div>
+                    <div class="error-message text-sm text-red-600 mt-2 hidden">
+                      <p class="flex items-center space-x-1">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span class="error-text"></span>
+                      </p>
+                    </div>
+                  </div>
+
+                  <!-- Password -->
+                  <div class="form-group">
+                    <label for="password1" class="block text-sm font-semibold text-gray-700 mb-2">
+                      <div class="flex items-center space-x-2">
+                        <svg class="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span>Mật khẩu</span>
+                        <span class="text-red-500">*</span>
+                      </div>
+                    </label>
+                    <div class="relative">
+                      <input type="password" id="password1" name="password1" required
+                        class="w-full px-4 py-3 sm:py-4 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-sky-500 focus:border-sky-600 transition-all duration-200 text-sm sm:text-base placeholder-gray-400"
+                        placeholder="Nhập mật khẩu (tối thiểu 8 ký tự)">
+                      <div class="absolute inset-y-0 right-0 flex items-center pr-4 space-x-2">
+                        <button type="button" class="text-gray-400 hover:text-gray-600 toggle-password" data-target="password1">
+                          <svg class="w-5 h-5 show-icon" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path>
+                            <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"></path>
+                          </svg>
+                          <svg class="w-5 h-5 hide-icon hidden" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z" clip-rule="evenodd"></path>
+                            <path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.065 7 9.542 7 .847 0 1.669-.105 2.454-.303z"></path>
+                          </svg>
+                        </button>
+                        <div class="w-2 h-2 rounded-full bg-gray-300 field-status" data-field="password1"></div>
+                      </div>
+                    </div>
+                    <p class="mt-1 text-xs text-gray-500">Tối thiểu 8 ký tự, bao gồm cả chữ và số</p>
+                    <div class="error-message text-sm text-red-600 mt-2 hidden">
+                      <p class="flex items-center space-x-1">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span class="error-text"></span>
+                      </p>
+                    </div>
+                  </div>
+
+                  <!-- Confirm Password -->
+                  <div class="form-group">
+                    <label for="password2" class="block text-sm font-semibold text-gray-700 mb-2">
+                      <div class="flex items-center space-x-2">
+                        <svg class="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span>Xác nhận mật khẩu</span>
+                        <span class="text-red-500">*</span>
+                      </div>
+                    </label>
+                    <div class="relative">
+                      <input type="password" id="password2" name="password2" required
+                        class="w-full px-4 py-3 sm:py-4 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-sky-500 focus:border-sky-600 transition-all duration-200 text-sm sm:text-base placeholder-gray-400"
+                        placeholder="Xác nhận mật khẩu">
+                      <div class="absolute inset-y-0 right-0 flex items-center pr-4 space-x-2">
+                        <button type="button" class="text-gray-400 hover:text-gray-600 toggle-password" data-target="password2">
+                          <svg class="w-5 h-5 show-icon" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path>
+                            <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"></path>
+                          </svg>
+                          <svg class="w-5 h-5 hide-icon hidden" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z" clip-rule="evenodd"></path>
+                            <path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.065 7 9.542 7 .847 0 1.669-.105 2.454-.303z"></path>
+                          </svg>
+                        </button>
+                        <div class="w-2 h-2 rounded-full bg-gray-300 field-status" data-field="password2"></div>
+                      </div>
+                    </div>
+                    <div class="error-message text-sm text-red-600 mt-2 hidden">
+                      <p class="flex items-center space-x-1">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span class="error-text"></span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Submit Button với màu tương thích -->
+                <div class="pt-4">
+                  <button type="submit" class="w-full bg-gradient-to-r from-sky-700 to-blue-800 hover:from-sky-800 hover:to-blue-900 text-white font-semibold py-4 px-6 rounded-2xl transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transform hover:scale-[1.02] active:scale-[0.98] text-sm sm:text-base shadow-lg hover:shadow-xl">
+                    <span class="flex items-center justify-center space-x-2">
+                      <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+                      </svg>
+                      <span>Tạo Tài Khoản</span>
+                    </span>
+                  </button>
+                </div>
+
+                <!-- Login Link -->
+                <div class="text-center pt-2">
+                  <p class="text-sm text-gray-600">
+                    Đã có tài khoản? 
+                    <a href="{% url 'dungchung:login' %}" class="font-medium text-sky-700 hover:text-blue-800 transition-colors duration-200 hover:underline">
+                      Đăng nhập ngay
+                    </a>
+                  </p>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.animate-fadeIn { animation: fadeIn 0.3s ease-out; }
+.animate-slideIn { animation: slideIn 0.3s ease-out; }
+
+/* Enhanced form styling với theme color */
+.form-group input:focus {
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+}
+
+.form-group input.success {
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.form-group input.error {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+/* Password toggle button styling */
+.toggle-password {
+  transition: all 0.2s;
+}
+
+.toggle-password:hover {
+  transform: scale(1.1);
+}
+
+/* Field status indicator */
+.field-status {
+  transition: all 0.3s;
+}
+
+.field-status.success {
+  background-color: #10b981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3);
+}
+
+.field-status.error {
+  background-color: #ef4444;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.3);
+}
+
+.field-status.loading {
+  background-color: #f59e0b;
+  animation: pulse 1.5s infinite;
+}
+
+/* Account type radio styling */
+.account-type-radio {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #d1d5db;
+  border-radius: 50%;
+  background: white;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.account-type-radio:checked {
+  border-color: #0ea5e9;
+  background: #0ea5e9;
+}
+
+.account-type-radio:checked::after {
+  content: '';
+  width: 8px;
+  height: 8px;
+  background: white;
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.account-type-option:has(input[type="radio"]:checked) {
+  border-color: #0ea5e9;
+  background-color: #f0f9ff;
+}
+</style>
+
+<script>
+// Enhanced validation and UI interactions
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const inputs = form.querySelectorAll('input[type="text"], input[type="email"], input[type="password"], input[type="tel"]');
+    
+    // Initialize
+    inputs.forEach(input => {
+        setupFieldValidation(input);
+        setupFieldAnimations(input);
+    });
+    
+    setupPasswordToggle();
+    setupFormSubmission();
+    setupAccountTypeSelection();
+    
+    function setupFieldValidation(input) {
+        input.addEventListener('blur', () => validateField(input));
+        input.addEventListener('input', () => {
+            clearFieldError(input);
+            if (input.value.trim()) {
+                validateFieldRealTime(input);
+            }
+        });
+        
+        input.addEventListener('focus', () => {
+            input.parentElement.classList.add('ring-2', 'ring-blue-500/20');
+        });
+        
+        input.addEventListener('blur', () => {
+            input.parentElement.classList.remove('ring-2', 'ring-blue-500/20');
+        });
+    }
+    
+    function setupFieldAnimations(input) {
+        input.addEventListener('focus', () => {
+            input.style.transform = 'scale(1.02)';
+            input.style.transition = 'all 0.2s';
+        });
+        
+        input.addEventListener('blur', () => {
+            input.style.transform = 'scale(1)';
+        });
+    }
+    
+    function setupPasswordToggle() {
+        document.querySelectorAll('.toggle-password').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.dataset.target;
+                const targetInput = document.getElementById(targetId);
+                const showIcon = this.querySelector('.show-icon');
+                const hideIcon = this.querySelector('.hide-icon');
+                
+                if (targetInput.type === 'password') {
+                    targetInput.type = 'text';
+                    showIcon.classList.add('hidden');
+                    hideIcon.classList.remove('hidden');
+                } else {
+                    targetInput.type = 'password';
+                    showIcon.classList.remove('hidden');
+                    hideIcon.classList.add('hidden');
+                }
+            });
+        });
+    }
+    
+    function setupFormSubmission() {
+        form.addEventListener('submit', function(e) {
+            const submitButton = form.querySelector('button[type="submit"]');
+            const buttonText = submitButton.querySelector('span:last-child');
+            const originalText = buttonText.textContent;
+            
+            // Add loading state
+            submitButton.disabled = true;
+            submitButton.classList.add('opacity-75', 'cursor-not-allowed');
+            buttonText.textContent = 'Đang xử lý...';
+            
+            // Add spinner
+            const spinner = document.createElement('div');
+            spinner.className = 'w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin';
+            submitButton.querySelector('svg').replaceWith(spinner);
+            
+            // If validation fails, restore button
+            setTimeout(() => {
+                if (!form.checkValidity()) {
+                    submitButton.disabled = false;
+                    submitButton.classList.remove('opacity-75', 'cursor-not-allowed');
+                    buttonText.textContent = originalText;
+                    spinner.replaceWith(createUserIcon());
+                }
+            }, 100);
+        });
+    }
+    
+    function validateField(field) {
+        const value = field.value.trim();
+        const fieldName = field.name;
+        const statusIndicator = getStatusIndicator(field);
+        
+        // Clear previous state
+        clearFieldError(field);
+        statusIndicator.className = statusIndicator.className.replace(/\b(success|error|loading)\b/g, '');
+        
+        // Basic validation
+        if (!value && field.hasAttribute('required')) {
+            showFieldError(field, 'Trường này là bắt buộc');
+            return false;
+        }
+        
+        // Specific validation
+        let isValid = true;
+        let errorMessage = '';
+        
+        switch (fieldName) {
+            case 'full_name':
+                if (value.length < 2) {
+                    errorMessage = 'Họ tên phải có ít nhất 2 ký tự';
+                    isValid = false;
+                }
+                break;
+            case 'username':
+                if (!/^[a-zA-Z0-9]{6,20}$/.test(value)) {
+                    errorMessage = 'Tên đăng nhập phải từ 6-20 ký tự, chỉ bao gồm chữ cái và số';
+                    isValid = false;
+                }
+                break;
+            case 'email':
+                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+                    errorMessage = 'Email không hợp lệ';
+                    isValid = false;
+                }
+                break;
+            case 'phone_number':
+                if (!/^[0-9]{10,11}$/.test(value)) {
+                    errorMessage = 'Số điện thoại phải có 10-11 chữ số';
+                    isValid = false;
+                }
+                break;
+            case 'password1':
+                if (!/^(?=.*[a-zA-Z])(?=.*[0-9]).{8,}$/.test(value)) {
+                    errorMessage = 'Mật khẩu phải tối thiểu 8 ký tự, bao gồm chữ và số';
+                    isValid = false;
+                }
+                break;
+            case 'password2':
+                const password1 = document.getElementById('password1').value;
+                if (value !== password1) {
+                    errorMessage = 'Mật khẩu xác nhận không khớp';
+                    isValid = false;
+                }
+                break;
+        }
+        
+        if (!isValid) {
+            showFieldError(field, errorMessage);
+        } else if (value) {
+            showFieldSuccess(field);
+        }
+        
+        return isValid;
+    }
+    
+    function validateFieldRealTime(field) {
+        const statusIndicator = getStatusIndicator(field);
+        statusIndicator.classList.add('loading');
+        
+        // Debounce validation
+        clearTimeout(field.validationTimeout);
+        field.validationTimeout = setTimeout(() => {
+            validateField(field);
+        }, 500);
+    }
+    
+    function showFieldError(field, message) {
+        field.classList.add('error');
+        field.classList.remove('success');
+        
+        const statusIndicator = getStatusIndicator(field);
+        statusIndicator.classList.remove('success', 'loading');
+        statusIndicator.classList.add('error');
+        
+        // Show error message
+        const errorContainer = field.parentElement.parentElement.querySelector('.error-message');
+        const errorText = errorContainer.querySelector('.error-text');
+        errorText.textContent = message;
+        errorContainer.classList.remove('hidden');
+        errorContainer.classList.add('animate-slideIn');
+    }
+    
+    function showFieldSuccess(field) {
+        field.classList.add('success');
+        field.classList.remove('error');
+        
+        const statusIndicator = getStatusIndicator(field);
+        statusIndicator.classList.remove('error', 'loading');
+        statusIndicator.classList.add('success');
+    }
+    
+    function clearFieldError(field) {
+        field.classList.remove('error', 'success');
+        
+        const statusIndicator = getStatusIndicator(field);
+        statusIndicator.classList.remove('success', 'error', 'loading');
+        
+        const errorContainer = field.parentElement.parentElement.querySelector('.error-message');
+        errorContainer.classList.add('hidden');
+        errorContainer.classList.remove('animate-slideIn');
+    }
+    
+    function getStatusIndicator(field) {
+        return field.parentElement.querySelector('.field-status');
+    }
+    
+    function createUserIcon() {
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('class', 'w-5 h-5');
+        svg.setAttribute('fill', 'currentColor');
+        svg.setAttribute('viewBox', '0 0 20 20');
+        svg.innerHTML = '<path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>';
+        return svg;
+    }
+    
+    function setupAccountTypeSelection() {
+        const radioInputs = document.querySelectorAll('input[name="account_type"]');
+        const labels = document.querySelectorAll('.account-type-option');
+        
+        radioInputs.forEach(radio => {
+            radio.addEventListener('change', function() {
+                // Remove active state from all labels
+                labels.forEach(label => {
+                    label.classList.remove('border-sky-500', 'bg-sky-50');
+                    label.classList.add('border-gray-200');
+                });
+                
+                // Add active state to selected label
+                if (this.checked) {
+                    const selectedLabel = this.closest('label');
+                    selectedLabel.classList.remove('border-gray-200');
+                    selectedLabel.classList.add('border-sky-500', 'bg-sky-50');
+                }
+            });
+        });
+        
+        // Initialize with default selection
+        const defaultChecked = document.querySelector('input[name="account_type"]:checked');
+        if (defaultChecked) {
+            defaultChecked.dispatchEvent(new Event('change'));
+        }
+    }
+});
+</script>
+{% endblock %}

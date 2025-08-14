@@ -7,9 +7,10 @@ from django.conf import settings
 from django.conf.urls.static import static
 urlpatterns = [ 
     path('', viewsDungChung.trang_chu, name='home'),
-    path('admin', admin_views.dashboard, name='admin'),
-    path('/', include(('apps.dungchung.urls', 'dungchung'), namespace='index')),
+    path('admin/', admin_views.dashboard, name='admin'),
+    path('', include(('apps.dungchung.urls', 'dungchung'), namespace='dungchung')),
     
+    # Admin URLs
     path('admin/', include(('apps.dichvu.urls', 'dichvu'), namespace='admin_dichvu')),
     path('admin/', include(('apps.hoadon.urls', 'hoadon'), namespace='admin_hoadon')),
     path('admin/', include(('apps.hopdong.urls', 'hopdong'), namespace='admin_hopdong')),
@@ -17,4 +18,7 @@ urlpatterns = [
     path('admin/', include(('apps.nhatro.urls', 'nhatro'), namespace='admin_nhatro')),
     path('admin/', include(('apps.phongtro.urls', 'phongtro'), namespace='admin_phongtro')),
     path('admin/', include(('apps.thanhvien.urls', 'thanhvien'), namespace='admin_thanhvien')),
+    
+    # User URLs  
+    path('phong-tro/', include(('apps.phongtro.user_urls', 'phongtro'), namespace='user_phongtro')),
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
