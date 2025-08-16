@@ -3,32 +3,93 @@
 {% load custom_filters %}
 
 {% block content %}
-<div class="pt-20 pb-16">
+<script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+<style>
+/* Custom Range Slider Styles for Better Cross-browser Support */
+.slider-input {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background: transparent;
+  pointer-events: auto;
+}
+
+.slider-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  background: #3B82F6;
+  border: 3px solid white;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3), 0 0 0 1px rgba(59, 130, 246, 0.1);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slider-input::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  background: #2563EB;
+  box-shadow: 0 6px 12px rgba(37, 99, 235, 0.4), 0 0 0 2px rgba(37, 99, 235, 0.2);
+}
+
+.slider-input::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  background: #3B82F6;
+  border: 3px solid white;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slider-input::-moz-range-thumb:hover {
+  transform: scale(1.15);
+  background: #2563EB;
+  box-shadow: 0 6px 12px rgba(37, 99, 235, 0.4);
+}
+
+.slider-input:focus {
+  outline: none;
+}
+
+.slider-input:focus::-webkit-slider-thumb {
+  box-shadow: 0 6px 12px rgba(37, 99, 235, 0.4), 0 0 0 3px rgba(59, 130, 246, 0.3);
+}
+
+.slider-input:focus::-moz-range-thumb {
+  box-shadow: 0 6px 12px rgba(37, 99, 235, 0.4), 0 0 0 3px rgba(59, 130, 246, 0.3);
+}
+</style>
+
+<div class=" pb-16">
   <!-- Hero Section -->
-  <div class="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-16">
-    <div class="max-w-screen-xl mx-auto px-6 text-center">
-      <h1 class="text-4xl font-bold mb-4">Tìm Phòng Trọ Lý Tưởng</h1>
-      <p class="text-xl mb-8">Hơn {{ total_phongs }} phòng trọ chất lượng đang chờ bạn khám phá</p>
+  <div class="hero-modern text-white py-16">
+    <div class="hero-content max-w-screen-xl mx-auto px-6 text-center">
+      <div class="fade-in">
+        <div class="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full text-sm mb-6">
+          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+          </svg>
+          Tìm kiếm thông minh
+        </div>
+        <h1 class="text-4xl md:text-5xl font-bold mb-4">Tìm Phòng Trọ Lý Tưởng</h1>
+        <p class="text-xl mb-8 text-white/90">Hơn {{ total_phongs }} phòng trọ chất lượng đang chờ bạn khám phá</p>
+      </div>
     </div>
   </div>
 
   <div class="max-w-screen-xl mx-auto px-6 -mt-8">
     <!-- Search Filter Card -->
-    <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
-      <form method="GET" class="space-y-4" id="searchForm">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <!-- Tên phòng -->
-          <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2">Tên phòng</label>
-            <input type="text" name="ten_phong" value="{{ filters.ten_phong }}" 
-                   placeholder="Nhập tên phòng..."
-                   class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-          </div>
-
+    <div class="modern-card glass-effect p-6 mb-8 scale-in">
+      <form method="GET" class="space-y-6" id="searchForm">
+        <!-- Tất cả các bộ lọc trên 1 grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           <!-- Khu vực -->
-          <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2">Khu vực</label>
-            <select name="khu_vuc" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          <div class="form-group-modern">
+            <label class="form-label-modern">Khu vực</label>
+            <select name="khu_vuc" class="form-input-modern">
               <option value="">Tất cả khu vực</option>
               {% for kv in khu_vucs %}
                 <option value="{{ kv.MA_KHU_VUC }}" {% if filters.khu_vuc == kv.MA_KHU_VUC|stringformat:"s" %}selected{% endif %}>
@@ -39,9 +100,9 @@
           </div>
 
           <!-- Loại phòng -->
-          <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2">Loại phòng</label>
-            <select name="loai_phong" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          <div class="form-group-modern">
+            <label class="form-label-modern">Loại phòng</label>
+            <select name="loai_phong" class="form-input-modern">
               <option value="">Tất cả loại phòng</option>
               {% for lp in loai_phongs %}
                 <option value="{{ lp.MA_LOAI_PHONG }}" {% if filters.loai_phong == lp.MA_LOAI_PHONG|stringformat:"s" %}selected{% endif %}>
@@ -51,62 +112,151 @@
             </select>
           </div>
 
+          <div x-data="{ 
+              priceDropdownOpen: false,
+              minPrice: {{ filters.gia_min|default:500000 }}, 
+              maxPrice: {{ filters.gia_max|default:15000000 }},
+              tempMinPrice: {{ filters.gia_min|default:500000 }}, 
+              tempMaxPrice: {{ filters.gia_max|default:15000000 }},
+              minLimit: 500000,
+              maxLimit: 15000000,
+              formatShort: function(value) {
+                if (value >= 1000000) {
+                  return (value / 1000000).toFixed(value % 1000000 === 0 ? 0 : 1) + 'M';
+                } else if (value >= 1000) {
+                  return (value / 1000).toFixed(value % 1000 === 0 ? 0 : 0) + 'K';
+                } else {
+                  return value.toString();
+                }
+              },
+              applyPrices() {
+                this.minPrice = this.tempMinPrice;
+                this.maxPrice = this.tempMaxPrice;
+                this.priceDropdownOpen = false;
+              },
+              resetPrices() {
+                this.tempMinPrice = this.minLimit;
+                this.tempMaxPrice = this.maxLimit;
+              }
+            }" class="relative">
+            <label class="form-label-modern">Khoảng giá</label>
+            
+            <!-- Input hiển thị giá được chọn -->
+            <div @click="priceDropdownOpen = !priceDropdownOpen"
+                 class="form-input-modern cursor-pointer flex items-center justify-between"
+                 tabindex="0">
+              <span x-text="`${formatShort(minPrice)} - ${formatShort(maxPrice)}`" class="text-gray-700"></span>
+              <svg class="w-4 h-4 text-gray-400 transition-transform duration-200" 
+                   :class="{'rotate-180': priceDropdownOpen}"
+                   fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+              </svg>
+            </div>
+            
+            <!-- Dropdown Panel -->
+            <div x-show="priceDropdownOpen" 
+                 x-transition
+                 @click.outside="priceDropdownOpen = false"
+                 class="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-xl z-30 p-4"
+                 style="display: none;">
+              
+              <!-- Input giá thấp nhất và cao nhất -->
+              <div class="mb-4 grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-medium text-gray-600 mb-1">Giá thấp nhất</label>
+                  <input type="number" 
+                         x-model.number="tempMinPrice"
+                         :min="minLimit" 
+                         :max="tempMaxPrice"
+                         step="100000"
+                         class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-gray-600 mb-1">Giá cao nhất</label>
+                  <input type="number" 
+                         x-model.number="tempMaxPrice"
+                         :min="tempMinPrice" 
+                         :max="maxLimit"
+                         step="100000"
+                         class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+              </div>
+              
+              <!-- Range Slider -->
+              <div class="mb-4">
+                <div class="relative">
+                  <div class="h-2 bg-gray-200 rounded-full relative overflow-hidden">
+                    <div class="absolute h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full transition-all duration-300" 
+                         :style="`left: ${((tempMinPrice - minLimit) / (maxLimit - minLimit)) * 100}%; 
+                                 width: ${((tempMaxPrice - tempMinPrice) / (maxLimit - minLimit)) * 100}%`"></div>
+                  </div>
+                  
+                  <input type="range" 
+                         x-model.number="tempMinPrice"
+                         :min="minLimit" 
+                         :max="maxLimit" 
+                         step="100000"
+                         class="absolute w-full h-2 bg-transparent appearance-none cursor-pointer slider-input"
+                         style="pointer-events: auto;">
+                  
+                  <input type="range" 
+                         x-model.number="tempMaxPrice"
+                         :min="minLimit" 
+                         :max="maxLimit" 
+                         step="100000"
+                         class="absolute w-full h-2 bg-transparent appearance-none cursor-pointer slider-input"
+                         style="pointer-events: auto;">
+                </div>
+              </div>
+              
+              <!-- Action Buttons -->
+              <div class="flex justify-between space-x-2">
+                <button type="button" 
+                        @click="resetPrices()"
+                        class="px-3 py-1 text-xs text-gray-600 bg-gray-100 rounded transition-colors">
+                  Xóa bỏ
+                </button>
+                <button type="button" 
+                        @click="applyPrices()"
+                        class="px-4 py-1 text-xs bg-blue-600 text-white font-medium rounded transition-colors">
+                  Áp dụng
+                </button>
+              </div>
+            </div>
+            
+            <!-- Hidden inputs -->
+            <input type="hidden" name="gia_min" :value="minPrice">
+            <input type="hidden" name="gia_max" :value="maxPrice">
+          </div>
+
+          <!-- Diện tích -->
+          <div>
+            <label class="form-label-modern">Diện tích (m²)</label>
+            <div class="flex space-x-2">
+              <input type="number" 
+                     name="dien_tich_min" 
+                     value="{{ filters.dien_tich_min }}" 
+                     placeholder="Từ" 
+                     min="0" 
+                     step="1"
+                     class="flex-1 form-input-modern">
+              <span class="flex items-center text-gray-500">-</span>
+              <input type="number" 
+                     name="dien_tich_max" 
+                     value="{{ filters.dien_tich_max }}" 
+                     placeholder="Đến" 
+                     min="0" 
+                     step="1"
+                     class="flex-1 form-input-modern">
+            </div>
+          </div>
+
           <!-- Nút tìm kiếm -->
           <div class="flex items-end">
             <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-300 flex items-center justify-center">
               <i class="fas fa-search mr-2"></i>
               Tìm kiếm
             </button>
-          </div>
-        </div>
-
-        <!-- Advanced Filters (Collapsible) -->
-        <div x-data="{ open: false }" class="mt-4">
-          <button type="button" @click="open = !open" class="text-blue-600 hover:text-blue-800 font-medium flex items-center">
-            <span x-text="open ? 'Ẩn bộ lọc nâng cao' : 'Hiện bộ lọc nâng cao'"></span>
-            <i class="fas fa-chevron-down ml-2 transform transition-transform" :class="{ 'rotate-180': open }"></i>
-          </button>
-          
-          <div x-show="open" x-transition class="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <!-- Trạng thái phòng -->
-            <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">Trạng thái phòng</label>
-              <select name="trang_thai" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                <option value="">Tất cả trạng thái</option>
-                <option value="Trống" {% if filters.trang_thai == 'Trống' %}selected{% endif %}>🟢 Còn trống</option>
-                <option value="Đã thuê" {% if filters.trang_thai == 'Đã thuê' %}selected{% endif %}>🔴 Đã thuê</option>
-                <option value="Đã cọc" {% if filters.trang_thai == 'Đã cọc' %}selected{% endif %}>🟡 Đã cọc</option>
-                <option value="Bảo trì" {% if filters.trang_thai == 'Bảo trì' %}selected{% endif %}>⚫ Bảo trì</option>
-              </select>
-            </div>
-
-            <!-- Giá phòng -->
-            <div class="lg:col-span-2">
-              <label class="block text-sm font-semibold text-gray-700 mb-2">Khoảng giá (VNĐ)</label>
-              <div class="flex space-x-2">
-                <input type="number" name="gia_min" value="{{ filters.gia_min }}" 
-                       placeholder="Từ" min="0" step="100000"
-                       class="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                <span class="flex items-center text-gray-500">-</span>
-                <input type="number" name="gia_max" value="{{ filters.gia_max }}" 
-                       placeholder="Đến" min="0" step="100000"
-                       class="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-              </div>
-            </div>
-
-            <!-- Diện tích -->
-            <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">Diện tích (m²)</label>
-              <div class="flex space-x-2">
-                <input type="number" name="dien_tich_min" value="{{ filters.dien_tich_min }}" 
-                       placeholder="Từ" min="0" step="1"
-                       class="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                <span class="flex items-center text-gray-500">-</span>
-                <input type="number" name="dien_tich_max" value="{{ filters.dien_tich_max }}" 
-                       placeholder="Đến" min="0" step="1"
-                       class="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-              </div>
-            </div>
           </div>
         </div>
       </form>
@@ -119,7 +269,7 @@
       </h2>
       
       <!-- Clear filters if any are active -->
-      {% if filters.ten_phong or filters.khu_vuc or filters.loai_phong or filters.gia_min or filters.gia_max or filters.dien_tich_min or filters.dien_tich_max %}
+      {% if filters.khu_vuc or filters.loai_phong or filters.gia_min or filters.gia_max or filters.dien_tich_min or filters.dien_tich_max %}
         <a href="{% url 'user_phongtro:tim_phong' %}" class="text-blue-600 hover:text-blue-800 font-medium">
           <i class="fas fa-times mr-1"></i>
           Xóa bộ lọc
@@ -127,12 +277,15 @@
       {% endif %}
     </div>
 
-    <!-- Results Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
+    <!-- Main Container -->
+<div class="flex flex-col lg:flex-row gap-6 p-6">
+  <!-- Room List (70% width) -->
+  <div class="w-full lg:w-2/3">
+    <div class="space-y-6">
       {% for phong in page_obj %}
-        <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 group">
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col sm:flex-row">
           <!-- Room Image Placeholder -->
-          <div class="h-48 bg-gradient-to-br from-blue-400 to-blue-600 relative overflow-hidden">
+          <div class="sm:w-1/3 h-48 bg-gradient-to-br from-blue-400 to-blue-600 relative overflow-hidden">
             <div class="absolute inset-0 flex items-center justify-center text-white">
               <i class="fas fa-home text-4xl opacity-50"></i>
             </div>
@@ -150,55 +303,58 @@
             </div>
           </div>
 
-          <div class="p-4">
-            <!-- Room Title -->
-            <h3 class="font-bold text-lg text-gray-800 mb-2 group-hover:text-blue-600 transition-colors">
-              {{ phong.TEN_PHONG }}
-            </h3>
+          <!-- Room Details -->
+          <div class="sm:w-2/3 p-4">
+            <div class="flex flex-col h-full">
+              <!-- Room Title -->
+              <h3 class="font-bold text-lg text-gray-800 mb-2 hover:text-blue-600 transition-colors">
+                {{ phong.TEN_PHONG }}
+              </h3>
 
-            <!-- Location -->
-            <p class="text-gray-600 text-sm mb-3 flex items-center">
-              <i class="fas fa-map-marker-alt mr-2 text-blue-500"></i>
-              {{ phong.MA_KHU_VUC.TEN_KHU_VUC }}, {{ phong.MA_KHU_VUC.MA_NHA_TRO.TEN_NHA_TRO }}
-            </p>
+              <!-- Location -->
+              <p class="text-gray-600 text-sm mb-3 flex items-center">
+                <i class="fas fa-map-marker-alt mr-2 text-blue-500"></i>
+                {{ phong.MA_KHU_VUC.TEN_KHU_VUC }}, {{ phong.MA_KHU_VUC.MA_NHA_TRO.TEN_NHA_TRO }}
+              </p>
 
-            <!-- Room Details -->
-            <div class="space-y-2 text-sm text-gray-600 mb-4">
-              <div class="flex justify-between">
-                <span>Loại phòng:</span>
-                <span class="font-medium">{{ phong.MA_LOAI_PHONG.TEN_LOAI_PHONG|default:"Chưa phân loại" }}</span>
+              <!-- Room Details -->
+              <div class="space-y-2 text-sm text-gray-600 mb-4">
+                <div class="flex justify-between">
+                  <span>Loại phòng:</span>
+                  <span class="font-medium">{{ phong.MA_LOAI_PHONG.TEN_LOAI_PHONG|default:"Chưa phân loại" }}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span>Diện tích:</span>
+                  <span class="font-medium">{{ phong.DIEN_TICH|default:"N/A" }} m²</span>
+                </div>
+                <div class="flex justify-between">
+                  <span>Sức chứa:</span>
+                  <span class="font-medium">{{ phong.SO_NGUOI_TOI_DA|default:"N/A" }} người</span>
+                </div>
               </div>
-              <div class="flex justify-between">
-                <span>Diện tích:</span>
-                <span class="font-medium">{{ phong.DIEN_TICH|default:"N/A" }} m²</span>
-              </div>
-              <div class="flex justify-between">
-                <span>Sức chứa:</span>
-                <span class="font-medium">{{ phong.SO_NGUOI_TOI_DA|default:"N/A" }} người</span>
-              </div>
-            </div>
 
-            <!-- Price -->
-            <div class="text-2xl font-bold text-blue-600 mb-4">
-              {{ phong.GIA_PHONG|currency_vn }}
-              <span class="text-sm font-normal text-gray-500">/tháng</span>
-            </div>
+              <!-- Price -->
+              <div class="text-2xl font-bold text-blue-600 mb-4">
+                {{ phong.GIA_PHONG|currency_vn }}
+                <span class="text-sm font-normal text-gray-500">/tháng</span>
+              </div>
 
-            <!-- Action Buttons -->
-            <div class="flex space-x-2">
-              <a href="{% url 'user_phongtro:chi_tiet_phong' phong.MA_PHONG %}" 
-                 class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-center py-2 px-3 rounded-lg transition duration-300 text-sm font-medium">
-                Chi tiết
-              </a>
-              <a href="{% url 'user_phongtro:dat_phong' phong.MA_PHONG %}" 
-                 class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-center py-2 px-3 rounded-lg transition duration-300 text-sm font-medium">
-                Đặt phòng
-              </a>
+              <!-- Action Buttons -->
+              <div class="flex space-x-2 mt-auto">
+                <a href="{% url 'user_phongtro:chi_tiet_phong' phong.MA_PHONG %}" 
+                   class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-center py-2 px-3 rounded-lg transition duration-300 text-sm font-medium">
+                  Chi tiết
+                </a>
+                <a href="{% url 'user_phongtro:dat_phong' phong.MA_PHONG %}" 
+                   class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-center py-2 px-3 rounded-lg transition duration-300 text-sm font-medium">
+                  Đặt phòng
+                </a>
+              </div>
             </div>
           </div>
         </div>
       {% empty %}
-        <div class="lg:col-span-4 text-center py-16">
+        <div class="text-center py-16">
           <i class="fas fa-search text-6xl text-gray-300 mb-4"></i>
           <h3 class="text-xl font-semibold text-gray-600 mb-2">Không tìm thấy phòng trọ nào</h3>
           <p class="text-gray-500 mb-4">Hãy thử điều chỉnh bộ lọc tìm kiếm của bạn</p>
@@ -208,6 +364,69 @@
         </div>
       {% endfor %}
     </div>
+  </div>
+
+  <!-- Filter Section (30% width) -->
+  <div class="w-full lg:w-1/3 bg-white rounded-xl shadow-lg p-6 sticky top-6">
+    <h3 class="text-lg font-bold text-gray-800 mb-4">Bộ lọc tìm kiếm</h3>
+    <form method="GET" action="{% url 'user_phongtro:tim_phong' %}">
+      <!-- Price Filter -->
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Khoảng giá</label>
+        <div class="space-y-2">
+          <label class="flex items-center">
+            <input type="checkbox" name="gia_phong" value="0-2000000" class="mr-2 accent-blue-600">
+            <span>Dưới 2 triệu</span>
+          </label>
+          <label class="flex items-center">
+            <input type="checkbox" name="gia_phong" value="2000000-3000000" class="mr-2 accent-blue-600">
+            <span>2 - 3 triệu</span>
+          </label>
+          <label class="flex items-center">
+            <input type="checkbox" name="gia_phong" value="3000000-5000000" class="mr-2 accent-blue-600">
+            <span>3 - 5 triệu</span>
+          </label>
+          <label class="flex items-center">
+            <input type="checkbox" name="gia_phong" value="5000000-10000000" class="mr-2 accent-blue-600">
+            <span>5 - 10 triệu</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Area Filter -->
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Diện tích</label>
+        <div class="space-y-2">
+          <label class="flex items-center">
+            <input type="checkbox" name="dien_tich" value="0-20" class="mr-2 accent-blue-600">
+            <span>Dưới 20 m²</span>
+          </label>
+          <label class="flex items-center">
+            <input type="checkbox" name="dien_tich" value="20-30" class="mr-2 accent-blue-600">
+            <span>20 - 30 m²</span>
+          </label>
+          <label class="flex items-center">
+            <input type="checkbox" name="dien_tich" value="30-50" class="mr-2 accent-blue-600">
+            <span>30 - 50 m²</span>
+          </label>
+          <label class="flex items-center">
+            <input type="checkbox" name="dien_tich" value="50-100" class="mr-2 accent-blue-600">
+            <span>50 - 100 m²</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Apply Filters Button -->
+      <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition duration-300">
+        Áp dụng bộ lọc
+      </button>
+      <!-- Reset Filters Link -->
+      <a href="{% url 'user_phongtro:tim_phong' %}" class="block text-center text-blue-600 hover:text-blue-800 text-sm mt-4">
+        Xóa tất cả bộ lọc
+      </a>
+    </form>
+  </div>
+</div>
 
     <!-- Pagination -->
     {% if page_obj.has_other_pages %}

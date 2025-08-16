@@ -17,19 +17,14 @@ def tim_phong(request):
     )
     
     # Các filter parameters
-    ten_phong = request.GET.get('ten_phong', '').strip()
     gia_min = request.GET.get('gia_min', '').strip()
     gia_max = request.GET.get('gia_max', '').strip()
     dien_tich_min = request.GET.get('dien_tich_min', '').strip()
     dien_tich_max = request.GET.get('dien_tich_max', '').strip()
     khu_vuc = request.GET.get('khu_vuc', '').strip()
     loai_phong = request.GET.get('loai_phong', '').strip()
-    trang_thai = request.GET.get('trang_thai', '').strip()
     
     # Áp dụng filters
-    if ten_phong:
-        phongs = phongs.filter(TEN_PHONG__icontains=ten_phong)
-    
     if gia_min:
         try:
             phongs = phongs.filter(GIA_PHONG__gte=float(gia_min))
@@ -66,9 +61,6 @@ def tim_phong(request):
         except ValueError:
             pass
     
-    if trang_thai:
-        phongs = phongs.filter(TRANG_THAI_P=trang_thai)
-    
     # Pagination
     paginator = Paginator(phongs, 12)  # 12 phòng mỗi trang
     page_number = request.GET.get('page')
@@ -83,14 +75,12 @@ def tim_phong(request):
         'khu_vucs': khu_vucs,
         'loai_phongs': loai_phongs,
         'filters': {
-            'ten_phong': ten_phong,
             'gia_min': gia_min,
             'gia_max': gia_max,
             'dien_tich_min': dien_tich_min,
             'dien_tich_max': dien_tich_max,
             'khu_vuc': khu_vuc,
             'loai_phong': loai_phong,
-            'trang_thai': trang_thai,
         },
         'total_phongs': paginator.count,
     }

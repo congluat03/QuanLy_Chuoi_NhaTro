@@ -1,41 +1,32 @@
 {% extends 'index/index_layout.html' %}
+{% load static %}
 
 {% block content %}
-<!-- Main Container với responsive breakpoints - tương thích với navbar fixed -->
-<div class="min-h-screen bg-gray-50 relative overflow-hidden pt-16">
-  <!-- Background Pattern tương thích với theme -->
-  <div class="absolute inset-0 opacity-5">
-    <div class="absolute top-20 left-10 w-32 h-32 bg-blue-800 rounded-full blur-xl animate-pulse"></div>
-    <div class="absolute bottom-10 right-10 w-48 h-48 bg-sky-600 rounded-full blur-xl animate-pulse delay-1000"></div>
-    <div class="absolute top-1/2 left-1/4 w-24 h-24 bg-blue-700 rounded-full blur-xl animate-pulse delay-500"></div>
-  </div>
-
-  <!-- Background Gradient overlay tương thích -->
-  <div class="absolute inset-0 bg-gradient-to-br from-sky-50/50 via-blue-50/30 to-indigo-50/50"></div>
-
-  <!-- Content Container với padding top cho navbar -->
-  <div class="relative z-10 flex items-center justify-center min-h-[calc(100vh-4rem)] px-4 py-8 sm:px-6 lg:px-8">
-    <div class="w-full max-w-md sm:max-w-lg lg:max-w-2xl xl:max-w-4xl">
+<!-- Main Container -->
+<div class="min-h-screen bg-gradient-to-br from-blue-50 via-slate-50 to-blue-100 relative overflow-hidden">
+  <!-- Content Container -->
+  <div class="flex items-center justify-center min-h-[calc(100vh-4rem)] px-4 py-12 sm:px-6 lg:px-8">
+    <div class="w-full max-w-md sm:max-w-lg lg:max-w-3xl xl:max-w-5xl">
       
       <!-- Card Container -->
-      <div class="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 overflow-hidden">
+      <div class="bg-white/90 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/20 overflow-hidden">
         
         <!-- Desktop Layout (lg+) - Split Screen -->
-        <div class="lg:flex lg:min-h-[700px]">
+        <div class="lg:flex lg:min-h-[650px]">
           
           <!-- Left Panel - Hidden on mobile/tablet với màu tương thích -->
-          <div class="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-sky-700 via-blue-800 to-indigo-900 p-12 items-center justify-center relative overflow-hidden">
+          <div class="hidden lg:flex lg:w-2/5 bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 p-8 xl:p-12 items-center justify-center relative overflow-hidden">
             <!-- Background Shapes -->
             <div class="absolute inset-0 opacity-10">
-              <div class="absolute top-20 left-20 w-40 h-40 bg-white rounded-full"></div>
-              <div class="absolute bottom-20 right-20 w-32 h-32 bg-white rounded-full"></div>
-              <div class="absolute top-1/2 left-10 w-24 h-24 bg-white rounded-full"></div>
+              <div class="absolute top-20 left-20 w-40 h-40 bg-white rounded-full animate-bounce"></div>
+              <div class="absolute bottom-20 right-20 w-32 h-32 bg-white rounded-full animate-bounce" style="animation-delay: 1s;"></div>
+              <div class="absolute top-1/2 left-10 w-24 h-24 bg-white rounded-full animate-bounce" style="animation-delay: 2s;"></div>
             </div>
             
             <!-- Content -->
             <div class="relative z-10 text-white text-center">
               <div class="mb-8">
-                <div class="w-24 h-24 mx-auto mb-6 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                <div class="w-24 h-24 mx-auto mb-5 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
                   <svg class="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 20 20">
                     <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
                   </svg>
@@ -77,10 +68,10 @@
           </div>
 
           <!-- Right Panel - Form -->
-          <div class="w-full lg:w-1/2">
+          <div class="w-full lg:w-3/5">
             <!-- Mobile/Tablet Header với màu tương thích -->
             <div class="lg:hidden text-center pt-8 pb-6 px-6 sm:px-8">
-              <div class="w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-sky-700 to-blue-800 rounded-2xl flex items-center justify-center transform rotate-3 shadow-lg">
+              <div class="w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center transform rotate-3 shadow-lg hover:rotate-6 transition-all duration-300">
                 <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
                   <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
                 </svg>
@@ -90,7 +81,7 @@
             </div>
 
             <!-- Desktop Header -->
-            <div class="hidden lg:block text-center pt-12 pb-8 px-12">
+            <div class="hidden lg:block text-center pt-8 pb-6 px-8 xl:px-12">
               <h1 class="text-3xl xl:text-4xl font-bold text-gray-900 mb-3">Tạo Tài Khoản</h1>
               <p class="text-gray-600 text-lg">Điền thông tin để bắt đầu</p>
             </div>
@@ -99,20 +90,29 @@
             {% if messages %}
               <div class="px-6 sm:px-8 lg:px-12 mb-4">
                 {% for message in messages %}
-                  <div class="mb-3 p-4 rounded-2xl border {% if message.tags == 'success' %}bg-green-50 text-green-700 border-green-200{% elif message.tags == 'error' %}bg-red-50 text-red-700 border-red-200{% else %}bg-blue-50 text-blue-700 border-blue-200{% endif %} animate-fadeIn">
-                    {{ message }}
+                  <div class="mb-3 p-4 rounded-2xl border flex items-center space-x-3 {% if message.tags == 'success' %}bg-green-50 text-green-700 border-green-200{% elif message.tags == 'error' %}bg-red-50 text-red-700 border-red-200{% else %}bg-blue-50 text-blue-700 border-blue-200{% endif %} animate-fadeIn">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      {% if message.tags == 'success' %}
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                      {% elif message.tags == 'error' %}
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                      {% else %}
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                      {% endif %}
+                    </svg>
+                    <span>{{ message }}</span>
                   </div>
                 {% endfor %}
               </div>
             {% endif %}
 
             <!-- Form Container -->
-            <div class="px-6 sm:px-8 lg:px-12 pb-8 lg:pb-12">
-              <form method="post" novalidate class="space-y-4 sm:space-y-5">
+            <div class="px-6 sm:px-8 lg:px-8 xl:px-12 pb-8 lg:pb-12">
+              <form method="post" novalidate class="space-y-5 sm:space-y-6">
                 {% csrf_token %}
                 
                 <!-- Loại tài khoản -->
-                <div class="form-group mb-6">
+                <div class="form-group mb-5">
                   <label class="block text-sm font-semibold text-gray-700 mb-4">
                     <div class="flex items-center space-x-2">
                       <svg class="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
@@ -126,7 +126,7 @@
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <!-- Khách thuê -->
                     <div class="relative">
-                      <label class="flex items-center p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-sky-300 transition-all duration-200 group account-type-option">
+                      <label class="flex items-center p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-blue-300 transition-all duration-200 group account-type-option">
                         <input type="radio" name="account_type" value="Khách thuê" checked class="account-type-radio">
                         <div class="ml-4 flex-1">
                           <div class="flex items-center space-x-3">
@@ -146,7 +146,7 @@
 
                     <!-- Chủ trọ -->
                     <div class="relative">
-                      <label class="flex items-center p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-sky-300 transition-all duration-200 group account-type-option">
+                      <label class="flex items-center p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-blue-300 transition-all duration-200 group account-type-option">
                         <input type="radio" name="account_type" value="Chủ trọ" class="account-type-radio">
                         <div class="ml-4 flex-1">
                           <div class="flex items-center space-x-3">
@@ -167,10 +167,10 @@
                 </div>
 
                 <!-- Form Grid - 2 columns on desktop -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   
                   <!-- Họ và tên -->
-                  <div class="form-group lg:col-span-2">
+                  <div class="group lg:col-span-2">
                     <label for="full_name" class="block text-sm font-semibold text-gray-700 mb-2">
                       <div class="flex items-center space-x-2">
                         <svg class="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
@@ -182,13 +182,13 @@
                     </label>
                     <div class="relative">
                       <input type="text" id="full_name" name="full_name" required
-                        class="w-full px-4 py-3 sm:py-4 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-sky-500 focus:border-sky-600 transition-all duration-200 text-sm sm:text-base placeholder-gray-400"
+                        class="w-full px-4 py-3.5 border border-slate-300 rounded-xl bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 text-base placeholder-slate-400 hover:border-blue-400"
                         placeholder="Nhập họ tên đầy đủ">
                       <div class="absolute inset-y-0 right-0 flex items-center pr-4">
                         <div class="w-2 h-2 rounded-full bg-gray-300 field-status" data-field="full_name"></div>
                       </div>
                     </div>
-                    <div class="error-message text-sm text-red-600 mt-2 hidden">
+                    <div class="error-message text-sm text-red-600 mt-2 hidden animate-pulse">
                       <p class="flex items-center space-x-1">
                         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                           <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
@@ -199,7 +199,7 @@
                   </div>
 
                   <!-- Username -->
-                  <div class="form-group">
+                  <div class="group">
                     <label for="username" class="block text-sm font-semibold text-gray-700 mb-2">
                       <div class="flex items-center space-x-2">
                         <svg class="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
@@ -211,14 +211,14 @@
                     </label>
                     <div class="relative">
                       <input type="text" id="username" name="username" required
-                        class="w-full px-4 py-3 sm:py-4 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-sky-500 focus:border-sky-600 transition-all duration-200 text-sm sm:text-base placeholder-gray-400"
+                        class="w-full px-4 py-3.5 border border-slate-300 rounded-xl bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 text-base placeholder-slate-400 hover:border-blue-400"
                         placeholder="Nhập tên đăng nhập (6-20 ký tự)">
                       <div class="absolute inset-y-0 right-0 flex items-center pr-4">
                         <div class="w-2 h-2 rounded-full bg-gray-300 field-status" data-field="username"></div>
                       </div>
                     </div>
                     <p class="mt-1 text-xs text-gray-500">Từ 6-20 ký tự, chỉ bao gồm chữ cái và số</p>
-                    <div class="error-message text-sm text-red-600 mt-2 hidden">
+                    <div class="error-message text-sm text-red-600 mt-2 hidden animate-pulse">
                       <p class="flex items-center space-x-1">
                         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                           <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
@@ -229,7 +229,7 @@
                   </div>
 
                   <!-- Email -->
-                  <div class="form-group">
+                  <div class="group">
                     <label for="email" class="block text-sm font-semibold text-gray-700 mb-2">
                       <div class="flex items-center space-x-2">
                         <svg class="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
@@ -242,13 +242,13 @@
                     </label>
                     <div class="relative">
                       <input type="email" id="email" name="email" required
-                        class="w-full px-4 py-3 sm:py-4 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-sky-500 focus:border-sky-600 transition-all duration-200 text-sm sm:text-base placeholder-gray-400"
+                        class="w-full px-4 py-3.5 border border-slate-300 rounded-xl bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 text-base placeholder-slate-400 hover:border-blue-400"
                         placeholder="Nhập email của bạn">
                       <div class="absolute inset-y-0 right-0 flex items-center pr-4">
                         <div class="w-2 h-2 rounded-full bg-gray-300 field-status" data-field="email"></div>
                       </div>
                     </div>
-                    <div class="error-message text-sm text-red-600 mt-2 hidden">
+                    <div class="error-message text-sm text-red-600 mt-2 hidden animate-pulse">
                       <p class="flex items-center space-x-1">
                         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                           <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
@@ -259,7 +259,7 @@
                   </div>
 
                   <!-- Số điện thoại -->
-                  <div class="form-group lg:col-span-2">
+                  <div class="group lg:col-span-2">
                     <label for="phone_number" class="block text-sm font-semibold text-gray-700 mb-2">
                       <div class="flex items-center space-x-2">
                         <svg class="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
@@ -271,13 +271,13 @@
                     </label>
                     <div class="relative">
                       <input type="tel" id="phone_number" name="phone_number" required
-                        class="w-full px-4 py-3 sm:py-4 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-sky-500 focus:border-sky-600 transition-all duration-200 text-sm sm:text-base placeholder-gray-400"
+                        class="w-full px-4 py-3.5 border border-slate-300 rounded-xl bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 text-base placeholder-slate-400 hover:border-blue-400"
                         placeholder="Nhập số điện thoại của bạn">
                       <div class="absolute inset-y-0 right-0 flex items-center pr-4">
                         <div class="w-2 h-2 rounded-full bg-gray-300 field-status" data-field="phone_number"></div>
                       </div>
                     </div>
-                    <div class="error-message text-sm text-red-600 mt-2 hidden">
+                    <div class="error-message text-sm text-red-600 mt-2 hidden animate-pulse">
                       <p class="flex items-center space-x-1">
                         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                           <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
@@ -288,7 +288,7 @@
                   </div>
 
                   <!-- Password -->
-                  <div class="form-group">
+                  <div class="group">
                     <label for="password1" class="block text-sm font-semibold text-gray-700 mb-2">
                       <div class="flex items-center space-x-2">
                         <svg class="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
@@ -300,7 +300,7 @@
                     </label>
                     <div class="relative">
                       <input type="password" id="password1" name="password1" required
-                        class="w-full px-4 py-3 sm:py-4 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-sky-500 focus:border-sky-600 transition-all duration-200 text-sm sm:text-base placeholder-gray-400"
+                        class="w-full px-4 py-3.5 border border-slate-300 rounded-xl bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 text-base placeholder-slate-400 hover:border-blue-400"
                         placeholder="Nhập mật khẩu (tối thiểu 8 ký tự)">
                       <div class="absolute inset-y-0 right-0 flex items-center pr-4 space-x-2">
                         <button type="button" class="text-gray-400 hover:text-gray-600 toggle-password" data-target="password1">
@@ -317,7 +317,7 @@
                       </div>
                     </div>
                     <p class="mt-1 text-xs text-gray-500">Tối thiểu 8 ký tự, bao gồm cả chữ và số</p>
-                    <div class="error-message text-sm text-red-600 mt-2 hidden">
+                    <div class="error-message text-sm text-red-600 mt-2 hidden animate-pulse">
                       <p class="flex items-center space-x-1">
                         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                           <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
@@ -328,7 +328,7 @@
                   </div>
 
                   <!-- Confirm Password -->
-                  <div class="form-group">
+                  <div class="group">
                     <label for="password2" class="block text-sm font-semibold text-gray-700 mb-2">
                       <div class="flex items-center space-x-2">
                         <svg class="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
@@ -340,7 +340,7 @@
                     </label>
                     <div class="relative">
                       <input type="password" id="password2" name="password2" required
-                        class="w-full px-4 py-3 sm:py-4 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-sky-500 focus:border-sky-600 transition-all duration-200 text-sm sm:text-base placeholder-gray-400"
+                        class="w-full px-4 py-3.5 border border-slate-300 rounded-xl bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 text-base placeholder-slate-400 hover:border-blue-400"
                         placeholder="Xác nhận mật khẩu">
                       <div class="absolute inset-y-0 right-0 flex items-center pr-4 space-x-2">
                         <button type="button" class="text-gray-400 hover:text-gray-600 toggle-password" data-target="password2">
@@ -356,7 +356,7 @@
                         <div class="w-2 h-2 rounded-full bg-gray-300 field-status" data-field="password2"></div>
                       </div>
                     </div>
-                    <div class="error-message text-sm text-red-600 mt-2 hidden">
+                    <div class="error-message text-sm text-red-600 mt-2 hidden animate-pulse">
                       <p class="flex items-center space-x-1">
                         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                           <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
@@ -368,10 +368,10 @@
                 </div>
 
                 <!-- Submit Button với màu tương thích -->
-                <div class="pt-4">
-                  <button type="submit" class="w-full bg-gradient-to-r from-sky-700 to-blue-800 hover:from-sky-800 hover:to-blue-900 text-white font-semibold py-4 px-6 rounded-2xl transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transform hover:scale-[1.02] active:scale-[0.98] text-sm sm:text-base shadow-lg hover:shadow-xl">
+                <div class="mb-5">
+                  <button type="submit" class="group w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold py-4 px-6 rounded-2xl transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transform hover:scale-[1.02] active:scale-[0.98] text-sm sm:text-base shadow-lg-lg hover:shadow-xl">
                     <span class="flex items-center justify-center space-x-2">
-                      <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <svg class="w-5 h-5 group-hover:rotate-12 transition-transform duration-300" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
                       </svg>
                       <span>Tạo Tài Khoản</span>
@@ -380,10 +380,10 @@
                 </div>
 
                 <!-- Login Link -->
-                <div class="text-center pt-2">
-                  <p class="text-sm text-gray-600">
+                <div class="text-center">
+                  <p class="text-sm text-slate-600">
                     Đã có tài khoản? 
-                    <a href="{% url 'dungchung:login' %}" class="font-medium text-sky-700 hover:text-blue-800 transition-colors duration-200 hover:underline">
+                    <a href="{% url 'dungchung:login' %}" class="font-medium text-blue-600 hover:text-blue-700 transition-all duration-200 hover:underline underline-offset-4 decoration-2">
                       Đăng nhập ngay
                     </a>
                   </p>
@@ -411,17 +411,17 @@
 .animate-fadeIn { animation: fadeIn 0.3s ease-out; }
 .animate-slideIn { animation: slideIn 0.3s ease-out; }
 
-/* Enhanced form styling với theme color */
-.form-group input:focus {
-  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+/* Enhanced form styling with modern interactions */
+.group input:focus {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-.form-group input.success {
+.group input.success {
   border-color: #10b981;
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
 }
 
-.form-group input.error {
+.group input.error {
   border-color: #ef4444;
   box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
 }
@@ -468,8 +468,8 @@
 }
 
 .account-type-radio:checked {
-  border-color: #0ea5e9;
-  background: #0ea5e9;
+  border-color: #2563eb;
+  background: #2563eb;
 }
 
 .account-type-radio:checked::after {
@@ -485,8 +485,8 @@
 }
 
 .account-type-option:has(input[type="radio"]:checked) {
-  border-color: #0ea5e9;
-  background-color: #f0f9ff;
+  border-color: #2563eb;
+  background-color: #dbeafe;
 }
 </style>
 
@@ -721,7 +721,7 @@ document.addEventListener('DOMContentLoaded', function() {
             radio.addEventListener('change', function() {
                 // Remove active state from all labels
                 labels.forEach(label => {
-                    label.classList.remove('border-sky-500', 'bg-sky-50');
+                    label.classList.remove('border-blue-600', 'bg-blue-50');
                     label.classList.add('border-gray-200');
                 });
                 
@@ -729,7 +729,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (this.checked) {
                     const selectedLabel = this.closest('label');
                     selectedLabel.classList.remove('border-gray-200');
-                    selectedLabel.classList.add('border-sky-500', 'bg-sky-50');
+                    selectedLabel.classList.add('border-blue-600', 'bg-blue-50');
                 }
             });
         });

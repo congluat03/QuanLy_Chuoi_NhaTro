@@ -1,0 +1,25 @@
+{
+  "name": "websitequanlynhatro",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build-css": "npx tailwindcss -i ./static/src/input.css -o ./static/css/tailwind-output.css --watch",
+    "build-css-prod": "npx tailwindcss -i ./static/src/input.css -o ./static/css/tailwind-output.css --minify",
+    "dev": "npm run build-css",
+    "build": "npm run build-css-prod",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@tailwindcss/forms": "^0.5.10",
+    "@tailwindcss/typography": "^0.5.16",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6"
+  },
+  "dependencies": {
+    "tailwindcss": "^3.4.17"
+  }
+}

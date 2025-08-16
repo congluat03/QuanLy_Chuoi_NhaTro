@@ -3,13 +3,13 @@
 {% load custom_filters %}
 
 {% block content %}
-<div class="pt-20 pb-16 bg-gray-50 min-h-screen">
+<div class="pt-20 pb-16 bg-gradient-to-br from-gray-50 via-blue-50/30 to-indigo-50/30 min-h-screen">
   <div class="max-w-6xl mx-auto px-6">
     <!-- Breadcrumb -->
-    <nav class="flex mb-6" aria-label="Breadcrumb">
-      <ol class="inline-flex items-center space-x-1 md:space-x-3">
+    <nav class="flex mb-8" aria-label="Breadcrumb">
+      <ol class="inline-flex items-center space-x-1 md:space-x-3 bg-white/80 backdrop-blur-sm px-4 py-2.5 rounded-xl border border-white/20">
         <li class="inline-flex items-center">
-          <a href="{% url 'user_phongtro:tim_phong' %}" class="text-gray-700 hover:text-blue-600 inline-flex items-center">
+          <a href="{% url 'user_phongtro:tim_phong' %}" class="text-gray-600 hover:text-blue-600 inline-flex items-center transition-colors duration-200 font-medium">
             <i class="fas fa-home mr-2"></i>
             Tìm phòng
           </a>
@@ -17,7 +17,7 @@
         <li>
           <div class="flex items-center">
             <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
-            <span class="text-gray-500">{{ phong.TEN_PHONG }}</span>
+            <span class="text-blue-600 font-semibold">{{ phong.TEN_PHONG }}</span>
           </div>
         </li>
       </ol>
@@ -25,76 +25,101 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <!-- Main Content -->
-      <div class="lg:col-span-2 space-y-6">
+      <div class="lg:col-span-2 space-y-8">
         <!-- Room Images -->
-        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
-          <div class="h-64 md:h-80 bg-gradient-to-br from-blue-400 to-blue-600 relative overflow-hidden">
-            <div class="absolute inset-0 flex items-center justify-center text-white">
-              <i class="fas fa-home text-6xl opacity-50"></i>
+        <div class="bg-white rounded-2xl shadow-soft-lg overflow-hidden border border-white/50">
+          <div class="h-64 md:h-96 bg-gradient-to-br from-blue-400 via-blue-500 to-indigo-600 relative overflow-hidden">
+            <!-- Background pattern với optimized animations -->
+            <div class="absolute inset-0 opacity-15">
+              <div class="absolute top-10 left-10 w-8 h-8 bg-white/60 rounded-full animate-float"></div>
+              <div class="absolute top-20 right-20 w-6 h-6 bg-white/40 rounded-full animate-float" style="animation-delay: 2s;"></div>
+              <div class="absolute bottom-20 left-1/3 w-4 h-4 bg-white/50 rounded-full animate-float" style="animation-delay: 4s;"></div>
+              <div class="absolute bottom-10 right-1/4 w-3 h-3 bg-white/30 rounded-full animate-pulse" style="animation-delay: 1s;"></div>
             </div>
+            
+            <div class="absolute inset-0 flex items-center justify-center text-white">
+              <div class="text-center">
+                <i class="fas fa-home text-7xl opacity-60 mb-4"></i>
+                <div class="text-lg font-semibold opacity-90">{{ phong.MA_KHU_VUC.TEN_KHU_VUC }}</div>
+                <div class="text-sm opacity-70">{{ phong.MA_KHU_VUC.MA_NHA_TRO.TEN_NHA_TRO }}</div>
+              </div>
+            </div>
+            
             <!-- Status Badge -->
-            <div class="absolute top-4 left-4">
-              <span class="px-4 py-2 rounded-full text-sm font-semibold flex items-center
-                {% if phong.TRANG_THAI_P == 'Trống' %}bg-green-500 text-white
-                {% elif phong.TRANG_THAI_P == 'Đã thuê' %}bg-red-500 text-white
-                {% elif phong.TRANG_THAI_P == 'Đã cọc' %}bg-yellow-500 text-white
-                {% elif phong.TRANG_THAI_P == 'Bảo trì' %}bg-gray-500 text-white
-                {% else %}bg-blue-500 text-white{% endif %}">
+            <div class="absolute top-6 left-6">
+              <span class="inline-flex items-center px-4 py-2.5 rounded-full text-sm font-semibold backdrop-blur-sm border border-white/20 shadow-lg
+                {% if phong.TRANG_THAI_P == 'Trống' %}bg-green-500/90 text-white
+                {% elif phong.TRANG_THAI_P == 'Đã thuê' %}bg-red-500/90 text-white
+                {% elif phong.TRANG_THAI_P == 'Đã cọc' %}bg-amber-500/90 text-white
+                {% elif phong.TRANG_THAI_P == 'Bảo trì' %}bg-gray-500/90 text-white
+                {% else %}bg-blue-500/90 text-white{% endif %}">
                 <i class="fas {% if phong.TRANG_THAI_P == 'Trống' %}fa-check-circle{% elif phong.TRANG_THAI_P == 'Đã thuê' %}fa-times-circle{% elif phong.TRANG_THAI_P == 'Đã cọc' %}fa-clock{% elif phong.TRANG_THAI_P == 'Bảo trì' %}fa-tools{% else %}fa-info-circle{% endif %} mr-2"></i>
                 {{ phong.TRANG_THAI_P }}
               </span>
             </div>
+            
             <!-- Price Badge -->
-            <div class="absolute top-4 right-4">
-              <div class="bg-white bg-opacity-90 px-3 py-2 rounded-lg">
-                <div class="text-lg font-bold text-blue-600">{{ phong.GIA_PHONG|currency_vn }}</div>
-                <div class="text-xs text-gray-600">/tháng</div>
+            <div class="absolute top-6 right-6">
+              <div class="bg-white/95 backdrop-blur-sm px-4 py-3 rounded-xl border border-white/20 shadow-lg">
+                <div class="text-xl font-bold text-blue-600">{{ phong.GIA_PHONG|currency_vn }}</div>
+                <div class="text-xs text-gray-600 text-center">/tháng</div>
               </div>
             </div>
           </div>
         </div>
 
         <!-- Room Info -->
-        <div class="bg-white rounded-xl shadow-lg p-6">
-          <div class="flex items-start justify-between mb-6">
-            <div>
-              <h1 class="text-3xl font-bold text-gray-800 mb-2">{{ phong.TEN_PHONG }}</h1>
-              <p class="text-gray-600 flex items-center">
-                <i class="fas fa-map-marker-alt mr-2 text-blue-500"></i>
-                {{ phong.MA_KHU_VUC.TEN_KHU_VUC }}, {{ phong.MA_KHU_VUC.MA_NHA_TRO.TEN_NHA_TRO }}
-              </p>
+        <div class="bg-white rounded-2xl shadow-soft-lg p-8 border border-white/50">
+          <div class="mb-8">
+            <h1 class="text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-4">
+              {{ phong.TEN_PHONG }}
+            </h1>
+            <div class="flex items-center text-gray-600">
+              <i class="fas fa-map-marker-alt mr-3 text-blue-500"></i>
+              <span class="text-lg">{{ phong.MA_KHU_VUC.TEN_KHU_VUC }}, {{ phong.MA_KHU_VUC.MA_NHA_TRO.TEN_NHA_TRO }}</span>
             </div>
           </div>
 
           <!-- Quick Stats -->
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div class="text-center p-4 bg-gray-50 rounded-lg">
-              <i class="fas fa-expand-arrows-alt text-2xl text-blue-500 mb-2"></i>
-              <div class="font-semibold text-gray-800">{{ phong.DIEN_TICH|default:"N/A" }}</div>
-              <div class="text-sm text-gray-600">m²</div>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+            <div class="text-center p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-100 hover:shadow-lg transition-all duration-300">
+              <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                <i class="fas fa-expand-arrows-alt text-white"></i>
+              </div>
+              <div class="font-bold text-xl text-gray-900">{{ phong.DIEN_TICH|default:"--" }}</div>
+              <div class="text-sm text-gray-600 font-medium">m²</div>
             </div>
-            <div class="text-center p-4 bg-gray-50 rounded-lg">
-              <i class="fas fa-users text-2xl text-blue-500 mb-2"></i>
-              <div class="font-semibold text-gray-800">{{ phong.SO_NGUOI_TOI_DA|default:"N/A" }}</div>
-              <div class="text-sm text-gray-600">người</div>
+            <div class="text-center p-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-100 hover:shadow-lg transition-all duration-300">
+              <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                <i class="fas fa-users text-white"></i>
+              </div>
+              <div class="font-bold text-xl text-gray-900">{{ phong.SO_NGUOI_TOI_DA|default:"--" }}</div>
+              <div class="text-sm text-gray-600 font-medium">người</div>
             </div>
-            <div class="text-center p-4 bg-gray-50 rounded-lg">
-              <i class="fas fa-tag text-2xl text-blue-500 mb-2"></i>
-              <div class="font-semibold text-gray-800">{{ phong.MA_LOAI_PHONG.TEN_LOAI_PHONG|default:"N/A" }}</div>
-              <div class="text-sm text-gray-600">Loại phòng</div>
+            <div class="text-center p-6 bg-gradient-to-br from-purple-50 to-violet-50 rounded-xl border border-purple-100 hover:shadow-lg transition-all duration-300">
+              <div class="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                <i class="fas fa-tag text-white"></i>
+              </div>
+              <div class="font-bold text-lg text-gray-900 truncate">{{ phong.MA_LOAI_PHONG.TEN_LOAI_PHONG|default:"N/A" }}</div>
+              <div class="text-sm text-gray-600 font-medium">Loại phòng</div>
             </div>
-            <div class="text-center p-4 bg-gray-50 rounded-lg">
-              <i class="fas fa-hand-holding-usd text-2xl text-blue-500 mb-2"></i>
-              <div class="font-semibold text-gray-800">{{ phong.SO_TIEN_CAN_COC|currency_vn_short }}</div>
-              <div class="text-sm text-gray-600">Tiền cọc</div>
+            <div class="text-center p-6 bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl border border-amber-100 hover:shadow-lg transition-all duration-300">
+              <div class="w-12 h-12 bg-amber-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                <i class="fas fa-hand-holding-usd text-white"></i>
+              </div>
+              <div class="font-bold text-lg text-gray-900">{{ phong.SO_TIEN_CAN_COC|currency_vn_short }}</div>
+              <div class="text-sm text-gray-600 font-medium">Tiền cọc</div>
             </div>
           </div>
 
           <!-- Description -->
           {% if phong.MO_TA_P %}
-          <div>
-            <h3 class="text-lg font-semibold text-gray-800 mb-3">Mô tả phòng</h3>
-            <div class="text-gray-600 prose prose-sm max-w-none">
+          <div class="border-t border-gray-100 pt-8">
+            <h3 class="text-xl font-bold text-gray-900 mb-4 flex items-center">
+              <i class="fas fa-align-left mr-3 text-blue-500"></i>
+              Mô tả phòng
+            </h3>
+            <div class="text-gray-700 prose prose-sm max-w-none leading-relaxed">
               {{ phong.MO_TA_P|linebreaks }}
             </div>
           </div>
@@ -102,116 +127,163 @@
         </div>
 
         <!-- Room Details -->
-        <div class="bg-white rounded-xl shadow-lg p-6">
-          <h3 class="text-lg font-semibold text-gray-800 mb-4">Thông tin chi tiết</h3>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="space-y-3">
-              <div class="flex justify-between py-2 border-b border-gray-100">
-                <span class="text-gray-600">Mã phòng:</span>
-                <span class="font-medium text-gray-800">#{{ phong.MA_PHONG }}</span>
+        <div class="bg-white rounded-2xl shadow-soft-lg p-8 border border-white/50">
+          <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center">
+            <i class="fas fa-info-circle mr-3 text-blue-500"></i>
+            Thông tin chi tiết
+          </h3>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="space-y-4">
+              <div class="flex items-center justify-between py-4 px-4 bg-gray-50 rounded-lg">
+                <div class="flex items-center">
+                  <i class="fas fa-hashtag text-blue-500 mr-3"></i>
+                  <span class="text-gray-600 font-medium">Mã phòng</span>
+                </div>
+                <span class="font-bold text-gray-900">#{{ phong.MA_PHONG }}</span>
               </div>
-              <div class="flex justify-between py-2 border-b border-gray-100">
-                <span class="text-gray-600">Loại phòng:</span>
-                <span class="font-medium text-gray-800">{{ phong.MA_LOAI_PHONG.TEN_LOAI_PHONG|default:"Chưa phân loại" }}</span>
+              
+              <div class="flex items-center justify-between py-4 px-4 bg-gray-50 rounded-lg">
+                <div class="flex items-center">
+                  <i class="fas fa-tag text-purple-500 mr-3"></i>
+                  <span class="text-gray-600 font-medium">Loại phòng</span>
+                </div>
+                <span class="font-bold text-gray-900">{{ phong.MA_LOAI_PHONG.TEN_LOAI_PHONG|default:"Chưa phân loại" }}</span>
               </div>
-              <div class="flex justify-between py-2 border-b border-gray-100">
-                <span class="text-gray-600">Diện tích:</span>
-                <span class="font-medium text-gray-800">{{ phong.DIEN_TICH|default:"Chưa cập nhật" }} m²</span>
+              
+              <div class="flex items-center justify-between py-4 px-4 bg-gray-50 rounded-lg">
+                <div class="flex items-center">
+                  <i class="fas fa-expand-arrows-alt text-green-500 mr-3"></i>
+                  <span class="text-gray-600 font-medium">Diện tích</span>
+                </div>
+                <span class="font-bold text-gray-900">{{ phong.DIEN_TICH|default:"Chưa cập nhật" }} m²</span>
               </div>
-              <div class="flex justify-between py-2 border-b border-gray-100">
-                <span class="text-gray-600">Sức chứa:</span>
-                <span class="font-medium text-gray-800">{{ phong.SO_NGUOI_TOI_DA|default:"Chưa cập nhật" }} người</span>
+              
+              <div class="flex items-center justify-between py-4 px-4 bg-gray-50 rounded-lg">
+                <div class="flex items-center">
+                  <i class="fas fa-users text-orange-500 mr-3"></i>
+                  <span class="text-gray-600 font-medium">Sức chứa</span>
+                </div>
+                <span class="font-bold text-gray-900">{{ phong.SO_NGUOI_TOI_DA|default:"Chưa cập nhật" }} người</span>
               </div>
             </div>
-            <div class="space-y-3">
-              <div class="flex justify-between py-2 border-b border-gray-100">
-                <span class="text-gray-600">Giá thuê:</span>
-                <span class="font-medium text-blue-600">{{ phong.GIA_PHONG|currency_vn }}/tháng</span>
+            
+            <div class="space-y-4">
+              <div class="flex items-center justify-between py-4 px-4 bg-blue-50 rounded-lg border border-blue-100">
+                <div class="flex items-center">
+                  <i class="fas fa-money-bill-wave text-blue-500 mr-3"></i>
+                  <span class="text-gray-600 font-medium">Giá thuê</span>
+                </div>
+                <span class="font-bold text-blue-600 text-lg">{{ phong.GIA_PHONG|currency_vn }}/tháng</span>
               </div>
-              <div class="flex justify-between py-2 border-b border-gray-100">
-                <span class="text-gray-600">Tiền cọc:</span>
-                <span class="font-medium text-green-600">{{ phong.SO_TIEN_CAN_COC|currency_vn }}</span>
+              
+              <div class="flex items-center justify-between py-4 px-4 bg-green-50 rounded-lg border border-green-100">
+                <div class="flex items-center">
+                  <i class="fas fa-hand-holding-usd text-green-500 mr-3"></i>
+                  <span class="text-gray-600 font-medium">Tiền cọc</span>
+                </div>
+                <span class="font-bold text-green-600 text-lg">{{ phong.SO_TIEN_CAN_COC|currency_vn }}</span>
               </div>
-              <div class="flex justify-between py-2 border-b border-gray-100">
-                <span class="text-gray-600">Trạng thái:</span>
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                  {% if phong.TRANG_THAI_P == 'Trống' %}bg-green-100 text-green-800
-                  {% elif phong.TRANG_THAI_P == 'Đã thuê' %}bg-red-100 text-red-800
-                  {% elif phong.TRANG_THAI_P == 'Đã cọc' %}bg-yellow-100 text-yellow-800
-                  {% else %}bg-gray-100 text-gray-800{% endif %}">
+              
+              <div class="flex items-center justify-between py-4 px-4 bg-gray-50 rounded-lg">
+                <div class="flex items-center">
+                  <i class="fas fa-flag text-indigo-500 mr-3"></i>
+                  <span class="text-gray-600 font-medium">Trạng thái</span>
+                </div>
+                <span class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold
+                  {% if phong.TRANG_THAI_P == 'Trống' %}bg-green-100 text-green-800 border border-green-200
+                  {% elif phong.TRANG_THAI_P == 'Đã thuê' %}bg-red-100 text-red-800 border border-red-200
+                  {% elif phong.TRANG_THAI_P == 'Đã cọc' %}bg-amber-100 text-amber-800 border border-amber-200
+                  {% else %}bg-gray-100 text-gray-800 border border-gray-200{% endif %}">
                   {{ phong.TRANG_THAI_P }}
                 </span>
               </div>
-              <div class="flex justify-between py-2 border-b border-gray-100">
-                <span class="text-gray-600">Khu vực:</span>
-                <span class="font-medium text-gray-800">{{ phong.MA_KHU_VUC.TEN_KHU_VUC }}</span>
+              
+              <div class="flex items-center justify-between py-4 px-4 bg-gray-50 rounded-lg">
+                <div class="flex items-center">
+                  <i class="fas fa-map-marker-alt text-red-500 mr-3"></i>
+                  <span class="text-gray-600 font-medium">Khu vực</span>
+                </div>
+                <span class="font-bold text-gray-900">{{ phong.MA_KHU_VUC.TEN_KHU_VUC }}</span>
               </div>
             </div>
           </div>
         </div>
 
         <!-- Similar Rooms -->
-        <div class="bg-white rounded-xl shadow-lg p-6">
-          <h3 class="text-lg font-semibold text-gray-800 mb-4">Phòng tương tự</h3>
-          <div class="text-center text-gray-500 py-8">
-            <i class="fas fa-home text-4xl text-gray-300 mb-2"></i>
-            <p>Đang cập nhật thông tin phòng tương tự...</p>
+        <div class="bg-white rounded-2xl shadow-soft-lg p-8 border border-white/50">
+          <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center">
+            <i class="fas fa-home mr-3 text-blue-500"></i>
+            Phòng tương tự
+          </h3>
+          <div class="text-center text-gray-500 py-12">
+            <div class="inline-flex items-center justify-center w-20 h-20 bg-gray-100 rounded-full mb-4">
+              <i class="fas fa-home text-2xl text-gray-400"></i>
+            </div>
+            <p class="text-lg font-medium">Đang cập nhật thông tin phòng tương tự...</p>
+            <p class="text-sm text-gray-400 mt-2">Chúng tôi sẽ sớm hiển thị các phòng phù hợp với bạn</p>
           </div>
         </div>
       </div>
 
       <!-- Sidebar -->
       <div class="lg:col-span-1">
-        <div class="sticky top-24 space-y-6">
+        <div class="sticky top-24 space-y-8">
           <!-- Booking Card -->
-          <div class="bg-white rounded-xl shadow-lg p-6">
-            <div class="text-center mb-6">
-              <div class="text-3xl font-bold text-blue-600 mb-1">
+          <div class="bg-white rounded-2xl shadow-soft-lg p-8 border border-white/50">
+            <div class="text-center mb-8">
+              <div class="text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2">
                 {{ phong.GIA_PHONG|currency_vn }}
               </div>
-              <div class="text-gray-600">/ tháng</div>
+              <div class="text-gray-600 font-medium">/ tháng</div>
             </div>
 
             {% if phong.TRANG_THAI_P == 'Trống' %}
             <div class="space-y-4">
               <a href="{% url 'user_phongtro:dat_phong' phong.MA_PHONG %}" 
-                 class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg transition duration-300 font-medium text-center block">
+                 class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-4 px-6 rounded-xl transition-all duration-300 font-semibold text-center block shadow-lg hover:shadow-xl hover:scale-105">
                 <i class="fas fa-calendar-check mr-2"></i>
                 Đặt phòng ngay
               </a>
               
-              <button class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 px-6 rounded-lg transition duration-300 font-medium">
+              <button class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-4 px-6 rounded-xl transition-all duration-300 font-medium border border-gray-200 hover:border-gray-300">
                 <i class="fas fa-phone mr-2"></i>
                 Liên hệ tư vấn
               </button>
             </div>
 
-            <div class="mt-6 pt-6 border-t border-gray-100">
-              <div class="space-y-3 text-sm">
+            <div class="mt-8 pt-6 border-t border-gray-100">
+              <div class="space-y-4">
                 <div class="flex items-center text-gray-600">
-                  <i class="fas fa-check text-green-500 mr-2"></i>
-                  Không phí môi giới
+                  <div class="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                    <i class="fas fa-check text-green-600 text-xs"></i>
+                  </div>
+                  <span class="font-medium">Không phí môi giới</span>
                 </div>
                 <div class="flex items-center text-gray-600">
-                  <i class="fas fa-check text-green-500 mr-2"></i>
-                  Xem phòng miễn phí
+                  <div class="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                    <i class="fas fa-check text-green-600 text-xs"></i>
+                  </div>
+                  <span class="font-medium">Xem phòng miễn phí</span>
                 </div>
                 <div class="flex items-center text-gray-600">
-                  <i class="fas fa-check text-green-500 mr-2"></i>
-                  Hỗ trợ 24/7
+                  <div class="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                    <i class="fas fa-check text-green-600 text-xs"></i>
+                  </div>
+                  <span class="font-medium">Hỗ trợ 24/7</span>
                 </div>
               </div>
             </div>
             {% else %}
-            <div class="text-center py-4">
-              <div class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium
-                {% if phong.TRANG_THAI_P == 'Đã thuê' %}bg-red-100 text-red-800
-                {% elif phong.TRANG_THAI_P == 'Đã cọc' %}bg-yellow-100 text-yellow-800
-                {% else %}bg-gray-100 text-gray-800{% endif %}">
+            <div class="text-center py-6">
+              <div class="inline-flex items-center px-6 py-3 rounded-full text-sm font-semibold mb-4
+                {% if phong.TRANG_THAI_P == 'Đã thuê' %}bg-red-100 text-red-800 border border-red-200
+                {% elif phong.TRANG_THAI_P == 'Đã cọc' %}bg-amber-100 text-amber-800 border border-amber-200
+                {% else %}bg-gray-100 text-gray-800 border border-gray-200{% endif %}">
                 <i class="fas fa-info-circle mr-2"></i>
                 {{ phong.TRANG_THAI_P }}
               </div>
-              <p class="text-gray-600 text-sm mt-2">
+              <p class="text-gray-600 mb-6 leading-relaxed">
                 {% if phong.TRANG_THAI_P == 'Đã thuê' %}
                   Phòng này đã có người thuê
                 {% elif phong.TRANG_THAI_P == 'Đã cọc' %}
@@ -221,7 +293,7 @@
                 {% endif %}
               </p>
               <a href="{% url 'user_phongtro:tim_phong' %}" 
-                 class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg transition duration-300 font-medium text-center block mt-4">
+                 class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-4 px-6 rounded-xl transition-all duration-300 font-semibold text-center block shadow-lg hover:shadow-xl hover:scale-105">
                 <i class="fas fa-search mr-2"></i>
                 Tìm phòng khác
               </a>
@@ -230,48 +302,60 @@
           </div>
 
           <!-- Contact Info -->
-          <div class="bg-white rounded-xl shadow-lg p-6">
-            <h4 class="font-semibold text-gray-800 mb-4">Thông tin liên hệ</h4>
-            <div class="space-y-3">
-              <div class="flex items-center">
-                <i class="fas fa-phone text-blue-500 mr-3"></i>
+          <div class="bg-white rounded-2xl shadow-soft-lg p-8 border border-white/50">
+            <h4 class="font-bold text-xl text-gray-900 mb-6 flex items-center">
+              <i class="fas fa-phone-alt mr-3 text-blue-500"></i>
+              Thông tin liên hệ
+            </h4>
+            <div class="space-y-6">
+              <div class="flex items-center p-4 bg-blue-50 rounded-xl border border-blue-100">
+                <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mr-4">
+                  <i class="fas fa-phone text-white"></i>
+                </div>
                 <div>
-                  <div class="font-medium text-gray-800">0123 456 789</div>
-                  <div class="text-sm text-gray-600">Hotline hỗ trợ</div>
+                  <div class="font-bold text-gray-900">0123 456 789</div>
+                  <div class="text-sm text-blue-600 font-medium">Hotline hỗ trợ</div>
                 </div>
               </div>
-              <div class="flex items-center">
-                <i class="fas fa-envelope text-blue-500 mr-3"></i>
+              <div class="flex items-center p-4 bg-green-50 rounded-xl border border-green-100">
+                <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mr-4">
+                  <i class="fas fa-envelope text-white"></i>
+                </div>
                 <div>
-                  <div class="font-medium text-gray-800">support@nhatro.com</div>
-                  <div class="text-sm text-gray-600">Email hỗ trợ</div>
+                  <div class="font-bold text-gray-900">support@nhatro.com</div>
+                  <div class="text-sm text-green-600 font-medium">Email hỗ trợ</div>
                 </div>
               </div>
-              <div class="flex items-center">
-                <i class="fas fa-clock text-blue-500 mr-3"></i>
+              <div class="flex items-center p-4 bg-amber-50 rounded-xl border border-amber-100">
+                <div class="w-12 h-12 bg-amber-500 rounded-full flex items-center justify-center mr-4">
+                  <i class="fas fa-clock text-white"></i>
+                </div>
                 <div>
-                  <div class="font-medium text-gray-800">8:00 - 22:00</div>
-                  <div class="text-sm text-gray-600">Giờ hỗ trợ</div>
+                  <div class="font-bold text-gray-900">8:00 - 22:00</div>
+                  <div class="text-sm text-amber-600 font-medium">Giờ hỗ trợ</div>
                 </div>
               </div>
             </div>
           </div>
 
           <!-- Share -->
-          <div class="bg-white rounded-xl shadow-lg p-6">
-            <h4 class="font-semibold text-gray-800 mb-4">Chia sẻ phòng này</h4>
-            <div class="flex space-x-3">
-              <button class="flex-1 bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg transition duration-300">
-                <i class="fab fa-facebook-f"></i>
+          <div class="bg-white rounded-2xl shadow-soft-lg p-8 border border-white/50">
+            <h4 class="font-bold text-xl text-gray-900 mb-6 flex items-center">
+              <i class="fas fa-share-alt mr-3 text-blue-500"></i>
+              Chia sẻ phòng này
+            </h4>
+            <div class="grid grid-cols-4 gap-3">
+              <button class="p-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg">
+                <i class="fab fa-facebook-f text-lg"></i>
               </button>
-              <button class="flex-1 bg-blue-400 hover:bg-blue-500 text-white p-2 rounded-lg transition duration-300">
-                <i class="fab fa-twitter"></i>
+              <button class="p-4 bg-sky-500 hover:bg-sky-600 text-white rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg">
+                <i class="fab fa-twitter text-lg"></i>
               </button>
-              <button class="flex-1 bg-green-500 hover:bg-green-600 text-white p-2 rounded-lg transition duration-300">
-                <i class="fab fa-whatsapp"></i>
+              <button class="p-4 bg-green-500 hover:bg-green-600 text-white rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg">
+                <i class="fab fa-whatsapp text-lg"></i>
               </button>
-              <button class="flex-1 bg-gray-400 hover:bg-gray-500 text-white p-2 rounded-lg transition duration-300">
-                <i class="fas fa-link"></i>
+              <button class="p-4 bg-gray-500 hover:bg-gray-600 text-white rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg">
+                <i class="fas fa-link text-lg"></i>
               </button>
             </div>
           </div>

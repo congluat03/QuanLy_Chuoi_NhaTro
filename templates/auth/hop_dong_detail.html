@@ -1,0 +1,266 @@
+{% extends 'index/index_layout.html' %}
+{% load custom_filters %}
+
+{% block content %}
+<div class="pt-20 pb-16 min-h-screen bg-gray-50">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Header -->
+    <div class="mb-8 flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-semibold text-gray-900">Chi Tiết Hợp Đồng</h1>
+        <p class="mt-1 text-sm text-gray-500">Thông tin hợp đồng thuê phòng của bạn</p>
+      </div>
+      <a href="{% url 'dungchung:profile' %}" 
+         class="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-200 transition-colors duration-200">
+        <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M7.707 14.707a1 1 0 01-1.414 0L3 11.414a1 1 0 010-1.414L6.293 6.707a1 1 0 011.414 1.414L5.414 10l2.293 2.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+        </svg>
+        Quay lại hồ sơ
+      </a>
+    </div>
+
+    <!-- Messages -->
+    {% if messages %}
+      <div class="mb-6 space-y-4">
+        {% for message in messages %}
+          <div class="p-4 rounded-md text-sm
+            {% if message.tags == 'success' %}bg-green-50 text-green-700 border border-green-200{% endif %}
+            {% if message.tags == 'error' %}bg-red-50 text-red-700 border border-red-200{% endif %}
+            {% if message.tags == 'info' %}bg-blue-50 text-blue-700 border border-blue-200{% endif %}
+            {% if message.tags != 'success' and message.tags != 'error' and message.tags != 'info' %}bg-yellow-50 text-yellow-700 border border-yellow-200{% endif %}">
+            {{ message }}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% if hop_dong %}
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Thông tin hợp đồng chính -->
+      <div class="lg:col-span-2">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+          <!-- Header Card -->
+          <div class="px-6 py-5 bg-gray-50 border-b border-gray-200">
+            <h2 class="text-xl font-semibold text-gray-900">Thông Tin Hợp Đồng</h2>
+            <p class="text-sm text-gray-500">Mã hợp đồng: #{{ hop_dong.MA_HOP_DONG }}</p>
+          </div>
+
+          <!-- Nội dung hợp đồng -->
+          <div class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <!-- Thông tin phòng -->
+              <div class="space-y-4">
+                <h3 class="text-base font-medium text-gray-900 border-b border-gray-200 pb-2">Thông Tin Phòng</h3>
+                
+                <div class="flex items-center p-3 bg-gray-50 rounded-md">
+                  <div class="w-8 h-8 bg-gray-100 rounded-md flex items-center justify-center mr-3">
+                    <svg class="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <p class="text-sm text-gray-500">Phòng số</p>
+                    <p class="text-base font-medium text-gray-900">{{ phong_tro.TEN_PHONG }}</p>
+                  </div>
+                </div>
+
+                <div class="flex items-center p-3 bg-gray-50 rounded-md">
+                  <div class="w-8 h-8 bg-gray-100 rounded-md flex items-center justify-center mr-3">
+                    <svg class="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <p class="text-sm text-gray-500">Khu vực</p>
+                    <p class="text-base font-medium text-gray-900">{{ phong_tro.MA_KHU_VUC.TEN_KHU_VUC }}</p>
+                  </div>
+                </div>
+
+                <div class="flex items-center p-3 bg-gray-50 rounded-md">
+                  <div class="w-8 h-8 bg-gray-100 rounded-md flex items-center justify-center mr-3">
+                    <svg class="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm2 6a2 2 0 11-4 0 2 2 0 014 0zm8 0a2 2 0 11-4 0 2 2 0 014 0z"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <p class="text-sm text-gray-500">Diện tích</p>
+                    <p class="text-base font-medium text-gray-900">{{ phong_tro.DIEN_TICH }}m²</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Thông tin hợp đồng -->
+              <div class="space-y-4">
+                <h3 class="text-base font-medium text-gray-900 border-b border-gray-200 pb-2">Chi Tiết Hợp Đồng</h3>
+                
+                <div class="flex items-center p-3 bg-gray-50 rounded-md">
+                  <div class="w-8 h-8 bg-gray-100 rounded-md flex items-center justify-center mr-3">
+                    <svg class="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <p class="text-sm text-gray-500">Ngày lập hợp đồng</p>
+                    <p class="text-base font-medium text-gray-900">{{ hop_dong.NGAY_LAP_HD|date:"d/m/Y" }}</p>
+                  </div>
+                </div>
+
+                <div class="flex items-center p-3 bg-gray-50 rounded-md">
+                  <div class="w-8 h-8 bg-gray-100 rounded-md flex items-center justify-center mr-3">
+                    <svg class="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <p class="text-sm text-gray-500">Thời hạn hợp đồng</p>
+                    <p class="text-base font-medium text-gray-900">{{ hop_dong.THOI_HAN_HD }} tháng</p>
+                  </div>
+                </div>
+
+                <div class="flex items-center p-3 bg-gray-50 rounded-md">
+                  <div class="w-8 h-8 bg-gray-100 rounded-md flex items-center justify-center mr-3">
+                    <svg class="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z"/>
+                      <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clip-rule="evenodd"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <p class="text-sm text-gray-500">Giá thuê hàng tháng</p>
+                    <p class="text-base font-medium text-gray-900">{{ hop_dong.GIA_THUE|currency_vn }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Thông tin ngày -->
+            <div class="mt-6 pt-6 border-t border-gray-200">
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="p-4 bg-gray-50 rounded-md text-center">
+                  <p class="text-sm text-gray-500">Ngày nhận phòng</p>
+                  <p class="text-base font-medium text-gray-900">{{ hop_dong.NGAY_NHAN_PHONG|date:"d/m/Y" }}</p>
+                </div>
+                
+                <div class="p-4 bg-gray-50 rounded-md text-center">
+                  <p class="text-sm text-gray-500">Ngày thu tiền</p>
+                  <p class="text-base font-medium text-gray-900">Ngày {{ hop_dong.NGAY_THU_TIEN }} hàng tháng</p>
+                </div>
+                
+                {% if hop_dong.NGAY_TRA_PHONG %}
+                <div class="p-4 bg-gray-50 rounded-md text-center">
+                  <p class="text-sm text-gray-500">Ngày trả phòng</p>
+                  <p class="text-base font-medium text-gray-900">{{ hop_dong.NGAY_TRA_PHONG|date:"d/m/Y" }}</p>
+                </div>
+                {% else %}
+                <div class="p-4 bg-gray-50 rounded-md text-center">
+                  <p class="text-sm text-gray-500">Trạng thái</p>
+                  <p class="text-base font-medium text-gray-900">Đang hiệu lực</p>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Thông tin thanh toán -->
+            {% if hop_dong.PHUONG_THUC_THANH_TOAN or hop_dong.GIA_COC_HD %}
+            <div class="mt-6 pt-6 border-t border-gray-200">
+              <h3 class="text-base font-medium text-gray-900 mb-4">Thông Tin Thanh Toán</h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {% if hop_dong.PHUONG_THUC_THANH_TOAN %}
+                <div class="flex items-center p-3 bg-gray-50 rounded-md">
+                  <div class="w-8 h-8 bg-gray-100 rounded-md flex items-center justify-center mr-3">
+                    <svg class="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm2 6a2 2 0 11-4 0 2 2 0 014 0zm8 0a2 2 0 11-4 0 2 2 0 014 0z"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <p class="text-sm text-gray-500">Phương thức thanh toán</p>
+                    <p class="text-base font-medium text-gray-900">{{ hop_dong.PHUONG_THUC_THANH_TOAN }}</p>
+                  </div>
+                </div>
+                {% endif %}
+
+                {% if hop_dong.GIA_COC_HD %}
+                <div class="flex items-center p-3 bg-gray-50 rounded-md">
+                  <div class="w-8 h-8 bg-gray-100 rounded-md flex items-center justify-center mr-3">
+                    <svg class="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <p class="text-sm text-gray-500">Tiền cọc</p>
+                    <p class="text-base font-medium text-gray-900">{{ hop_dong.GIA_COC_HD|currency_vn }}</p>
+                  </div>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+            {% endif %}
+
+            <!-- Ghi chú -->
+            {% if hop_dong.GHI_CHU_HD %}
+            <div class="mt-6 pt-6 border-t border-gray-200">
+              <h3 class="text-base font-medium text-gray-900 mb-3">Ghi Chú</h3>
+              <div class="p-3 bg-gray-50 rounded-md border border-gray-200">
+                <p class="text-sm text-gray-700">{{ hop_dong.GHI_CHU_HD }}</p>
+              </div>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Sidebar - Thành viên hợp đồng -->
+      <div class="lg:col-span-1">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+          <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
+            <h3 class="text-base font-semibold text-gray-900">Thành Viên Hợp Đồng</h3>
+            <p class="text-sm text-gray-500">{{ thanh_vien_hop_dong|length }} người</p>
+          </div>
+          
+          <div class="p-6">
+            {% for thanh_vien in thanh_vien_hop_dong %}
+            <div class="flex items-center p-3 rounded-md mb-3 {% if thanh_vien.MA_KHACH_THUE.MA_KHACH_THUE == khach_thue.MA_KHACH_THUE %}bg-blue-50 border border-blue-200{% else %}bg-gray-50{% endif %}">
+              <div class="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center mr-3">
+                {% if thanh_vien.MA_KHACH_THUE.ANH_KT %}
+                  <img src="{{ thanh_vien.MA_KHACH_THUE.ANH_KT.url }}" alt="Avatar" class="w-10 h-10 rounded-full object-cover">
+                {% else %}
+                  <span class="text-white font-medium">{{ thanh_vien.MA_KHACH_THUE.HO_TEN_KT|first }}</span>
+                {% endif %}
+              </div>
+              <div class="flex-1">
+                <p class="text-sm font-medium text-gray-900">{{ thanh_vien.MA_KHACH_THUE.HO_TEN_KT }}</p>
+                <p class="text-xs text-gray-500">{{ thanh_vien.MOI_QUAN_HE }}</p>
+                <p class="text-xs text-gray-500">Từ {{ thanh_vien.NGAY_THAM_GIA|date:"d/m/Y" }}</p>
+                {% if thanh_vien.MA_KHACH_THUE.MA_KHACH_THUE == khach_thue.MA_KHACH_THUE %}
+                  <span class="inline-block px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full mt-1">Bạn</span>
+                {% endif %}
+              </div>
+            </div>
+            {% empty %}
+            <p class="text-gray-500 text-center py-4 text-sm">Không có thành viên nào</p>
+            {% endfor %}
+          </div>
+        </div>     
+      </div>
+    </div>
+    {% else %}
+    <!-- Không có hợp đồng -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+      <div class="text-center py-12">
+        <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 0v12h8V4H6z" clip-rule="evenodd"/>
+        </svg>
+        <h3 class="text-lg font-medium text-gray-900 mb-2">Chưa có hợp đồng</h3>
+        <p class="text-sm text-gray-500 mb-4">Bạn hiện chưa có hợp đồng thuê phòng nào đang hiệu lực.</p>
+        <a href="{% url 'user_phongtro:tim_phong' %}" 
+           class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors duration-200">
+          <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/>
+          </svg>
+          Tìm phòng trọ
+        </a>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

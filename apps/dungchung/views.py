@@ -7,6 +7,12 @@ from functools import wraps
 import re
 from apps.thanhvien.models import TaiKhoan
 from apps.khachthue.models import KhachThue
+from apps.hopdong.models import HopDong, LichSuHopDong
+from apps.hoadon.models import HoaDon, KhauTru
+from apps.phongtro.models import PhongTro
+from apps.nhatro.models import KhuVuc
+from django.db.models import Q
+from datetime import datetime
 
 def trang_chu(request):
     return render(request, 'index/trangchu/trangchu.html')
@@ -387,3 +393,194 @@ def user_doi_mat_khau_view(request):
         'khach_thue': khach_thue,
     }
     return render(request, 'auth/doi_mat_khau.html', context)
+
+
+@tai_khoan_login_required 
+def user_hop_dong_view(request):
+    """View xem chi tiết hợp đồng của người thuê"""
+    user_info = get_user_khachthue_info(request)
+    
+    if not user_info:
+        messages.error(request, 'Không tìm thấy thông tin tài khoản.')
+        return redirect('dungchung:logout')
+    
+    # Kiểm tra quyền khách thuê
+    if user_info['tai_khoan'].QUYEN_HAN != 'Khách thuê':
+        messages.error(request, 'Bạn không có quyền truy cập trang này.')
+        return redirect('dungchung:trang_chu')
+    
+    tai_khoan = user_info['tai_khoan']
+    khach_thue = user_info['khach_thue']
+    
+    # Lấy hợp đồng hiện tại của người thuê (hợp đồng chưa kết thúc)
+    try:
+        lich_su_hop_dong = LichSuHopDong.objects.filter(
+            MA_KHACH_THUE=khach_thue,
+            NGAY_ROI_DI__isnull=True  # Chưa rời đi
+        ).select_related(
+            'MA_HOP_DONG',
+            'MA_HOP_DONG__MA_PHONG',
+            'MA_HOP_DONG__MA_PHONG__MA_KHU_VUC',
+            'MA_HOP_DONG__MA_PHONG__MA_KHU_VUC__MA_NHA_TRO'
+        ).first()
+        
+        if not lich_su_hop_dong:
+            messages.info(request, 'Bạn hiện không có hợp đồng nào đang hiệu lực.')
+            return render(request, 'auth/hop_dong_detail.html', {
+                'tai_khoan': tai_khoan,
+                'khach_thue': khach_thue,
+                'hop_dong': None
+            })
+            
+        hop_dong = lich_su_hop_dong.MA_HOP_DONG
+        phong_tro = hop_dong.MA_PHONG
+        
+        # Lấy danh sách tất cả thành viên trong hợp đồng
+        thanh_vien_hop_dong = LichSuHopDong.objects.filter(
+            MA_HOP_DONG=hop_dong
+        ).select_related('MA_KHACH_THUE').order_by('NGAY_THAM_GIA')
+        
+        context = {
+            'tai_khoan': tai_khoan,
+            'khach_thue': khach_thue,
+            'hop_dong': hop_dong,
+            'phong_tro': phong_tro,
+            'lich_su_hop_dong': lich_su_hop_dong,
+            'thanh_vien_hop_dong': thanh_vien_hop_dong,
+        }
+        
+        return render(request, 'auth/hop_dong_detail.html', context)
+        
+    except Exception as e:
+        messages.error(request, f'Có lỗi xảy ra: {str(e)}')
+        return redirect('dungchung:profile')
+
+
+@tai_khoan_login_required
+def user_hoa_don_list_view(request):
+    """View xem danh sách hóa đơn hàng tháng của người thuê"""
+    user_info = get_user_khachthue_info(request)
+    
+    if not user_info:
+        messages.error(request, 'Không tìm thấy thông tin tài khoản.')
+        return redirect('dungchung:logout')
+    
+    # Kiểm tra quyền khách thuê
+    if user_info['tai_khoan'].QUYEN_HAN != 'Khách thuê':
+        messages.error(request, 'Bạn không có quyền truy cập trang này.')
+        return redirect('dungchung:trang_chu')
+    
+    tai_khoan = user_info['tai_khoan']
+    khach_thue = user_info['khach_thue']
+    
+    # Lấy hợp đồng hiện tại của người thuê
+    try:
+        lich_su_hop_dong = LichSuHopDong.objects.filter(
+            MA_KHACH_THUE=khach_thue,
+            NGAY_ROI_DI__isnull=True
+        ).select_related('MA_HOP_DONG__MA_PHONG').first()
+        
+        if not lich_su_hop_dong:
+            messages.info(request, 'Bạn hiện không có hợp đồng nào để xem hóa đơn.')
+            return render(request, 'auth/hoa_don_list.html', {
+                'tai_khoan': tai_khoan,
+                'khach_thue': khach_thue,
+                'hoa_don_list': [],
+                'phong_tro': None
+            })
+        
+        phong_tro = lich_su_hop_dong.MA_HOP_DONG.MA_PHONG
+        
+        # Lọc theo năm và tháng nếu có
+        year = request.GET.get('year')
+        month = request.GET.get('month')
+        
+        # Lấy danh sách hóa đơn của phòng
+        hoa_don_query = HoaDon.objects.filter(
+            MA_PHONG=phong_tro
+        ).order_by('-NGAY_LAP_HDON')
+        
+        if year:
+            hoa_don_query = hoa_don_query.filter(NGAY_LAP_HDON__year=year)
+        if month:
+            hoa_don_query = hoa_don_query.filter(NGAY_LAP_HDON__month=month)
+            
+        hoa_don_list = hoa_don_query[:12]  # Giới hạn 12 hóa đơn gần nhất
+        
+        # Lấy danh sách năm có hóa đơn
+        years = HoaDon.objects.filter(
+            MA_PHONG=phong_tro
+        ).dates('NGAY_LAP_HDON', 'year', order='DESC')
+        
+        context = {
+            'tai_khoan': tai_khoan,
+            'khach_thue': khach_thue,
+            'hoa_don_list': hoa_don_list,
+            'phong_tro': phong_tro,
+            'years': years,
+            'selected_year': year,
+            'selected_month': month,
+        }
+        
+        return render(request, 'auth/hoa_don_list.html', context)
+        
+    except Exception as e:
+        messages.error(request, f'Có lỗi xảy ra: {str(e)}')
+        return redirect('dungchung:profile')
+
+
+@tai_khoan_login_required
+def user_hoa_don_detail_view(request, ma_hoa_don):
+    """View xem chi tiết hóa đơn của người thuê"""
+    user_info = get_user_khachthue_info(request)
+    
+    if not user_info:
+        messages.error(request, 'Không tìm thấy thông tin tài khoản.')
+        return redirect('dungchung:logout')
+    
+    # Kiểm tra quyền khách thuê
+    if user_info['tai_khoan'].QUYEN_HAN != 'Khách thuê':
+        messages.error(request, 'Bạn không có quyền truy cập trang này.')
+        return redirect('dungchung:trang_chu')
+    
+    tai_khoan = user_info['tai_khoan']
+    khach_thue = user_info['khach_thue']
+    
+    try:
+        # Lấy hợp đồng hiện tại của người thuê
+        lich_su_hop_dong = LichSuHopDong.objects.filter(
+            MA_KHACH_THUE=khach_thue,
+            NGAY_ROI_DI__isnull=True
+        ).select_related('MA_HOP_DONG__MA_PHONG').first()
+        
+        if not lich_su_hop_dong:
+            messages.error(request, 'Bạn không có quyền xem hóa đơn này.')
+            return redirect('dungchung:user_hoa_don_list')
+        
+        phong_tro = lich_su_hop_dong.MA_HOP_DONG.MA_PHONG
+        
+        # Lấy hóa đơn và kiểm tra quyền truy cập
+        hoa_don = get_object_or_404(
+            HoaDon.objects.select_related('MA_PHONG'),
+            MA_HOA_DON=ma_hoa_don,
+            MA_PHONG=phong_tro  # Chỉ cho phép xem hóa đơn của phòng mình
+        )
+        
+        # Lấy danh sách khấu trừ
+        khau_tru_list = KhauTru.objects.filter(
+            MA_HOA_DON=hoa_don
+        ).order_by('NGAYKHAUTRU')
+        
+        context = {
+            'tai_khoan': tai_khoan,
+            'khach_thue': khach_thue,
+            'hoa_don': hoa_don,
+            'phong_tro': phong_tro,
+            'khau_tru_list': khau_tru_list,
+        }
+        
+        return render(request, 'auth/hoa_don_detail.html', context)
+        
+    except Exception as e:
+        messages.error(request, f'Có lỗi xảy ra: {str(e)}')
+        return redirect('dungchung:user_hoa_don_list')

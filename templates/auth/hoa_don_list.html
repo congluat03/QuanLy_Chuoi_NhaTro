@@ -1,0 +1,200 @@
+{% extends 'index/index_layout.html' %}
+{% load custom_filters %}
+
+{% block content %}
+<div class="pt-20 pb-16 min-h-screen bg-gray-50">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Header -->
+    <div class="mb-8 flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-semibold text-gray-900">Danh Sách Hóa Đơn</h1>
+        <p class="mt-1 text-sm text-gray-500">Lịch sử hóa đơn hàng tháng của bạn</p>
+        {% if phong_tro %}
+          <p class="mt-1 text-sm text-gray-600">Phòng: {{ phong_tro.TEN_PHONG }} - {{ phong_tro.MA_KHU_VUC.TEN_KHU_VUC }}</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Messages -->
+    {% if messages %}
+      <div class="mb-6 space-y-4">
+        {% for message in messages %}
+          <div class="p-4 rounded-md text-sm
+            {% if message.tags == 'success' %}bg-green-50 text-green-700 border border-green-200{% endif %}
+            {% if message.tags == 'error' %}bg-red-50 text-red-700 border border-red-200{% endif %}
+            {% if message.tags == 'info' %}bg-blue-50 text-blue-700 border border-blue-200{% endif %}
+            {% if message.tags != 'success' and message.tags != 'error' and message.tags != 'info' %}bg-yellow-50 text-yellow-700 border border-yellow-200{% endif %}">
+            {{ message }}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <!-- Filters -->
+    {% if phong_tro %}
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+      <h3 class="text-base font-medium text-gray-900 mb-4">Lọc hóa đơn</h3>
+      <form method="get" class="flex flex-wrap gap-4 items-end">
+        <div>
+          <label for="year" class="block text-sm text-gray-700 mb-1">Năm</label>
+          <select name="year" id="year" class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            <option value="">Tất cả năm</option>
+            {% for year in years %}
+              <option value="{{ year.year }}" {% if selected_year == year.year|stringformat:"s" %}selected{% endif %}>{{ year.year }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        
+        <div>
+          <label for="month" class="block text-sm text-gray-700 mb-1">Tháng</label>
+          <select name="month" id="month" class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            <option value="">Tất cả tháng</option>
+            {% for i in "123456789012"|make_list %}
+              {% if forloop.counter <= 12 %}
+                <option value="{{ forloop.counter }}" {% if selected_month == forloop.counter|stringformat:"s" %}selected{% endif %}>Tháng {{ forloop.counter }}</option>
+              {% endif %}
+            {% endfor %}
+          </select>
+        </div>
+        
+        <div class="flex gap-2">
+          <button type="submit" class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors duration-200">
+            Lọc
+          </button>
+          {% if selected_year or selected_month %}
+            <a href="{% url 'dungchung:user_hoa_don_list' %}" class="px-4 py-2 bg-gray-200 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-300 transition-colors duration-200">
+              Xóa lọc
+            </a>
+          {% endif %}
+        </div>
+      </form>
+    </div>
+    {% endif %}
+
+    {% if hoa_don_list %}
+    <!-- Danh sách hóa đơn -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 divide-y divide-gray-200">
+      {% for hoa_don in hoa_don_list %}
+      <div class="p-6 hover:bg-gray-50 transition-colors duration-200">
+        <div class="flex items-center justify-between">
+          <!-- Thông tin hóa đơn -->
+          <div class="flex-1">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="text-base font-medium text-gray-900">Hóa đơn #{{ hoa_don.MA_HOA_DON }}</h3>
+                <p class="text-sm text-gray-500">{{ hoa_don.NGAY_LAP_HDON|date:"F Y" }}</p>
+              </div>
+              <span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full
+                {% if hoa_don.TRANG_THAI_HDON == 'Đã thanh toán' %}bg-green-100 text-green-700{% elif hoa_don.TRANG_THAI_HDON == 'Chưa thanh toán' %}bg-red-100 text-red-700{% else %}bg-yellow-100 text-yellow-700{% endif %}">
+                {{ hoa_don.TRANG_THAI_HDON }}
+              </span>
+            </div>
+            
+            <div class="mt-3 space-y-2 text-sm">
+              <div class="flex justify-between">
+                <span class="text-gray-500">Ngày lập:</span>
+                <span class="text-gray-900">{{ hoa_don.NGAY_LAP_HDON|date:"d/m/Y" }}</span>
+              </div>
+              {% if hoa_don.LOAI_HOA_DON %}
+              <div class="flex justify-between">
+                <span class="text-gray-500">Loại:</span>
+                <span class="text-gray-900">{{ hoa_don.LOAI_HOA_DON }}</span>
+              </div>
+              {% endif %}
+              {% if hoa_don.TIEN_PHONG %}
+              <div class="flex justify-between">
+                <span class="text-gray-500">Tiền phòng:</span>
+                <span class="text-gray-900">{{ hoa_don.TIEN_PHONG|currency_vn }}</span>
+              </div>
+              {% endif %}
+              {% if hoa_don.TIEN_DICH_VU %}
+              <div class="flex justify-between">
+                <span class="text-gray-500">Tiền dịch vụ:</span>
+                <span class="text-gray-900">{{ hoa_don.TIEN_DICH_VU|currency_vn }}</span>
+              </div>
+              {% endif %}
+              {% if hoa_don.TIEN_COC %}
+              <div class="flex justify-between">
+                <span class="text-gray-500">Tiền cọc:</span>
+                <span class="text-gray-900">{{ hoa_don.TIEN_COC|currency_vn }}</span>
+              </div>
+              {% endif %}
+              {% if hoa_don.TIEN_KHAU_TRU %}
+              <div class="flex justify-between">
+                <span class="text-gray-500">Khấu trừ:</span>
+                <span class="text-gray-900">-{{ hoa_don.TIEN_KHAU_TRU|currency_vn }}</span>
+              </div>
+              {% endif %}
+              <div class="flex justify-between pt-2 border-t border-gray-200">
+                <span class="font-medium text-gray-900">Tổng tiền:</span>
+                <span class="font-medium text-gray-900">{{ hoa_don.TONG_TIEN|currency_vn }}</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Action -->
+          <div class="ml-6">
+            <a href="{% url 'dungchung:user_hoa_don_detail' hoa_don.MA_HOA_DON %}" 
+               class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors duration-200">
+              <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
+                <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/>
+              </svg>
+              Xem chi tiết
+            </a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    
+    <!-- Pagination hoặc thông báo -->
+    {% if hoa_don_list|length == 12 %}
+    <div class="mt-8 text-center">
+      <p class="text-sm text-gray-500">Chỉ hiển thị 12 hóa đơn gần nhất. Sử dụng bộ lọc để tìm hóa đơn cụ thể.</p>
+    </div>
+    {% endif %}
+    
+    {% else %}
+    <!-- Không có hóa đơn -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+      <div class="text-center py-12">
+        <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/>
+          <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/>
+        </svg>
+        <h3 class="text-lg font-medium text-gray-900 mb-2">Chưa có hóa đơn</h3>
+        {% if phong_tro %}
+          <p class="text-sm text-gray-500 mb-4">
+            {% if selected_year or selected_month %}
+              Không tìm thấy hóa đơn nào trong khoảng thời gian đã chọn.
+            {% else %}
+              Chưa có hóa đơn nào được tạo cho phòng của bạn.
+            {% endif %}
+          </p>
+          {% if selected_year or selected_month %}
+            <a href="{% url 'dungchung:user_hoa_don_list' %}" 
+               class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors duration-200">
+              <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+              </svg>
+              Xem tất cả hóa đơn
+            </a>
+          {% endif %}
+        {% else %}
+          <p class="text-sm text-gray-500 mb-4">Bạn cần có hợp đồng thuê phòng để xem hóa đơn.</p>
+          <a href="{% url 'dungchung:user_hop_dong' %}" 
+             class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors duration-200">
+            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 0v12h8V4H6z" clip-rule="evenodd"/>
+            </svg>
+            Xem hợp đồng
+          </a>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+    
+  </div>
+</div>
+{% endblock %}

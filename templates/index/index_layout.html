@@ -5,23 +5,38 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Trang Chủ | Quản Lý Nhà Trọ</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{% static 'css/modern-design.css' %}">
+    <link rel="stylesheet" href="{% static 'css/tailwind-output.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   </head>
-  <body class="bg-gray-50 text-gray-900">
+  <body class="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 text-slate-900 font-sans antialiased">
     <!-- Navbar -->
-    <header class="bg-blue-800 shadow-md fixed w-full z-50 top-0">
-      <div class="max-w-screen-xl mx-auto px-6 sm:px-8 lg:px-12">
-        <div class="flex justify-between items-center h-16">
-          <div class="text-2xl font-extrabold text-white tracking-wide">Quản Lý Nhà Trọ</div>
-          <nav class="hidden md:flex space-x-8 font-semibold text-white">
-            <a href="/" class="hover:text-sky-300 transition-colors duration-300">Trang Chủ</a>
-            <a href="{% url 'user_phongtro:tim_phong' %}" class="hover:text-sky-300 transition-colors duration-300">Tìm Phòng</a>
-            <a href="{% url 'user_phongtro:tra_cuu_dat_phong' %}" class="hover:text-sky-300 transition-colors duration-300">Tra Cứu Đặt Phòng</a>
+    <header class="bg-blue-600/95 backdrop-blur-lg shadow-lg border-b border-white/10 fixed w-full z-50 top-0 transition-all duration-300">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-20">
+          <div class="text-2xl font-bold text-white tracking-wide flex items-center gap-3">
+            <div class="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm hover:bg-white/30 transition-all duration-300 hover:scale-110 hover:rotate-3">
+              <svg class="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+              </svg>
+            </div>
+            <span class="text-white font-extrabold">Quản Lý Nhà Trọ</span>
+          </div>
+          <nav class="hidden md:flex items-center space-x-2 font-medium text-white">
+            <a href="/" class="px-4 py-2.5 rounded-xl hover:bg-white/10 hover:text-blue-200 transition-all duration-300 font-semibold">
+              Trang Chủ
+            </a>
+            <a href="{% url 'user_phongtro:tim_phong' %}" class="px-4 py-2.5 rounded-xl hover:bg-white/10 hover:text-blue-200 transition-all duration-300 font-semibold">
+              Tìm Phòng
+            </a>
+            <a href="{% url 'user_phongtro:tra_cuu_dat_phong' %}" class="px-4 py-2.5 rounded-xl hover:bg-white/10 hover:text-blue-200 transition-all duration-300 font-semibold">
+              Tra Cứu Đặt Phòng
+            </a>
             
             {% if request.session.is_authenticated %}
               <!-- Menu khi đã đăng nhập -->
               <div class="relative group">
-                <button class="flex items-center space-x-2 hover:text-sky-300 transition-colors duration-300 focus:outline-none">
+                <button class="flex items-center space-x-2 px-3 py-2 rounded-xl hover:bg-white/10 hover:text-blue-200 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-white/20">
                   <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                     <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
                   </svg>
@@ -32,23 +47,84 @@
                 </button>
                 
                 <!-- Dropdown menu -->
-                <div class="absolute right-0 top-full mt-2 w-56 bg-white rounded-lg shadow-xl py-2 z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-                  <div class="px-4 py-3 border-b border-gray-100">
-                    <p class="text-sm font-medium text-gray-900">{{ request.session.username }}</p>
-                    <p class="text-sm text-gray-500">Vai trò: {{ request.session.vai_tro }}</p>
+                <div class="absolute right-0 top-full mt-3 w-80 bg-white/95 backdrop-blur-lg rounded-2xl shadow-xl py-3 z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 border border-white/20 transform translate-y-2 group-hover:translate-y-0">
+                  <!-- User Info Header -->
+                  <div class="px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50">
+                    <p class="text-sm font-semibold text-gray-900">{{ request.session.username }}</p>
+                    <p class="text-xs text-gray-600">{{ request.session.vai_tro }}</p>
                   </div>
                   
+                  <!-- Account Management Section -->
                   <div class="py-1">
-                    <a href="{% url 'dungchung:profile' %}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200">
+                    <div class="px-4 py-2">
+                      <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Tài khoản</p>
+                    </div>
+                    
+                    <a href="{% url 'dungchung:profile' %}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors duration-200">
                       <svg class="w-4 h-4 mr-3 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clip-rule="evenodd"></path>
                       </svg>
                       Thông tin cá nhân
                     </a>
                     
-                    <div class="border-t border-gray-100 my-1"></div>
+                    <a href="{% url 'dungchung:cap_nhat_profile' %}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 transition-colors duration-200">
+                      <svg class="w-4 h-4 mr-3 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/>
+                      </svg>
+                      Cập nhật thông tin
+                    </a>
                     
-                    <a href="{% url 'dungchung:logout' %}" class="flex items-center px-4 py-2 text-sm text-red-700 hover:bg-red-50 transition-colors duration-200">
+                    <a href="{% url 'dungchung:doi_mat_khau' %}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-700 transition-colors duration-200">
+                      <svg class="w-4 h-4 mr-3 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"></path>
+                      </svg>
+                      Đổi mật khẩu
+                    </a>
+                  </div>
+                  
+                  <!-- Contract & Invoice Section (Only for tenants) -->
+                  {% if request.session.vai_tro == 'Khách thuê' %}
+                  <div class="border-t border-gray-100 py-1">
+                    <div class="px-4 py-2">
+                      <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Hợp đồng & Hóa đơn</p>
+                    </div>
+                    
+                    <a href="{% url 'dungchung:user_hop_dong' %}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition-colors duration-200">
+                      <svg class="w-4 h-4 mr-3 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 0v12h8V4H6z" clip-rule="evenodd"/>
+                      </svg>
+                      Xem hợp đồng
+                    </a>
+                    
+                    <a href="{% url 'dungchung:user_hoa_don_list' %}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors duration-200">
+                      <svg class="w-4 h-4 mr-3 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/>
+                        <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/>
+                      </svg>
+                      Xem hóa đơn
+                    </a>
+                  </div>
+                  {% endif %}
+                  
+                  <!-- Admin Section (Only for admin/landlord) -->
+                  {% if request.session.vai_tro == 'Chủ trọ' or request.session.vai_tro == 'admin' %}
+                  <div class="border-t border-gray-100 py-1">
+                    <div class="px-4 py-2">
+                      <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Quản lý</p>
+                    </div>
+                    
+                    <a href="/admin/" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors duration-200">
+                      <svg class="w-4 h-4 mr-3 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
+                      </svg>
+                      Trang quản trị
+                    </a>
+                  </div>
+                  {% endif %}
+                  
+                  <!-- Logout Section -->
+                  <div class="border-t border-gray-100 py-1">
+                    <a href="{% url 'dungchung:logout' %}" class="flex items-center px-4 py-2 text-sm text-red-700 hover:bg-red-50 hover:text-red-800 transition-colors duration-200">
                       <svg class="w-4 h-4 mr-3 text-red-400" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clip-rule="evenodd"></path>
                       </svg>
@@ -59,30 +135,363 @@
               </div>
             {% else %}
               <!-- Menu khi chưa đăng nhập -->
-              <a href="{% url 'dungchung:register' %}" class="hover:text-sky-300 transition-colors duration-300">Đăng ký</a>
-              <a href="{% url 'dungchung:login' %}" class="hover:text-sky-300 transition-colors duration-300">Đăng Nhập</a>
+              <a href="{% url 'dungchung:register' %}" class="px-4 py-2.5 rounded-xl hover:bg-white/10 hover:text-blue-200 transition-all duration-300 font-semibold">
+                Đăng ký
+              </a>
+              <a href="{% url 'dungchung:login' %}" class="bg-white/20 hover:bg-white/30 text-white px-6 py-2.5 rounded-xl transition-all duration-300 font-semibold shadow-lg hover:shadow-xl hover:scale-105">
+                Đăng Nhập
+              </a>
             {% endif %}
           </nav>
           <div class="md:hidden">
-            <button class="text-white focus:outline-none">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+            <button class="text-white focus:outline-none p-2 rounded-xl hover:bg-white/10 transition-all duration-300" id="mobile-menu-toggle">
+              <svg class="w-6 h-6 transition-transform duration-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" id="menu-icon">
                 <path d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+              <svg class="w-6 h-6 transition-transform duration-300 hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" id="close-icon">
+                <path d="M18 6L6 18M6 6l12 12" />
               </svg>
             </button>
           </div>
         </div>
       </div>
     </header>
-    <!-- Giới Thiệu -->
-    <main class="min-h-screen">
+    <!-- Mobile Menu -->
+    <div class="md:hidden fixed inset-0 z-40 opacity-0 invisible transition-all duration-300" id="mobile-menu-overlay">
+      <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" id="mobile-menu-backdrop"></div>
+      <div class="absolute top-20 left-0 right-0 mx-4 bg-white/95 backdrop-blur-lg rounded-2xl shadow-xl border border-white/20 transform translate-y-2">
+        <nav class="py-4">
+          <a href="/" class="block px-6 py-3 text-slate-700 hover:bg-blue-50 hover:text-blue-700 transition-all duration-300 font-semibold">Trang Chủ</a>
+          <a href="{% url 'user_phongtro:tim_phong' %}" class="block px-6 py-3 text-slate-700 hover:bg-blue-50 hover:text-blue-700 transition-all duration-300 font-semibold">Tìm Phòng</a>
+          <a href="{% url 'user_phongtro:tra_cuu_dat_phong' %}" class="block px-6 py-3 text-slate-700 hover:bg-blue-50 hover:text-blue-700 transition-all duration-300 font-semibold">Tra Cứu Đặt Phòng</a>
+          {% if not request.session.is_authenticated %}
+            <div class="border-t border-white/20 mt-4 pt-4 px-6 space-y-2">
+              <a href="{% url 'dungchung:register' %}" class="block w-full text-center px-4 py-3 border border-blue-500 text-blue-600 rounded-xl hover:bg-blue-50 transition-all duration-300 font-semibold">Đăng ký</a>
+              <a href="{% url 'dungchung:login' %}" class="block w-full text-center bg-blue-600 text-white px-4 py-3 rounded-xl hover:bg-blue-700 transition-all duration-300 font-semibold shadow-lg">Đăng Nhập</a>
+            </div>
+          {% endif %}
+        </nav>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="min-h-screen pt-20">
       {% block content %}
 
       {% endblock %}
     </main>
 
     <!-- Footer -->
-    <footer class="bg-blue-900 text-white py-6 mt-16">
-      <div class="text-center text-sm font-light tracking-wide">© 2025 Quản Lý Nhà Trọ. Được phát triển bởi nhóm sinh viên.</div>
+    <footer class="relative bg-gradient-to-r from-blue-900 via-blue-800 to-indigo-900 text-white mt-20 overflow-hidden">
+      <!-- Background Pattern -->
+      <div class="absolute inset-0 opacity-10">
+        <div class="absolute top-10 left-10 w-20 h-20 bg-white rounded-full animate-bounce" style="animation-delay: 0s;"></div>
+        <div class="absolute top-20 right-20 w-16 h-16 bg-white rounded-full animate-bounce" style="animation-delay: 2s;"></div>
+        <div class="absolute bottom-10 left-1/3 w-12 h-12 bg-white rounded-full animate-bounce" style="animation-delay: 4s;"></div>
+        <div class="absolute bottom-20 right-1/3 w-14 h-14 bg-white rounded-full animate-bounce" style="animation-delay: 1s;"></div>
+      </div>
+
+      <!-- Content -->
+      <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <!-- Logo & Description -->
+          <div class="md:col-span-2 space-y-4">
+            <div class="flex items-center space-x-3">
+              <div class="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
+                <svg class="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+                </svg>
+              </div>
+              <span class="text-2xl font-bold bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
+                Quản Lý Nhà Trọ
+              </span>
+            </div>
+            <p class="text-white/80 leading-relaxed max-w-md">
+              Hệ thống quản lý nhà trọ hiện đại, giúp chủ trọ và khách thuê quản lý thông tin một cách dễ dàng và hiệu quả.
+            </p>
+            <div class="flex space-x-4">
+              <a href="#" class="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20 transition-all duration-300 hover:scale-110">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"/>
+                </svg>
+              </a>
+              <a href="#" class="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20 transition-all duration-300 hover:scale-110">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M22.46 6c-.77.35-1.6.58-2.46.69.88-.53 1.56-1.37 1.88-2.38-.83.5-1.75.85-2.72 1.05C18.37 4.5 17.26 4 16 4c-2.35 0-4.27 1.92-4.27 4.29 0 .34.04.67.11.98C8.28 9.09 5.11 7.38 3 4.79c-.37.63-.58 1.37-.58 2.15 0 1.49.75 2.81 1.91 3.56-.71 0-1.37-.2-1.95-.5v.03c0 2.08 1.48 3.82 3.44 4.21a4.22 4.22 0 0 1-1.93.07 4.28 4.28 0 0 0 4 2.98 8.521 8.521 0 0 1-5.33 1.84c-.34 0-.68-.02-1.02-.06C3.44 20.29 5.7 21 8.12 21 16 21 20.33 14.46 20.33 8.79c0-.19 0-.37-.01-.56.84-.6 1.56-1.36 2.14-2.23z"/>
+                </svg>
+              </a>
+              <a href="#" class="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20 transition-all duration-300 hover:scale-110">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 5.079 3.158 9.417 7.618 11.174-.105-.949-.199-2.403.041-3.439.219-.937 1.406-5.957 1.406-5.957s-.359-.72-.359-1.781c0-1.663.967-2.911 2.168-2.911 1.024 0 1.518.769 1.518 1.688 0 1.029-.653 2.567-.992 3.992-.285 1.193.6 2.165 1.775 2.165 2.128 0 3.768-2.245 3.768-5.487 0-2.861-2.063-4.869-5.008-4.869-3.41 0-5.409 2.562-5.409 5.199 0 1.033.394 2.143.889 2.741.099.12.112.225.085.345-.09.375-.293 1.199-.334 1.363-.053.225-.172.271-.402.165-1.495-.69-2.433-2.878-2.433-4.646 0-3.776 2.748-7.252 7.92-7.252 4.158 0 7.392 2.967 7.392 6.923 0 4.135-2.607 7.462-6.233 7.462-1.214 0-2.357-.629-2.750-1.378l-.748 2.853c-.271 1.043-1.002 2.35-1.492 3.146C9.57 23.812 10.763 24.009 12.017 24.009c6.624 0 11.99-5.367 11.99-11.988C24.007 5.367 18.641.001.012.001z"/>
+                </svg>
+              </a>
+            </div>
+          </div>
+
+          <!-- Quick Links -->
+          <div class="space-y-4">
+            <h3 class="text-lg font-bold text-white">Liên kết nhanh</h3>
+            <ul class="space-y-2">
+              <li><a href="/" class="text-white/70 hover:text-white transition-colors duration-300 flex items-center space-x-2">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/>
+                </svg>
+                <span>Trang chủ</span>
+              </a></li>
+              <li><a href="{% url 'user_phongtro:tim_phong' %}" class="text-white/70 hover:text-white transition-colors duration-300 flex items-center space-x-2">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/>
+                </svg>
+                <span>Tìm phòng</span>
+              </a></li>
+              <li><a href="{% url 'user_phongtro:tra_cuu_dat_phong' %}" class="text-white/70 hover:text-white transition-colors duration-300 flex items-center space-x-2">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/>
+                </svg>
+                <span>Tra cứu đặt phòng</span>
+              </a></li>
+            </ul>
+          </div>
+
+          <!-- Contact Info -->
+          <div class="space-y-4">
+            <h3 class="text-lg font-bold text-white">Liên hệ</h3>
+            <ul class="space-y-3">
+              <li class="flex items-center space-x-3 text-white/70">
+                <svg class="w-5 h-5 text-white/50" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/>
+                </svg>
+                <span class="text-sm">Đại học ABC, TP.HCM</span>
+              </li>
+              <li class="flex items-center space-x-3 text-white/70">
+                <svg class="w-5 h-5 text-white/50" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"/>
+                </svg>
+                <span class="text-sm">+84 123 456 789</span>
+              </li>
+              <li class="flex items-center space-x-3 text-white/70">
+                <svg class="w-5 h-5 text-white/50" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/>
+                  <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/>
+                </svg>
+                <span class="text-sm">contact@quanlynhatro.com</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Bottom Border -->
+        <div class="border-t border-white/20 mt-12 pt-8">
+          <div class="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+            <p class="text-white/60 text-sm">
+              © 2025 Quản Lý Nhà Trọ. Được phát triển bởi nhóm sinh viên.
+            </p>
+            <div class="flex items-center space-x-6 text-sm text-white/60">
+              <a href="#" class="hover:text-white transition-colors duration-300">Chính sách bảo mật</a>
+              <a href="#" class="hover:text-white transition-colors duration-300">Điều khoản sử dụng</a>
+              <a href="#" class="hover:text-white transition-colors duration-300">Hỗ trợ</a>
+            </div>
+          </div>
+        </div>
+      </div>
     </footer>
+    
+    <!-- Modern Interactions JavaScript -->
+    <script src="{% static 'js/modern-interactions.js' %}"></script>
+
+    <!-- Enhanced Mobile Menu & Navigation Interactions -->
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        // Mobile menu toggle functionality
+        const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+        const mobileMenuOverlay = document.getElementById('mobile-menu-overlay');
+        const mobileMenuBackdrop = document.getElementById('mobile-menu-backdrop');
+        const menuIcon = document.getElementById('menu-icon');
+        const closeIcon = document.getElementById('close-icon');
+
+        if (mobileMenuToggle && mobileMenuOverlay) {
+          // Toggle mobile menu
+          mobileMenuToggle.addEventListener('click', function(e) {
+            e.preventDefault();
+            const isVisible = !mobileMenuOverlay.classList.contains('invisible');
+            
+            if (isVisible) {
+              closeMobileMenu();
+            } else {
+              openMobileMenu();
+            }
+          });
+
+          // Close menu when clicking backdrop
+          if (mobileMenuBackdrop) {
+            mobileMenuBackdrop.addEventListener('click', closeMobileMenu);
+          }
+
+          // Close menu on escape key
+          document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+              closeMobileMenu();
+            }
+          });
+
+          function openMobileMenu() {
+            mobileMenuOverlay.classList.remove('opacity-0', 'invisible');
+            mobileMenuOverlay.classList.add('opacity-100', 'visible');
+            document.body.style.overflow = 'hidden';
+            
+            if (menuIcon && closeIcon) {
+              menuIcon.classList.add('hidden');
+              closeIcon.classList.remove('hidden');
+            }
+          }
+
+          function closeMobileMenu() {
+            mobileMenuOverlay.classList.remove('opacity-100', 'visible');
+            mobileMenuOverlay.classList.add('opacity-0', 'invisible');
+            document.body.style.overflow = '';
+            
+            if (menuIcon && closeIcon) {
+              menuIcon.classList.remove('hidden');
+              closeIcon.classList.add('hidden');
+            }
+          }
+        }
+
+        // Enhanced navbar scroll effect
+        let lastScrollY = window.scrollY;
+        const navbar = document.querySelector('header');
+        
+        window.addEventListener('scroll', function() {
+          const currentScrollY = window.scrollY;
+          
+          if (navbar) {
+            if (currentScrollY > 100) {
+              navbar.classList.add('shadow-soft-xl');
+              navbar.classList.remove('shadow-soft-lg');
+            } else {
+              navbar.classList.remove('shadow-soft-xl');
+              navbar.classList.add('shadow-soft-lg');
+            }
+
+            // Hide/show navbar on scroll
+            if (currentScrollY > lastScrollY && currentScrollY > 200) {
+              navbar.style.transform = 'translateY(-100%)';
+            } else {
+              navbar.style.transform = 'translateY(0)';
+            }
+          }
+          
+          lastScrollY = currentScrollY;
+        });
+
+        // Add smooth page transitions
+        const links = document.querySelectorAll('a[href^="/"], a[href^="{% url"]');
+        links.forEach(link => {
+          link.addEventListener('click', function(e) {
+            if (this.hostname === window.location.hostname) {
+              document.body.style.opacity = '0.8';
+              document.body.style.transition = 'opacity 0.3s ease';
+              
+              setTimeout(() => {
+                document.body.style.opacity = '1';
+              }, 300);
+            }
+          });
+        });
+
+        // Enhanced dropdown animations
+        const dropdownTriggers = document.querySelectorAll('.group');
+        dropdownTriggers.forEach(trigger => {
+          const dropdown = trigger.querySelector('.absolute');
+          if (dropdown) {
+            let hoverTimeout;
+            
+            trigger.addEventListener('mouseenter', function() {
+              clearTimeout(hoverTimeout);
+              dropdown.style.transform = 'translateY(10px) scale(0.95)';
+              dropdown.style.opacity = '0';
+              
+              requestAnimationFrame(() => {
+                dropdown.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+                dropdown.style.transform = 'translateY(0) scale(1)';
+                dropdown.style.opacity = '1';
+              });
+            });
+            
+            trigger.addEventListener('mouseleave', function() {
+              hoverTimeout = setTimeout(() => {
+                dropdown.style.transform = 'translateY(-10px) scale(0.95)';
+                dropdown.style.opacity = '0';
+              }, 150);
+            });
+          }
+        });
+
+        // Add loading animation for buttons
+        const buttons = document.querySelectorAll('button, .btn-primary, a[href*="login"], a[href*="register"]');
+        buttons.forEach(button => {
+          button.addEventListener('click', function(e) {
+            if (!this.classList.contains('loading')) {
+              this.classList.add('loading');
+              
+              // Create ripple effect
+              const rect = this.getBoundingClientRect();
+              const ripple = document.createElement('div');
+              const size = Math.max(rect.width, rect.height);
+              const x = e.clientX - rect.left - size / 2;
+              const y = e.clientY - rect.top - size / 2;
+              
+              ripple.style.width = ripple.style.height = size + 'px';
+              ripple.style.left = x + 'px';
+              ripple.style.top = y + 'px';
+              ripple.style.position = 'absolute';
+              ripple.style.borderRadius = '50%';
+              ripple.style.background = 'rgba(255, 255, 255, 0.3)';
+              ripple.style.transform = 'scale(0)';
+              ripple.style.animation = 'ripple 0.6s linear';
+              ripple.style.pointerEvents = 'none';
+              
+              this.style.position = 'relative';
+              this.style.overflow = 'hidden';
+              this.appendChild(ripple);
+              
+              setTimeout(() => {
+                ripple.remove();
+                this.classList.remove('loading');
+              }, 600);
+            }
+          });
+        });
+
+        // Add parallax effect to background elements
+        const parallaxElements = document.querySelectorAll('.animate-float');
+        window.addEventListener('scroll', function() {
+          const scrolled = window.pageYOffset;
+          const rate = scrolled * -0.5;
+          
+          parallaxElements.forEach((element, index) => {
+            const speed = 0.2 + (index * 0.1);
+            element.style.transform = `translateY(${rate * speed}px)`;
+          });
+        });
+      });
+
+      // CSS for ripple animation
+      const style = document.createElement('style');
+      style.textContent = `
+        @keyframes ripple {
+          to {
+            transform: scale(4);
+            opacity: 0;
+          }
+        }
+        
+        .loading {
+          pointer-events: none;
+          opacity: 0.8;
+        }
+      `;
+      document.head.appendChild(style);
+    </script>
   </body>
 </html>

@@ -2,33 +2,118 @@
 {% load static %}
 {% block content %}
 <!-- Hero Section -->
-<section id="home" class="relative bg-gradient-to-r from-sky-700 via-blue-800 to-indigo-900 text-white min-h-[70vh] flex items-center justify-center bg-cover bg-center pt-24" style="background-image: url('{% static 'images/boarding-house.jpg' %}');">
-  <div class="absolute inset-0 bg-gradient-to-r from-sky-900/90 via-blue-900/80 to-indigo-900/90"></div>
-  <div class="relative z-10 text-center px-6 max-w-2xl">
-    <h1 class="text-4xl md:text-5xl font-extrabold mb-6 drop-shadow-lg">Hệ Thống Quản Lý Nhà Trọ</h1>
-    <p class="text-lg md:text-xl mb-10 text-sky-200 drop-shadow">Giải pháp hiện đại giúp bạn quản lý nhà trọ dễ dàng, nhanh chóng và hiệu quả hơn bao giờ hết.</p>
-    <div class="flex flex-col sm:flex-row gap-6 justify-center">
-      <a href="{% url 'dungchung:register' %}" class="bg-white text-blue-800 font-semibold px-8 py-3 rounded-full shadow-lg hover:bg-sky-100 transition duration-300">Đăng ký quản lý</a>
-      <a href="{% url 'dungchung:login' %}" class="bg-sky-600 hover:bg-sky-700 text-white font-semibold px-8 py-3 rounded-full shadow-lg transition duration-300">Đăng Nhập</a>
+<section id="home" class="bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 relative text-white min-h-[70vh] flex items-center justify-center pt-24">
+  <div class="relative z-10 text-center px-6 max-w-4xl animate-fade-in">
+    <div class="mb-8">
+      <div class="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full text-sm mb-6">
+        <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+        <span>Hệ thống đang hoạt động</span>
+      </div>
+      <h1 class="text-4xl md:text-6xl font-bold mb-6 drop-shadow-lg">
+        Hệ Thống 
+        <span class="bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">
+          Quản Lý
+        </span>
+        <br>Nhà Trọ Hiện Đại
+      </h1>
+      <p class="text-lg md:text-xl mb-10 text-white/90 drop-shadow max-w-3xl mx-auto leading-relaxed">
+        Giải pháp toàn diện giúp bạn quản lý nhà trọ một cách thông minh, tiết kiệm thời gian và tối đa hóa doanh thu.
+      </p>
+    </div>
+    
+    <div class="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+      <a href="{% url 'dungchung:register' %}" class="inline-flex items-center gap-2 bg-white text-blue-800 hover:bg-gray-100 font-semibold shadow-xl px-8 py-4 rounded-xl transition-all duration-300 hover:scale-105">
+        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
+        </svg>
+        Đăng ký miễn phí
+      </a>
+      <a href="{% url 'dungchung:login' %}" class="inline-flex items-center gap-2 bg-transparent border-2 border-white text-white hover:bg-white hover:text-blue-800 font-semibold px-8 py-4 rounded-xl transition-all duration-300 hover:scale-105">
+        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+        </svg>
+        Đăng nhập
+      </a>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+      <div class="bg-white/10 backdrop-blur-sm p-4 rounded-xl border border-white/20">
+        <div class="text-2xl font-bold">1000+</div>
+        <div class="text-sm text-white/80">Phòng trọ</div>
+      </div>
+      <div class="bg-white/10 backdrop-blur-sm p-4 rounded-xl border border-white/20">
+        <div class="text-2xl font-bold">500+</div>
+        <div class="text-sm text-white/80">Chủ trọ</div>
+      </div>
+      <div class="bg-white/10 backdrop-blur-sm p-4 rounded-xl border border-white/20">
+        <div class="text-2xl font-bold">2000+</div>
+        <div class="text-sm text-white/80">Khách thuê</div>
+      </div>
+      <div class="bg-white/10 backdrop-blur-sm p-4 rounded-xl border border-white/20">
+        <div class="text-2xl font-bold">99%</div>
+        <div class="text-sm text-white/80">Hài lòng</div>
+      </div>
     </div>
   </div>
 </section>
+
+<!-- Features Section -->
 <section class="bg-white py-20 px-6 sm:px-12">
-  <div class="max-w-screen-xl mx-auto text-center">
-    <h2 class="text-3xl md:text-4xl font-extrabold text-blue-900 mb-8">Tại sao chọn hệ thống của chúng tôi?</h2>
-    <p class="text-gray-700 mb-16 max-w-3xl mx-auto text-lg leading-relaxed">Nền tảng giúp bạn theo dõi hợp đồng, hóa đơn, người thuê và báo cáo thu chi dễ dàng. Tiết kiệm thời gian, giảm sai sót và tăng hiệu quả kinh doanh.</p>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
-      <div class="bg-sky-50 rounded-3xl shadow-lg p-8 hover:shadow-2xl transition-shadow duration-300 border border-sky-200">
-        <h3 class="text-xl font-semibold mb-4 text-blue-900">Quản lý hợp đồng</h3>
-        <p class="text-gray-700 leading-relaxed">Tạo, chỉnh sửa và quản lý hợp đồng thuê trọ nhanh chóng và chính xác.</p>
+  <div class="max-w-screen-xl mx-auto">
+    <div class="text-center mb-16 transform translate-y-4 opacity-0">
+      <div class="inline-flex items-center gap-2 bg-blue-100 text-blue-800 px-4 py-2 rounded-full text-sm font-medium mb-4">
+        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"/>
+        </svg>
+        Tính năng nổi bật
       </div>
-      <div class="bg-sky-50 rounded-3xl shadow-lg p-8 hover:shadow-2xl transition-shadow duration-300 border border-sky-200">
-        <h3 class="text-xl font-semibold mb-4 text-blue-900">Theo dõi hóa đơn</h3>
-        <p class="text-gray-700 leading-relaxed">Tự động tính chi phí điện, nước và tạo hóa đơn định kỳ.</p>
+      <h2 class="text-3xl md:text-5xl font-bold text-gray-900 mb-6">
+        Tại sao chọn hệ thống của 
+        <span class="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">chúng tôi?</span>
+      </h2>
+      <p class="text-gray-600 text-lg max-w-3xl mx-auto leading-relaxed">
+        Nền tảng all-in-one giúp bạn quản lý nhà trọ một cách thông minh và hiệu quả
+      </p>
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-8 group hover:scale-105 transition-all duration-300 hover:shadow-2xl">
+        <div class="text-center">
+          <div class="w-16 h-16 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+            <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z" clip-rule="evenodd"/>
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold mb-4 text-gray-900">Quản lý hợp đồng</h3>
+          <p class="text-gray-600 leading-relaxed">Tạo, chỉnh sửa và quản lý hợp đồng thuê trọ nhanh chóng và chính xác với template có sẵn.</p>
+        </div>
       </div>
-      <div class="bg-sky-50 rounded-3xl shadow-lg p-8 hover:shadow-2xl transition-shadow duration-300 border border-sky-200">
-        <h3 class="text-xl font-semibold mb-4 text-blue-900">Báo cáo & thống kê</h3>
-        <p class="text-gray-700 leading-relaxed">Xem tổng quan doanh thu, công nợ và tình trạng phòng trống dễ dàng.</p>
+      
+      <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-8 group hover:scale-105 transition-all duration-300 hover:shadow-2xl">
+        <div class="text-center">
+          <div class="w-16 h-16 bg-gradient-to-r from-green-500 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+            <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/>
+              <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/>
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold mb-4 text-gray-900">Hóa đơn thông minh</h3>
+          <p class="text-gray-600 leading-relaxed">Tự động tính toán chi phí điện, nước, internet và tạo hóa đơn định kỳ chính xác.</p>
+        </div>
+      </div>
+      
+      <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-8 group hover:scale-105 transition-all duration-300 hover:shadow-2xl">
+        <div class="text-center">
+          <div class="w-16 h-16 bg-gradient-to-r from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+            <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z"/>
+              <path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z"/>
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold mb-4 text-gray-900">Báo cáo & thống kê</h3>
+          <p class="text-gray-600 leading-relaxed">Dashboard trực quan với biểu đồ doanh thu, tỷ lệ lấp đầy và phân tích xu hướng.</p>
+        </div>
       </div>
     </div>
   </div>
