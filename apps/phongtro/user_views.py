@@ -5,16 +5,21 @@ from django.core.paginator import Paginator
 from django.db.models import Q, Count
 from django.utils import timezone
 from datetime import datetime
-from .models import PhongTro, CocPhong, LoaiPhong
+from .models import PhongTro, CocPhong, LoaiPhong, DangTinPhong
 from apps.nhatro.models import KhuVuc, NhaTro
 
 
 def tim_phong(request):
-    """View tìm kiếm phòng trọ"""
-    # Lấy tất cả phòng (không chỉ phòng trống)
-    phongs = PhongTro.objects.all().select_related(
-        'MA_LOAI_PHONG', 'MA_KHU_VUC', 'MA_KHU_VUC__MA_NHA_TRO'
-    )
+    """View tìm kiếm phòng trọ - Chỉ hiển thị phòng có tin đăng"""
+    # Lấy tin đăng đang hiển thị
+    tin_dang_list = DangTinPhong.objects.filter(
+        TRANG_THAI='DANG_HIEN_THI'
+    ).select_related(
+        'MA_PHONG', 
+        'MA_PHONG__MA_LOAI_PHONG', 
+        'MA_PHONG__MA_KHU_VUC', 
+        'MA_PHONG__MA_KHU_VUC__MA_NHA_TRO'
+    ).prefetch_related('hinh_anh')
     
     # Các filter parameters
     gia_min = request.GET.get('gia_min', '').strip()
@@ -24,45 +29,45 @@ def tim_phong(request):
     khu_vuc = request.GET.get('khu_vuc', '').strip()
     loai_phong = request.GET.get('loai_phong', '').strip()
     
-    # Áp dụng filters
+    # Áp dụng filters cho tin đăng
     if gia_min:
         try:
-            phongs = phongs.filter(GIA_PHONG__gte=float(gia_min))
+            tin_dang_list = tin_dang_list.filter(MA_PHONG__GIA_PHONG__gte=float(gia_min))
         except ValueError:
             pass
     
     if gia_max:
         try:
-            phongs = phongs.filter(GIA_PHONG__lte=float(gia_max))
+            tin_dang_list = tin_dang_list.filter(MA_PHONG__GIA_PHONG__lte=float(gia_max))
         except ValueError:
             pass
     
     if dien_tich_min:
         try:
-            phongs = phongs.filter(DIEN_TICH__gte=float(dien_tich_min))
+            tin_dang_list = tin_dang_list.filter(MA_PHONG__DIEN_TICH__gte=float(dien_tich_min))
         except ValueError:
             pass
     
     if dien_tich_max:
         try:
-            phongs = phongs.filter(DIEN_TICH__lte=float(dien_tich_max))
+            tin_dang_list = tin_dang_list.filter(MA_PHONG__DIEN_TICH__lte=float(dien_tich_max))
         except ValueError:
             pass
     
     if khu_vuc:
         try:
-            phongs = phongs.filter(MA_KHU_VUC=int(khu_vuc))
+            tin_dang_list = tin_dang_list.filter(MA_PHONG__MA_KHU_VUC=int(khu_vuc))
         except ValueError:
             pass
     
     if loai_phong:
         try:
-            phongs = phongs.filter(MA_LOAI_PHONG=int(loai_phong))
+            tin_dang_list = tin_dang_list.filter(MA_PHONG__MA_LOAI_PHONG=int(loai_phong))
         except ValueError:
             pass
     
     # Pagination
-    paginator = Paginator(phongs, 12)  # 12 phòng mỗi trang
+    paginator = Paginator(tin_dang_list, 12)  # 12 tin đăng mỗi trang
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
@@ -89,16 +94,25 @@ def tim_phong(request):
 
 
 def chi_tiet_phong(request, ma_phong):
-    """View chi tiết phòng"""
-    phong = get_object_or_404(
-        PhongTro.objects.select_related(
-            'MA_LOAI_PHONG', 'MA_KHU_VUC', 'MA_KHU_VUC__MA_NHA_TRO'
-        ),
-        MA_PHONG=ma_phong       
+    """View chi tiết phòng - Hiển thị từ tin đăng"""
+    # Lấy tin đăng của phòng này
+    tin_dang = get_object_or_404(
+        DangTinPhong.objects.select_related(
+            'MA_PHONG',
+            'MA_PHONG__MA_LOAI_PHONG', 
+            'MA_PHONG__MA_KHU_VUC', 
+            'MA_PHONG__MA_KHU_VUC__MA_NHA_TRO'
+        ).prefetch_related('hinh_anh'),
+        MA_PHONG=ma_phong,
+        TRANG_THAI='DANG_HIEN_THI'
     )
     
+    # Tăng lượt xem
+    tin_dang.tang_luot_xem()
+    
     context = {
-        'phong': phong,
+        'tin_dang': tin_dang,
+        'phong': tin_dang.MA_PHONG,  # Backward compatibility
     }
     
     return render(request, 'user/phongtro/chi_tiet_phong.html', context)

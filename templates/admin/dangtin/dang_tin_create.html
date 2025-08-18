@@ -1,0 +1,224 @@
+{% extends 'admin/admin_layout.html' %}
+{% load static %}
+
+{% block title %}Đăng tin phòng mới{% endblock %}
+
+{% block content_body %}
+<div class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-800 mb-2">
+                        <i class="fas fa-plus-circle text-green-600 mr-3"></i>
+                        Đăng tin phòng mới
+                    </h1>
+                    <p class="text-gray-600">Chọn phòng trống và upload hình ảnh để đăng tin</p>
+                </div>
+                <a href="{% url 'admin_phongtro:dang_tin_list' %}" 
+                   class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors">
+                    <i class="fas fa-arrow-left mr-2"></i>Quay lại
+                </a>
+            </div>
+        </div>
+
+        <!-- Form -->
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+            <form method="POST" enctype="multipart/form-data" id="dangTinForm">
+                {% csrf_token %}
+                
+                <div class="p-6">
+                    <!-- Chọn phòng -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-3">
+                            <i class="fas fa-door-open text-blue-500 mr-2"></i>
+                            Chọn phòng <span class="text-red-500">*</span>
+                        </label>
+                        
+                        {% if phong_chua_dang %}
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {% for phong in phong_chua_dang %}
+                            <div class="border-2 border-gray-200 rounded-lg p-4 hover:border-blue-500 transition-colors cursor-pointer phong-option"
+                                 data-phong-id="{{ phong.MA_PHONG }}">
+                                <input type="radio" name="ma_phong" value="{{ phong.MA_PHONG }}" class="hidden">
+                                <div class="flex items-center justify-between mb-2">
+                                    <h3 class="font-semibold text-gray-800">{{ phong.TEN_PHONG }}</h3>
+                                    <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">{{ phong.TRANG_THAI_P }}</span>
+                                </div>
+                                <div class="text-sm text-gray-600 space-y-1">
+                                    <div><i class="fas fa-map-marker-alt text-red-500 w-4"></i> {{ phong.MA_KHU_VUC.TEN_KHU_VUC }}</div>
+                                    <div><i class="fas fa-tag text-blue-500 w-4"></i> {{ phong.MA_LOAI_PHONG.TEN_LOAI_PHONG }}</div>
+                                    <div><i class="fas fa-money-bill-wave text-green-500 w-4"></i> {{ phong.GIA_PHONG|floatformat:0 }} VNĐ/tháng</div>
+                                    <div><i class="fas fa-expand-arrows-alt text-purple-500 w-4"></i> {{ phong.DIEN_TICH }} m²</div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="text-center py-8 bg-gray-50 rounded-lg">
+                            <i class="fas fa-info-circle text-blue-500 text-4xl mb-4"></i>
+                            <p class="text-gray-600 text-lg">Không có phòng trống nào để đăng tin</p>
+                            <p class="text-gray-500 text-sm mt-2">Chỉ có thể đăng tin cho phòng có trạng thái "Trống" và chưa có tin đăng</p>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Thông tin liên hệ -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-phone text-green-500 mr-2"></i>
+                                Số điện thoại liên hệ <span class="text-red-500">*</span>
+                            </label>
+                            <input type="tel" name="sdt_lien_he" required
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                   placeholder="Nhập số điện thoại">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-envelope text-blue-500 mr-2"></i>
+                                Email liên hệ
+                            </label>
+                            <input type="email" name="email_lien_he"
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                   placeholder="Nhập email (tùy chọn)">
+                        </div>
+                    </div>
+
+                    <!-- Upload hình ảnh -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-3">
+                            <i class="fas fa-images text-purple-500 mr-2"></i>
+                            Hình ảnh phòng <span class="text-red-500">*</span>
+                        </label>
+                        <p class="text-gray-500 text-sm mb-4">Chọn nhiều hình ảnh để hiển thị phòng một cách tốt nhất. Hình đầu tiên sẽ làm ảnh đại diện.</p>
+                        
+                        <!-- Drop zone -->
+                        <div id="dropZone" class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-500 transition-colors cursor-pointer">
+                            <i class="fas fa-cloud-upload-alt text-gray-400 text-4xl mb-4"></i>
+                            <p class="text-gray-600 mb-2">Kéo thả hình ảnh vào đây hoặc <span class="text-blue-600 font-semibold">nhấp để chọn</span></p>
+                            <p class="text-gray-500 text-sm">Hỗ trợ: JPG, PNG, WEBP. Tối đa 5MB mỗi ảnh.</p>
+                            <input type="file" id="fileInput" name="hinh_anh" multiple accept="image/*" class="hidden" required>
+                        </div>
+                        
+                        <!-- Preview container -->
+                        <div id="imagePreview" class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4 hidden"></div>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="bg-gray-50 px-6 py-4 flex justify-end gap-4">
+                    <button type="button" onclick="history.back()" 
+                            class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+                        Hủy
+                    </button>
+                    <button type="submit" id="submitBtn" disabled
+                            class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed">
+                        <i class="fas fa-paper-plane mr-2"></i>
+                        Đăng tin
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const phongOptions = document.querySelectorAll('.phong-option');
+    const fileInput = document.getElementById('fileInput');
+    const dropZone = document.getElementById('dropZone');
+    const imagePreview = document.getElementById('imagePreview');
+    const submitBtn = document.getElementById('submitBtn');
+    
+    let selectedFiles = [];
+    let selectedPhong = null;
+    
+    // Xử lý chọn phòng
+    phongOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            phongOptions.forEach(opt => opt.classList.remove('border-blue-500', 'bg-blue-50'));
+            this.classList.add('border-blue-500', 'bg-blue-50');
+            this.querySelector('input[type="radio"]').checked = true;
+            selectedPhong = this.dataset.phongId;
+            checkFormValid();
+        });
+    });
+    
+    // Xử lý drop zone
+    dropZone.addEventListener('click', () => fileInput.click());
+    
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('border-blue-500', 'bg-blue-50');
+    });
+    
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('border-blue-500', 'bg-blue-50');
+    });
+    
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('border-blue-500', 'bg-blue-50');
+        handleFiles(e.dataTransfer.files);
+    });
+    
+    fileInput.addEventListener('change', (e) => {
+        handleFiles(e.target.files);
+    });
+    
+    function handleFiles(files) {
+        selectedFiles = Array.from(files);
+        updateImagePreview();
+        checkFormValid();
+    }
+    
+    function updateImagePreview() {
+        imagePreview.innerHTML = '';
+        if (selectedFiles.length > 0) {
+            imagePreview.classList.remove('hidden');
+            
+            selectedFiles.forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const div = document.createElement('div');
+                    div.className = 'relative group';
+                    div.innerHTML = `
+                        <img src="${e.target.result}" class="w-full h-24 object-cover rounded-lg border">
+                        <button type="button" onclick="removeImage(${index})" 
+                                class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <i class="fas fa-times"></i>
+                        </button>
+                        ${index === 0 ? '<div class="absolute bottom-1 left-1 bg-green-500 text-white px-1 py-0.5 rounded text-xs">Ảnh đại diện</div>' : ''}
+                    `;
+                    imagePreview.appendChild(div);
+                };
+                reader.readAsDataURL(file);
+            });
+        } else {
+            imagePreview.classList.add('hidden');
+        }
+    }
+    
+    window.removeImage = function(index) {
+        selectedFiles.splice(index, 1);
+        updateFileInput();
+        updateImagePreview();
+        checkFormValid();
+    }
+    
+    function updateFileInput() {
+        const dt = new DataTransfer();
+        selectedFiles.forEach(file => dt.items.add(file));
+        fileInput.files = dt.files;
+    }
+    
+    function checkFormValid() {
+        const isValid = selectedPhong && selectedFiles.length > 0;
+        submitBtn.disabled = !isValid;
+    }
+});
+</script>
+{% endblock %}

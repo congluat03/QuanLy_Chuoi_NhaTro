@@ -282,23 +282,25 @@
   <!-- Room List (70% width) -->
   <div class="w-full lg:w-2/3">
     <div class="space-y-6">
-      {% for phong in page_obj %}
+      {% for tin_dang in page_obj %}
         <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col sm:flex-row">
-          <!-- Room Image Placeholder -->
-          <div class="sm:w-1/3 h-48 bg-gradient-to-br from-blue-400 to-blue-600 relative overflow-hidden">
-            <div class="absolute inset-0 flex items-center justify-center text-white">
-              <i class="fas fa-home text-4xl opacity-50"></i>
-            </div>
+          <!-- Room Image -->
+          <div class="sm:w-1/3 h-48 relative overflow-hidden">
+            {% if tin_dang.hinh_anh_dai_dien %}
+              <img src="{{ tin_dang.hinh_anh_dai_dien.HINH_ANH.url }}" 
+                   alt="{{ tin_dang.MA_PHONG.TEN_PHONG }}"
+                   class="w-full h-full object-cover">
+            {% else %}
+              <div class="w-full h-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white">
+                <i class="fas fa-home text-4xl opacity-50"></i>
+              </div>
+            {% endif %}
+            
             <!-- Status Badge -->
             <div class="absolute top-3 left-3">
-              <span class="px-3 py-1 rounded-full text-xs font-semibold
-                {% if phong.TRANG_THAI_P == 'Trống' %}bg-green-500 text-white
-                {% elif phong.TRANG_THAI_P == 'Đã thuê' %}bg-red-500 text-white
-                {% elif phong.TRANG_THAI_P == 'Đã cọc' %}bg-yellow-500 text-white
-                {% elif phong.TRANG_THAI_P == 'Bảo trì' %}bg-gray-500 text-white
-                {% else %}bg-blue-500 text-white{% endif %}">
-                <i class="fas {% if phong.TRANG_THAI_P == 'Trống' %}fa-check-circle{% elif phong.TRANG_THAI_P == 'Đã thuê' %}fa-times-circle{% elif phong.TRANG_THAI_P == 'Đã cọc' %}fa-clock{% else %}fa-info-circle{% endif %} mr-1"></i>
-                {{ phong.TRANG_THAI_P }}
+              <span class="px-3 py-1 rounded-full text-xs font-semibold bg-green-500 text-white">
+                <i class="fas fa-eye mr-1"></i>
+                Đang cho thuê
               </span>
             </div>
           </div>
@@ -308,45 +310,64 @@
             <div class="flex flex-col h-full">
               <!-- Room Title -->
               <h3 class="font-bold text-lg text-gray-800 mb-2 hover:text-blue-600 transition-colors">
-                {{ phong.TEN_PHONG }}
+                {{ tin_dang.MA_PHONG.TEN_PHONG }}
               </h3>
 
               <!-- Location -->
               <p class="text-gray-600 text-sm mb-3 flex items-center">
                 <i class="fas fa-map-marker-alt mr-2 text-blue-500"></i>
-                {{ phong.MA_KHU_VUC.TEN_KHU_VUC }}, {{ phong.MA_KHU_VUC.MA_NHA_TRO.TEN_NHA_TRO }}
+                {{ tin_dang.MA_PHONG.MA_KHU_VUC.TEN_KHU_VUC }}, {{ tin_dang.MA_PHONG.MA_KHU_VUC.MA_NHA_TRO.TEN_NHA_TRO }}
               </p>
 
               <!-- Room Details -->
               <div class="space-y-2 text-sm text-gray-600 mb-4">
                 <div class="flex justify-between">
                   <span>Loại phòng:</span>
-                  <span class="font-medium">{{ phong.MA_LOAI_PHONG.TEN_LOAI_PHONG|default:"Chưa phân loại" }}</span>
+                  <span class="font-medium">{{ tin_dang.MA_PHONG.MA_LOAI_PHONG.TEN_LOAI_PHONG|default:"Chưa phân loại" }}</span>
                 </div>
                 <div class="flex justify-between">
                   <span>Diện tích:</span>
-                  <span class="font-medium">{{ phong.DIEN_TICH|default:"N/A" }} m²</span>
+                  <span class="font-medium">{{ tin_dang.MA_PHONG.DIEN_TICH|default:"N/A" }} m²</span>
                 </div>
                 <div class="flex justify-between">
                   <span>Sức chứa:</span>
-                  <span class="font-medium">{{ phong.SO_NGUOI_TOI_DA|default:"N/A" }} người</span>
+                  <span class="font-medium">{{ tin_dang.MA_PHONG.SO_NGUOI_TOI_DA|default:"N/A" }} người</span>
                 </div>
+                <div class="flex justify-between">
+                  <span>Lượt xem:</span>
+                  <span class="font-medium text-blue-600">{{ tin_dang.LUOT_XEM }}</span>
+                </div>
+              </div>
+
+              <!-- Contact Info -->
+              <div class="bg-blue-50 rounded-lg p-3 mb-4">
+                <div class="flex items-center text-sm text-gray-700">
+                  <i class="fas fa-phone text-green-500 mr-2"></i>
+                  <span class="font-medium">{{ tin_dang.SDT_LIEN_HE }}</span>
+                </div>
+                {% if tin_dang.EMAIL_LIEN_HE %}
+                <div class="flex items-center text-sm text-gray-700 mt-1">
+                  <i class="fas fa-envelope text-blue-500 mr-2"></i>
+                  <span>{{ tin_dang.EMAIL_LIEN_HE }}</span>
+                </div>
+                {% endif %}
               </div>
 
               <!-- Price -->
               <div class="text-2xl font-bold text-blue-600 mb-4">
-                {{ phong.GIA_PHONG|currency_vn }}
+                {{ tin_dang.MA_PHONG.GIA_PHONG|currency_vn }}
                 <span class="text-sm font-normal text-gray-500">/tháng</span>
               </div>
 
               <!-- Action Buttons -->
               <div class="flex space-x-2 mt-auto">
-                <a href="{% url 'user_phongtro:chi_tiet_phong' phong.MA_PHONG %}" 
+                <a href="{% url 'user_phongtro:chi_tiet_phong' tin_dang.MA_PHONG.MA_PHONG %}" 
                    class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-center py-2 px-3 rounded-lg transition duration-300 text-sm font-medium">
                   Chi tiết
                 </a>
-                <a href="{% url 'user_phongtro:dat_phong' phong.MA_PHONG %}" 
-                   class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-center py-2 px-3 rounded-lg transition duration-300 text-sm font-medium">
+                <a href="{% url 'user_phongtro:dat_phong' tin_dang.MA_PHONG.MA_PHONG %}" 
+                   class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-center py-2 px-3 rounded-lg transition duration-300 text-sm font-medium"
+                   onclick="incrementContactCount({{ tin_dang.MA_TIN_DANG }})">
                   Đặt phòng
                 </a>
               </div>
@@ -480,4 +501,17 @@
     </div>
   </div>
 </div>
+
+<script>
+// Function to increment contact count
+function incrementContactCount(tinDangId) {
+    fetch(`/api/tin-dang/${tinDangId}/tang-luot-lien-he/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '',
+            'Content-Type': 'application/json',
+        },
+    }).catch(error => console.log('Error updating contact count:', error));
+}
+</script>
 {% endblock %}

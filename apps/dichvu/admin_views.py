@@ -19,6 +19,167 @@ from django.db import transaction
 from datetime import date
 from django.http import JsonResponse
 
+def ghi_so_dich_vu(request):
+    """Hiển thị form ghi số dịch vụ sử dụng."""
+    if request.method == 'GET':
+        khu_vucs = KhuVuc.objects.filter(MA_NHA_TRO=1).order_by('MA_KHU_VUC')
+        context = {
+            'khu_vucs': khu_vucs,
+        }
+        return render(request, 'admin/dichvu/ghi_so_dichvu.html', context)
+    
+    if request.method == 'POST':
+        return luu_chi_so_dich_vu(request)
+
+def lay_phong_theo_khu_vuc(request):
+    """AJAX - Lấy danh sách phòng theo khu vực."""
+    khu_vuc_id = request.GET.get('khu_vuc_id')
+    if not khu_vuc_id:
+        return JsonResponse({'error': 'Thiếu mã khu vực'}, status=400)
+    
+    try:
+        from apps.hopdong.models import HopDong
+        phong_tros = PhongTro.objects.filter(
+            MA_KHU_VUC_id=khu_vuc_id,
+            hopdong__TRANG_THAI_HD__in=['Đang hoạt động', 'Đã xác nhận']
+        ).distinct().values('MA_PHONG', 'TEN_PHONG')
+        
+        phong_list = list(phong_tros)
+        return JsonResponse({'phong_tros': phong_list})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+def lay_dich_vu_theo_khu_vuc(request):
+    """AJAX - Lấy danh sách dịch vụ đang áp dụng theo khu vực."""
+    khu_vuc_id = request.GET.get('khu_vuc_id')
+    if not khu_vuc_id:
+        return JsonResponse({'error': 'Thiếu mã khu vực'}, status=400)
+    
+    try:
+        dich_vus = LichSuApDungDichVu.objects.filter(
+            MA_KHU_VUC_id=khu_vuc_id,
+            NGAY_HUY_DV__isnull=True
+        ).select_related('MA_DICH_VU').values(
+            'MA_DICH_VU__MA_DICH_VU',
+            'MA_DICH_VU__TEN_DICH_VU',
+            'MA_DICH_VU__DON_VI_TINH',
+            'MA_DICH_VU__LOAI_DICH_VU',
+            'GIA_DICH_VU_AD'
+        )
+        
+        dich_vu_list = list(dich_vus)
+        return JsonResponse({'dich_vus': dich_vu_list})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+def lay_chi_so_cu(request):
+    """AJAX - Lấy chỉ số cũ của dịch vụ."""
+    ma_phong = request.GET.get('ma_phong')
+    ma_dich_vu = request.GET.get('ma_dich_vu')
+    
+    if not ma_phong or not ma_dich_vu:
+        return JsonResponse({'error': 'Thiếu thông tin phòng hoặc dịch vụ'}, status=400)
+    
+    try:
+        chi_so_moi_nhat = ChiSoDichVu.objects.filter(
+            MA_PHONG_id=ma_phong,
+            MA_DICH_VU_id=ma_dich_vu
+        ).order_by('-NGAY_GHI_CS').first()
+        
+        chi_so_cu = 0
+        if chi_so_moi_nhat and chi_so_moi_nhat.CHI_SO_MOI is not None:
+            chi_so_cu = chi_so_moi_nhat.CHI_SO_MOI
+            
+        return JsonResponse({'chi_so_cu': chi_so_cu})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+def luu_chi_so_dich_vu(request):
+    """Lưu chỉ số dịch vụ sử dụng."""
+    try:
+        ma_phong = request.POST.get('ma_phong')
+        ngay_ghi_cs = request.POST.get('ngay_ghi_cs')
+        chi_so_data = []
+        
+        # Lấy thông tin phòng và hợp đồng
+        phong = get_object_or_404(PhongTro, MA_PHONG=ma_phong)
+        from apps.hopdong.models import HopDong
+        hop_dong = HopDong.objects.filter(
+            MA_PHONG=phong,
+            TRANG_THAI_HD__in=['Đang hoạt động', 'Đã xác nhận']
+        ).first()
+        
+        if not hop_dong:
+            messages.error(request, 'Không tìm thấy hợp đồng hiệu lực cho phòng này.')
+            return redirect('dichvu:ghi_so_dich_vu')
+        
+        # Lấy dữ liệu chỉ số từ form
+        for key, value in request.POST.items():
+            if key.startswith('chi_so_moi_'):
+                ma_dich_vu = key.split('_')[-1]
+                chi_so_cu = request.POST.get(f'chi_so_cu_{ma_dich_vu}', 0)
+                chi_so_moi = value
+                so_luong = request.POST.get(f'so_luong_{ma_dich_vu}', 1)
+                
+                if chi_so_moi or so_luong:
+                    chi_so_data.append({
+                        'MA_DICH_VU': ma_dich_vu,
+                        'CHI_SO_CU': chi_so_cu,
+                        'CHI_SO_MOI': chi_so_moi,
+                        'SO_LUONG': so_luong
+                    })
+        
+        # Validation
+        if not chi_so_data:
+            messages.error(request, 'Vui lòng nhập ít nhất một chỉ số dịch vụ.')
+            return redirect('dichvu:ghi_so_dich_vu')
+        
+        # Lưu chỉ số dịch vụ
+        with transaction.atomic():
+            for chi_so in chi_so_data:
+                dich_vu = get_object_or_404(DichVu, MA_DICH_VU=chi_so['MA_DICH_VU'])
+                
+                # Kiểm tra loại dịch vụ và validate
+                if dich_vu.LOAI_DICH_VU != 'Cố định':
+                    if not chi_so['CHI_SO_MOI']:
+                        continue
+                    chi_so_cu = float(chi_so['CHI_SO_CU'] or 0)
+                    chi_so_moi = float(chi_so['CHI_SO_MOI'])
+                    
+                    if chi_so_moi < chi_so_cu:
+                        messages.error(request, f'Chỉ số mới của {dich_vu.TEN_DICH_VU} phải lớn hơn hoặc bằng chỉ số cũ.')
+                        return redirect('dichvu:ghi_so_dich_vu')
+                    
+                    # Tạo bản ghi chỉ số
+                    ChiSoDichVu.objects.create(
+                        MA_DICH_VU=dich_vu,
+                        MA_PHONG=phong,
+                        MA_HOP_DONG=hop_dong,
+                        CHI_SO_CU=int(chi_so_cu),
+                        CHI_SO_MOI=int(chi_so_moi),
+                        NGAY_GHI_CS=ngay_ghi_cs,
+                        SO_LUONG=chi_so_moi - chi_so_cu
+                    )
+                else:
+                    # Dịch vụ cố định
+                    so_luong = int(chi_so['SO_LUONG'] or 1)
+                    ChiSoDichVu.objects.create(
+                        MA_DICH_VU=dich_vu,
+                        MA_PHONG=phong,
+                        MA_HOP_DONG=hop_dong,
+                        CHI_SO_CU=0,
+                        CHI_SO_MOI=so_luong,
+                        NGAY_GHI_CS=ngay_ghi_cs,
+                        SO_LUONG=so_luong
+                    )
+        
+        messages.success(request, 'Ghi số dịch vụ sử dụng thành công!')
+        return redirect('dichvu:ghi_so_dich_vu')
+        
+    except Exception as e:
+        messages.error(request, f'Có lỗi xảy ra: {str(e)}')
+        return redirect('dichvu:ghi_so_dich_vu')
+
 def dichvu_list(request):
     # Lấy toàn bộ danh sách dịch vụ (không phân trang)
     dich_vus = DichVu.objects.order_by('MA_DICH_VU')

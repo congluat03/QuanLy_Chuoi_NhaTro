@@ -11,6 +11,7 @@ from datetime import date
 from django.http import JsonResponse
 from django.template.loader import render_to_string
 from django.views.decorators.http import require_http_methods
+from django.conf import settings
 import json
 
 def khuvuc_list(request):
@@ -53,35 +54,113 @@ def khuvuc_sua(request, khuVucId):
     try:
         khu_vuc = KhuVuc.objects.get(MA_KHU_VUC=khuVucId)
     except KhuVuc.DoesNotExist:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'error': 'Khu vực không tồn tại.'}, status=404)
         messages.error(request, "Khu vực không tồn tại.")
-        return redirect('dashboard_khuvuc')  # Thay bằng tên URL đúng trong hệ thống của bạn
+        return redirect('nhatro:khuvuc_list')
+
 
     if request.method == "POST":
+        # Thông tin cơ bản
         ten_khu_vuc = request.POST.get("TEN_KHU_VUC")
         cap1 = request.POST.get("DV_HANH_CHINH_CAP1")
         cap2 = request.POST.get("DV_HANH_CHINH_CAP2")
         cap3 = request.POST.get("DV_HANH_CHINH_CAP3")
+        
+        # Địa chỉ chi tiết
+        so_nha = request.POST.get("SO_NHA", "").strip()
+        ten_duong = request.POST.get("TEN_DUONG", "").strip()
+        dia_chi_chi_tiet = request.POST.get("DIA_CHI_CHI_TIET", "").strip()
+        
+        # Tọa độ bản đồ
+        kinh_do = request.POST.get("KINH_DO", "").strip()
+        vi_do = request.POST.get("VI_DO", "").strip()
+        diem_toa_do = request.POST.get("DIEM_TOA_DO", "").strip()
+        
+        # Thông tin bổ sung
+        mo_ta_vi_tri = request.POST.get("MO_TA_VI_TRI", "").strip()
+        ghi_chu_kv = request.POST.get("GHI_CHU_KV", "").strip()
 
+        # Cập nhật thông tin cơ bản
         khu_vuc.TEN_KHU_VUC = ten_khu_vuc
         khu_vuc.DV_HANH_CHINH_CAP1 = cap1
         khu_vuc.DV_HANH_CHINH_CAP2 = cap2
         khu_vuc.DV_HANH_CHINH_CAP3 = cap3
+        
+        # Cập nhật địa chỉ chi tiết
+        khu_vuc.SO_NHA = so_nha if so_nha else None
+        khu_vuc.TEN_DUONG = ten_duong if ten_duong else None
+        khu_vuc.DIA_CHI_CHI_TIET = dia_chi_chi_tiet if dia_chi_chi_tiet else None
+        
+        # Cập nhật tọa độ
+        try:
+            if kinh_do and vi_do:
+                khu_vuc.KINH_DO = float(kinh_do)
+                khu_vuc.VI_DO = float(vi_do)
+                # Tự động tạo DIEM_TOA_DO từ VI_DO và KINH_DO (sẽ được xử lý trong save method)
+                khu_vuc.DIEM_TOA_DO = None  # Để save method tự tạo
+            else:
+                khu_vuc.KINH_DO = None
+                khu_vuc.VI_DO = None
+                khu_vuc.DIEM_TOA_DO = None
+        except ValueError:
+            messages.warning(request, "Tọa độ không hợp lệ, đã bỏ qua việc cập nhật tọa độ.")
+            khu_vuc.KINH_DO = None
+            khu_vuc.VI_DO = None
+            khu_vuc.DIEM_TOA_DO = None
+        
+        # Cập nhật thông tin bổ sung
+        khu_vuc.MO_TA_VI_TRI = mo_ta_vi_tri if mo_ta_vi_tri else None
+        khu_vuc.GHI_CHU_KV = ghi_chu_kv if ghi_chu_kv else None
+        
         khu_vuc.save()
 
         messages.success(request, "Cập nhật khu vực thành công.")
         return redirect("nhatro:khuvuc_list")
 
-    return render(request, 'admin/khuvuc/themsua_khuvuc.html', {'khu_vuc': khu_vuc})
+    context = {
+        'khu_vuc': khu_vuc
+    }
+    
+    return render(request, 'admin/khuvuc/themsua_khuvuc.html', context)
 
 def khuvuc_them(request):
+
     if request.method == "POST":
+        # Thông tin cơ bản
         ten_khu_vuc = request.POST.get("TEN_KHU_VUC")
         cap1 = request.POST.get("DV_HANH_CHINH_CAP1")
         cap2 = request.POST.get("DV_HANH_CHINH_CAP2")
         cap3 = request.POST.get("DV_HANH_CHINH_CAP3")
         trang_thai = 'đang hoạt động' # Mặc định là 1 (hoạt động)
+        
+        # Địa chỉ chi tiết
+        so_nha = request.POST.get("SO_NHA", "").strip()
+        ten_duong = request.POST.get("TEN_DUONG", "").strip()
+        dia_chi_chi_tiet = request.POST.get("DIA_CHI_CHI_TIET", "").strip()
+        
+        # Tọa độ bản đồ
+        kinh_do = request.POST.get("KINH_DO", "").strip()
+        vi_do = request.POST.get("VI_DO", "").strip()
+        diem_toa_do = request.POST.get("DIEM_TOA_DO", "").strip()
+        
+        # Thông tin bổ sung
+        mo_ta_vi_tri = request.POST.get("MO_TA_VI_TRI", "").strip()
+        ghi_chu_kv = request.POST.get("GHI_CHU_KV", "").strip()
+        
         # Lấy nhà trọ mặc định hoặc từ user đang đăng nhập
         nha_tro = get_object_or_404(NhaTro, pk=1)
+
+        # Xử lý tọa độ
+        kinh_do_value = None
+        vi_do_value = None
+        try:
+            if kinh_do:
+                kinh_do_value = float(kinh_do)
+            if vi_do:
+                vi_do_value = float(vi_do)
+        except ValueError:
+            messages.warning(request, "Tọa độ không hợp lệ, đã bỏ qua việc lưu tọa độ.")
 
         khu_vuc = KhuVuc.objects.create(
             MA_NHA_TRO=nha_tro,
@@ -89,13 +168,28 @@ def khuvuc_them(request):
             TRANG_THAI_KV=trang_thai,
             DV_HANH_CHINH_CAP1=cap1,
             DV_HANH_CHINH_CAP2=cap2,
-            DV_HANH_CHINH_CAP3=cap3
+            DV_HANH_CHINH_CAP3=cap3,
+            # Địa chỉ chi tiết
+            SO_NHA=so_nha if so_nha else None,
+            TEN_DUONG=ten_duong if ten_duong else None,
+            DIA_CHI_CHI_TIET=dia_chi_chi_tiet if dia_chi_chi_tiet else None,
+            # Tọa độ
+            KINH_DO=kinh_do_value,
+            VI_DO=vi_do_value,
+            # DIEM_TOA_DO sẽ được tự động tạo trong save method
+            # Thông tin bổ sung
+            MO_TA_VI_TRI=mo_ta_vi_tri if mo_ta_vi_tri else None,
+            GHI_CHU_KV=ghi_chu_kv if ghi_chu_kv else None
         )
 
         messages.success(request, "Thêm khu vực thành công.")
         return redirect("nhatro:khuvuc_list")
 
-    return render(request, 'admin/khuvuc/themsua_khuvuc.html', {'khu_vuc': None})
+    context = {
+        'khu_vuc': None
+    }
+    
+    return render(request, 'admin/khuvuc/themsua_khuvuc.html', context)
 
 def xoa_khuvuc(request, ma_khu_vuc):
     khu_vuc = get_object_or_404(KhuVuc, MA_KHU_VUC=ma_khu_vuc)

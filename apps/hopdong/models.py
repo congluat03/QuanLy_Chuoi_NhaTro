@@ -24,7 +24,7 @@ class HopDong(models.Model):
     SO_THANH_VIEN = models.IntegerField(null=True, blank=True)
     GIA_THUE = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     NGAY_THU_TIEN = models.CharField(max_length=10, null=True, blank=True)
-    PHUONG_THUC_THANH_TOAN = models.CharField(max_length=50, null=True, blank=True)
+    THOI_DIEM_THANH_TOAN = models.CharField(max_length=20, null=True, blank=True)  # Đầu kỳ/Cuối kỳ
     TRANG_THAI_HD = models.CharField(max_length=50, null=True, blank=True)
     GHI_CHU_HD = models.TextField(null=True, blank=True)
     CHU_KY_THANH_TOAN = models.CharField(max_length=20, null=True, blank=True)
@@ -37,9 +37,13 @@ class HopDong(models.Model):
         db_table = 'hopdong'
     def clean(self):
         """Validate dữ liệu hợp đồng."""
-        if self.NGAY_NHAN_PHONG >= self.NGAY_TRA_PHONG:
-            raise ValidationError('Ngày nhận phòng phải trước ngày trả phòng.')
-        if self.SO_THANH_VIEN <= 0:
+        # Kiểm tra ngày nhận phòng và ngày trả phòng
+        if self.NGAY_NHAN_PHONG and self.NGAY_TRA_PHONG:
+            if self.NGAY_NHAN_PHONG >= self.NGAY_TRA_PHONG:
+                raise ValidationError('Ngày nhận phòng phải trước ngày trả phòng.')
+        
+        # Kiểm tra số thành viên
+        if self.SO_THANH_VIEN is not None and self.SO_THANH_VIEN <= 0:
             raise ValidationError('Số thành viên phải lớn hơn 0.')
     def get_hop_dong_hieu_luc(ma_phong):
         try:
@@ -67,7 +71,7 @@ class HopDong(models.Model):
                 SO_THANH_VIEN=data.get('SO_THANH_VIEN_TOI_DA'),
                 GIA_THUE=data.get('GIA_THUE'),
                 NGAY_THU_TIEN=data.get('NGAY_THU_TIEN'),
-                PHUONG_THUC_THANH_TOAN=data.get('THOI_DIEM_THANH_TOAN'),
+                THOI_DIEM_THANH_TOAN=data.get('THOI_DIEM_THANH_TOAN'),
                 TRANG_THAI_HD= 'Chờ xác nhận',
                 GHI_CHU_HD=data.get('GHI_CHU_HD'),
                 CHU_KY_THANH_TOAN=data.get('CHU_KY_THANH_TOAN'),
@@ -131,8 +135,8 @@ class HopDong(models.Model):
             self.SO_THANH_VIEN = data.get('SO_THANH_VIEN_TOI_DA')
             self.GIA_THUE = data.get('GIA_THUE')
             self.NGAY_THU_TIEN = data.get('NGAY_THU_TIEN')
-            self.PHUONG_THUC_THANH_TOAN = data.get('PHUONG_THUC_THANH_TOAN')
-            self.CHU_KY_THANH_TOAN = data.get('THOI_DIEM_THANH_TOAN')
+            self.THOI_DIEM_THANH_TOAN = data.get('THOI_DIEM_THANH_TOAN')
+            self.CHU_KY_THANH_TOAN = data.get('CHU_KY_THANH_TOAN')
             self.GHI_CHU_HD = data.get('GHI_CHU_HD')
             self.full_clean()  # Validate trước khi lưu
             self.save()

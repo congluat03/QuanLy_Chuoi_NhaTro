@@ -1,0 +1,205 @@
+{% extends 'admin/admin_layout.html' %}
+{% load static %}
+
+{% block title %}Quản lý tin đăng phòng{% endblock %}
+
+{% block content_body %}
+<div class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-800 mb-2">
+                        <i class="fas fa-bullhorn text-blue-600 mr-3"></i>
+                        Quản lý tin đăng phòng
+                    </h1>
+                    <p class="text-gray-600">Đăng phòng trống lên giao diện tìm phòng</p>
+                </div>
+                <a href="{% url 'admin_phongtro:dang_tin_create' %}" 
+                   class="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-md hover:shadow-lg flex items-center gap-2">
+                    <i class="fas fa-plus"></i>
+                    Đăng tin mới
+                </a>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <form method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Từ khóa</label>
+                    <input type="text" name="keyword" value="{{ keyword }}" placeholder="Tên phòng, khu vực..."
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Trạng thái</label>
+                    <select name="trang_thai" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">Tất cả</option>
+                        {% for value, label in trang_thai_choices %}
+                            <option value="{{ value }}" {% if trang_thai == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Khu vực</label>
+                    <select name="ma_khu_vuc" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">Tất cả</option>
+                        {% for khu_vuc in khu_vucs %}
+                            <option value="{{ khu_vuc.MA_KHU_VUC }}" {% if ma_khu_vuc == khu_vuc.MA_KHU_VUC|stringformat:"s" %}selected{% endif %}>
+                                {{ khu_vuc.TEN_KHU_VUC }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="flex items-end">
+                    <button type="submit" class="w-full bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors">
+                        <i class="fas fa-search mr-2"></i>Tìm kiếm
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Tin đăng list -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for tin_dang in tin_dang_list %}
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300">
+                <!-- Hình ảnh -->
+                <div class="relative h-48 overflow-hidden">
+                    {% if tin_dang.hinh_anh_dai_dien %}
+                        <img src="{{ tin_dang.hinh_anh_dai_dien.HINH_ANH.url }}" 
+                             alt="{{ tin_dang.MA_PHONG.TEN_PHONG }}"
+                             class="w-full h-full object-cover">
+                    {% else %}
+                        <div class="w-full h-full bg-gray-200 flex items-center justify-center">
+                            <i class="fas fa-image text-gray-400 text-4xl"></i>
+                        </div>
+                    {% endif %}
+                    
+                    <!-- Badge trạng thái -->
+                    <div class="absolute top-3 right-3">
+                        {% if tin_dang.TRANG_THAI == 'DANG_HIEN_THI' %}
+                            <span class="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
+                                <i class="fas fa-eye mr-1"></i>Hiển thị
+                            </span>
+                        {% else %}
+                            <span class="bg-gray-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
+                                <i class="fas fa-eye-slash mr-1"></i>Ẩn
+                            </span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Số hình ảnh -->
+                    <div class="absolute bottom-3 left-3">
+                        <span class="bg-black bg-opacity-70 text-white px-2 py-1 rounded text-xs">
+                            <i class="fas fa-images mr-1"></i>{{ tin_dang.hinh_anh.count }} ảnh
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Nội dung -->
+                <div class="p-4">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-2">{{ tin_dang.MA_PHONG.TEN_PHONG }}</h3>
+                    
+                    <div class="space-y-2 text-sm text-gray-600 mb-4">
+                        <div class="flex items-center">
+                            <i class="fas fa-map-marker-alt text-red-500 w-4"></i>
+                            <span class="ml-2">{{ tin_dang.MA_PHONG.MA_KHU_VUC.TEN_KHU_VUC }}</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-tag text-green-500 w-4"></i>
+                            <span class="ml-2">{{ tin_dang.MA_PHONG.MA_LOAI_PHONG.TEN_LOAI_PHONG }}</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-money-bill-wave text-blue-500 w-4"></i>
+                            <span class="ml-2 font-semibold">{{ tin_dang.MA_PHONG.GIA_PHONG|floatformat:0 }} VNĐ/tháng</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-phone text-purple-500 w-4"></i>
+                            <span class="ml-2">{{ tin_dang.SDT_LIEN_HE }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Thống kê -->
+                    <div class="flex justify-between text-xs text-gray-500 mb-4">
+                        <span><i class="fas fa-eye mr-1"></i>{{ tin_dang.LUOT_XEM }} lượt xem</span>
+                        <span><i class="fas fa-phone-alt mr-1"></i>{{ tin_dang.LUOT_LIEN_HE }} lượt liên hệ</span>
+                        <span><i class="fas fa-calendar mr-1"></i>{{ tin_dang.NGAY_DANG|date:"d/m/Y" }}</span>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="flex gap-2">
+                        <a href="{% url 'admin_phongtro:dang_tin_detail' tin_dang.MA_TIN_DANG %}" 
+                           class="flex-1 bg-blue-50 text-blue-600 py-2 px-3 rounded-lg text-center hover:bg-blue-100 transition-colors text-sm">
+                            <i class="fas fa-eye mr-1"></i>Xem
+                        </a>
+                        <a href="{% url 'admin_phongtro:dang_tin_edit' tin_dang.MA_TIN_DANG %}" 
+                           class="flex-1 bg-yellow-50 text-yellow-600 py-2 px-3 rounded-lg text-center hover:bg-yellow-100 transition-colors text-sm">
+                            <i class="fas fa-edit mr-1"></i>Sửa
+                        </a>
+                        <form method="POST" action="{% url 'admin_phongtro:dang_tin_toggle_status' tin_dang.MA_TIN_DANG %}" class="inline">
+                            {% csrf_token %}
+                            <button type="submit" class="bg-gray-50 text-gray-600 py-2 px-3 rounded-lg hover:bg-gray-100 transition-colors text-sm">
+                                {% if tin_dang.TRANG_THAI == 'DANG_HIEN_THI' %}
+                                    <i class="fas fa-eye-slash"></i>
+                                {% else %}
+                                    <i class="fas fa-eye"></i>
+                                {% endif %}
+                            </button>
+                        </form>
+                        <form method="POST" action="{% url 'admin_phongtro:dang_tin_delete' tin_dang.MA_TIN_DANG %}" 
+                              onsubmit="return confirm('Bạn có chắc chắn muốn xóa tin đăng này?')" class="inline">
+                            {% csrf_token %}
+                            <button type="submit" class="bg-red-50 text-red-600 py-2 px-3 rounded-lg hover:bg-red-100 transition-colors text-sm">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-span-full text-center py-12">
+                <i class="fas fa-inbox text-gray-300 text-6xl mb-4"></i>
+                <p class="text-gray-500 text-lg">Chưa có tin đăng nào</p>
+                <a href="{% url 'admin_phongtro:dang_tin_create' %}" class="inline-block mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                    Đăng tin đầu tiên
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if tin_dang_list.has_other_pages %}
+        <div class="mt-8 flex justify-center">
+            <nav class="flex items-center space-x-2">
+                {% if tin_dang_list.has_previous %}
+                    <a href="?page={{ tin_dang_list.previous_page_number }}&keyword={{ keyword }}&trang_thai={{ trang_thai }}&ma_khu_vuc={{ ma_khu_vuc }}" 
+                       class="px-3 py-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                {% endif %}
+
+                {% for num in tin_dang_list.paginator.page_range %}
+                    {% if tin_dang_list.number == num %}
+                        <span class="px-3 py-2 bg-blue-600 text-white rounded-lg">{{ num }}</span>
+                    {% else %}
+                        <a href="?page={{ num }}&keyword={{ keyword }}&trang_thai={{ trang_thai }}&ma_khu_vuc={{ ma_khu_vuc }}" 
+                           class="px-3 py-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg">{{ num }}</a>
+                    {% endif %}
+                {% endfor %}
+
+                {% if tin_dang_list.has_next %}
+                    <a href="?page={{ tin_dang_list.next_page_number }}&keyword={{ keyword }}&trang_thai={{ trang_thai }}&ma_khu_vuc={{ ma_khu_vuc }}" 
+                       class="px-3 py-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                {% endif %}
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,7 +1,10 @@
 from django.db import models
 from django.core.exceptions import ValidationError
 from apps.nhatro.models import KhuVuc
-from datetime import date
+from datetime import date, datetime
+from django.utils import timezone
+import os
+from django.conf import settings
 
 # Create your models here.
 # Hằng số trạng thái
@@ -326,6 +329,18 @@ class TAISAN(models.Model):
 
     class Meta:
         db_table = 'taisan'
+    
+    @classmethod
+    def tao_tai_san_tu_ten(cls, ten_tai_san):
+        """Tạo hoặc lấy tài sản từ tên"""
+        tai_san, created = cls.objects.get_or_create(
+            TEN_TAI_SAN=ten_tai_san,
+            defaults={
+                'DON_VI_TS': 'cái',
+                'GIA_TS': 0.00
+            }
+        )
+        return tai_san
 
 class TAISANPHONG(models.Model):
     MA_TAI_SAN_PHONG = models.IntegerField(primary_key=True)
@@ -374,5 +389,146 @@ class TAISANBANGIAO(models.Model):
                 GHI_CHU=''
             )
             danh_sach.append(ts)
-        cls.objects.bulk_create(danh_sach)
+        # Lưu từng đối tượng riêng lẻ để tránh lỗi bulk_create với foreign key
+        for tai_san_ban_giao in danh_sach:
+            tai_san_ban_giao.save()
+
+    @classmethod
+    def tao_tai_san_tu_form(cls, hop_dong, danh_sach_tai_san_co_ban, danh_sach_tai_san_tuy_chinh):
+        """Tạo tài sản bàn giao từ form data"""
+        danh_sach_ban_giao = []
+        
+        # Xử lý tài sản cơ bản
+        for tai_san_data in danh_sach_tai_san_co_ban:
+            if tai_san_data.get('selected'):
+                # Tạo hoặc lấy tài sản và đảm bảo nó đã được lưu
+                tai_san = TAISAN.tao_tai_san_tu_ten(tai_san_data['name'])
+                
+                # Tạo bản ghi bàn giao sử dụng ID thay vì đối tượng
+                ban_giao = cls(
+                    MA_HOP_DONG=hop_dong,
+                    MA_TAI_SAN_id=tai_san.MA_TAI_SAN,  # Sử dụng ID thay vì đối tượng
+                    SO_LUONG=1,
+                    TINH_TRANG_GIAO=tai_san_data.get('condition', 'Tốt'),
+                    GHI_CHU=f"Tài sản cơ bản: {tai_san_data['name']}"
+                )
+                danh_sach_ban_giao.append(ban_giao)
+        
+        # Xử lý tài sản tùy chỉnh
+        for tai_san_data in danh_sach_tai_san_tuy_chinh:
+            ten_tai_san = tai_san_data.get('name', '').strip()
+            if ten_tai_san:
+                # Tạo hoặc lấy tài sản và đảm bảo nó đã được lưu
+                tai_san = TAISAN.tao_tai_san_tu_ten(ten_tai_san)
+                
+                # Tạo bản ghi bàn giao sử dụng ID thay vì đối tượng
+                ban_giao = cls(
+                    MA_HOP_DONG=hop_dong,
+                    MA_TAI_SAN_id=tai_san.MA_TAI_SAN,  # Sử dụng ID thay vì đối tượng
+                    SO_LUONG=1,
+                    TINH_TRANG_GIAO=tai_san_data.get('condition', 'Tốt'),
+                    GHI_CHU=f"Tài sản tùy chỉnh: {ten_tai_san}"
+                )
+                danh_sach_ban_giao.append(ban_giao)
+        
+        # Lưu từng đối tượng riêng lẻ để tránh lỗi bulk_create với foreign key
+        danh_sach_da_luu = []
+        for ban_giao in danh_sach_ban_giao:
+            ban_giao.save()
+            danh_sach_da_luu.append(ban_giao)
+        
+        return danh_sach_da_luu
+
+
+# Model for tin đăng phòng - Đăng phòng có sẵn lên giao diện tìm phòng
+class DangTinPhong(models.Model):
+    MA_TIN_DANG = models.AutoField(primary_key=True)
+    MA_PHONG = models.OneToOneField(
+        'PhongTro',
+        on_delete=models.CASCADE,
+        db_column='MA_PHONG',
+        related_name='tin_dang'
+    )
+    
+    # Thông tin liên hệ
+    SDT_LIEN_HE = models.CharField(max_length=15, verbose_name="Số điện thoại liên hệ")
+    EMAIL_LIEN_HE = models.EmailField(max_length=100, null=True, blank=True, verbose_name="Email liên hệ")
+    
+    # Trạng thái tin đăng
+    TRANG_THAI = models.CharField(
+        max_length=20,
+        choices=[
+            ('DANG_HIEN_THI', 'Đang hiển thị'),
+            ('DA_AN', 'Đã ẩn'),
+        ],
+        default='DANG_HIEN_THI',
+        verbose_name="Trạng thái"
+    )
+    
+    NGAY_DANG = models.DateTimeField(auto_now_add=True, verbose_name="Ngày đăng")
+    NGAY_CAP_NHAT = models.DateTimeField(auto_now=True, verbose_name="Ngày cập nhật")
+    
+    # Thống kê
+    LUOT_XEM = models.IntegerField(default=0, verbose_name="Lượt xem")
+    LUOT_LIEN_HE = models.IntegerField(default=0, verbose_name="Lượt liên hệ")
+    
+    def __str__(self):
+        return f"Tin đăng - {self.MA_PHONG.TEN_PHONG}"
+    
+    class Meta:
+        db_table = 'dangtinphong'
+        ordering = ['-NGAY_CAP_NHAT']
+        verbose_name = "Tin đăng phòng"
+        verbose_name_plural = "Tin đăng phòng"
+    
+    @property
+    def hinh_anh_dai_dien(self):
+        """Lấy hình ảnh đại diện (hình đầu tiên)."""
+        return self.hinh_anh.first()
+    
+    def tang_luot_xem(self):
+        """Tăng lượt xem tin đăng."""
+        self.LUOT_XEM += 1
+        self.save(update_fields=['LUOT_XEM'])
+    
+    def tang_luot_lien_he(self):
+        """Tăng lượt liên hệ tin đăng."""
+        self.LUOT_LIEN_HE += 1
+        self.save(update_fields=['LUOT_LIEN_HE'])
+
+
+def hinh_anh_tin_dang_path(instance, filename):
+    """Đường dẫn lưu hình ảnh tin đăng."""
+    ext = filename.split('.')[-1]
+    filename = f"tin_{instance.MA_TIN_DANG.MA_TIN_DANG}_{timezone.now().strftime('%Y%m%d_%H%M%S')}.{ext}"
+    return os.path.join('tin_dang', str(instance.MA_TIN_DANG.MA_TIN_DANG), filename)
+
+
+# Model for hình ảnh tin đăng  
+class HinhAnhTinDang(models.Model):
+    MA_HINH_ANH = models.AutoField(primary_key=True)
+    MA_TIN_DANG = models.ForeignKey(
+        'DangTinPhong',
+        on_delete=models.CASCADE,
+        db_column='MA_TIN_DANG',
+        related_name='hinh_anh'
+    )
+    
+    HINH_ANH = models.ImageField(
+        upload_to=hinh_anh_tin_dang_path,
+        verbose_name="Hình ảnh"
+    )
+    THU_TU = models.PositiveIntegerField(default=1, verbose_name="Thứ tự hiển thị")
+    MO_TA = models.CharField(max_length=200, null=True, blank=True, verbose_name="Mô tả hình ảnh")
+    
+    NGAY_TAO = models.DateTimeField(auto_now_add=True, verbose_name="Ngày tạo")
+    
+    def __str__(self):
+        return f"Hình ảnh {self.THU_TU} - {self.MA_TIN_DANG}"
+    
+    class Meta:
+        db_table = 'hinhanhtindang'
+        ordering = ['THU_TU']
+        verbose_name = "Hình ảnh tin đăng"
+        verbose_name_plural = "Hình ảnh tin đăng"
 

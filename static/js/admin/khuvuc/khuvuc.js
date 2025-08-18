@@ -72,10 +72,13 @@ function showModalKhuvuc(type, khuVucId = null) {
     const modalContainer = document.getElementById("modalContainer");
     if (modalContainer) {
         // Mặc định là max-w-2xl (khoảng 672px)
-        modalContainer.classList.remove("max-w-2xl", "max-w-4xl");
+        modalContainer.classList.remove("max-w-2xl", "max-w-4xl", "max-w-6xl");
         if (type === "thietLapDichVu") {
             // Tăng kích thước cho thiết lập dịch vụ (max-w-4xl ≈ 896px)
             modalContainer.classList.add("max-w-4xl");
+        } else if (type === "themKhuVuc" || type === "chiSua") {
+            // Tăng kích thước cho form thêm/sửa khu vực (max-w-6xl ≈ 1152px)
+            modalContainer.classList.add("max-w-6xl");
         } else {
             modalContainer.classList.add("max-w-2xl");
         }
@@ -85,8 +88,9 @@ function showModalKhuvuc(type, khuVucId = null) {
             url = `/admin/khuvuc/thong-tin/${khuVucId}/`;
             initFunction = initThongTin;
             break;
-        case "chiSua":
+        case "suaKhuVuc":
             url = `/admin/khuvuc/sua/${khuVucId}/`;
+            initFunction = initModalMap;
             break;
 
         case "thietLapDichVu":
@@ -101,6 +105,7 @@ function showModalKhuvuc(type, khuVucId = null) {
             break;
         case "themKhuVuc":
             url = "/admin/khuvuc/them/";
+            initFunction = initModalMap;
             break;
     }
     // Ẩn menu nếu đang mở
@@ -123,18 +128,33 @@ function showModalKhuvuc(type, khuVucId = null) {
         modal.classList.remove("hidden");
     }
 
-    fetch(url)
+    fetch(url, {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+        }
+    })
         .then((response) => {
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            return response.text();
+            return response.json();
         })
         .then((data) => {
-            document.getElementById("modalContentKhuVuc").innerHTML = data;
-            if (typeof initFunction === "function") {
-                initFunction();
+            if (data.error) {
+                throw new Error(data.error);
             }
+            document.getElementById("modalContentKhuVuc").innerHTML = data.html;
+            
+            // Khởi tạo OpenStreetMap modal nếu có
+            if (typeof initFunction === "function") {
+                // Đợi một chút để DOM được render
+                setTimeout(() => {
+                    initFunction();
+                }, 100);
+            }
+            
+            // Thiết lập xử lý form submission qua AJAX
+            setupModalFormSubmission();
         })
         .catch((error) => {
             console.error("Error loading modal content:", error);
@@ -149,6 +169,82 @@ function toggleKhuVucModal(show) {
     const modal = document.getElementById("khuVucModal");
     if (modal) {
         modal.classList.toggle("hidden", !show);
+        
+        // Cleanup map khi đóng modal
+        if (!show && typeof cleanupModalMap === "function") {
+            cleanupModalMap();
+        }
     }
+}
+
+function setupModalFormSubmission() {
+    const form = document.getElementById('khuVucForm');
+    if (!form) return;
+    
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(form);
+        const action = form.action || (form.querySelector('input[name="MA_KHU_VUC"]') ? 
+            `/admin/khuvuc/sua/${form.querySelector('input[name="MA_KHU_VUC"]').value}/` : 
+            '/admin/khuvuc/them/');
+        
+        fetch(action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Hiển thị thông báo thành công
+                showSuccessMessage(data.message);
+                
+                // Đóng modal
+                toggleKhuVucModal(false);
+                
+                // Reload trang để cập nhật danh sách
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                throw new Error(data.message || 'Có lỗi xảy ra');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showErrorMessage(error.message || 'Có lỗi xảy ra khi lưu khu vực');
+        });
+    });
+}
+
+function showSuccessMessage(message) {
+    const alert = document.createElement('div');
+    alert.className = 'fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-[10001] flex items-center';
+    alert.innerHTML = `<i class="fas fa-check-circle mr-2"></i>${message}`;
+    
+    document.body.appendChild(alert);
+    
+    setTimeout(() => {
+        if (document.body.contains(alert)) {
+            document.body.removeChild(alert);
+        }
+    }, 3000);
+}
+
+function showErrorMessage(message) {
+    const alert = document.createElement('div');
+    alert.className = 'fixed top-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-[10001] flex items-center';
+    alert.innerHTML = `<i class="fas fa-exclamation-circle mr-2"></i>${message}`;
+    
+    document.body.appendChild(alert);
+    
+    setTimeout(() => {
+        if (document.body.contains(alert)) {
+            document.body.removeChild(alert);
+        }
+    }, 5000);
 }
 

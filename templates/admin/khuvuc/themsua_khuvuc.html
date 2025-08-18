@@ -1,48 +1,1199 @@
+
+{% extends 'admin/admin_layout.html' %}
 {% load static %}
 
-<div >
+{% block content_body %}
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <!-- Header -->
+    <div class="mb-8">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">
+                    {% if khu_vuc %}
+                        <i class="fas fa-edit text-blue-600 mr-3"></i>
+                        Chỉnh sửa khu vực
+                    {% else %}
+                        <i class="fas fa-plus-circle text-green-600 mr-3"></i>
+                        Thêm khu vực mới
+                    {% endif %}
+                </h1>
+                <p class="mt-2 text-sm text-gray-600">
+                    {% if khu_vuc %}
+                        Cập nhật thông tin khu vực {{ khu_vuc.TEN_KHU_VUC|default:"" }}
+                    {% else %}
+                        Điền thông tin để tạo khu vực mới trong hệ thống
+                    {% endif %}
+                </p>
+            </div>
+            <a href="{% url 'nhatro:khuvuc_list' %}" 
+               class="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+                <i class="fas fa-arrow-left mr-2"></i>
+                Quay lại
+            </a>
+        </div>
+        <div class="mt-4 border-b border-gray-200"></div>
+    </div>
 
-    <form action="{% if khu_vuc %}{% url 'nhatro:khuvuc_sua' khu_vuc.MA_KHU_VUC %}{% else %}{% url 'nhatro:khuvuc_them' %}{% endif %}" method="POST" class="space-y-6">
+    <form action="{% if khu_vuc %}{% url 'nhatro:khuvuc_sua' khu_vuc.MA_KHU_VUC %}{% else %}{% url 'nhatro:khuvuc_them' %}{% endif %}" 
+          method="POST" class="space-y-8">
         {% csrf_token %}
         {% if khu_vuc %}
             <input type="hidden" name="_method" value="PUT">
         {% endif %}
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Tên Khu Vực -->
-            <div>
-                <label for="TEN_KHU_VUC" class="block text-sm font-medium text-gray-700 mb-1">Khu Vực</label>
-                <input name="TEN_KHU_VUC" type="text" placeholder="Tên Khu Vực" value="{{ khu_vuc.TEN_KHU_VUC|default:"" }}" required
-                    class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-sm" />
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Cột trái: Thông tin cơ bản -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Thông tin cơ bản -->
+                <div class="bg-white border border-gray-200 rounded-lg shadow-sm">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h3 class="text-base font-semibold text-gray-900 flex items-center">
+                            <i class="fas fa-info-circle text-blue-500 mr-2"></i>
+                            Thông tin cơ bản
+                        </h3>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <!-- Tên Khu Vực -->
+                        <div>
+                            <label for="TEN_KHU_VUC" class="block text-sm font-medium text-gray-700 mb-2">
+                                Tên Khu Vực <span class="text-red-500">*</span>
+                            </label>
+                            <input name="TEN_KHU_VUC" type="text" placeholder="Nhập tên khu vực" 
+                                   value="{{ khu_vuc.TEN_KHU_VUC|default:"" }}" required
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" />
+                        </div>
+
+                        <!-- Hành chính -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="relative">
+                                <label for="DV_HANH_CHINH_CAP1" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Tỉnh/Thành phố <span class="text-red-500">*</span>
+                                </label>
+                                <input name="DV_HANH_CHINH_CAP1" id="DV_HANH_CHINH_CAP1" type="text" 
+                                       placeholder="Nhập tên tỉnh/thành phố" autocomplete="off"
+                                       value="{{ khu_vuc.DV_HANH_CHINH_CAP1|default:"" }}" required
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" />
+                                <div id="province-suggestions" class="hidden absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-48 overflow-y-auto mt-1"></div>
+                            </div>
+                            <div class="relative">
+                                <label for="DV_HANH_CHINH_CAP2" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Quận/Huyện <span class="text-red-500">*</span>
+                                </label>
+                                <input name="DV_HANH_CHINH_CAP2" id="DV_HANH_CHINH_CAP2" type="text" 
+                                       placeholder="Chọn tỉnh/thành phố trước" autocomplete="off"
+                                       value="{{ khu_vuc.DV_HANH_CHINH_CAP2|default:"" }}" required disabled
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:bg-gray-100 disabled:text-gray-500" />
+                                <div id="district-suggestions" class="hidden absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-48 overflow-y-auto mt-1"></div>
+                            </div>
+                            <div class="relative">
+                                <label for="DV_HANH_CHINH_CAP3" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Phường/Xã <span class="text-red-500">*</span>
+                                </label>
+                                <input name="DV_HANH_CHINH_CAP3" id="DV_HANH_CHINH_CAP3" type="text" 
+                                       placeholder="Chọn quận/huyện trước" autocomplete="off"
+                                       value="{{ khu_vuc.DV_HANH_CHINH_CAP3|default:"" }}" required disabled
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:bg-gray-100 disabled:text-gray-500" />
+                                <div id="ward-suggestions" class="hidden absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-48 overflow-y-auto mt-1"></div>
+                            </div>
+                        </div>
+
+                        <!-- Địa chỉ -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="SO_NHA" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Số nhà
+                                </label>
+                                <input name="SO_NHA" type="text" placeholder="123" 
+                                       value="{{ khu_vuc.SO_NHA|default:"" }}"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" />
+                            </div>
+                            <div>
+                                <label for="TEN_DUONG" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Tên đường
+                                </label>
+                                <input name="TEN_DUONG" type="text" placeholder="Nguyễn Huệ" 
+                                       value="{{ khu_vuc.TEN_DUONG|default:"" }}"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" />
+                            </div>
+                        </div>
+
+                        <!-- Mô tả -->
+                        <div>
+                            <label for="MO_TA_VI_TRI" class="block text-sm font-medium text-gray-700 mb-2">
+                                Mô tả vị trí
+                            </label>
+                            <textarea name="MO_TA_VI_TRI" rows="3" 
+                                      placeholder="Gần trường đại học, chợ, bến xe bus..."
+                                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">{{ khu_vuc.MO_TA_VI_TRI|default:"" }}</textarea>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <!-- Quận/Huyện -->
-            <div>
-                <label for="DV_HANH_CHINH_CAP2" class="block text-sm font-medium text-gray-700 mb-1">Quận / Huyện</label>
-                <input name="DV_HANH_CHINH_CAP2" type="text" placeholder="Quận / Huyện" value="{{ khu_vuc.DV_HANH_CHINH_CAP2|default:"" }}" required
-                    class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-sm" />
-            </div>
+            <!-- Cột phải: Bản đồ và tọa độ -->
+            <div class="lg:col-span-1 space-y-6">
+                <!-- Bản đồ -->
+                <div class="bg-white border border-gray-200 rounded-lg shadow-sm">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h3 class="text-base font-semibold text-gray-900 flex items-center">
+                            <i class="fas fa-map-marked-alt text-green-500 mr-2"></i>
+                            Vị trí trên bản đồ
+                        </h3>
+                        <p class="text-sm text-green-600 mt-1">
+                            <i class="fas fa-leaf mr-1"></i>
+                            Sử dụng OpenStreetMap miễn phí
+                        </p>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <!-- Bản đồ -->
+                        <div id="map" style="height: 300px; width: 100%; border-radius: 8px; border: 1px solid #e5e7eb;">
+                            <div id="map-loading" class="flex items-center justify-center h-full bg-gray-50">
+                                <div class="text-center">
+                                    <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                                    <p class="text-gray-600 text-sm">Đang tải bản đồ...</p>
+                                </div>
+                            </div>
+                        </div>
 
-            <!-- Thành phố -->
-            <div>
-                <label for="DV_HANH_CHINH_CAP1" class="block text-sm font-medium text-gray-700 mb-1">Thành Phố</label>
-                <input name="DV_HANH_CHINH_CAP1" type="text" placeholder="Thành Phố" value="{{ khu_vuc.DV_HANH_CHINH_CAP1|default:"" }}" required
-                    class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-sm" />
-            </div>
+                        <!-- Vị trí đã chọn -->
+                        <div id="selected-location-info" class="hidden">
+                            <div class="bg-orange-50 border border-orange-200 rounded-md p-3">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex-1">
+                                        <div id="temp-coordinates" class="text-sm font-mono text-orange-800"></div>
+                                        <div id="temp-address" class="text-sm text-orange-700"></div>
+                                    </div>
+                                    <div class="flex space-x-2 ml-3">
+                                        <button type="button" id="confirm-location" 
+                                                class="px-2 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700">
+                                            OK
+                                        </button>
+                                        <button type="button" id="cancel-location" 
+                                                class="px-2 py-1 bg-gray-500 text-white text-xs rounded hover:bg-gray-600">
+                                            Hủy
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
-            <!-- Phường/Xã -->
-            <div>
-                <label for="DV_HANH_CHINH_CAP3" class="block text-sm font-medium text-gray-700 mb-1">Phường / Xã</label>
-                <input name="DV_HANH_CHINH_CAP3" type="text" placeholder="Phường / Xã" value="{{ khu_vuc.DV_HANH_CHINH_CAP3|default:"" }}" required
-                    class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-sm" />
+                        <!-- Tọa độ -->
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium text-gray-700">Tọa độ</span>
+                                <button type="button" id="toggle-coordinate-edit" 
+                                        class="text-xs text-blue-600 hover:text-blue-700 transition-colors">
+                                    <i class="fas fa-edit mr-1"></i>
+                                    Nhập thủ công
+                                </button>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs text-gray-600 mb-1">Vĩ độ (Latitude)</label>
+                                    <input name="VI_DO" id="VI_DO" type="number" step="0.0000001" 
+                                           value="{{ khu_vuc.VI_DO|default:"" }}" readonly
+                                           class="w-full px-2 py-1 text-sm border border-gray-300 rounded bg-gray-50 text-gray-600" />
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-gray-600 mb-1">Kinh độ (Longitude)</label>
+                                    <input name="KINH_DO" id="KINH_DO" type="number" step="0.0000001" 
+                                           value="{{ khu_vuc.KINH_DO|default:"" }}" readonly
+                                           class="w-full px-2 py-1 text-sm border border-gray-300 rounded bg-gray-50 text-gray-600" />
+                                </div>
+                            </div>
+                            <div id="coordinate-manual-mode" class="hidden">
+                                <div class="flex space-x-2">
+                                    <button type="button" id="apply-manual-coordinates" 
+                                            class="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors">
+                                        <i class="fas fa-check mr-1"></i>
+                                        Áp dụng
+                                    </button>
+                                    <button type="button" id="cancel-manual-coordinates" 
+                                            class="px-3 py-1 bg-gray-500 text-white text-xs rounded hover:bg-gray-600 transition-colors">
+                                        <i class="fas fa-times mr-1"></i>
+                                        Hủy
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Nút điều khiển -->
+                        <div class="space-y-2">
+                            <div class="grid grid-cols-2 gap-2">
+                                <button type="button" id="search-address-btn" 
+                                        class="w-full px-2 py-1.5 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors">
+                                    <i class="fas fa-search mr-1"></i>
+                                    Tìm địa chỉ
+                                </button>
+                                <button type="button" id="current-location-btn" 
+                                        class="w-full px-2 py-1.5 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors">
+                                    <i class="fas fa-crosshairs mr-1"></i>
+                                    Vị trí hiện tại
+                                </button>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button type="button" id="open-google-maps-btn" 
+                                        class="w-full px-2 py-1.5 bg-indigo-600 text-white text-xs rounded hover:bg-indigo-700 transition-colors">
+                                    <i class="fab fa-google mr-1"></i>
+                                    Google Maps
+                                </button>
+                                <button type="button" id="paste-coordinates-btn" 
+                                        class="w-full px-2 py-1.5 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 transition-colors">
+                                    <i class="fas fa-paste mr-1"></i>
+                                    Dán tọa độ
+                                </button>
+                            </div>
+                            <button type="button" id="clear-location-btn" 
+                                    class="w-full px-2 py-1.5 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors">
+                                <i class="fas fa-times mr-1"></i>
+                                Xóa vị trí
+                            </button>
+                        </div>
+
+                        <!-- Địa chỉ xác nhận -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Địa chỉ đã xác nhận</label>
+                            <div id="confirmed-address" class="w-full px-2 py-2 text-sm border border-gray-200 rounded bg-gray-50 text-gray-600 min-h-[32px]">
+                                <span class="text-gray-400">Chọn vị trí trên bản đồ</span>
+                            </div>
+                        </div>
+
+                        <!-- Hidden inputs -->
+                        <!-- DIEM_TOA_DO sẽ được tự động tạo trong model save method -->
+                        <input type="hidden" name="DIA_CHI_CHI_TIET" value="{{ khu_vuc.DIA_CHI_CHI_TIET|default:"" }}" />
+                        <input type="hidden" name="GHI_CHU_KV" value="{{ khu_vuc.GHI_CHU_KV|default:"" }}" />
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="text-center pt-4">
-            <button type="submit"
-                class="inline-block px-6 py-2 bg-blue-600 text-white text-base font-semibold rounded-xl shadow hover:bg-blue-700 transition duration-300">
-                {% if khu_vuc %}Cập Nhật{% else %}Lưu{% endif %}
-            </button>
+        <!-- Nút lưu -->
+        <div class="flex items-center justify-between py-6 border-t border-gray-200">
+            <div class="text-sm text-gray-500">
+                <i class="fas fa-info-circle mr-1"></i>
+                Các trường có dấu (*) là bắt buộc
+            </div>
+            <div class="flex space-x-3">
+                <a href="{% url 'nhatro:khuvuc_list' %}"
+                    class="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+                    <i class="fas fa-times mr-2"></i>
+                    Hủy bỏ
+                </a>
+                <button type="submit"
+                    class="inline-flex items-center px-4 py-1.5 border border-transparent rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                    <i class="fas fa-save mr-2"></i>
+                    {% if khu_vuc %}Cập nhật khu vực{% else %}Lưu khu vực{% endif %}
+                </button>
+            </div>
         </div>
     </form>
 </div>
+
+<!-- Leaflet CSS và JS (OpenStreetMap - Miễn phí) -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+let map;
+let marker;
+let tempLocation = null;
+
+// Khởi tạo bản đồ khi trang đã load
+document.addEventListener('DOMContentLoaded', function() {
+    initMap();
+});
+
+function initMap() {
+    console.log('Khởi tạo OpenStreetMap với Leaflet...');
+    
+    // Kiểm tra div map
+    const mapDiv = document.getElementById('map');
+    if (!mapDiv) {
+        console.error('Không tìm thấy div với id="map"');
+        return;
+    }
+    
+    // Xóa loading state
+    mapDiv.innerHTML = '';
+    
+    // Tọa độ mặc định (trung tâm Hồ Chí Minh)
+    const defaultLocation = [10.7769, 106.7009];
+    
+    // Kiểm tra xem có tọa độ sẵn có không
+    const existingLat = document.getElementById('VI_DO').value;
+    const existingLng = document.getElementById('KINH_DO').value;
+    const initialLocation = (existingLat && existingLng) ? 
+        [parseFloat(existingLat), parseFloat(existingLng)] : defaultLocation;
+
+    console.log('Vị trí khởi tạo:', initialLocation);
+
+    try {
+        // Khởi tạo bản đồ Leaflet
+        map = L.map('map').setView(initialLocation, 15);
+        
+        // Thêm tile layer từ OpenStreetMap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            maxZoom: 18
+        }).addTo(map);
+        
+        console.log('OpenStreetMap đã được khởi tạo thành công');
+        
+        // Thêm marker nếu có tọa độ sẵn có
+        if (existingLat && existingLng) {
+            addMarker(initialLocation);
+            reverseGeocode(initialLocation);
+            
+            // Hiển thị địa chỉ đã xác nhận
+            updateConfirmedAddress();
+        }
+
+        // Lắng nghe sự kiện click trên bản đồ
+        map.on('click', function(e) {
+            const clickedLocation = [e.latlng.lat, e.latlng.lng];
+            showTemporaryLocation(clickedLocation);
+        });
+
+        // Thiết lập event listeners cho các nút
+        setupEventListeners();
+        
+        // Thiết lập auto-search cho địa chỉ hành chính
+        setupAddressAutoSearch();
+        
+        // Thiết lập autocomplete cho địa chỉ hành chính
+        setupAdministrativeAutocomplete();
+        
+    } catch (error) {
+        console.error('Lỗi khi khởi tạo OpenStreetMap:', error);
+        mapDiv.innerHTML = `
+            <div class="flex items-center justify-center h-full bg-red-50 text-red-600">
+                <div class="text-center">
+                    <i class="fas fa-exclamation-triangle text-4xl mb-2"></i>
+                    <p>Lỗi tải bản đồ</p>
+                    <p class="text-sm">${error.message}</p>
+                </div>
+            </div>
+        `;
+        return;
+    }
+}
+
+function addMarker(location) {
+    // Xóa marker cũ nếu có
+    if (marker) {
+        map.removeLayer(marker);
+    }
+
+    // Thêm marker mới
+    marker = L.marker(location, {
+        draggable: true
+    }).addTo(map);
+
+    // Lắng nghe sự kiện kéo thả marker
+    marker.on('dragend', function(e) {
+        const newLocation = [e.target.getLatLng().lat, e.target.getLatLng().lng];
+        showTemporaryLocation(newLocation);
+    });
+
+    // Di chuyển bản đồ đến vị trí marker
+    map.setView(location, 15);
+}
+
+function updateCoordinates(location) {
+    document.getElementById('VI_DO').value = location[0].toFixed(7);
+    document.getElementById('KINH_DO').value = location[1].toFixed(7);
+    // DIEM_TOA_DO sẽ được tự động tạo trong model save method
+}
+
+function showTemporaryLocation(location) {
+    tempLocation = location;
+    
+    addMarker(location);
+    
+    document.getElementById('temp-coordinates').textContent = 
+        `Tọa độ: ${location[0].toFixed(6)}, ${location[1].toFixed(6)}`;
+    
+    document.getElementById('temp-address').innerHTML = 
+        '<i class="fas fa-spinner fa-spin mr-2"></i>Đang tìm địa chỉ...';
+    
+    document.getElementById('selected-location-info').classList.remove('hidden');
+    
+    reverseGeocode(location);
+}
+
+function confirmLocation() {
+    if (!tempLocation) return;
+    
+    updateCoordinates(tempLocation);
+    
+    const tempAddressText = document.getElementById('temp-address').textContent;
+    document.getElementById('confirmed-address').innerHTML = 
+        `<i class="fas fa-map-marker-alt text-green-500 mr-2"></i>${tempAddressText}`;
+    
+    document.getElementById('selected-location-info').classList.add('hidden');
+    
+    showSuccessMessage('Đã xác nhận vị trí thành công!');
+    
+    tempLocation = null;
+}
+
+function cancelLocation() {
+    if (marker) {
+        map.removeLayer(marker);
+        marker = null;
+    }
+    
+    document.getElementById('selected-location-info').classList.add('hidden');
+    tempLocation = null;
+    
+    // Khôi phục marker cũ nếu có
+    const existingLat = document.getElementById('VI_DO').value;
+    const existingLng = document.getElementById('KINH_DO').value;
+    if (existingLat && existingLng) {
+        const confirmedLocation = [parseFloat(existingLat), parseFloat(existingLng)];
+        addMarker(confirmedLocation);
+    }
+}
+
+function reverseGeocode(location) {
+    // Sử dụng Nominatim API (miễn phí) để reverse geocoding
+    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${location[0]}&lon=${location[1]}&limit=1`;
+    
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            if (data && data.display_name) {
+                const tempAddressEl = document.getElementById('temp-address');
+                if (tempAddressEl) {
+                    tempAddressEl.textContent = data.display_name;
+                }
+                
+                // Hiển thị địa chỉ đã xác nhận nếu không có temp location
+                if (!tempLocation) {
+                    document.getElementById('confirmed-address').innerHTML = 
+                        `<i class="fas fa-map-marker-alt text-green-500 mr-2"></i>${data.display_name}`;
+                }
+            } else {
+                const tempAddressEl = document.getElementById('temp-address');
+                if (tempAddressEl) {
+                    tempAddressEl.innerHTML = 
+                        '<span class="text-red-500"><i class="fas fa-exclamation-triangle mr-1"></i>Không tìm thấy địa chỉ</span>';
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Lỗi reverse geocoding:', error);
+            const tempAddressEl = document.getElementById('temp-address');
+            if (tempAddressEl) {
+                tempAddressEl.innerHTML = 
+                    '<span class="text-red-500"><i class="fas fa-exclamation-triangle mr-1"></i>Lỗi tìm địa chỉ</span>';
+            }
+        });
+}
+
+// Cập nhật địa chỉ đã xác nhận từ dữ liệu hiện có
+function updateConfirmedAddress() {
+    const existingLat = document.getElementById('VI_DO').value;
+    const existingLng = document.getElementById('KINH_DO').value;
+    
+    if (existingLat && existingLng) {
+        // Nếu đã có tọa độ, thực hiện reverse geocoding để lấy địa chỉ
+        const location = [parseFloat(existingLat), parseFloat(existingLng)];
+        
+        const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${location[0]}&lon=${location[1]}&limit=1`;
+        
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                if (data && data.display_name) {
+                    document.getElementById('confirmed-address').innerHTML = 
+                        `<i class="fas fa-map-marker-alt text-green-500 mr-2"></i>${data.display_name}`;
+                } else {
+                    document.getElementById('confirmed-address').innerHTML = 
+                        `<i class="fas fa-map-marker-alt text-green-500 mr-2"></i>Tọa độ: ${existingLat}, ${existingLng}`;
+                }
+            })
+            .catch(error => {
+                console.error('Lỗi reverse geocoding khi load:', error);
+                document.getElementById('confirmed-address').innerHTML = 
+                    `<i class="fas fa-map-marker-alt text-green-500 mr-2"></i>Tọa độ: ${existingLat}, ${existingLng}`;
+            });
+    }
+}
+
+function searchByAddress() {
+    const parts = [];
+    const soNha = document.querySelector('input[name="SO_NHA"]').value;
+    const tenDuong = document.querySelector('input[name="TEN_DUONG"]').value;
+    const phuongXa = document.querySelector('input[name="DV_HANH_CHINH_CAP3"]').value;
+    const quanHuyen = document.querySelector('input[name="DV_HANH_CHINH_CAP2"]').value;
+    const tinhThanh = document.querySelector('input[name="DV_HANH_CHINH_CAP1"]').value;
+    
+    if (soNha) parts.push(soNha);
+    if (tenDuong) parts.push(tenDuong);
+    if (phuongXa) parts.push(phuongXa);
+    if (quanHuyen) parts.push(quanHuyen);
+    if (tinhThanh) parts.push(tinhThanh);
+    
+    if (parts.length === 0) {
+        alert('Vui lòng nhập ít nhất một phần của địa chỉ để tìm kiếm.');
+        return;
+    }
+    
+    const address = parts.join(', ');
+    
+    // Sử dụng Nominatim API để geocoding
+    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1&countrycodes=vn`;
+    
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            if (data && data.length > 0) {
+                const location = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+                showTemporaryLocation(location);
+            } else {
+                alert('Không thể tìm thấy địa chỉ: ' + address);
+            }
+        })
+        .catch(error => {
+            console.error('Lỗi geocoding:', error);
+            alert('Lỗi tìm kiếm địa chỉ. Vui lòng thử lại sau.');
+        });
+}
+
+function clearLocation() {
+    if (marker) {
+        map.removeLayer(marker);
+        marker = null;
+    }
+    document.getElementById('VI_DO').value = '';
+    document.getElementById('KINH_DO').value = '';
+    document.getElementById('confirmed-address').innerHTML = 
+        '<span class="text-gray-400">Chọn vị trí trên bản đồ</span>';
+}
+
+function getCurrentLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                const location = [position.coords.latitude, position.coords.longitude];
+                showTemporaryLocation(location);
+            },
+            function() {
+                alert('Không thể lấy vị trí hiện tại. Vui lòng cho phép truy cập vị trí.');
+            }
+        );
+    } else {
+        alert('Trình duyệt không hỗ trợ Geolocation.');
+    }
+}
+
+function openGoogleMaps() {
+    const parts = [];
+    const soNha = document.querySelector('input[name="SO_NHA"]').value;
+    const tenDuong = document.querySelector('input[name="TEN_DUONG"]').value;
+    const phuongXa = document.querySelector('input[name="DV_HANH_CHINH_CAP3"]').value;
+    const quanHuyen = document.querySelector('input[name="DV_HANH_CHINH_CAP2"]').value;
+    const tinhThanh = document.querySelector('input[name="DV_HANH_CHINH_CAP1"]').value;
+    
+    if (soNha) parts.push(soNha);
+    if (tenDuong) parts.push(tenDuong);
+    if (phuongXa) parts.push(phuongXa);
+    if (quanHuyen) parts.push(quanHuyen);
+    if (tinhThanh) parts.push(tinhThanh);
+    
+    let url = 'https://maps.google.com/';
+    if (parts.length > 0) {
+        const address = encodeURIComponent(parts.join(', '));
+        url = `https://maps.google.com/maps?q=${address}`;
+    }
+    
+    window.open(url, '_blank');
+}
+
+function pasteCoordinates() {
+    const coordinates = prompt('Dán tọa độ từ Google Maps (định dạng: vĩ độ, kinh độ):');
+    if (coordinates) {
+        const cleaned = coordinates.replace(/[^\d.,\-\s]/g, '').trim();
+        const parts = cleaned.split(',');
+        
+        if (parts.length !== 2) {
+            alert('Định dạng tọa độ không đúng. Vui lòng nhập theo định dạng: vĩ độ, kinh độ');
+            return;
+        }
+        
+        const lat = parseFloat(parts[0].trim());
+        const lng = parseFloat(parts[1].trim());
+        
+        if (isNaN(lat) || isNaN(lng)) {
+            alert('Tọa độ không hợp lệ. Vui lòng kiểm tra lại.');
+            return;
+        }
+        
+        const location = [lat, lng];
+        showTemporaryLocation(location);
+    }
+}
+
+function showSuccessMessage(message) {
+    const alert = document.createElement('div');
+    alert.className = 'fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center';
+    alert.innerHTML = `<i class="fas fa-check-circle mr-2"></i>${message}`;
+    
+    document.body.appendChild(alert);
+    
+    setTimeout(() => {
+        if (document.body.contains(alert)) {
+            document.body.removeChild(alert);
+        }
+    }, 3000);
+}
+
+function pasteCoordinates() {
+    const coordinates = prompt('Dán tọa độ từ Google Maps (định dạng: vĩ độ, kinh độ):');
+    if (coordinates) {
+        const cleaned = coordinates.replace(/[^\d.,-\s]/g, '').trim();
+        const parts = cleaned.split(',');
+        
+        if (parts.length !== 2) {
+            alert('Định dạng tọa độ không đúng. Vui lòng nhập theo định dạng: vĩ độ, kinh độ');
+            return;
+        }
+        
+        const lat = parseFloat(parts[0].trim());
+        const lng = parseFloat(parts[1].trim());
+        
+        if (isNaN(lat) || isNaN(lng)) {
+            alert('Tọa độ không hợp lệ. Vui lòng kiểm tra lại.');
+            return;
+        }
+        
+        const location = [lat, lng];
+        showTemporaryLocation(location);
+    }
+}
+
+function setupEventListeners() {
+    document.getElementById('search-address-btn').addEventListener('click', searchByAddress);
+    document.getElementById('clear-location-btn').addEventListener('click', clearLocation);
+    document.getElementById('current-location-btn').addEventListener('click', getCurrentLocation);
+    document.getElementById('open-google-maps-btn').addEventListener('click', openGoogleMaps);
+    document.getElementById('paste-coordinates-btn').addEventListener('click', pasteCoordinates);
+    document.getElementById('confirm-location').addEventListener('click', confirmLocation);
+    document.getElementById('cancel-location').addEventListener('click', cancelLocation);
+    
+    // Event listeners cho chức năng nhập tọa độ thủ công
+    document.getElementById('toggle-coordinate-edit').addEventListener('click', toggleCoordinateEditMode);
+    document.getElementById('apply-manual-coordinates').addEventListener('click', applyManualCoordinates);
+    document.getElementById('cancel-manual-coordinates').addEventListener('click', cancelManualCoordinates);
+}
+
+// Thiết lập auto-search khi thay đổi địa chỉ hành chính
+function setupAddressAutoSearch() {
+    const addressFields = [
+        'DV_HANH_CHINH_CAP1',
+        'DV_HANH_CHINH_CAP2', 
+        'DV_HANH_CHINH_CAP3',
+        'SO_NHA',
+        'TEN_DUONG'
+    ];
+    
+    let searchTimeout;
+    
+    addressFields.forEach(fieldName => {
+        const field = document.querySelector(`input[name="${fieldName}"]`);
+        if (field) {
+            field.addEventListener('input', function() {
+                // Debounce tìm kiếm sau 1.5 giây
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    autoSearchAddress();
+                }, 1500);
+            });
+            
+            field.addEventListener('blur', function() {
+                // Tìm kiếm ngay khi blur khỏi field
+                clearTimeout(searchTimeout);
+                setTimeout(() => {
+                    autoSearchAddress();
+                }, 300);
+            });
+        }
+    });
+}
+
+// Tự động tìm kiếm và di chuyển bản đồ đến khu vực
+function autoSearchAddress() {
+    const parts = [];
+    const soNha = document.querySelector('input[name="SO_NHA"]').value.trim();
+    const tenDuong = document.querySelector('input[name="TEN_DUONG"]').value.trim();
+    const phuongXa = document.querySelector('input[name="DV_HANH_CHINH_CAP3"]').value.trim();
+    const quanHuyen = document.querySelector('input[name="DV_HANH_CHINH_CAP2"]').value.trim();
+    const tinhThanh = document.querySelector('input[name="DV_HANH_CHINH_CAP1"]').value.trim();
+    
+    // Ưu tiên địa chỉ từ chi tiết đến tổng quát
+    if (soNha) parts.push(soNha);
+    if (tenDuong) parts.push(tenDuong);
+    if (phuongXa) parts.push(phuongXa);
+    if (quanHuyen) parts.push(quanHuyen);
+    if (tinhThanh) parts.push(tinhThanh);
+    
+    // Cần ít nhất Tỉnh/Thành phố mới tìm kiếm
+    if (!tinhThanh) {
+        return;
+    }
+    
+    const address = parts.join(', ');
+    console.log('Auto searching for:', address);
+    
+    // Hiển thị loading trên bản đồ
+    showMapLoading('Đang tìm vị trí...');
+    
+    // Sử dụng Nominatim API để geocoding
+    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1&countrycodes=vn`;
+    
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            hideMapLoading();
+            if (data && data.length > 0) {
+                const location = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+                
+                // Di chuyển bản đồ đến vị trí tìm được (không đặt marker)
+                map.setView(location, 15);
+                
+                // Hiển thị thông báo
+                showAutoSearchResult(address, data[0].display_name);
+            } else {
+                console.log('Không tìm thấy vị trí cho địa chỉ:', address);
+                showAutoSearchResult(address, null);
+            }
+        })
+        .catch(error => {
+            hideMapLoading();
+            console.error('Lỗi auto search:', error);
+        });
+}
+
+// Hiển thị kết quả tìm kiếm tự động
+function showAutoSearchResult(searchAddress, foundAddress) {
+    // Tạo hoặc cập nhật thông báo
+    let notification = document.getElementById('auto-search-notification');
+    if (!notification) {
+        notification = document.createElement('div');
+        notification.id = 'auto-search-notification';
+        notification.className = 'fixed top-4 right-4 max-w-sm z-50';
+        document.body.appendChild(notification);
+    }
+    
+    if (foundAddress) {
+        notification.innerHTML = `
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 shadow-lg">
+                <div class="flex items-start">
+                    <i class="fas fa-map-marker-alt text-blue-500 mt-1 mr-2"></i>
+                    <div class="flex-1">
+                        <p class="text-sm font-medium text-blue-800">Đã tìm thấy vị trí</p>
+                        <p class="text-xs text-blue-600 mt-1">Bản đồ đã di chuyển đến khu vực "${searchAddress}"</p>
+                        <p class="text-xs text-blue-500 mt-1">Nhấp vào bản đồ để chọn vị trí chính xác</p>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.parentElement.remove()" 
+                            class="text-blue-400 hover:text-blue-600 ml-2">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+    } else {
+        notification.innerHTML = `
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 shadow-lg">
+                <div class="flex items-start">
+                    <i class="fas fa-exclamation-triangle text-yellow-500 mt-1 mr-2"></i>
+                    <div class="flex-1">
+                        <p class="text-sm font-medium text-yellow-800">Không tìm thấy</p>
+                        <p class="text-xs text-yellow-600 mt-1">Không thể tìm thấy vị trí cho "${searchAddress}"</p>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.parentElement.remove()" 
+                            class="text-yellow-400 hover:text-yellow-600 ml-2">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Tự động ẩn sau 5 giây
+    setTimeout(() => {
+        if (notification && notification.parentElement) {
+            notification.remove();
+        }
+    }, 5000);
+}
+
+// Hiển thị loading trên bản đồ
+function showMapLoading(message = 'Đang tải...') {
+    const mapDiv = document.getElementById('map');
+    const loadingOverlay = document.createElement('div');
+    loadingOverlay.id = 'map-loading-overlay';
+    loadingOverlay.className = 'absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 rounded-lg';
+    loadingOverlay.innerHTML = `
+        <div class="bg-white rounded-lg p-4 text-center">
+            <div class="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-blue-600 mx-auto mb-2"></div>
+            <p class="text-sm text-gray-600">${message}</p>
+        </div>
+    `;
+    
+    mapDiv.style.position = 'relative';
+    mapDiv.appendChild(loadingOverlay);
+}
+
+// Ẩn loading trên bản đồ
+function hideMapLoading() {
+    const loadingOverlay = document.getElementById('map-loading-overlay');
+    if (loadingOverlay) {
+        loadingOverlay.remove();
+    }
+}
+
+// Chức năng nhập tọa độ thủ công
+function toggleCoordinateEditMode() {
+    const latInput = document.getElementById('VI_DO');
+    const lngInput = document.getElementById('KINH_DO');
+    const manualMode = document.getElementById('coordinate-manual-mode');
+    const toggleBtn = document.getElementById('toggle-coordinate-edit');
+    
+    if (latInput.readOnly) {
+        // Chuyển sang chế độ chỉnh sửa
+        latInput.readOnly = false;
+        lngInput.readOnly = false;
+        latInput.className = latInput.className.replace('bg-gray-50 text-gray-600', 'bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500');
+        lngInput.className = lngInput.className.replace('bg-gray-50 text-gray-600', 'bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500');
+        
+        manualMode.classList.remove('hidden');
+        toggleBtn.innerHTML = '<i class="fas fa-times mr-1"></i>Hủy nhập';
+        toggleBtn.className = toggleBtn.className.replace('text-blue-600 hover:text-blue-700', 'text-red-600 hover:text-red-700');
+        
+        // Focus vào ô vĩ độ
+        latInput.focus();
+    } else {
+        // Hủy chế độ chỉnh sửa
+        cancelManualCoordinates();
+    }
+}
+
+function applyManualCoordinates() {
+    const latInput = document.getElementById('VI_DO');
+    const lngInput = document.getElementById('KINH_DO');
+    
+    const lat = parseFloat(latInput.value);
+    const lng = parseFloat(lngInput.value);
+    
+    if (isNaN(lat) || isNaN(lng)) {
+        alert('Vui lòng nhập tọa độ hợp lệ');
+        return;
+    }
+    
+    if (lat < -90 || lat > 90) {
+        alert('Vĩ độ phải nằm trong khoảng -90 đến 90');
+        return;
+    }
+    
+    if (lng < -180 || lng > 180) {
+        alert('Kinh độ phải nằm trong khoảng -180 đến 180');
+        return;
+    }
+    
+    // Áp dụng tọa độ
+    const location = [lat, lng];
+    updateCoordinates(location);
+    addMarker(location);
+    reverseGeocode(location);
+    
+    // Thoát chế độ chỉnh sửa
+    exitCoordinateEditMode();
+    
+    showSuccessMessage('Đã áp dụng tọa độ thủ công thành công!');
+}
+
+function cancelManualCoordinates() {
+    const latInput = document.getElementById('VI_DO');
+    const lngInput = document.getElementById('KINH_DO');
+    
+    // Khôi phục giá trị cũ
+    const existingLat = tempLocation ? tempLocation[0] : (marker ? marker.getLatLng().lat : '');
+    const existingLng = tempLocation ? tempLocation[1] : (marker ? marker.getLatLng().lng : '');
+    
+    latInput.value = existingLat ? existingLat.toFixed(7) : '';
+    lngInput.value = existingLng ? existingLng.toFixed(7) : '';
+    
+    exitCoordinateEditMode();
+}
+
+function exitCoordinateEditMode() {
+    const latInput = document.getElementById('VI_DO');
+    const lngInput = document.getElementById('KINH_DO');
+    const manualMode = document.getElementById('coordinate-manual-mode');
+    const toggleBtn = document.getElementById('toggle-coordinate-edit');
+    
+    // Chuyển về chế độ readonly
+    latInput.readOnly = true;
+    lngInput.readOnly = true;
+    latInput.className = latInput.className.replace('bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500', 'bg-gray-50 text-gray-600');
+    lngInput.className = lngInput.className.replace('bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500', 'bg-gray-50 text-gray-600');
+    
+    manualMode.classList.add('hidden');
+    toggleBtn.innerHTML = '<i class="fas fa-edit mr-1"></i>Nhập thủ công';
+    toggleBtn.className = toggleBtn.className.replace('text-red-600 hover:text-red-700', 'text-blue-600 hover:text-blue-700');
+}
+
+// Dữ liệu tỉnh/thành phố Việt Nam
+const vietnamProvinces = [
+    "An Giang", "Bà Rịa - Vũng Tàu", "Bắc Giang", "Bắc Kạn", "Bạc Liêu", "Bắc Ninh",
+    "Bến Tre", "Bình Định", "Bình Dương", "Bình Phước", "Bình Thuận", "Cà Mau",
+    "Cao Bằng", "Đắk Lắk", "Đắk Nông", "Điện Biên", "Đồng Nai", "Đồng Tháp",
+    "Gia Lai", "Hà Giang", "Hà Nam", "Hà Tĩnh", "Hải Dương", "Hậu Giang",
+    "Hòa Bình", "Hưng Yên", "Khánh Hòa", "Kiên Giang", "Kon Tum", "Lai Châu",
+    "Lâm Đồng", "Lạng Sơn", "Lào Cai", "Long An", "Nam Định", "Nghệ An",
+    "Ninh Bình", "Ninh Thuận", "Phú Thọ", "Phú Yên", "Quảng Bình", "Quảng Nam",
+    "Quảng Ngãi", "Quảng Ninh", "Quảng Trị", "Sóc Trăng", "Sơn La", "Tây Ninh",
+    "Thái Bình", "Thái Nguyên", "Thanh Hóa", "Thừa Thiên Huế", "Tiền Giang",
+    "Trà Vinh", "Tuyên Quang", "Vĩnh Long", "Vĩnh Phúc", "Yên Bái",
+    "Hà Nội", "Hồ Chí Minh", "Đà Nẵng", "Hải Phòng", "Cần Thơ"
+];
+
+// Dữ liệu quận/huyện theo tỉnh (một số ví dụ chính)
+const vietnamDistricts = {
+    "Hồ Chí Minh": [
+        "Quận 1", "Quận 2", "Quận 3", "Quận 4", "Quận 5", "Quận 6", "Quận 7", "Quận 8", 
+        "Quận 9", "Quận 10", "Quận 11", "Quận 12", "Quận Bình Tân", "Quận Bình Thạnh",
+        "Quận Gò Vấp", "Quận Phú Nhuận", "Quận Tân Bình", "Quận Tân Phú", "Quận Thủ Đức",
+        "Huyện Bình Chánh", "Huyện Cần Giờ", "Huyện Củ Chi", "Huyện Hóc Môn", "Huyện Nhà Bè"
+    ],
+    "Hà Nội": [
+        "Quận Ba Đình", "Quận Hoàn Kiếm", "Quận Tây Hồ", "Quận Long Biên", "Quận Cầu Giấy",
+        "Quận Đống Đa", "Quận Hai Bà Trưng", "Quận Hoàng Mai", "Quận Thanh Xuân", "Quận Nam Từ Liêm",
+        "Quận Bắc Từ Liêm", "Quận Hà Đông", "Huyện Ba Vì", "Huyện Chương Mỹ", "Huyện Đan Phượng",
+        "Huyện Đông Anh", "Huyện Gia Lâm", "Huyện Hoài Đức", "Huyện Mê Linh", "Huyện Mỹ Đức",
+        "Huyện Phú Xuyên", "Huyện Phúc Thọ", "Huyện Quốc Oai", "Huyện Sóc Sơn", "Huyện Thạch Thất",
+        "Huyện Thanh Oai", "Huyện Thanh Trì", "Huyện Thường Tín", "Huyện Ứng Hòa", "Thị xã Sơn Tây"
+    ],
+    "Đà Nẵng": [
+        "Quận Hải Châu", "Quận Thanh Khê", "Quận Sơn Trà", "Quận Ngũ Hành Sơn", 
+        "Quận Liên Chiểu", "Quận Cẩm Lệ", "Huyện Hòa Vang", "Huyện Hoàng Sa"
+    ],
+    "Hải Phòng": [
+        "Quận Hồng Bàng", "Quận Lê Chân", "Quận Ngô Quyền", "Quận Kiến An", "Quận Hải An",
+        "Quận Đồ Sơn", "Huyện Thuỷ Nguyên", "Huyện An Dương", "Huyện An Lão", "Huyện Kiến Thuỵ",
+        "Huyện Tiên Lãng", "Huyện Vĩnh Bảo", "Huyện Cát Hải", "Huyện Bạch Long Vĩ"
+    ],
+    "Cần Thơ": [
+        "Quận Ninh Kiều", "Quận Ô Môn", "Quận Bình Thuỷ", "Quận Cái Răng", "Quận Thốt Nốt",
+        "Huyện Vĩnh Thạnh", "Huyện Cờ Đỏ", "Huyện Phong Điền", "Huyện Thới Lai"
+    ]
+};
+
+// Dữ liệu phường/xã theo quận/huyện (một số ví dụ)
+const vietnamWards = {
+    "Quận 1": [
+        "Phường Bến Nghé", "Phường Bến Thành", "Phường Cầu Kho", "Phường Cầu Ông Lãnh",
+        "Phường Cô Giang", "Phường Đa Kao", "Phường Nguyễn Cư Trinh", "Phường Nguyễn Thái Bình",
+        "Phường Phạm Ngũ Lão", "Phường Tân Định"
+    ],
+    "Quận 2": [
+        "Phường An Khánh", "Phường An Lợi Đông", "Phường An Phú", "Phường Bình An",
+        "Phường Bình Khánh", "Phường Bình Trưng Đông", "Phường Bình Trưng Tây",
+        "Phường Cát Lái", "Phường Thạnh Mỹ Lợi", "Phường Thảo Điền", "Phường Thủ Thiêm"
+    ],
+    "Quận 3": [
+        "Phường 1", "Phường 2", "Phường 3", "Phường 4", "Phường 5", "Phường 6",
+        "Phường 7", "Phường 8", "Phường 9", "Phường 10", "Phường 11", "Phường 12",
+        "Phường 13", "Phường 14"
+    ],
+    "Quận Ba Đình": [
+        "Phường Cống Vị", "Phường Điện Biên", "Phường Đội Cấn", "Phường Giảng Võ",
+        "Phường Kim Mã", "Phường Liễu Giai", "Phường Ngọc Hà", "Phường Ngọc Khánh",
+        "Phường Nguyễn Trung Trực", "Phường Phúc Xá", "Phường Quán Thánh",
+        "Phường Thành Công", "Phường Trúc Bạch", "Phường Vĩnh Phúc"
+    ],
+    "Quận Hoàn Kiếm": [
+        "Phường Chương Dương Độ", "Phường Cửa Đông", "Phường Cửa Nam", "Phường Đồng Xuân",
+        "Phường Hàng Bạc", "Phường Hàng Bài", "Phường Hàng Bồ", "Phường Hàng Buồm",
+        "Phường Hàng Đào", "Phường Hàng Gai", "Phường Hàng Mã", "Phường Hàng Trống",
+        "Phường Lý Thái Tổ", "Phường Phan Chu Trinh", "Phường Phúc Tấn", "Phường Tràng Tiền",
+        "Phường Trần Hưng Đạo", "Phường Tân Định"
+    ]
+};
+
+// Thiết lập autocomplete cho địa chỉ hành chính
+function setupAdministrativeAutocomplete() {
+    let selectedProvince = '';
+    let selectedDistrict = '';
+    
+    // Autocomplete cho tỉnh/thành phố
+    setupInputAutocomplete(
+        'DV_HANH_CHINH_CAP1',
+        'province-suggestions',
+        vietnamProvinces,
+        function(value) {
+            selectedProvince = value;
+            // Enable và reset quận/huyện
+            const districtInput = document.getElementById('DV_HANH_CHINH_CAP2');
+            const wardInput = document.getElementById('DV_HANH_CHINH_CAP3');
+            
+            districtInput.disabled = false;
+            districtInput.placeholder = "Nhập tên quận/huyện";
+            districtInput.value = '';
+            
+            wardInput.disabled = true;
+            wardInput.placeholder = "Chọn quận/huyện trước";
+            wardInput.value = '';
+            
+            selectedDistrict = '';
+        }
+    );
+    
+    // Autocomplete cho quận/huyện
+    setupInputAutocomplete(
+        'DV_HANH_CHINH_CAP2',
+        'district-suggestions',
+        function() {
+            return vietnamDistricts[selectedProvince] || [];
+        },
+        function(value) {
+            selectedDistrict = value;
+            // Enable phường/xã
+            const wardInput = document.getElementById('DV_HANH_CHINH_CAP3');
+            wardInput.disabled = false;
+            wardInput.placeholder = "Nhập tên phường/xã";
+            wardInput.value = '';
+        }
+    );
+    
+    // Autocomplete cho phường/xã
+    setupInputAutocomplete(
+        'DV_HANH_CHINH_CAP3',
+        'ward-suggestions',
+        function() {
+            return vietnamWards[selectedDistrict] || [];
+        },
+        function(value) {
+            // Có thể thêm logic xử lý khi chọn phường/xã
+        }
+    );
+    
+    // Khởi tạo giá trị ban đầu nếu đang chỉnh sửa
+    const initialProvince = document.getElementById('DV_HANH_CHINH_CAP1').value.trim();
+    const initialDistrict = document.getElementById('DV_HANH_CHINH_CAP2').value.trim();
+    const initialWard = document.getElementById('DV_HANH_CHINH_CAP3').value.trim();
+    
+    if (initialProvince) {
+        selectedProvince = initialProvince;
+        const districtInput = document.getElementById('DV_HANH_CHINH_CAP2');
+        districtInput.disabled = false;
+        districtInput.placeholder = "Nhập tên quận/huyện";
+        districtInput.className = districtInput.className.replace('disabled:bg-gray-100 disabled:text-gray-500', '');
+    }
+    
+    if (initialDistrict) {
+        selectedDistrict = initialDistrict;
+        const wardInput = document.getElementById('DV_HANH_CHINH_CAP3');
+        wardInput.disabled = false;
+        wardInput.placeholder = "Nhập tên phường/xã";
+        wardInput.className = wardInput.className.replace('disabled:bg-gray-100 disabled:text-gray-500', '');
+    }
+    
+    console.log('Khởi tạo autocomplete với dữ liệu:', {
+        province: selectedProvince,
+        district: selectedDistrict,
+        ward: initialWard
+    });
+}
+
+// Thiết lập autocomplete cho một input
+function setupInputAutocomplete(inputId, suggestionsId, dataSource, onSelectCallback) {
+    const input = document.getElementById(inputId);
+    const suggestions = document.getElementById(suggestionsId);
+    
+    if (!input || !suggestions) return;
+    
+    let debounceTimer;
+    
+    input.addEventListener('input', function() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            const query = this.value.trim().toLowerCase();
+            
+            if (query.length < 1) {
+                suggestions.classList.add('hidden');
+                return;
+            }
+            
+            const data = typeof dataSource === 'function' ? dataSource() : dataSource;
+            const filtered = data.filter(item => 
+                removeDiacritics(item.toLowerCase()).includes(removeDiacritics(query))
+            );
+            
+            showSuggestions(suggestions, filtered, input, onSelectCallback);
+        }, 300);
+    });
+    
+    input.addEventListener('focus', function() {
+        if (this.value.trim().length >= 1) {
+            const data = typeof dataSource === 'function' ? dataSource() : dataSource;
+            const query = this.value.trim().toLowerCase();
+            const filtered = data.filter(item => 
+                removeDiacritics(item.toLowerCase()).includes(removeDiacritics(query))
+            );
+            showSuggestions(suggestions, filtered, input, onSelectCallback);
+        }
+    });
+    
+    // Ẩn suggestions khi click ra ngoài
+    document.addEventListener('click', function(e) {
+        if (!input.contains(e.target) && !suggestions.contains(e.target)) {
+            suggestions.classList.add('hidden');
+        }
+    });
+}
+
+// Hiển thị gợi ý
+function showSuggestions(suggestionsEl, items, input, onSelectCallback) {
+    if (items.length === 0) {
+        suggestionsEl.classList.add('hidden');
+        return;
+    }
+    
+    suggestionsEl.innerHTML = items.map(item => 
+        `<div class="px-3 py-2 hover:bg-blue-50 cursor-pointer text-sm border-b border-gray-100 last:border-b-0" 
+              data-value="${item}">${item}</div>`
+    ).join('');
+    
+    suggestionsEl.classList.remove('hidden');
+    
+    // Thêm event listener cho các item
+    suggestionsEl.querySelectorAll('[data-value]').forEach(item => {
+        item.addEventListener('click', function() {
+            const value = this.getAttribute('data-value');
+            input.value = value;
+            suggestionsEl.classList.add('hidden');
+            
+            if (onSelectCallback) {
+                onSelectCallback(value);
+            }
+            
+            // Trigger auto search
+            setTimeout(() => {
+                autoSearchAddress();
+            }, 100);
+        });
+    });
+}
+
+// Loại bỏ dấu tiếng Việt để tìm kiếm
+function removeDiacritics(str) {
+    return str.normalize('NFD')
+              .replace(/[\u0300-\u036f]/g, '')
+              .replace(/đ/g, 'd')
+              .replace(/Đ/g, 'D');
+}
+</script>
+{% endblock %}

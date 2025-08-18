@@ -1,0 +1,244 @@
+{% extends 'admin/admin_layout.html' %}
+{% load static %}
+
+{% block title %}Chi tiết tin đăng{% endblock %}
+
+{% block content_body %}
+<div class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-800 mb-2">
+                        <i class="fas fa-eye text-blue-600 mr-3"></i>
+                        Chi tiết tin đăng
+                    </h1>
+                    <p class="text-gray-600">{{ tin_dang.MA_PHONG.TEN_PHONG }} - {{ tin_dang.MA_PHONG.MA_KHU_VUC.TEN_KHU_VUC }}</p>
+                </div>
+                <div class="flex gap-3">
+                    <a href="{% url 'admin_phongtro:dang_tin_edit' tin_dang.MA_TIN_DANG %}" 
+                       class="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition-colors">
+                        <i class="fas fa-edit mr-2"></i>Chỉnh sửa
+                    </a>
+                    <a href="{% url 'admin_phongtro:dang_tin_list' %}" 
+                       class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors">
+                        <i class="fas fa-arrow-left mr-2"></i>Quay lại
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Hình ảnh -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden mb-6">
+                    <div class="p-6">
+                        <h2 class="text-xl font-semibold text-gray-800 mb-4">
+                            <i class="fas fa-images text-purple-500 mr-2"></i>
+                            Hình ảnh ({{ tin_dang.hinh_anh.count }} ảnh)
+                        </h2>
+                        
+                        {% if tin_dang.hinh_anh.all %}
+                        <!-- Ảnh chính -->
+                        <div class="mb-4">
+                            <img id="mainImage" src="{{ tin_dang.hinh_anh.first.HINH_ANH.url }}" 
+                                 alt="{{ tin_dang.MA_PHONG.TEN_PHONG }}"
+                                 class="w-full h-80 object-cover rounded-lg border">
+                        </div>
+                        
+                        <!-- Thumbnail -->
+                        <div class="grid grid-cols-4 md:grid-cols-6 gap-2">
+                            {% for hinh_anh in tin_dang.hinh_anh.all %}
+                            <div class="relative group cursor-pointer thumbnail" data-src="{{ hinh_anh.HINH_ANH.url }}">
+                                <img src="{{ hinh_anh.HINH_ANH.url }}" alt="Hình ảnh {{ hinh_anh.THU_TU }}"
+                                     class="w-full h-16 object-cover rounded border hover:border-blue-500 transition-colors">
+                                <div class="absolute bottom-1 left-1 bg-black bg-opacity-70 text-white px-1 rounded text-xs">
+                                    {{ hinh_anh.THU_TU }}
+                                </div>
+                                {% if forloop.first %}
+                                <div class="absolute top-1 right-1 bg-green-500 text-white px-1 rounded text-xs">
+                                    <i class="fas fa-star"></i>
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="text-center py-12 bg-gray-50 rounded-lg">
+                            <i class="fas fa-images text-gray-400 text-6xl mb-4"></i>
+                            <p class="text-gray-500 text-lg">Chưa có hình ảnh nào</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Thông tin -->
+            <div class="space-y-6">
+                <!-- Trạng thái -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                        <i class="fas fa-info-circle text-blue-500 mr-2"></i>
+                        Trạng thái tin đăng
+                    </h3>
+                    <div class="text-center">
+                        {% if tin_dang.TRANG_THAI == 'DANG_HIEN_THI' %}
+                            <div class="inline-flex items-center bg-green-100 text-green-800 px-4 py-2 rounded-full text-lg font-semibold mb-4">
+                                <i class="fas fa-eye mr-2"></i>Đang hiển thị
+                            </div>
+                        {% else %}
+                            <div class="inline-flex items-center bg-gray-100 text-gray-800 px-4 py-2 rounded-full text-lg font-semibold mb-4">
+                                <i class="fas fa-eye-slash mr-2"></i>Đã ẩn
+                            </div>
+                        {% endif %}
+                        
+                        <form method="POST" action="{% url 'admin_phongtro:dang_tin_toggle_status' tin_dang.MA_TIN_DANG %}">
+                            {% csrf_token %}
+                            <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
+                                {% if tin_dang.TRANG_THAI == 'DANG_HIEN_THI' %}
+                                    <i class="fas fa-eye-slash mr-2"></i>Ẩn tin đăng
+                                {% else %}
+                                    <i class="fas fa-eye mr-2"></i>Hiển thị tin đăng
+                                {% endif %}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Thông tin phòng -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                        <i class="fas fa-door-open text-green-500 mr-2"></i>
+                        Thông tin phòng
+                    </h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Tên phòng:</span>
+                            <span class="font-semibold">{{ tin_dang.MA_PHONG.TEN_PHONG }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Khu vực:</span>
+                            <span class="font-semibold">{{ tin_dang.MA_PHONG.MA_KHU_VUC.TEN_KHU_VUC }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Loại phòng:</span>
+                            <span class="font-semibold">{{ tin_dang.MA_PHONG.MA_LOAI_PHONG.TEN_LOAI_PHONG }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Giá phòng:</span>
+                            <span class="font-semibold text-green-600">{{ tin_dang.MA_PHONG.GIA_PHONG|floatformat:0 }} VNĐ</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Diện tích:</span>
+                            <span class="font-semibold">{{ tin_dang.MA_PHONG.DIEN_TICH }} m²</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Số người tối đa:</span>
+                            <span class="font-semibold">{{ tin_dang.MA_PHONG.SO_NGUOI_TOI_DA }} người</span>
+                        </div>
+                        {% if tin_dang.MA_PHONG.MO_TA_P %}
+                        <div class="pt-3 border-t">
+                            <span class="text-gray-600 text-sm">Mô tả:</span>
+                            <p class="text-gray-800 mt-1">{{ tin_dang.MA_PHONG.MO_TA_P }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Thông tin liên hệ -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                        <i class="fas fa-phone text-blue-500 mr-2"></i>
+                        Thông tin liên hệ
+                    </h3>
+                    <div class="space-y-3">
+                        <div class="flex items-center">
+                            <i class="fas fa-phone text-green-500 w-5"></i>
+                            <span class="ml-3 font-semibold">{{ tin_dang.SDT_LIEN_HE }}</span>
+                        </div>
+                        {% if tin_dang.EMAIL_LIEN_HE %}
+                        <div class="flex items-center">
+                            <i class="fas fa-envelope text-blue-500 w-5"></i>
+                            <span class="ml-3">{{ tin_dang.EMAIL_LIEN_HE }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Thống kê -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                        <i class="fas fa-chart-bar text-purple-500 mr-2"></i>
+                        Thống kê
+                    </h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="text-center bg-blue-50 rounded-lg p-3">
+                            <div class="text-2xl font-bold text-blue-600">{{ tin_dang.LUOT_XEM }}</div>
+                            <div class="text-sm text-gray-600">Lượt xem</div>
+                        </div>
+                        <div class="text-center bg-green-50 rounded-lg p-3">
+                            <div class="text-2xl font-bold text-green-600">{{ tin_dang.LUOT_LIEN_HE }}</div>
+                            <div class="text-sm text-gray-600">Lượt liên hệ</div>
+                        </div>
+                    </div>
+                    <div class="mt-4 space-y-2 text-sm text-gray-600">
+                        <div class="flex justify-between">
+                            <span>Ngày đăng:</span>
+                            <span>{{ tin_dang.NGAY_DANG|date:"d/m/Y H:i" }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Cập nhật cuối:</span>
+                            <span>{{ tin_dang.NGAY_CAP_NHAT|date:"d/m/Y H:i" }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                        <i class="fas fa-cogs text-orange-500 mr-2"></i>
+                        Thao tác
+                    </h3>
+                    <div class="space-y-3">
+                        <a href="{% url 'admin_phongtro:dang_tin_edit' tin_dang.MA_TIN_DANG %}" 
+                           class="w-full bg-yellow-500 text-white py-2 px-4 rounded-lg hover:bg-yellow-600 transition-colors text-center block">
+                            <i class="fas fa-edit mr-2"></i>Chỉnh sửa tin đăng
+                        </a>
+                        <form method="POST" action="{% url 'admin_phongtro:dang_tin_delete' tin_dang.MA_TIN_DANG %}" 
+                              onsubmit="return confirm('Bạn có chắc chắn muốn xóa tin đăng này?')">
+                            {% csrf_token %}
+                            <button type="submit" class="w-full bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-600 transition-colors">
+                                <i class="fas fa-trash mr-2"></i>Xóa tin đăng
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const mainImage = document.getElementById('mainImage');
+    const thumbnails = document.querySelectorAll('.thumbnail');
+    
+    thumbnails.forEach(thumbnail => {
+        thumbnail.addEventListener('click', function() {
+            const newSrc = this.dataset.src;
+            mainImage.src = newSrc;
+            
+            // Update active thumbnail
+            thumbnails.forEach(thumb => thumb.classList.remove('ring-2', 'ring-blue-500'));
+            this.classList.add('ring-2', 'ring-blue-500');
+        });
+    });
+    
+    // Set first thumbnail as active
+    if (thumbnails.length > 0) {
+        thumbnails[0].classList.add('ring-2', 'ring-blue-500');
+    }
+});
+</script>
+{% endblock %}

@@ -95,6 +95,18 @@ function togglePhongTroModal(show) {
 
 // 👉 Hàm chính: gọi các hàm nhỏ để hiển thị modal phòng trọ
 function showModalPhongTro(type, maPhongTro = null, khuVucId = null, tenPhong = null) {
+    // Nếu là lập hợp đồng, chuyển đến trang mới
+    if (type === 'HopDong') {
+        window.location.href = `/admin/phongtro/lap-hop-dong/${maPhongTro}/`;
+        return;
+    }
+    
+    // Nếu là lập hóa đơn, chuyển đến trang mới
+    if (type === 'ChonHoaDon') {
+        window.location.href = `/admin/hoadon/them/${maPhongTro}/`;
+        return;
+    }
+    
     const modalLabel = document.getElementById("phongTroModalLabel");
     const modalContentId = "modalContentPhongTro";
 
@@ -169,7 +181,7 @@ function openModal(modalId, type) {
     if (modalContainer) {
         // Mặc định là max-w-2xl (khoảng 672px)
         modalContainer.classList.remove("max-w-3xl", "max-w-6xl");
-        if (type === "HopDong" || type === "ChonHoaDon") {
+        if (type === "HopDong") {
             modalContainer.classList.add("max-w-6xl");
         } else {
             modalContainer.classList.add("max-w-3xl");
@@ -251,3 +263,4 @@ function XoaPhongTro(maPhongTro) {
         return;
     }
 }
+

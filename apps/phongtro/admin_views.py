@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
 from django.core.paginator import Paginator
 from django.contrib import messages
-from .models import PhongTro, CocPhong, TAISANPHONG, TAISAN
+from .models import PhongTro, CocPhong, TAISANPHONG, TAISAN, DangTinPhong, HinhAnhTinDang
 from apps.nhatro.models import KhuVuc
 from apps.khachthue.models import KhachThue
 from apps.hopdong.models import HopDong
@@ -262,7 +262,142 @@ def view_coc_giu_cho(request, ma_phong):
         'form_data': {'TIEN_COC_PHONG': phong_tro.GIA_PHONG},
     })
 def view_lap_hop_dong(request, ma_phong):
-    # Ví dụ: lấy danh sách phòng thuộc nhà trọ có mã là 1
+    """View hiển thị trang lập hợp đồng cho phòng trọ"""
+    phong_tro = get_object_or_404(PhongTro, MA_PHONG=ma_phong)
+    
+    if request.method == 'POST':
+        try:
+            with transaction.atomic():
+                # Xử lý tạo hợp đồng mới
+                # Xử lý số thành viên an toàn
+                so_thanh_vien = request.POST.get('SO_THANH_VIEN_TOI_DA')
+                if so_thanh_vien:
+                    try:
+                        so_thanh_vien = int(so_thanh_vien)
+                    except (ValueError, TypeError):
+                        so_thanh_vien = 1  # Giá trị mặc định
+                else:
+                    so_thanh_vien = 1
+                
+                # Xử lý giá cọc an toàn
+                gia_coc = request.POST.get('GIA_COC_HD')
+                if gia_coc:
+                    try:
+                        gia_coc = float(gia_coc)
+                    except (ValueError, TypeError):
+                        gia_coc = 0.00
+                else:
+                    gia_coc = 0.00
+                
+                hop_dong_data = {
+                    'MA_PHONG': ma_phong,
+                    'MA_KHACH_THUE': request.POST.get('MA_KHACH_THUE'),
+                    'HO_TEN_KT': request.POST.get('HO_TEN_KT'),
+                    'SDT_KT': request.POST.get('SDT_KT'),
+                    'NGAY_SINH_KT': request.POST.get('NGAY_SINH_KT'),
+                    'GIOI_TINH_KT': request.POST.get('GIOI_TINH_KT'),
+                    'TAI_KHOAN': request.POST.get('TAI_KHOAN'),
+                    'MAT_KHAU': request.POST.get('MAT_KHAU'),
+                    'NGAY_LAP_HD': request.POST.get('NGAY_LAP_HD'),
+                    'THOI_HAN_HD': request.POST.get('THOI_HAN_HD'),
+                    'NGAY_NHAN_PHONG': request.POST.get('NGAY_NHAN_PHONG'),
+                    'NGAY_TRA_PHONG': request.POST.get('NGAY_TRA_PHONG'),
+                    'SO_THANH_VIEN_TOI_DA': so_thanh_vien,
+                    'GIA_THUE': request.POST.get('GIA_THUE') or phong_tro.GIA_PHONG,
+                    'NGAY_THU_TIEN': request.POST.get('NGAY_THU_TIEN'),
+                    'THOI_DIEM_THANH_TOAN': request.POST.get('THOI_DIEM_THANH_TOAN'),
+                    'CHU_KY_THANH_TOAN': request.POST.get('CHU_KY_THANH_TOAN'),
+                    'GHI_CHU_HD': request.POST.get('GHI_CHU_HD'),
+                    'GIA_COC_HD': gia_coc,
+                }
+                
+                # Debug: Kiểm tra các giá trị quan trọng
+                print(f"DEBUG - SO_THANH_VIEN_TOI_DA: {request.POST.get('SO_THANH_VIEN_TOI_DA')} -> so_thanh_vien: {so_thanh_vien}")
+                print(f"DEBUG - GIA_COC_HD: {request.POST.get('GIA_COC_HD')} -> gia_coc: {gia_coc}")
+                print(f"DEBUG - THOI_HAN_HD: {request.POST.get('THOI_HAN_HD')}")
+                print(f"DEBUG - CHU_KY_THANH_TOAN: {request.POST.get('CHU_KY_THANH_TOAN')}")
+                print(f"DEBUG - NGAY_THU_TIEN: {request.POST.get('NGAY_THU_TIEN')}")
+                
+                # Tạo hợp đồng
+                hop_dong = HopDong.tao_hop_dong(hop_dong_data)
+                
+                # Xử lý tài sản bàn giao từ form mới
+                ds_tai_san_ban_giao = []
+                
+                # Lấy tài sản từ checkbox trong form
+                tai_san_keys = [key for key in request.POST.keys() if key.startswith('taisan[') and key.endswith('][MA_TAI_SAN]')]
+                
+                for key in tai_san_keys:
+                    ma_tai_san = request.POST.get(key)
+                    # Lấy index từ key để lấy số lượng tương ứng
+                    index = key.split('[')[1].split(']')[0]
+                    so_luong_key = f'taisan[{index}][so_luong]'
+                    so_luong = request.POST.get(so_luong_key, 1)
+                    
+                    if ma_tai_san:
+                        ds_tai_san_ban_giao.append({
+                            'MA_TAI_SAN': ma_tai_san,
+                            'SO_LUONG': so_luong
+                        })
+                
+                # Xử lý tài sản tùy chỉnh
+                i = 0
+                while request.POST.get(f'custom_asset_name_{i}'):
+                    ten_tai_san = request.POST.get(f'custom_asset_name_{i}')
+                    tinh_trang = request.POST.get(f'custom_asset_condition_{i}', 'Tốt')
+                    
+                    if ten_tai_san:
+                        # Tạo hoặc lấy tài sản
+                        from .models import TAISAN
+                        tai_san = TAISAN.tao_tai_san_tu_ten(ten_tai_san)
+                        
+                        ds_tai_san_ban_giao.append({
+                            'MA_TAI_SAN': tai_san.MA_TAI_SAN,
+                            'SO_LUONG': 1,
+                            'TINH_TRANG': tinh_trang
+                        })
+                    i += 1
+                
+                # Tạo tài sản bàn giao
+                if ds_tai_san_ban_giao:
+                    from .models import TAISANBANGIAO
+                    TAISANBANGIAO.tao_danh_sach_tai_san_ban_giao(hop_dong, ds_tai_san_ban_giao)
+                
+                # Xử lý dịch vụ (nếu có)
+                ds_dich_vu = []
+                dichvu_keys = [key for key in request.POST.keys() if key.startswith('dichvu_')]
+                for key in dichvu_keys:
+                    ma_dv = key.split('_')[1]
+                    if request.POST.get(key):  # Nếu checkbox được check
+                        dich_vu_data = {'MA_DICH_VU': ma_dv}
+                        
+                        # Kiểm tra loại dịch vụ để lấy đúng dữ liệu
+                        chiso_moi = request.POST.get(f'chiso_moi_{ma_dv}')
+                        so_luong = request.POST.get(f'soluong_{ma_dv}')
+                        
+                        if chiso_moi:  # Dịch vụ tính theo chỉ số
+                            dich_vu_data['CHI_SO_MOI'] = chiso_moi
+                            dich_vu_data['SO_LUONG'] = 0  # Không cần số lượng cho dịch vụ chỉ số
+                        elif so_luong:  # Dịch vụ cố định
+                            dich_vu_data['SO_LUONG'] = so_luong
+                            dich_vu_data['CHI_SO_MOI'] = None
+                        else:
+                            dich_vu_data['SO_LUONG'] = 1  # Mặc định
+                            dich_vu_data['CHI_SO_MOI'] = None
+                            
+                        ds_dich_vu.append(dich_vu_data)
+                
+                if ds_dich_vu:
+                    ChiSoDichVu.tao_danh_sach_chi_so(hop_dong, ds_dich_vu)
+                
+                messages.success(request, f'Tạo hợp đồng thành công! Mã hợp đồng: {hop_dong.MA_HOP_DONG}')
+                return redirect('phongtro:phongtro_list')
+                
+        except Exception as e:
+            messages.error(request, f'Lỗi khi tạo hợp đồng: {str(e)}')
+            return redirect('phongtro:lap_hop_dong', ma_phong=ma_phong)
+    
+     # Ví dụ: lấy danh sách phòng thuộc nhà trọ có mã là 1
     phong_tros = PhongTro.lay_phong_theo_ma_nha_tro(1)
     phong_tro = get_object_or_404(PhongTro, MA_PHONG=ma_phong)
     
@@ -272,7 +407,7 @@ def view_lap_hop_dong(request, ma_phong):
         MA_KHU_VUC=phong_tro.MA_KHU_VUC,
         NGAY_HUY_DV__isnull=True
     ).select_related('MA_DICH_VU')
-    taisanphong_list = TAISANPHONG.objects.filter(MA_PHONG__MA_PHONG=ma_phong).select_related('MA_TAI_SAN')
+    taisanphong_list = TAISANPHONG.objects.filter(MA_PHONG=ma_phong).select_related('MA_TAI_SAN')
 
     # Tạo danh sách dịch vụ với chỉ số mới nhất
     lichsu_dichvu_with_chiso = []
@@ -293,7 +428,7 @@ def view_lap_hop_dong(request, ma_phong):
     # return JsonResponse(dict(lichsu_dichvu))
 
 
-    return render(request, 'admin/hopdong/themsua_hopdong.html', {
+    return render(request, 'admin/phongtro/lap_hop_dong.html', {
         'phong_tros': phong_tros,
         'phong_tro': phong_tro,
         'lichsu_dichvu_with_chiso': lichsu_dichvu_with_chiso,
@@ -314,7 +449,7 @@ def ghi_so_dich_vu(request, ma_phong_tro):
             MA_KHU_VUC=phong_tro.MA_KHU_VUC,
             NGAY_HUY_DV__isnull=True
         ).select_related('MA_DICH_VU')
-    taisanphong_list = TAISANPHONG.objects.filter(MA_PHONG__MA_PHONG=ma_phong_tro).select_related('MA_TAI_SAN')
+    taisanphong_list = TAISANPHONG.objects.filter(MA_PHONG=ma_phong_tro).select_related('MA_TAI_SAN')
 
     # Tạo danh sách dịch vụ với chỉ số mới nhất
     lichsu_dichvu_with_chiso = []
@@ -334,3 +469,216 @@ def ghi_so_dich_vu(request, ma_phong_tro):
     }
     
     return render(request, 'admin/phongtro/ghiso_dichvu.html', context)
+
+
+# ==================== QUẢN LÝ TIN ĐĂNG PHÒNG ====================
+
+def dang_tin_list(request):
+    """Danh sách tin đăng phòng"""
+    # Lấy tham số tìm kiếm và bộ lọc
+    keyword = request.GET.get('keyword', '')
+    trang_thai = request.GET.get('trang_thai', '')
+    ma_khu_vuc = request.GET.get('ma_khu_vuc', '')
+    
+    # Lấy danh sách tin đăng
+    tin_dang_list = DangTinPhong.objects.select_related(
+        'MA_PHONG', 
+        'MA_PHONG__MA_KHU_VUC',
+        'MA_PHONG__MA_LOAI_PHONG'
+    ).prefetch_related('hinh_anh')
+    
+    # Áp dụng bộ lọc
+    if keyword:
+        tin_dang_list = tin_dang_list.filter(
+            Q(MA_PHONG__TEN_PHONG__icontains=keyword) |
+            Q(MA_PHONG__MA_KHU_VUC__TEN_KHU_VUC__icontains=keyword)
+        )
+    
+    if trang_thai:
+        tin_dang_list = tin_dang_list.filter(TRANG_THAI=trang_thai)
+    
+    if ma_khu_vuc:
+        tin_dang_list = tin_dang_list.filter(MA_PHONG__MA_KHU_VUC=ma_khu_vuc)
+    
+    # Phân trang
+    paginator = Paginator(tin_dang_list, 12)
+    page_number = request.GET.get('page', 1)
+    tin_dang_page = paginator.get_page(page_number)
+    
+    # Lấy danh sách khu vực cho filter
+    khu_vucs = KhuVuc.objects.filter(MA_NHA_TRO=1)
+    
+    context = {
+        'tin_dang_list': tin_dang_page,
+        'khu_vucs': khu_vucs,
+        'keyword': keyword,
+        'trang_thai': trang_thai,
+        'ma_khu_vuc': ma_khu_vuc,
+        'trang_thai_choices': DangTinPhong._meta.get_field('TRANG_THAI').choices,
+    }
+    
+    return render(request, 'admin/dangtin/dang_tin_list.html', context)
+
+
+def dang_tin_create(request):
+    """Tạo tin đăng mới"""
+    if request.method == 'POST':
+        try:
+            with transaction.atomic():
+                # Lấy dữ liệu từ form
+                ma_phong = request.POST.get('ma_phong')
+                sdt_lien_he = request.POST.get('sdt_lien_he')
+                email_lien_he = request.POST.get('email_lien_he')
+                
+                # Validation
+                if not ma_phong:
+                    messages.error(request, 'Vui lòng chọn phòng.')
+                    return redirect('admin_phongtro:dang_tin_create')
+                
+                if not sdt_lien_he:
+                    messages.error(request, 'Vui lòng nhập số điện thoại liên hệ.')
+                    return redirect('admin_phongtro:dang_tin_create')
+                
+                # Kiểm tra phòng có tồn tại và chưa có tin đăng
+                phong = get_object_or_404(PhongTro, MA_PHONG=ma_phong)
+                if hasattr(phong, 'tin_dang'):
+                    messages.error(request, f'Phòng {phong.TEN_PHONG} đã có tin đăng.')
+                    return redirect('admin_phongtro:dang_tin_create')
+                
+                # Tạo tin đăng
+                tin_dang = DangTinPhong.objects.create(
+                    MA_PHONG=phong,
+                    SDT_LIEN_HE=sdt_lien_he,
+                    EMAIL_LIEN_HE=email_lien_he,
+                    TRANG_THAI='DANG_HIEN_THI'
+                )
+                
+                # Xử lý upload hình ảnh
+                hinh_anhs = request.FILES.getlist('hinh_anh')
+                if not hinh_anhs:
+                    tin_dang.delete()
+                    messages.error(request, 'Phải có ít nhất 1 hình ảnh để đăng tin.')
+                    return redirect('admin_phongtro:dang_tin_create')
+                
+                # Lưu hình ảnh
+                for index, hinh_anh in enumerate(hinh_anhs):
+                    HinhAnhTinDang.objects.create(
+                        MA_TIN_DANG=tin_dang,
+                        HINH_ANH=hinh_anh,
+                        THU_TU=index + 1,
+                        MO_TA=f'Hình ảnh {index + 1}'
+                    )
+                
+                messages.success(request, f'Đã tạo tin đăng cho phòng {phong.TEN_PHONG}.')
+                return redirect('admin_phongtro:dang_tin_list')
+                
+        except Exception as e:
+            messages.error(request, f'Lỗi khi tạo tin đăng: {str(e)}')
+    
+    # Lấy danh sách phòng chưa có tin đăng và trạng thái "Trống"
+    phong_chua_dang = PhongTro.objects.filter(
+        tin_dang__isnull=True,
+        TRANG_THAI_P='Trống'
+    ).select_related('MA_KHU_VUC', 'MA_LOAI_PHONG')
+    
+    context = {
+        'phong_chua_dang': phong_chua_dang,
+    }
+    
+    return render(request, 'admin/dangtin/dang_tin_create.html', context)
+
+
+def dang_tin_edit(request, ma_tin_dang):
+    """Chỉnh sửa tin đăng"""
+    tin_dang = get_object_or_404(DangTinPhong, MA_TIN_DANG=ma_tin_dang)
+    
+    if request.method == 'POST':
+        try:
+            with transaction.atomic():
+                # Cập nhật thông tin tin đăng
+                tin_dang.SDT_LIEN_HE = request.POST.get('sdt_lien_he', tin_dang.SDT_LIEN_HE)
+                tin_dang.EMAIL_LIEN_HE = request.POST.get('email_lien_he', tin_dang.EMAIL_LIEN_HE)
+                tin_dang.TRANG_THAI = request.POST.get('trang_thai', tin_dang.TRANG_THAI)
+                tin_dang.save()
+                
+                # Xử lý hình ảnh mới nếu có
+                hinh_anhs = request.FILES.getlist('hinh_anh')
+                if hinh_anhs:
+                    # Xóa hình ảnh cũ
+                    tin_dang.hinh_anh.all().delete()
+                    
+                    # Lưu hình ảnh mới
+                    for index, hinh_anh in enumerate(hinh_anhs):
+                        HinhAnhTinDang.objects.create(
+                            MA_TIN_DANG=tin_dang,
+                            HINH_ANH=hinh_anh,
+                            THU_TU=index + 1,
+                            MO_TA=f'Hình ảnh {index + 1}'
+                        )
+                
+                messages.success(request, 'Đã cập nhật tin đăng.')
+                return redirect('admin_phongtro:dang_tin_list')
+                
+        except Exception as e:
+            messages.error(request, f'Lỗi khi cập nhật tin đăng: {str(e)}')
+    
+    context = {
+        'tin_dang': tin_dang,
+        'trang_thai_choices': DangTinPhong._meta.get_field('TRANG_THAI').choices,
+    }
+    
+    return render(request, 'admin/dangtin/dang_tin_edit.html', context)
+
+
+@require_POST
+def dang_tin_delete(request, ma_tin_dang):
+    """Xóa tin đăng"""
+    try:
+        tin_dang = get_object_or_404(DangTinPhong, MA_TIN_DANG=ma_tin_dang)
+        ten_phong = tin_dang.MA_PHONG.TEN_PHONG
+        tin_dang.delete()
+        messages.success(request, f'Đã xóa tin đăng phòng {ten_phong}.')
+    except Exception as e:
+        messages.error(request, f'Lỗi khi xóa tin đăng: {str(e)}')
+    
+    return redirect('admin_phongtro:dang_tin_list')
+
+
+@require_POST
+def dang_tin_toggle_status(request, ma_tin_dang):
+    """Chuyển đổi trạng thái tin đăng (hiển thị/ẩn)"""
+    try:
+        tin_dang = get_object_or_404(DangTinPhong, MA_TIN_DANG=ma_tin_dang)
+        
+        if tin_dang.TRANG_THAI == 'DANG_HIEN_THI':
+            tin_dang.TRANG_THAI = 'DA_AN'
+            action = 'ẩn'
+        else:
+            tin_dang.TRANG_THAI = 'DANG_HIEN_THI'
+            action = 'hiển thị'
+        
+        tin_dang.save()
+        messages.success(request, f'Đã {action} tin đăng.')
+        
+    except Exception as e:
+        messages.error(request, f'Lỗi khi thay đổi trạng thái: {str(e)}')
+    
+    return redirect('admin_phongtro:dang_tin_list')
+
+
+def dang_tin_detail(request, ma_tin_dang):
+    """Chi tiết tin đăng"""
+    tin_dang = get_object_or_404(
+        DangTinPhong.objects.select_related(
+            'MA_PHONG',
+            'MA_PHONG__MA_KHU_VUC',
+            'MA_PHONG__MA_LOAI_PHONG'
+        ).prefetch_related('hinh_anh'),
+        MA_TIN_DANG=ma_tin_dang
+    )
+    
+    context = {
+        'tin_dang': tin_dang,
+    }
+    
+    return render(request, 'admin/dangtin/dang_tin_detail.html', context)

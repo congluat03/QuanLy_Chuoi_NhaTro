@@ -19,41 +19,140 @@
         <!-- Main Content Grid -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <!-- Khu Vuc Info -->
-            <div class="lg:col-span-1 bg-gray-100 p-6 rounded-xl shadow-sm">
-                <h5 class="text-lg font-semibold text-gray-800 mb-4">Thông Tin Cơ Bản</h5>
-                <div class="space-y-4">
-                    <div class="bg-white p-4 rounded-lg shadow-sm">
-                        <span class="text-sm font-medium text-gray-500">Tên Khu Vực</span>
-                        <p class="text-base font-semibold text-gray-900">{{ khu_vuc.TEN_KHU_VUC|default:"Chưa có tên" }}</p>
+            <div class="lg:col-span-1 space-y-6">
+                <!-- Thông tin cơ bản -->
+                <div class="bg-gray-100 p-6 rounded-xl shadow-sm">
+                    <h5 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                        <i class="fas fa-info-circle text-blue-500 mr-2"></i>
+                        Thông Tin Cơ Bản
+                    </h5>
+                    <div class="space-y-4">
+                        <div class="bg-white p-4 rounded-lg shadow-sm">
+                            <span class="text-sm font-medium text-gray-500">Tên Khu Vực</span>
+                            <p class="text-base font-semibold text-gray-900">{{ khu_vuc.TEN_KHU_VUC|default:"Chưa có tên" }}</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg shadow-sm">
+                            <span class="text-sm font-medium text-gray-500">Nhà Trọ</span>
+                            <p class="text-base font-semibold text-gray-900">{{ khu_vuc.MA_NHA_TRO.TEN_NHA_TRO|default:"Chưa có thông tin" }}</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg shadow-sm">
+                            <span class="text-sm font-medium text-gray-500">Địa Chỉ Hành Chính</span>
+                            <p class="text-base font-semibold text-gray-900">
+                                {{ khu_vuc.DV_HANH_CHINH_CAP3|default:"" }}{% if khu_vuc.DV_HANH_CHINH_CAP3 %}, {% endif %}
+                                {{ khu_vuc.DV_HANH_CHINH_CAP2|default:"" }}{% if khu_vuc.DV_HANH_CHINH_CAP2 %}, {% endif %}
+                                {{ khu_vuc.DV_HANH_CHINH_CAP1|default:"Chưa có thông tin" }}
+                            </p>
+                        </div>
+                        
+                        
+                        {% if khu_vuc.dia_chi_day_du %}
+                        <div class="bg-white p-4 rounded-lg shadow-sm">
+                            <span class="text-sm font-medium text-gray-500">Địa Chỉ Đầy Đủ</span>
+                            <p class="text-base font-semibold text-gray-900">{{ khu_vuc.dia_chi_day_du }}</p>
+                        </div>
+                        {% endif %}
+                        
+                        {% if khu_vuc.MO_TA_VI_TRI %}
+                        <div class="bg-white p-4 rounded-lg shadow-sm">
+                            <span class="text-sm font-medium text-gray-500">Mô Tả Vị Trí</span>
+                            <p class="text-base text-gray-900">{{ khu_vuc.MO_TA_VI_TRI }}</p>
+                        </div>
+                        {% endif %}
+                        
+                        {% if khu_vuc.DIA_CHI_CHI_TIET %}
+                        <div class="bg-white p-4 rounded-lg shadow-sm">
+                            <span class="text-sm font-medium text-gray-500">Địa Chỉ Chi Tiết</span>
+                            <p class="text-base text-gray-900">{{ khu_vuc.DIA_CHI_CHI_TIET }}</p>
+                        </div>
+                        {% endif %}
+                        
+                        {% if khu_vuc.GHI_CHU_KV %}
+                        <div class="bg-white p-4 rounded-lg shadow-sm">
+                            <span class="text-sm font-medium text-gray-500">Ghi Chú</span>
+                            <p class="text-base text-gray-900">{{ khu_vuc.GHI_CHU_KV }}</p>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="bg-white p-4 rounded-lg shadow-sm">
+                            <span class="text-sm font-medium text-gray-500">Trạng Thái</span>
+                            <p class="text-base font-semibold text-gray-900">{{ khu_vuc.TRANG_THAI_KV|default:"Chưa có trạng thái" }}</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg shadow-sm">
+                            <span class="text-sm font-medium text-gray-500">Số Lượng Phòng Trọ</span>
+                            <p class="text-base font-semibold text-gray-900">{{ so_luong_phong_tro }}</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg shadow-sm">
+                            <span class="text-sm font-medium text-gray-500">Số Lượng Dịch Vụ Đang Áp Dụng</span>
+                            <p class="text-base font-semibold text-gray-900">{{ so_luong_dich_vu_dang_ap_dung }}</p>
+                        </div>
                     </div>
-                    <div class="bg-white p-4 rounded-lg shadow-sm">
-                        <span class="text-sm font-medium text-gray-500">Nhà Trọ</span>
-                        <p class="text-base font-semibold text-gray-900">{{ khu_vuc.MA_NHA_TRO.TEN_NHA_TRO|default:"Chưa có thông tin" }}</p>
-                    </div>
-                    <div class="bg-white p-4 rounded-lg shadow-sm">
-                        <span class="text-sm font-medium text-gray-500">Địa Chỉ</span>
-                        <p class="text-base font-semibold text-gray-900">
-                            {{ khu_vuc.DV_HANH_CHINH_CAP3|default:"" }}{% if khu_vuc.DV_HANH_CHINH_CAP3 %}, {% endif %}
-                            {{ khu_vuc.DV_HANH_CHINH_CAP2|default:"" }}{% if khu_vuc.DV_HANH_CHINH_CAP2 %}, {% endif %}
-                            {{ khu_vuc.DV_HANH_CHINH_CAP1|default:"Chưa có thông tin" }}
-                        </p>
-                    </div>
-                    <div class="bg-white p-4 rounded-lg shadow-sm">
-                        <span class="text-sm font-medium text-gray-500">Vùng Miền</span>
-                        <p class="text-base font-semibold text-gray-900">{{ khu_vuc.MA_NHA_TRO.VUNG_MIEN|default:"Chưa có thông tin" }}</p>
-                    </div>
-                    <div class="bg-white p-4 rounded-lg shadow-sm">
-                        <span class="text-sm font-medium text-gray-500">Trạng Thái</span>
-                        <p class="text-base font-semibold text-gray-900">{{ khu_vuc.TRANG_THAI_KV|default:"Chưa có trạng thái" }}</p>
-                    </div>
-                    <div class="bg-white p-4 rounded-lg shadow-sm">
-                        <span class="text-sm font-medium text-gray-500">Số Lượng Phòng Trọ</span>
-                        <p class="text-base font-semibold text-gray-900">{{ so_luong_phong_tro }}</p>
-                    </div>
-                    <div class="bg-white p-4 rounded-lg shadow-sm">
-                        <span class="text-sm font-medium text-gray-500">Số Lượng Dịch Vụ Đang Áp Dụng</span>
-                        <p class="text-base font-semibold text-gray-900">{{ so_luong_dich_vu_dang_ap_dung }}</p>
-                    </div>
+                </div>
+
+                <!-- Bản đồ -->
+                <div class="bg-gray-100 p-6 rounded-xl shadow-sm">
+                    <h5 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                        <i class="fas fa-map-marked-alt text-green-500 mr-2"></i>
+                        Vị Trí Trên Bản Đồ
+                    </h5>
+                    
+                    {% if khu_vuc.has_coordinates %}
+                        <!-- Hiển thị bản đồ với tọa độ -->
+                        <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                            <div id="map" class="w-full h-64"></div>
+                            <div class="p-4 border-t">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                                    <div>
+                                        <span class="font-medium text-gray-500">Vĩ độ:</span>
+                                        <span class="text-gray-900">{{ khu_vuc.VI_DO }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="font-medium text-gray-500">Kinh độ:</span>
+                                        <span class="text-gray-900">{{ khu_vuc.KINH_DO }}</span>
+                                    </div>
+                                </div>
+                                <div class="mt-4 flex flex-wrap gap-2">
+                                    <a href="{{ khu_vuc.get_google_maps_url }}" target="_blank" 
+                                       class="inline-flex items-center px-3 py-2 bg-blue-600 text-white text-xs font-medium rounded-md hover:bg-blue-700 transition duration-300">
+                                        <i class="fas fa-external-link-alt mr-1"></i>
+                                        Mở Google Maps
+                                    </a>
+                                    <button onclick="copyCoordinates()" 
+                                            class="inline-flex items-center px-3 py-2 bg-gray-600 text-white text-xs font-medium rounded-md hover:bg-gray-700 transition duration-300">
+                                        <i class="fas fa-copy mr-1"></i>
+                                        Copy tọa độ
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    {% elif khu_vuc.dia_chi_day_du %}
+                        <!-- Hiển thị bản đồ theo địa chỉ -->
+                        <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                            <div id="map" class="w-full h-64"></div>
+                            <div class="p-4 border-t">
+                                <p class="text-sm text-gray-600 mb-3">
+                                    <i class="fas fa-info-circle text-blue-500 mr-1"></i>
+                                    Vị trí được hiển thị dựa trên địa chỉ. Để hiển thị chính xác hơn, vui lòng cập nhật tọa độ GPS.
+                                </p>
+                                <a href="{{ khu_vuc.get_google_maps_url }}" target="_blank" 
+                                   class="inline-flex items-center px-3 py-2 bg-blue-600 text-white text-xs font-medium rounded-md hover:bg-blue-700 transition duration-300">
+                                    <i class="fas fa-external-link-alt mr-1"></i>
+                                    Mở Google Maps
+                                </a>
+                            </div>
+                        </div>
+                    {% else %}
+                        <!-- Chưa có thông tin vị trí -->
+                        <div class="bg-white p-6 rounded-lg shadow-sm text-center">
+                            <i class="fas fa-map-marked-alt text-gray-300 text-4xl mb-3"></i>
+                            <h6 class="text-base font-medium text-gray-600 mb-2">Chưa có thông tin vị trí</h6>
+                            <p class="text-sm text-gray-500 mb-4">Vui lòng cập nhật địa chỉ và tọa độ để hiển thị vị trí trên bản đồ.</p>
+                            <a href="{% url 'nhatro:khuvuc_sua' khu_vuc.MA_KHU_VUC %}" 
+                               class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition duration-300">
+                                <i class="fas fa-edit mr-2"></i>
+                                Cập nhật thông tin
+                            </a>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
 
@@ -160,4 +259,136 @@
         </div>
     </div>
 </div>
+
+<script>
+let map;
+let marker;
+
+function initMap() {
+    {% if khu_vuc.has_coordinates %}
+        // Hiển thị bản đồ với tọa độ chính xác
+        const position = { lat: {{ khu_vuc.VI_DO }}, lng: {{ khu_vuc.KINH_DO }} };
+        
+        map = new google.maps.Map(document.getElementById("map"), {
+            zoom: 16,
+            center: position,
+            mapTypeId: google.maps.MapTypeId.ROADMAP
+        });
+        
+        marker = new google.maps.Marker({
+            position: position,
+            map: map,
+            title: "{{ khu_vuc.TEN_KHU_VUC }}",
+            icon: {
+                url: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
+                scaledSize: new google.maps.Size(32, 32)
+            }
+        });
+        
+        const infoWindow = new google.maps.InfoWindow({
+            content: `
+                <div class="p-2">
+                    <h6 class="font-semibold text-gray-800">{{ khu_vuc.TEN_KHU_VUC }}</h6>
+                    <p class="text-sm text-gray-600">{{ khu_vuc.dia_chi_day_du|default:"Khu vực nhà trọ" }}</p>
+                    {% if khu_vuc.MO_TA_VI_TRI %}
+                    <p class="text-xs text-gray-500 mt-1">{{ khu_vuc.MO_TA_VI_TRI }}</p>
+                    {% endif %}
+                </div>
+            `
+        });
+        
+        marker.addListener("click", () => {
+            infoWindow.open(map, marker);
+        });
+        
+    {% elif khu_vuc.dia_chi_day_du %}
+        // Hiển thị bản đồ theo địa chỉ
+        const geocoder = new google.maps.Geocoder();
+        
+        map = new google.maps.Map(document.getElementById("map"), {
+            zoom: 15,
+            center: { lat: 10.7769, lng: 106.7009 }, // Default to Ho Chi Minh City
+            mapTypeId: google.maps.MapTypeId.ROADMAP
+        });
+        
+        geocoder.geocode({ address: "{{ khu_vuc.dia_chi_day_du }}" }, (results, status) => {
+            if (status === "OK") {
+                map.setCenter(results[0].geometry.location);
+                marker = new google.maps.Marker({
+                    map: map,
+                    position: results[0].geometry.location,
+                    title: "{{ khu_vuc.TEN_KHU_VUC }}",
+                    icon: {
+                        url: 'https://maps.google.com/mapfiles/ms/icons/yellow-dot.png',
+                        scaledSize: new google.maps.Size(32, 32)
+                    }
+                });
+                
+                const infoWindow = new google.maps.InfoWindow({
+                    content: `
+                        <div class="p-2">
+                            <h6 class="font-semibold text-gray-800">{{ khu_vuc.TEN_KHU_VUC }}</h6>
+                            <p class="text-sm text-gray-600">{{ khu_vuc.dia_chi_day_du }}</p>
+                            <p class="text-xs text-yellow-600 mt-1">
+                                <i class="fas fa-exclamation-triangle mr-1"></i>
+                                Vị trí ước tính từ địa chỉ
+                            </p>
+                            {% if khu_vuc.MO_TA_VI_TRI %}
+                            <p class="text-xs text-gray-500 mt-1">{{ khu_vuc.MO_TA_VI_TRI }}</p>
+                            {% endif %}
+                        </div>
+                    `
+                });
+                
+                marker.addListener("click", () => {
+                    infoWindow.open(map, marker);
+                });
+            } else {
+                console.error("Geocode was not successful for the following reason: " + status);
+                document.getElementById("map").innerHTML = `
+                    <div class="flex items-center justify-center h-64 bg-gray-100 text-gray-500">
+                        <div class="text-center">
+                            <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+                            <p>Không thể tải bản đồ cho địa chỉ này</p>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+    {% endif %}
+}
+
+function copyCoordinates() {
+    {% if khu_vuc.has_coordinates %}
+        const coordinates = "{{ khu_vuc.VI_DO }}, {{ khu_vuc.KINH_DO }}";
+        navigator.clipboard.writeText(coordinates).then(() => {
+            // Hiển thị thông báo thành công
+            const button = event.target.closest('button');
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-check mr-1"></i>Đã copy!';
+            button.classList.remove('bg-gray-600', 'hover:bg-gray-700');
+            button.classList.add('bg-green-600', 'hover:bg-green-700');
+            
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                button.classList.remove('bg-green-600', 'hover:bg-green-700');
+                button.classList.add('bg-gray-600', 'hover:bg-gray-700');
+            }, 2000);
+        }).catch(err => {
+            console.error('Could not copy text: ', err);
+            alert('Không thể copy tọa độ. Vui lòng copy thủ công: {{ khu_vuc.VI_DO }}, {{ khu_vuc.KINH_DO }}');
+        });
+    {% endif %}
+}
+
+// Load Google Maps API
+window.initMap = initMap;
+</script>
+
+{% if khu_vuc.has_coordinates or khu_vuc.dia_chi_day_du %}
+<script async defer 
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBOti4mM-6x9WDnZIjIeyEU21OpBXqWBgw&callback=initMap&libraries=geometry">
+</script>
+{% endif %}
+
 {% endblock %}

@@ -1,5 +1,7 @@
-
+{% extends 'admin/admin_layout.html' %}
 {% load static %}
+
+{% block content_body %}
 
 <div id="deduction-data" data-deduction-index="{{ khau_tru|length }}"></div>
 <div class="container mx-auto px-4 py-8 bg-gray-50 min-h-screen font-sans">
@@ -287,3 +289,4 @@
 </div>
 <script src="{% static 'js/admin/hoadon/chon_phong.js' %}"></script>
 <script src="{% static 'js/admin/hoadon/themsua_hoadon.js' %}"></script>
+{% endblock %}
