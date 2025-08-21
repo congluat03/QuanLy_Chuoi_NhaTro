@@ -20,6 +20,57 @@
             </div>
         </div>
 
+        <!-- Statistics Summary -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl p-4 text-white">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-blue-100 text-sm font-medium">Tổng hóa đơn</p>
+                        <p class="text-2xl font-bold">{{ total_invoices }}</p>
+                    </div>
+                    <div class="bg-blue-400 bg-opacity-50 rounded-full p-3">
+                        <i class="fas fa-file-invoice-dollar text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-xl p-4 text-white">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-green-100 text-sm font-medium">Đã thu tiền</p>
+                        <p class="text-2xl font-bold">{{ paid_invoices_count|default:0 }}</p>
+                    </div>
+                    <div class="bg-green-400 bg-opacity-50 rounded-full p-3">
+                        <i class="fas fa-check-circle text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-gradient-to-r from-red-500 to-red-600 rounded-xl p-4 text-white">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-red-100 text-sm font-medium">Chưa thu tiền</p>
+                        <p class="text-2xl font-bold">{{ unpaid_invoices_count|default:0 }}</p>
+                    </div>
+                    <div class="bg-red-400 bg-opacity-50 rounded-full p-3">
+                        <i class="fas fa-exclamation-circle text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-xl p-4 text-white">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-yellow-100 text-sm font-medium">Đang nợ</p>
+                        <p class="text-2xl font-bold">{{ overdue_invoices_count|default:0 }}</p>
+                    </div>
+                    <div class="bg-yellow-400 bg-opacity-50 rounded-full p-3">
+                        <i class="fas fa-clock text-xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Month & Year Selector -->
         <div class="w-full mb-6">
             <div class="flex justify-center items-center gap-1 flex-wrap">
@@ -166,16 +217,10 @@
                     {% endfor %}
                 </tbody>
             </table>
-            <!-- Phân trang -->
-            <div class="mt-4 flex justify-center items-center space-x-2">
-                {% if hoa_dons.has_previous %}
-                    <a href="?page={{ hoa_dons.previous_page_number }}" class="px-4 py-2 text-sm bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition duration-200">Trước</a>
-                {% endif %}
-                <span class="px-4 py-2 text-sm bg-blue-50 text-blue-800 rounded-lg">Trang {{ hoa_dons.number }} / {{ hoa_dons.paginator.num_pages }}</span>
-                {% if hoa_dons.has_next %}
-                    <a href="?page={{ hoa_dons.next_page_number }}" class="px-4 py-2 text-sm bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition duration-200">Sau</a>
-                {% endif %}
-            </div>
+        </div>
+        
+        <!-- Advanced Pagination for Invoices -->
+        {% include 'admin/components/pagination_invoice.html' with page_obj=hoa_dons current_page_size=current_page_size total_count=total_invoices %}
         </div>
 
         <!-- Modal -->
@@ -244,6 +289,143 @@
     const qrImg = document.getElementById('invoiceQRCode');
     qrImg.src = `https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=${encodeURIComponent(link)}`;
   }
+
+  // ======================= PAGINATION FUNCTIONS =======================
+  
+  /**
+   * Thay đổi số lượng item mỗi trang
+   */
+  function changePageSize(newSize) {
+    showLoadingState();
+    const url = new URL(window.location);
+    url.searchParams.set('page_size', newSize);
+    url.searchParams.set('page', '1'); // Reset về trang 1 khi thay đổi page size
+    
+    // Preserve month and year parameters
+    const month = url.searchParams.get('month');
+    const year = url.searchParams.get('year');
+    if (month) url.searchParams.set('month', month);
+    if (year) url.searchParams.set('year', year);
+    
+    window.location.href = url.toString();
+  }
+
+  /**
+   * Hiển thị loading state khi chuyển trang
+   */
+  function showLoadingState() {
+    // Tạo overlay loading
+    const loadingOverlay = document.createElement('div');
+    loadingOverlay.id = 'loadingOverlay';
+    loadingOverlay.className = 'fixed inset-0 bg-black bg-opacity-25 z-50 flex items-center justify-center';
+    loadingOverlay.innerHTML = `
+      <div class="bg-white rounded-lg p-6 shadow-xl flex items-center space-x-3">
+        <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+        <span class="text-gray-700 font-medium">Đang tải hóa đơn...</span>
+      </div>
+    `;
+    document.body.appendChild(loadingOverlay);
+    
+    // Auto remove sau 5s để tránh stuck
+    setTimeout(() => {
+      const overlay = document.getElementById('loadingOverlay');
+      if (overlay) overlay.remove();
+    }, 5000);
+  }
+
+  /**
+   * Đi đến trang cụ thể
+   */
+  function goToPage(pageNumber) {
+    showLoadingState();
+    const url = new URL(window.location);
+    url.searchParams.set('page', pageNumber);
+    
+    // Preserve other parameters
+    const month = url.searchParams.get('month');
+    const year = url.searchParams.get('year');
+    const pageSize = url.searchParams.get('page_size');
+    if (month) url.searchParams.set('month', month);
+    if (year) url.searchParams.set('year', year);
+    if (pageSize) url.searchParams.set('page_size', pageSize);
+    
+    window.location.href = url.toString();
+  }
+
+  /**
+   * Thêm loading cho tất cả pagination links
+   */
+  function addLoadingToPaginationLinks() {
+    const paginationLinks = document.querySelectorAll('nav[aria-label="Pagination"] a, .sm\\:hidden a[href*="page="]');
+    paginationLinks.forEach(link => {
+      link.addEventListener('click', function(e) {
+        // Chỉ show loading nếu không phải cùng trang
+        const url = new URL(this.href);
+        const targetPage = url.searchParams.get('page');
+        const currentPage = {{ hoa_dons.number|default:1 }};
+        
+        if (targetPage != currentPage) {
+          showLoadingState();
+        }
+      });
+    });
+  }
+
+  /**
+   * Hiển thị thông tin phân trang đẹp hơn trên mobile
+   */
+  function updateMobilePaginationInfo() {
+    const currentPage = {{ hoa_dons.number|default:1 }};
+    const totalPages = {{ hoa_dons.paginator.num_pages|default:1 }};
+    const startIndex = {{ hoa_dons.start_index|default:0 }};
+    const endIndex = {{ hoa_dons.end_index|default:0 }};
+    const totalCount = {{ total_invoices|default:0 }};
+    
+    // Có thể sử dụng để cập nhật UI động nếu cần
+    console.log(`📄 Phân trang hóa đơn: Trang ${currentPage}/${totalPages}, Hiển thị ${startIndex}-${endIndex}/${totalCount}`);
+  }
+
+  // Gọi khi trang load xong
+  document.addEventListener('DOMContentLoaded', function() {
+    updateMobilePaginationInfo();
+    addLoadingToPaginationLinks();
+    
+    // Thêm keyboard shortcuts cho pagination
+    document.addEventListener('keydown', function(e) {
+      // Chỉ hoạt động khi không focus vào input/textarea
+      if (document.activeElement.tagName.toLowerCase() === 'input' || 
+          document.activeElement.tagName.toLowerCase() === 'textarea') {
+        return;
+      }
+      
+      const currentPage = {{ hoa_dons.number|default:1 }};
+      const totalPages = {{ hoa_dons.paginator.num_pages|default:1 }};
+      
+      // Arrow Left = Previous Page
+      if (e.key === 'ArrowLeft' && currentPage > 1) {
+        e.preventDefault();
+        goToPage(currentPage - 1);
+      }
+      
+      // Arrow Right = Next Page  
+      if (e.key === 'ArrowRight' && currentPage < totalPages) {
+        e.preventDefault();
+        goToPage(currentPage + 1);
+      }
+      
+      // Home = First Page
+      if (e.key === 'Home') {
+        e.preventDefault();
+        goToPage(1);
+      }
+      
+      // End = Last Page
+      if (e.key === 'End') {
+        e.preventDefault();
+        goToPage(totalPages);
+      }
+    });
+  });
 </script>
 <script src="{% static 'js/admin/hoadon/hoadon.js' %}"></script>
 {% endblock %}

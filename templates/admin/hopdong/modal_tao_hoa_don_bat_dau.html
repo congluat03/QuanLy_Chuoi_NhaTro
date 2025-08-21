@@ -1,0 +1,209 @@
+<!-- Modal tạo hóa đơn bắt đầu với Tailwind -->
+<div class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden" id="modalTaoHoaDonBatDau">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <!-- Header -->
+            <div class="bg-green-600 text-white p-6 rounded-t-xl">
+                <div class="flex items-center justify-between">
+                    <h5 class="text-xl font-semibold flex items-center">
+                        <i class="fas fa-plus-circle mr-3"></i>
+                        Tạo hóa đơn bắt đầu hợp đồng
+                    </h5>
+                    <button type="button" class="text-white hover:text-gray-200 transition" data-modal-close>
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Body -->
+            <form id="formTaoHoaDon" method="POST">
+                <div class="p-6">
+                    <!-- Thông tin hợp đồng -->
+                    <div class="bg-blue-50 p-4 rounded-lg mb-6">
+                        <h6 class="font-semibold text-blue-800 mb-3 flex items-center">
+                            <i class="fas fa-file-contract mr-2"></i>
+                            Thông tin hợp đồng
+                        </h6>
+                        <div class="grid md:grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <p><span class="font-medium text-gray-600">Mã hợp đồng:</span> <span class="font-mono">{{ hop_dong.MA_HOP_DONG }}</span></p>
+                                <p><span class="font-medium text-gray-600">Phòng:</span> {{ hop_dong.MA_PHONG.TEN_PHONG }}</p>
+                            </div>
+                            <div>
+                                <p><span class="font-medium text-gray-600">Khách thuê:</span> {{ khach_thue.HO_TEN_KT|default:'Chưa có thông tin' }}</p>
+                                <p><span class="font-medium text-gray-600">Trạng thái:</span> 
+                                    <span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium">{{ hop_dong.TRANG_THAI_HD }}</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Preview hóa đơn -->
+                    <div class="bg-gray-50 border border-gray-200 rounded-lg overflow-hidden">
+                        <div class="bg-gray-100 px-4 py-3">
+                            <h6 class="font-semibold text-gray-800 flex items-center">
+                                <i class="fas fa-receipt mr-2"></i>
+                                Chi tiết hóa đơn bắt đầu
+                            </h6>
+                        </div>
+                        <div class="p-4">
+                            <table class="w-full">
+                                <tbody class="divide-y divide-gray-200">
+                                    <tr class="py-2">
+                                        <td class="py-3 text-sm text-gray-900">
+                                            <i class="fas fa-home mr-2 text-blue-600"></i>
+                                            <strong>Tiền phòng tháng đầu</strong>
+                                        </td>
+                                        <td class="py-3 text-sm text-right font-mono">
+                                            <input type="number" 
+                                                   name="tien_phong" 
+                                                   id="tien_phong" 
+                                                   class="w-32 p-1 border rounded text-right focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                                                   value="{{ hoa_don_preview.tien_phong|floatformat:0 }}"
+                                                   min="0" 
+                                                   step="1000"
+                                                   oninput="updateTotal()">
+                                            VNĐ
+                                        </td>
+                                    </tr>
+                                    <tr class="py-2">
+                                        <td class="py-3 text-sm text-gray-900">
+                                            <i class="fas fa-shield-alt mr-2 text-yellow-600"></i>
+                                            <strong>Tiền cọc</strong>
+                                        </td>
+                                        <td class="py-3 text-sm text-right font-mono">
+                                            <input type="number" 
+                                                   name="tien_coc" 
+                                                   id="tien_coc" 
+                                                   class="w-32 p-1 border rounded text-right focus:outline-none focus:ring-2 focus:ring-yellow-500" 
+                                                   value="{{ hoa_don_preview.tien_coc|floatformat:0 }}"
+                                                   min="0" 
+                                                   step="1000"
+                                                   oninput="updateTotal()">
+                                            VNĐ
+                                        </td>
+                                    </tr>
+                                    <tr class="py-2">
+                                        <td class="py-3 text-sm text-gray-900">
+                                            <i class="fas fa-tools mr-2 text-green-600"></i>
+                                            <strong>Tiền dịch vụ</strong>
+                                        </td>
+                                        <td class="py-3 text-sm text-right font-mono">
+                                            <span id="tien_dich_vu">{{ hoa_don_preview.tien_dich_vu|floatformat:0 }}</span> VNĐ
+                                        </td>
+                                    </tr>
+                                </tbody>
+                                <tfoot class="border-t-2 border-green-200">
+                                    <tr class="bg-green-50">
+                                        <td class="py-4 text-base font-bold text-green-800">
+                                            <i class="fas fa-calculator mr-2"></i>
+                                            TỔNG CỘNG
+                                        </td>
+                                        <td class="py-4 text-base font-bold text-green-800 text-right font-mono">
+                                            <span id="tong_tien">{{ hoa_don_preview.tong_tien|floatformat:0 }}</span> VNĐ
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Thông báo -->
+                    <div class="mt-6 bg-amber-50 border border-amber-200 rounded-lg p-4">
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-info-circle text-amber-600 text-lg"></i>
+                            </div>
+                            <div class="ml-3 text-sm text-amber-700">
+                                <p class="font-medium mb-1">Lưu ý khi tạo hóa đơn bắt đầu:</p>
+                                <ul class="list-disc list-inside space-y-1 text-xs">
+                                    <li>Hóa đơn sẽ được tạo với trạng thái "Chưa thanh toán"</li>
+                                    <li>Hợp đồng này sẽ được đánh dấu là đã có hóa đơn bắt đầu</li>
+                                    <li>Bạn có thể xem hoặc xóa hóa đơn này sau khi tạo</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Hidden form data -->
+                    {% csrf_token %}
+                    <input type="hidden" name="ma_hop_dong" value="{{ hop_dong.MA_HOP_DONG }}">
+                </div>
+
+                <!-- Footer -->
+                <div class="flex flex-wrap justify-end gap-3 p-6 bg-gray-50 rounded-b-xl border-t">
+                    <button type="button" class="bg-gray-500 text-white px-6 py-2 rounded-md hover:bg-gray-600 transition" data-modal-close>
+                        <i class="fas fa-times mr-2"></i>Hủy
+                    </button>
+                    <button type="submit" id="btnLuuThietLap" class="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 transition">
+                        <i class="fas fa-save mr-2"></i>Tạo hóa đơn
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function updateTotal() {
+    const tienPhong = parseFloat(document.getElementById('tien_phong').value) || 0;
+    const tienCoc = parseFloat(document.getElementById('tien_coc').value) || 0;
+    const tienDichVu = parseFloat(document.getElementById('tien_dich_vu').textContent) || 0;
+    const tongTien = tienPhong + tienCoc + tienDichVu;
+    
+    document.getElementById('tong_tien').textContent = tongTien.toLocaleString('vi-VN');
+}
+
+document.getElementById('formTaoHoaDon').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = {
+        ma_hop_dong: formData.get('ma_hop_dong'),
+        tien_phong: parseFloat(formData.get('tien_phong')) || 0,
+        tien_coc: parseFloat(formData.get('tien_coc')) || 0,
+        tien_dich_vu: parseFloat(document.getElementById('tien_dich_vu').textContent) || 0,
+        csrfmiddlewaretoken: formData.get('csrfmiddlewaretoken')
+    };
+
+    // Show loading state
+    const submitButton = document.getElementById('btnLuuThietLap');
+    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Đang tạo...';
+    submitButton.disabled = true;
+
+    // Send AJAX request
+    fetch('{% url "hopdong:thiet_lap_hoa_don_bat_dau_hop_dong" hop_dong.MA_HOP_DONG %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': data.csrfmiddlewaretoken
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        submitButton.innerHTML = '<i class="fas fa-save mr-2"></i>Tạo hóa đơn';
+        submitButton.disabled = false;
+        
+        if (data.success) {
+            alert(data.message);
+            document.getElementById('modalTaoHoaDonBatDau').classList.add('hidden');
+            location.reload();
+        } else {
+            alert('Lỗi: ' + data.message);
+        }
+    })
+    .catch(error => {
+        submitButton.innerHTML = '<i class="fas fa-save mr-2"></i>Tạo hóa đơn';
+        submitButton.disabled = false;
+        alert('Có lỗi xảy ra khi tạo hóa đơn!');
+    });
+});
+
+// Handle modal close
+document.querySelectorAll('[data-modal-close]').forEach(button => {
+    button.addEventListener('click', () => {
+        document.getElementById('modalTaoHoaDonBatDau').classList.add('hidden');
+    });
+});
+</script>

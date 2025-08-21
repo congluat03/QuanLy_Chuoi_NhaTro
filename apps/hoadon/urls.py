@@ -12,6 +12,13 @@ urlpatterns = [
 
     path('hoadon/lay-thong-tin-phong/<int:ma_phong>/', admin_views.lay_thong_tin_phong, name='lay_thong_tin_phong'),
     path('hoadon/chitiet-hoadon/<int:ma_hoa_don>/', admin_views.hoadon_detail, name='hoadon_detail'),
+    
+    # API endpoints mới cho giao diện hóa đơn
+    path('api/khu-vuc-list/', admin_views.lay_khu_vuc_list, name='lay_khu_vuc_list'),
+    path('api/phong-theo-khu-vuc/', admin_views.lay_phong_theo_khu_vuc_hoa_don, name='lay_phong_theo_khu_vuc_hoa_don'),
+    path('api/thong-tin-phong-hoa-don/<int:ma_phong>/', admin_views.lay_thong_tin_phong_hoa_don, name='lay_thong_tin_phong_hoa_don'),
+    path('api/them-khau-tru/', admin_views.them_khau_tru_ajax, name='them_khau_tru_ajax'),
+    path('api/cap-nhat-khau-tru/', admin_views.cap_nhat_khau_tru_ajax, name='cap_nhat_khau_tru_ajax'),
 
     # # Quản lý dịch vụ và khấu trừ
     # path('hoa-don/<int:ma_hoa_don>/dich-vu/', views.hoa_don_dich_vu, name='hoa_don_dich_vu'),

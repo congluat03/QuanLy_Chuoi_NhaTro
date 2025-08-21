@@ -41,7 +41,7 @@ def lay_phong_theo_khu_vuc(request):
         from apps.hopdong.models import HopDong
         phong_tros = PhongTro.objects.filter(
             MA_KHU_VUC_id=khu_vuc_id,
-            hopdong__TRANG_THAI_HD__in=['Đang hoạt động', 'Đã xác nhận']
+            hopdong__TRANG_THAI_HD='Đang hoạt động'
         ).distinct().values('MA_PHONG', 'TEN_PHONG')
         
         phong_list = list(phong_tros)
@@ -81,8 +81,22 @@ def lay_chi_so_cu(request):
         return JsonResponse({'error': 'Thiếu thông tin phòng hoặc dịch vụ'}, status=400)
     
     try:
+        # Lấy hợp đồng hiệu lực của phòng
+        from apps.hopdong.models import HopDong
+        from apps.phongtro.models import PhongTro
+        
+        phong = get_object_or_404(PhongTro, MA_PHONG=ma_phong)
+        hop_dong = HopDong.objects.filter(
+            MA_PHONG=phong,
+            TRANG_THAI_HD='Đang hoạt động'
+        ).first()
+        
+        if not hop_dong:
+            return JsonResponse({'chi_so_cu': 0})
+        
+        # Lấy chỉ số mới nhất của dịch vụ trong hợp đồng này
         chi_so_moi_nhat = ChiSoDichVu.objects.filter(
-            MA_PHONG_id=ma_phong,
+            MA_HOP_DONG=hop_dong,
             MA_DICH_VU_id=ma_dich_vu
         ).order_by('-NGAY_GHI_CS').first()
         
@@ -94,55 +108,166 @@ def lay_chi_so_cu(request):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
+def kiem_tra_chi_so_da_ghi(request):
+    """AJAX - Kiểm tra chỉ số đã ghi trong kỳ thanh toán hiện tại"""
+    ma_phong = request.GET.get('ma_phong')
+    
+    if not ma_phong:
+        return JsonResponse({'error': 'Thiếu thông tin phòng'}, status=400)
+    
+    try:
+        from apps.hopdong.models import HopDong
+        from apps.phongtro.models import PhongTro
+        
+        phong = get_object_or_404(PhongTro, MA_PHONG=ma_phong)
+        hop_dong = HopDong.objects.filter(
+            MA_PHONG=phong,
+            TRANG_THAI_HD='Đang hoạt động'
+        ).first()
+        
+        if not hop_dong:
+            return JsonResponse({'error': 'Không tìm thấy hợp đồng hiệu lực'}, status=404)
+        
+        # Lấy chỉ số có thể chỉnh sửa trong kỳ hiện tại
+        readings_by_service, start_period, end_period = ChiSoDichVu.get_editable_readings(hop_dong)
+        
+        
+        # Chuẩn bị dữ liệu trả về
+        editable_readings = {}
+        for service_id, reading in readings_by_service.items():
+            editable_readings[str(service_id)] = {
+                'MA_CHI_SO': reading.MA_CHI_SO,
+                'CHI_SO_CU': reading.CHI_SO_CU,
+                'CHI_SO_MOI': reading.CHI_SO_MOI,
+                'SO_LUONG': reading.SO_LUONG,
+                'NGAY_GHI_CS': reading.NGAY_GHI_CS.strftime('%Y-%m-%d') if reading.NGAY_GHI_CS else None,
+                'TEN_DICH_VU': reading.MA_DICH_VU.TEN_DICH_VU,
+                'LOAI_DICH_VU': reading.MA_DICH_VU.LOAI_DICH_VU
+            }
+        
+        return JsonResponse({
+            'has_readings': len(editable_readings) > 0,
+            'readings': editable_readings,
+            'billing_period': {
+                'start': start_period.strftime('%Y-%m-%d'),
+                'end': end_period.strftime('%Y-%m-%d'),
+                'chu_ky': hop_dong.CHU_KY_THANH_TOAN,
+                'ngay_thu_tien': hop_dong.NGAY_THU_TIEN
+            }
+        })
+        
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
 def luu_chi_so_dich_vu(request):
     """Lưu chỉ số dịch vụ sử dụng."""
     try:
+        from datetime import datetime
+        
         ma_phong = request.POST.get('ma_phong')
-        ngay_ghi_cs = request.POST.get('ngay_ghi_cs')
+        ngay_ghi_cs_str = request.POST.get('ngay_ghi_cs')
         chi_so_data = []
+        
+        # Parse ngày ghi chỉ số
+        if ngay_ghi_cs_str:
+            try:
+                ngay_ghi_cs = datetime.strptime(ngay_ghi_cs_str, '%Y-%m-%d').date()
+            except ValueError:
+                messages.error(request, 'Định dạng ngày ghi chỉ số không hợp lệ.')
+                return redirect('dichvu:ghi_so_dich_vu')
+        else:
+            messages.error(request, 'Vui lòng chọn ngày ghi chỉ số.')
+            return redirect('dichvu:ghi_so_dich_vu')
         
         # Lấy thông tin phòng và hợp đồng
         phong = get_object_or_404(PhongTro, MA_PHONG=ma_phong)
         from apps.hopdong.models import HopDong
         hop_dong = HopDong.objects.filter(
             MA_PHONG=phong,
-            TRANG_THAI_HD__in=['Đang hoạt động', 'Đã xác nhận']
+            TRANG_THAI_HD='Đang hoạt động'
         ).first()
         
         if not hop_dong:
             messages.error(request, 'Không tìm thấy hợp đồng hiệu lực cho phòng này.')
             return redirect('dichvu:ghi_so_dich_vu')
         
-        # Lấy dữ liệu chỉ số từ form
+        # Lấy dữ liệu chỉ số từ form - chỉ số theo thực tế
         for key, value in request.POST.items():
             if key.startswith('chi_so_moi_'):
                 ma_dich_vu = key.split('_')[-1]
                 chi_so_cu = request.POST.get(f'chi_so_cu_{ma_dich_vu}', 0)
                 chi_so_moi = value
-                so_luong = request.POST.get(f'so_luong_{ma_dich_vu}', 1)
                 
-                if chi_so_moi or so_luong:
+                if chi_so_moi:
                     chi_so_data.append({
                         'MA_DICH_VU': ma_dich_vu,
                         'CHI_SO_CU': chi_so_cu,
                         'CHI_SO_MOI': chi_so_moi,
-                        'SO_LUONG': so_luong
+                        'LOAI': 'chi_so'
                     })
+            elif key.startswith('so_luong_'):
+                ma_dich_vu = key.split('_')[-1]
+                so_luong = value
+                
+                if so_luong and int(so_luong) > 0:
+                    chi_so_data.append({
+                        'MA_DICH_VU': ma_dich_vu,
+                        'SO_LUONG': so_luong,
+                        'LOAI': 'co_dinh'
+                    })
+        
+        # Tự động thêm tất cả dịch vụ cố định của khu vực với số lượng mặc định
+        from .models import LichSuApDungDichVu
+        dich_vu_co_dinh = LichSuApDungDichVu.objects.filter(
+            MA_KHU_VUC=phong.MA_KHU_VUC,
+            MA_DICH_VU__LOAI_DICH_VU__in=['Cố định', 'Co dinh'],  # Xử lý cả 2 trường hợp
+            NGAY_HUY_DV__isnull=True
+        )
+        
+        # Lấy danh sách dịch vụ đã được nhập (cả chỉ số và cố định)
+        ma_dv_da_nhap = [item['MA_DICH_VU'] for item in chi_so_data]
+        
+        # Chỉ thêm dịch vụ cố định chưa được nhập
+        for dv_co_dinh in dich_vu_co_dinh:
+            ma_dv_str = str(dv_co_dinh.MA_DICH_VU.MA_DICH_VU)
+            if ma_dv_str not in ma_dv_da_nhap:
+                chi_so_data.append({
+                    'MA_DICH_VU': ma_dv_str,
+                    'SO_LUONG': '1',  # Mặc định số lượng = 1
+                    'LOAI': 'co_dinh'
+                })
         
         # Validation
         if not chi_so_data:
-            messages.error(request, 'Vui lòng nhập ít nhất một chỉ số dịch vụ.')
+            messages.error(request, 'Không có dịch vụ nào để ghi chỉ số.')
             return redirect('dichvu:ghi_so_dich_vu')
         
+        # Debug: In ra dữ liệu sẽ được lưu
+        print(f"DEBUG: Ngày ghi chỉ số: {ngay_ghi_cs} (type: {type(ngay_ghi_cs)})")
+        print(f"DEBUG: Sẽ lưu {len(chi_so_data)} bản ghi chỉ số dịch vụ:")
+        for item in chi_so_data:
+            dich_vu_temp = DichVu.objects.get(MA_DICH_VU=item['MA_DICH_VU'])
+            print(f"  - {dich_vu_temp.TEN_DICH_VU} ({dich_vu_temp.LOAI_DICH_VU}) - Loại: {item['LOAI']}")
+
         # Lưu chỉ số dịch vụ
+        saved_count = 0
         with transaction.atomic():
             for chi_so in chi_so_data:
                 dich_vu = get_object_or_404(DichVu, MA_DICH_VU=chi_so['MA_DICH_VU'])
                 
-                # Kiểm tra loại dịch vụ và validate
-                if dich_vu.LOAI_DICH_VU != 'Cố định':
-                    if not chi_so['CHI_SO_MOI']:
-                        continue
+                # Kiểm tra trùng lặp - chỉ lưu nếu chưa có bản ghi trong ngày
+                existing = ChiSoDichVu.objects.filter(
+                    MA_DICH_VU=dich_vu,
+                    MA_HOP_DONG=hop_dong,
+                    NGAY_GHI_CS=ngay_ghi_cs
+                ).exists()
+                
+                if existing:
+                    print(f"DEBUG: Bỏ qua {dich_vu.TEN_DICH_VU} - đã có bản ghi trong ngày")
+                    continue
+                
+                if chi_so['LOAI'] == 'chi_so':
+                    # Dịch vụ theo chỉ số (điện, nước)
                     chi_so_cu = float(chi_so['CHI_SO_CU'] or 0)
                     chi_so_moi = float(chi_so['CHI_SO_MOI'])
                     
@@ -151,34 +276,162 @@ def luu_chi_so_dich_vu(request):
                         return redirect('dichvu:ghi_so_dich_vu')
                     
                     # Tạo bản ghi chỉ số
-                    ChiSoDichVu.objects.create(
+                    new_reading = ChiSoDichVu.objects.create(
                         MA_DICH_VU=dich_vu,
-                        MA_PHONG=phong,
                         MA_HOP_DONG=hop_dong,
                         CHI_SO_CU=int(chi_so_cu),
                         CHI_SO_MOI=int(chi_so_moi),
                         NGAY_GHI_CS=ngay_ghi_cs,
-                        SO_LUONG=chi_so_moi - chi_so_cu
+                        SO_LUONG=int(chi_so_moi - chi_so_cu)
                     )
+                    saved_count += 1
+                    print(f"DEBUG: Lưu dịch vụ theo chỉ số - {dich_vu.TEN_DICH_VU}, Ngày: {ngay_ghi_cs}, MA_CHI_SO: {new_reading.MA_CHI_SO}")
                 else:
-                    # Dịch vụ cố định
+                    # Dịch vụ cố định (wifi, rác, bảo vệ...)
                     so_luong = int(chi_so['SO_LUONG'] or 1)
-                    ChiSoDichVu.objects.create(
+                    new_reading = ChiSoDichVu.objects.create(
                         MA_DICH_VU=dich_vu,
-                        MA_PHONG=phong,
                         MA_HOP_DONG=hop_dong,
                         CHI_SO_CU=0,
-                        CHI_SO_MOI=so_luong,
+                        CHI_SO_MOI=0,
                         NGAY_GHI_CS=ngay_ghi_cs,
                         SO_LUONG=so_luong
                     )
+                    saved_count += 1
+                    print(f"DEBUG: Lưu dịch vụ cố định - {dich_vu.TEN_DICH_VU}, Ngày: {ngay_ghi_cs}, MA_CHI_SO: {new_reading.MA_CHI_SO}")
+        
+        print(f"DEBUG: Đã lưu thành công {saved_count}/{len(chi_so_data)} bản ghi")
         
         messages.success(request, 'Ghi số dịch vụ sử dụng thành công!')
-        return redirect('dichvu:ghi_so_dich_vu')
+        
+        # Redirect với thông tin phòng để reload lại
+        return redirect(f"{request.path}?room={ma_phong}&area={phong.MA_KHU_VUC_id}")
         
     except Exception as e:
         messages.error(request, f'Có lỗi xảy ra: {str(e)}')
         return redirect('dichvu:ghi_so_dich_vu')
+
+def cap_nhat_chi_so_dich_vu(request):
+   
+    
+    """API - Cập nhật chỉ số dịch vụ đã ghi"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Chỉ hỗ trợ POST method'}, status=405)
+    
+    try:
+        from datetime import datetime
+        import json
+        
+        print(f"DEBUG UPDATE: Request method: {request.method}")
+        print(f"DEBUG UPDATE: Request body: {request.body}")
+        
+        data = json.loads(request.body)
+        ma_chi_so = data.get('ma_chi_so')
+        chi_so_moi = data.get('chi_so_moi')
+        so_luong = data.get('so_luong')
+        ngay_ghi_cs_str = data.get('ngay_ghi_cs')
+        
+        print(f"DEBUG UPDATE: Parsed data - ma_chi_so: {ma_chi_so}, chi_so_moi: {chi_so_moi}, so_luong: {so_luong}")
+        
+        # return JsonResponse({
+        #     'success': True,
+        #     'message': chi_so_moi,        
+        # })
+
+        if not ma_chi_so:
+            return JsonResponse({'error': 'Thiếu mã chỉ số'}, status=400)
+        
+        # Parse ngày
+        if ngay_ghi_cs_str:
+            try:
+                ngay_ghi_cs = datetime.strptime(ngay_ghi_cs_str, '%Y-%m-%d').date()
+            except ValueError:
+                return JsonResponse({'error': 'Định dạng ngày không hợp lệ'}, status=400)
+        else:
+            ngay_ghi_cs = None
+        
+        # Lấy bản ghi chỉ số
+        chi_so_obj = get_object_or_404(ChiSoDichVu, MA_CHI_SO=ma_chi_so)
+        
+        # Kiểm tra xem có được phép chỉnh sửa không (trong kỳ thanh toán hiện tại)
+        hop_dong = chi_so_obj.MA_HOP_DONG
+        start_period, end_period = ChiSoDichVu.get_current_billing_period(hop_dong)
+        
+        if not (start_period <= chi_so_obj.NGAY_GHI_CS < end_period):
+            return JsonResponse({'error': 'Chỉ có thể chỉnh sửa chỉ số trong kỳ thanh toán hiện tại'}, status=403)
+        
+        # Cập nhật thông tin
+        with transaction.atomic():
+            if chi_so_obj.MA_DICH_VU.LOAI_DICH_VU not in ['Cố định', 'Co dinh']:
+                # Dịch vụ theo chỉ số
+                if chi_so_moi is not None:
+                    chi_so_cu = chi_so_obj.CHI_SO_CU or 0
+                    if float(chi_so_moi) < chi_so_cu:
+                        return JsonResponse({'error': 'Chỉ số mới phải lớn hơn hoặc bằng chỉ số cũ'}, status=400)
+                    
+                    chi_so_obj.CHI_SO_MOI = int(float(chi_so_moi))
+                    chi_so_obj.SO_LUONG = int(float(chi_so_moi)) - chi_so_cu
+            else:
+                # Dịch vụ cố định
+                if so_luong is not None:
+                    chi_so_obj.SO_LUONG = int(float(so_luong))
+            
+            if ngay_ghi_cs:
+                chi_so_obj.NGAY_GHI_CS = ngay_ghi_cs
+                
+            chi_so_obj.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Đã cập nhật chỉ số thành công',
+            'data': {
+                'MA_CHI_SO': chi_so_obj.MA_CHI_SO,
+                'CHI_SO_CU': chi_so_obj.CHI_SO_CU,
+                'CHI_SO_MOI': chi_so_obj.CHI_SO_MOI,
+                'SO_LUONG': chi_so_obj.SO_LUONG,
+                'NGAY_GHI_CS': chi_so_obj.NGAY_GHI_CS.strftime('%Y-%m-%d') if chi_so_obj.NGAY_GHI_CS else None
+            }
+        })
+        
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+def xoa_chi_so_dich_vu(request):
+    """API - Xóa chỉ số dịch vụ đã ghi"""
+    if request.method != 'DELETE':
+        return JsonResponse({'error': 'Chỉ hỗ trợ DELETE method'}, status=405)
+    
+    try:
+        import json
+        data = json.loads(request.body)
+        ma_chi_so = data.get('ma_chi_so')
+        
+        if not ma_chi_so:
+            return JsonResponse({'error': 'Thiếu mã chỉ số'}, status=400)
+        
+        # Lấy bản ghi chỉ số
+        chi_so_obj = get_object_or_404(ChiSoDichVu, MA_CHI_SO=ma_chi_so)
+        
+        # Kiểm tra xem có được phép xóa không (trong kỳ thanh toán hiện tại)
+        hop_dong = chi_so_obj.MA_HOP_DONG
+        start_period, end_period = ChiSoDichVu.get_current_billing_period(hop_dong)
+        
+        if not (start_period <= chi_so_obj.NGAY_GHI_CS < end_period):
+            return JsonResponse({'error': 'Chỉ có thể xóa chỉ số trong kỳ thanh toán hiện tại'}, status=403)
+        
+        # Lưu thông tin để trả về
+        ten_dich_vu = chi_so_obj.MA_DICH_VU.TEN_DICH_VU
+        
+        # Xóa bản ghi
+        chi_so_obj.delete()
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Đã xóa chỉ số dịch vụ {ten_dich_vu} thành công'
+        })
+        
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
 
 def dichvu_list(request):
     # Lấy toàn bộ danh sách dịch vụ (không phân trang)

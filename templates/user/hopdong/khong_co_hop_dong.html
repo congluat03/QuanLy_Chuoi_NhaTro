@@ -1,0 +1,60 @@
+{% extends 'index/index_layout.html' %}
+
+{% block title %}Không có hợp đồng{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="bg-white rounded-lg shadow-md">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-gray-600 to-gray-700 text-white p-6 rounded-t-lg">
+            <h1 class="text-2xl font-bold">Hợp đồng của tôi</h1>
+            <p class="text-gray-100 mt-1">Xem và quản lý các hợp đồng thuê phòng</p>
+        </div>
+
+        <!-- Content -->
+        <div class="p-6">
+            <div class="text-center py-12">
+                <div class="text-gray-400 mb-6">
+                    <i class="fas fa-user-times text-8xl"></i>
+                </div>
+                <h3 class="text-xl font-medium text-gray-900 mb-4">Tài khoản chưa được liên kết</h3>
+                <p class="text-gray-500 mb-6 max-w-md mx-auto">
+                    Tài khoản của bạn chưa được liên kết với bất kỳ thông tin khách thuê nào. 
+                    Vui lòng liên hệ với quản lý để được hỗ trợ.
+                </p>
+                
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <a href="{% url 'user_phongtro:tim_phong' %}" 
+                       class="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors">
+                        <i class="fas fa-search mr-2"></i>Tìm phòng trọ
+                    </a>
+                    
+                    <a href="{% url 'dungchung:home' %}" 
+                       class="bg-gray-600 text-white px-6 py-3 rounded-md hover:bg-gray-700 transition-colors">
+                        <i class="fas fa-home mr-2"></i>Về trang chủ
+                    </a>
+                </div>
+
+                <!-- Contact info -->
+                <div class="mt-12 bg-gray-50 rounded-lg p-6 max-w-md mx-auto">
+                    <h4 class="font-semibold text-gray-800 mb-3">Cần hỗ trợ?</h4>
+                    <div class="space-y-2 text-sm text-gray-600">
+                        <p>
+                            <i class="fas fa-phone mr-2"></i>
+                            Hotline: 0123.456.789
+                        </p>
+                        <p>
+                            <i class="fas fa-envelope mr-2"></i>
+                            Email: support@nhatro.com
+                        </p>
+                        <p>
+                            <i class="fas fa-clock mr-2"></i>
+                            Thời gian hỗ trợ: 8:00 - 22:00 hàng ngày
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

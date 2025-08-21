@@ -1,0 +1,307 @@
+{% extends 'index/index_layout.html' %}
+
+{% block title %}Chi tiết hóa đơn{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <!-- Header -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900 mb-2">Chi tiết hóa đơn</h1>
+                    <p class="text-gray-600">Mã hóa đơn: <span class="font-semibold">{{ hoa_don.MA_HOA_DON }}</span></p>
+                </div>
+                <div class="text-right">
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium 
+                                 {% if hoa_don.TRANG_THAI_HDON == 'Đã thanh toán' %}bg-green-100 text-green-800
+                                 {% elif hoa_don.TRANG_THAI_HDON == 'Chưa thanh toán' %}bg-yellow-100 text-yellow-800
+                                 {% else %}bg-gray-100 text-gray-800{% endif %}">
+                        {{ hoa_don.TRANG_THAI_HDON }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Thông tin hóa đơn -->
+        <div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+            <div class="px-6 py-4 bg-blue-50 border-b border-blue-200">
+                <h2 class="text-lg font-semibold text-blue-900 flex items-center">
+                    <i class="fas fa-receipt text-blue-600 mr-2"></i>
+                    {{ hoa_don.LOAI_HOA_DON }}
+                </h2>
+            </div>
+            
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Ngày lập hóa đơn</label>
+                        <p class="text-gray-900 font-medium">{{ hoa_don.NGAY_LAP_HDON|date:"d/m/Y" }}</p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Phòng</label>
+                        <p class="text-gray-900 font-medium">{{ hoa_don.MA_PHONG.TEN_PHONG }}</p>
+                    </div>
+                    
+                    {% if hop_dong %}
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Mã hợp đồng</label>
+                        <p class="text-gray-900 font-medium">{{ hop_dong.MA_HOP_DONG }}</p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Loại hóa đơn</label>
+                        <p class="text-gray-900 font-medium">{{ hoa_don.LOAI_HOA_DON }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Chi tiết các khoản phí -->
+                <div class="border border-gray-200 rounded-lg overflow-hidden">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Khoản phí
+                                </th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Số tiền
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% if hoa_don.TIEN_PHONG and hoa_don.TIEN_PHONG != 0 %}
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-home text-blue-500 mr-2"></i>
+                                        Tiền phòng
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-medium">
+                                    {{ hoa_don.TIEN_PHONG|floatformat:0 }} VNĐ
+                                </td>
+                            </tr>
+                            {% endif %}
+                            
+                            {% if hoa_don.TIEN_DICH_VU and hoa_don.TIEN_DICH_VU != 0 %}
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-tools text-green-500 mr-2"></i>
+                                        Tiền dịch vụ
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-medium">
+                                    {{ hoa_don.TIEN_DICH_VU|floatformat:0 }} VNĐ
+                                </td>
+                            </tr>
+                            {% endif %}
+                            
+                            {% if hoa_don.TIEN_COC and hoa_don.TIEN_COC != 0 %}
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-piggy-bank text-yellow-500 mr-2"></i>
+                                        {% if hoa_don.TIEN_COC > 0 %}Tiền cọc{% else %}Hoàn tiền cọc{% endif %}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-medium 
+                                           {% if hoa_don.TIEN_COC > 0 %}text-red-600{% else %}text-green-600{% endif %}">
+                                    {{ hoa_don.TIEN_COC|floatformat:0 }} VNĐ
+                                </td>
+                            </tr>
+                            {% endif %}
+                            
+                            {% if hoa_don.TIEN_KHAU_TRU and hoa_don.TIEN_KHAU_TRU != 0 %}
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-minus-circle text-red-500 mr-2"></i>
+                                        Tiền khấu trừ/phí phạt
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-medium text-red-600">
+                                    {{ hoa_don.TIEN_KHAU_TRU|floatformat:0 }} VNĐ
+                                </td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                        <tfoot class="bg-gray-50">
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-lg font-bold text-gray-900">
+                                    Tổng tiền
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-lg font-bold text-right 
+                                           {% if hoa_don.TONG_TIEN >= 0 %}text-blue-600{% else %}text-green-600{% endif %}">
+                                    {{ hoa_don.TONG_TIEN|floatformat:0 }} VNĐ
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <!-- Ghi chú nếu có -->
+                {% if hoa_don.TONG_TIEN < 0 %}
+                <div class="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-info-circle text-green-400"></i>
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="text-sm font-medium text-green-800">
+                                Hóa đơn hoàn tiền
+                            </h3>
+                            <p class="mt-1 text-sm text-green-700">
+                                Đây là hóa đơn hoàn tiền. Số tiền âm có nghĩa là bạn sẽ được hoàn lại số tiền này.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Thông tin thanh toán -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <i class="fas fa-credit-card text-blue-600 mr-2"></i>
+                Thông tin thanh toán
+            </h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium 
+                                 {% if hoa_don.TRANG_THAI_HDON == 'Đã thanh toán' %}bg-green-100 text-green-800
+                                 {% elif hoa_don.TRANG_THAI_HDON == 'Chưa thanh toán' %}bg-yellow-100 text-yellow-800
+                                 {% else %}bg-gray-100 text-gray-800{% endif %}">
+                        {{ hoa_don.TRANG_THAI_HDON }}
+                    </span>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Số tiền cần thanh toán</label>
+                    <p class="text-xl font-bold {% if hoa_don.TONG_TIEN >= 0 %}text-red-600{% else %}text-green-600{% endif %}">
+                        {% if hoa_don.TONG_TIEN >= 0 %}
+                            {{ hoa_don.TONG_TIEN|floatformat:0 }} VNĐ
+                        {% else %}
+                            Được hoàn: {{ hoa_don.TONG_TIEN|floatformat:0|slice:"1:" }} VNĐ
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            
+            {% if hoa_don.TRANG_THAI_HDON == 'Chưa thanh toán' and hoa_don.TONG_TIEN > 0 %}
+            <div class="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-exclamation-triangle text-yellow-400"></i>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-yellow-800">
+                            Cần thanh toán
+                        </h3>
+                        <p class="mt-1 text-sm text-yellow-700">
+                            Vui lòng liên hệ chủ trọ để thực hiện thanh toán hóa đơn này.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Actions -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Thao tác</h3>
+            
+            <div class="flex flex-wrap gap-3">
+                <a href="{% url 'user_hopdong:xuat_hoa_don_pdf' hoa_don.MA_HOA_DON %}" 
+                   class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition">
+                    <i class="fas fa-download mr-2"></i>
+                    Tải PDF
+                </a>
+                
+                <button onclick="printInvoice()" 
+                        class="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition">
+                    <i class="fas fa-print mr-2"></i>
+                    In hóa đơn
+                </button>
+                
+                <button onclick="shareInvoice()" 
+                        class="inline-flex items-center px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-md hover:bg-purple-700 transition">
+                    <i class="fas fa-share mr-2"></i>
+                    Chia sẻ
+                </button>
+                
+                {% if hop_dong %}
+                <a href="{% url 'user_hopdong:thong_tin_hop_dong' hop_dong.MA_HOP_DONG %}" 
+                   class="inline-flex items-center px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-md hover:bg-gray-700 transition">
+                    <i class="fas fa-file-contract mr-2"></i>
+                    Xem hợp đồng
+                </a>
+                {% endif %}
+                
+                <a href="javascript:history.back()" 
+                   class="inline-flex items-center px-4 py-2 bg-gray-300 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-400 transition">
+                    <i class="fas fa-arrow-left mr-2"></i>
+                    Quay lại
+                </a>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+function printInvoice() {
+    window.print();
+}
+
+function shareInvoice() {
+    if (navigator.share) {
+        navigator.share({
+            title: 'Hóa đơn {{ hoa_don.LOAI_HOA_DON }}',
+            text: 'Hóa đơn {{ hoa_don.LOAI_HOA_DON }} - Mã: {{ hoa_don.MA_HOA_DON }}',
+            url: window.location.href
+        });
+    } else {
+        // Fallback cho browser không hỗ trợ Web Share API
+        navigator.clipboard.writeText(window.location.href).then(() => {
+            alert('Đã sao chép link hóa đơn vào clipboard!');
+        });
+    }
+}
+
+// CSS cho print
+const printCSS = `
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    .print-area, .print-area * {
+        visibility: visible;
+    }
+    .print-area {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+    }
+    .no-print {
+        display: none !important;
+    }
+}
+`;
+
+// Thêm CSS cho print
+const style = document.createElement('style');
+style.textContent = printCSS;
+document.head.appendChild(style);
+
+// Đánh dấu khu vực cần in
+document.querySelector('.max-w-4xl').classList.add('print-area');
+</script>
+{% endblock %}

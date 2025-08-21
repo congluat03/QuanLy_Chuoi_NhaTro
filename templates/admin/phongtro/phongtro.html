@@ -265,6 +265,31 @@
             <!-- Menu dropdown -->
             <div id="menuPhongTro-{{ phong_tro.MA_PHONG }}"
                 class="hidden absolute top-10 right-2 bg-white border border-gray-100 rounded-lg shadow-xl w-56 z-50 animate-fadeIn">
+              
+              <!-- Workflow Actions -->
+              {% if phong_tro.current_contract %}
+                {% for action in phong_tro.workflow_actions %}
+                <a href="#" onclick="showRoomWorkflowModal('{{ action.action }}', {{ phong_tro.MA_PHONG }}, {{ phong_tro.current_contract.MA_HOP_DONG }})"
+                  class="flex items-center gap-2 px-3 py-2 text-sm text-{{ action.color }}-600 hover:bg-{{ action.color }}-50 hover:text-{{ action.color }}-700">
+                  <i class="{{ action.icon }} w-3"></i> {{ action.label }}
+                </a>
+                {% endfor %}
+                
+                {% if phong_tro.workflow_actions %}
+                <hr class="border-gray-100">
+                {% endif %}
+              {% else %}
+                <!-- Phòng trống - có thể tạo hợp đồng mới -->
+                {% if phong_tro.TRANG_THAI_P == 'Đang trống' %}
+                <a href="#" onclick="showRoomWorkflowModal('create_contract', {{ phong_tro.MA_PHONG }})"
+                  class="flex items-center gap-2 px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 hover:text-blue-700">
+                  <i class="fas fa-file-plus w-3"></i> Tạo hợp đồng mới
+                </a>
+                <hr class="border-gray-100">
+                {% endif %}
+              {% endif %}
+              
+              <!-- Standard Actions -->
               <a href="#" onclick="showModalPhongTro('chinhsua', {{ phong_tro.MA_PHONG }}, {{ ma_khu_vuc }}, '{{ phong_tro.TEN_PHONG }}')"
                 class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:bg-indigo-50 hover:text-indigo-600">
                 <i class="fas fa-edit w-3"></i> Chỉnh sửa phòng
@@ -378,4 +403,192 @@
         animation: fadeIn 0.2s ease forwards;
     }
 </style>
+
+<script>
+// Room workflow modal functions
+let currentRoomId = null;
+let currentRoomContractId = null;
+let currentRoomAction = null;
+
+function showRoomWorkflowModal(action, roomId, contractId = null) {
+    currentRoomId = roomId;
+    currentRoomContractId = contractId;
+    currentRoomAction = action;
+    
+    // Close any existing room menu
+    const existingMenus = document.querySelectorAll('[id^="menuPhongTro-"]');
+    existingMenus.forEach(menu => menu.classList.add('hidden'));
+    
+    // Handle different actions
+    if (action === 'create_contract') {
+        // For new contract creation, redirect to contract creation page
+        window.location.href = `/admin/hopdong/viewthem/?ma_phong=${roomId}`;
+        return;
+    } else if (action === 'extend') {
+        showRoomExtensionModal();
+        return;
+    } else if (action === 'early_end') {
+        showRoomEarlyEndModal();
+        return;
+    } else {
+        // Show confirmation modal for simple actions
+        showRoomConfirmationModal(action);
+    }
+}
+
+function showRoomConfirmationModal(action) {
+    const actionTitles = {
+        'confirm': 'Xác nhận Hợp đồng',
+        'create_invoice': 'Tạo Hóa đơn',
+        'end': 'Kết thúc Hợp đồng',
+        'cancel': 'Hủy Hợp đồng'
+    };
+    
+    const modal = document.getElementById('workflowModal') || createRoomWorkflowModal();
+    const title = document.getElementById('workflowModalTitle');
+    const body = document.getElementById('workflowModalBody');
+    
+    title.textContent = actionTitles[action] || 'Thao tác Phòng trọ';
+    
+    body.innerHTML = `
+        <div class="text-center">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 mb-4">
+                <i class="fas fa-question-circle text-yellow-600 text-xl"></i>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">
+                Xác nhận thao tác
+            </h3>
+            <p class="text-sm text-gray-500 mb-6">
+                Bạn có chắc chắn muốn ${actionTitles[action].toLowerCase()} cho phòng này?
+            </p>
+            <div class="flex space-x-3">
+                <button onclick="executeRoomWorkflowAction()" class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition">
+                    Xác nhận
+                </button>
+                <button onclick="closeRoomWorkflowModal()" class="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400 transition">
+                    Hủy
+                </button>
+            </div>
+        </div>
+    `;
+    
+    modal.classList.remove('hidden');
+}
+
+function showRoomExtensionModal() {
+    const modal = document.getElementById('extensionModal') || createRoomExtensionModal();
+    modal.classList.remove('hidden');
+    
+    // Set minimum date to today
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('newEndDate').setAttribute('min', today);
+}
+
+function showRoomEarlyEndModal() {
+    const modal = document.getElementById('earlyEndModal') || createRoomEarlyEndModal();
+    modal.classList.remove('hidden');
+    
+    // Set minimum date to today  
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('earlyEndDate').setAttribute('min', today);
+}
+
+function closeRoomWorkflowModal() {
+    const modal = document.getElementById('workflowModal');
+    if (modal) modal.classList.add('hidden');
+    
+    currentRoomId = null;
+    currentRoomContractId = null;
+    currentRoomAction = null;
+}
+
+function executeRoomWorkflowAction() {
+    if (!currentRoomId || !currentRoomAction) {
+        alert('Lỗi: Không có thông tin phòng trọ hoặc thao tác.');
+        return;
+    }
+    
+    // Show loading
+    const body = document.getElementById('workflowModalBody');
+    if (body) {
+        body.innerHTML = `
+            <div class="text-center">
+                <div class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p class="text-blue-600 font-medium">Đang xử lý...</p>
+            </div>
+        `;
+    }
+    
+    // Get CSRF token
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value ||
+                     document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    
+    if (!csrfToken) {
+        alert('Lỗi: Không tìm thấy CSRF token.');
+        closeRoomWorkflowModal();
+        return;
+    }
+    
+    // Make AJAX request
+    fetch('/admin/phongtro/room-workflow-action/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({
+            action: currentRoomAction,
+            room_id: currentRoomId,
+            contract_id: currentRoomContractId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (data.redirect) {
+                window.location.href = data.redirect;
+            } else {
+                alert(data.message || 'Thao tác thành công!');
+                location.reload(); // Refresh the page to show updated data
+            }
+        } else {
+            alert(data.message || 'Có lỗi xảy ra!');
+        }
+        closeRoomWorkflowModal();
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Lỗi kết nối!');
+        closeRoomWorkflowModal();
+    });
+}
+
+// Helper function to create workflow modal if it doesn't exist
+function createRoomWorkflowModal() {
+    if (document.getElementById('workflowModal')) {
+        return document.getElementById('workflowModal');
+    }
+    
+    const modalHTML = `
+        <div id="workflowModal" tabindex="-1" role="dialog" aria-modal="true" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-60 hidden transition-opacity duration-300 ease-in-out">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 transform transition-all duration-300">
+                <div class="flex items-center justify-between px-6 py-4 bg-blue-600 rounded-t-xl">
+                    <h4 id="workflowModalTitle" class="text-white text-xl font-semibold">
+                        Thao tác Phòng trọ
+                    </h4>
+                    <button type="button" aria-label="Đóng" onclick="closeRoomWorkflowModal()" class="text-white text-2xl font-bold hover:text-blue-200 focus:outline-none transition">
+                        ×
+                    </button>
+                </div>
+                <div id="workflowModalBody" class="px-6 py-6">
+                    <!-- Content will be dynamically loaded here -->
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    return document.getElementById('workflowModal');
+}
+</script>
 {% endblock %}

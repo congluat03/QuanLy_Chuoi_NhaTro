@@ -1,0 +1,156 @@
+<!-- Section Lịch sử Gia hạn -->
+<div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+    <div class="flex justify-between items-center mb-6">
+        <h3 class="text-xl font-bold text-gray-800 flex items-center">
+            <i class="fas fa-history text-purple-600 mr-3"></i>
+            Lịch sử Gia hạn
+            {% if so_lan_gia_han > 0 %}
+                <span class="ml-2 bg-purple-100 text-purple-800 text-xs font-semibold px-2 py-1 rounded-full">
+                    {{ so_lan_gia_han }} lần
+                </span>
+            {% endif %}
+        </h3>
+        
+        {% if hop_dong.TRANG_THAI_HD in 'Đang hoạt động,Sắp kết thúc' %}
+        <button onclick="hienThiModalGiaHan({
+            MA_HOP_DONG: {{ hop_dong.MA_HOP_DONG }},
+            TEN_PHONG: '{{ hop_dong.MA_PHONG.TEN_PHONG|default:"-" }}',
+            TEN_KHACH_THUE: '{% if khach_thue %}{{ khach_thue.MA_KHACH_THUE.HO_TEN_KT }}{% else %}-{% endif %}',
+            NGAY_TRA_PHONG: '{{ hop_dong.NGAY_TRA_PHONG|date:"Y-m-d" }}',
+            GIA_THUE: {{ hop_dong.GIA_THUE|default:0 }},
+            THOI_HAN_HD: '{{ hop_dong.THOI_HAN_HD|default:"-" }}',
+            TRANG_THAI_HD: '{{ hop_dong.TRANG_THAI_HD|default:"-" }}'
+        })" 
+        class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
+            <i class="fas fa-calendar-plus mr-2"></i>
+            Gia hạn hợp đồng
+        </button>
+        {% endif %}
+    </div>
+
+    {% if lich_su_gia_han %}
+        <!-- Danh sách lịch sử gia hạn -->
+        <div class="space-y-4">
+            {% for gia_han in lich_su_gia_han %}
+            <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                    <!-- Thông tin chính -->
+                    <div class="flex-1">
+                        <div class="flex items-center mb-2">
+                            <span class="bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-1 rounded mr-3">
+                                Lần {{ forloop.counter }}
+                            </span>
+                            <span class="text-gray-600 text-sm">
+                                <i class="fas fa-calendar mr-1"></i>
+                                {{ gia_han.NGAY_GIA_HAN|date:"d/m/Y H:i" }}
+                            </span>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
+                            <!-- Ngày trả phòng mới -->
+                            <div class="flex items-center">
+                                <i class="fas fa-calendar-check text-green-600 mr-2"></i>
+                                <span class="text-gray-600">Gia hạn đến:</span>
+                                <span class="font-semibold ml-1 text-green-700">
+                                    {{ gia_han.NGAY_TRA_PHONG_MOI|date:"d/m/Y" }}
+                                </span>
+                            </div>
+                            
+                            <!-- Giá thuê mới (nếu có) -->
+                            {% if gia_han.GIA_THUE_MOI %}
+                            <div class="flex items-center">
+                                <i class="fas fa-money-bill-wave text-blue-600 mr-2"></i>
+                                <span class="text-gray-600">Giá mới:</span>
+                                <span class="font-semibold ml-1 text-blue-700">
+                                    {{ gia_han.GIA_THUE_MOI|floatformat:0 }} VNĐ
+                                </span>
+                            </div>
+                            {% endif %}
+                            
+                            <!-- Thời hạn mới (nếu có) -->
+                            {% if gia_han.THOI_HAN_MOI %}
+                            <div class="flex items-center">
+                                <i class="fas fa-clock text-purple-600 mr-2"></i>
+                                <span class="text-gray-600">Thời hạn:</span>
+                                <span class="font-semibold ml-1 text-purple-700">
+                                    {{ gia_han.THOI_HAN_MOI }}
+                                </span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Lý do gia hạn -->
+                        {% if gia_han.LY_DO_GIA_HAN %}
+                        <div class="mt-3 p-3 bg-gray-50 rounded-lg">
+                            <div class="flex items-start">
+                                <i class="fas fa-comment-alt text-gray-500 mr-2 mt-0.5"></i>
+                                <div>
+                                    <span class="text-gray-600 text-sm font-medium">Lý do:</span>
+                                    <p class="text-gray-700 text-sm mt-1">{{ gia_han.LY_DO_GIA_HAN }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Badge thời gian -->
+                    <div class="flex-shrink-0">
+                        <div class="text-center">
+                            <div class="bg-gradient-to-r from-blue-500 to-purple-600 text-white text-xs font-semibold px-3 py-1 rounded-full">
+                                Mã: {{ gia_han.MA_GIA_HAN }}
+                            </div>
+                            <div class="text-xs text-gray-500 mt-1">
+                                {{ gia_han.NGAY_GIA_HAN|timesince }} trước
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Timeline summary -->
+        <div class="mt-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-100">
+            <div class="flex items-center justify-center">
+                <div class="text-center">
+                    <i class="fas fa-chart-line text-blue-600 text-2xl mb-2"></i>
+                    <p class="text-sm text-gray-600">
+                        Hợp đồng đã được gia hạn <span class="font-bold text-blue-700">{{ so_lan_gia_han }} lần</span>
+                        {% if lich_su_gia_han.first %}
+                            , lần cuối: {{ lich_su_gia_han.first.NGAY_GIA_HAN|date:"d/m/Y" }}
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+    {% else %}
+        <!-- Chưa có lịch sử gia hạn -->
+        <div class="text-center py-12">
+            <div class="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                <i class="fas fa-calendar-alt text-gray-400 text-3xl"></i>
+            </div>
+            <h4 class="text-lg font-semibold text-gray-600 mb-2">Chưa có lịch sử gia hạn</h4>
+            <p class="text-gray-500 text-sm mb-6">Hợp đồng này chưa được gia hạn lần nào</p>
+            
+            {% if hop_dong.TRANG_THAI_HD in 'Đang hoạt động,Sắp kết thúc' %}
+            <button onclick="hienThiModalGiaHan({
+                MA_HOP_DONG: {{ hop_dong.MA_HOP_DONG }},
+                TEN_PHONG: '{{ hop_dong.MA_PHONG.TEN_PHONG|default:"-" }}',
+                TEN_KHACH_THUE: '{% if khach_thue %}{{ khach_thue.MA_KHACH_THUE.HO_TEN_KT }}{% else %}-{% endif %}',
+                NGAY_TRA_PHONG: '{{ hop_dong.NGAY_TRA_PHONG|date:"Y-m-d" }}',
+                GIA_THUE: {{ hop_dong.GIA_THUE|default:0 }},
+                THOI_HAN_HD: '{{ hop_dong.THOI_HAN_HD|default:"-" }}',
+                TRANG_THAI_HD: '{{ hop_dong.TRANG_THAI_HD|default:"-" }}'
+            })" 
+            class="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
+                <i class="fas fa-calendar-plus mr-2"></i>
+                Thực hiện gia hạn đầu tiên
+            </button>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+
+<!-- Include modal gia hạn -->
+{% include 'admin/hopdong/modal_gia_han_hop_dong.html' %}

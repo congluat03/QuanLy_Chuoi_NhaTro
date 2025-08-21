@@ -4,71 +4,79 @@
 {% block title %}Ghi số dịch vụ sử dụng{% endblock %}
 
 {% block content_body %}
-<div class="w-full px-4 sm:px-8">
-    <div class="bg-white shadow-xl rounded-2xl p-6 sm:p-8">
-        <!-- Header -->
-        <div class="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
-            <h1 class="text-3xl font-extrabold text-gray-800 flex items-center">
-                <svg class="w-8 h-8 text-green-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                </svg>
-                Ghi số dịch vụ sử dụng
-            </h1>
+<div class="max-w-6xl mx-auto px-6 sm:px-8 lg:px-10 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+    <div class="bg-white border-b border-gray-200 px-6 py-4">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <div class="w-10 h-10 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">Ghi số dịch vụ sử dụng</h1>
+                    <p class="text-sm text-gray-600">Quản lý chỉ số tiêu thụ dịch vụ theo phòng</p>
+                </div>
+            </div>
             <a href="{% url 'dichvu:dichvu_list' %}" 
-               class="inline-flex items-center px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition duration-300 shadow">
+               class="inline-flex items-center px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition duration-200">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                 </svg>
                 Quay lại
             </a>
         </div>
+    </div>
+    </div>
 
-        <!-- Messages -->
-        {% if messages %}
-            <div class="mb-6">
-                {% for message in messages %}
-                    <div class="p-4 mb-3 rounded-lg border-l-4 {% if message.tags == 'error' %}bg-red-50 border-red-400 text-red-800{% else %}bg-green-50 border-green-400 text-green-800{% endif %}">
-                        <div class="flex">
-                            <div class="flex-shrink-0">
-                                {% if message.tags == 'error' %}
-                                    <svg class="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
-                                    </svg>
-                                {% else %}
-                                    <svg class="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                                    </svg>
-                                {% endif %}
-                            </div>
-                            <div class="ml-3">
-                                <p class="text-sm font-medium">{{ message }}</p>
-                            </div>
+    <!-- Messages -->
+    {% if messages %}
+        <div class="px-6 py-4">
+            {% for message in messages %}
+                <div class="p-4 mb-3 rounded-lg border-l-4 {% if message.tags == 'error' %}bg-red-50 border-red-400 text-red-800{% else %}bg-green-50 border-green-400 text-green-800{% endif %}">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            {% if message.tags == 'error' %}
+                                <svg class="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                                </svg>
+                            {% else %}
+                                <svg class="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                </svg>
+                            {% endif %}
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm font-medium">{{ message }}</p>
                         </div>
                     </div>
-                {% endfor %}
-            </div>
-        {% endif %}
-
-        <!-- Form -->
-        <form method="post" id="ghiSoDichVuForm" class="space-y-6">
-            {% csrf_token %}
-            
-            <!-- Thông tin cơ bản -->
-            <div class="bg-gray-50 rounded-xl p-6 border border-gray-200">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    
+    <!-- Main Layout -->
+    <div class="max-w-screen-xl mx-auto flex h-screen">
+        <!-- Left Sidebar - 30% -->
+        <div class="w-[30%] bg-white border-r border-gray-200 flex flex-col">
+            <!-- Filter Section -->
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                     <svg class="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.414A1 1 0 013 6.707V4z"></path>
                     </svg>
-                    Thông tin cơ bản
+                    Bộ lọc phòng
                 </h3>
                 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="space-y-4">
                     <div>
                         <label for="khu_vuc" class="block text-sm font-medium text-gray-700 mb-2">
                             Khu vực <span class="text-red-500">*</span>
                         </label>
                         <select id="khu_vuc" name="khu_vuc" required
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200">
+                                class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-sm">
                             <option value="">Chọn khu vực</option>
                             {% for kv in khu_vucs %}
                                 <option value="{{ kv.MA_KHU_VUC }}">{{ kv.TEN_KHU_VUC }}</option>
@@ -77,53 +85,98 @@
                     </div>
                     
                     <div>
-                        <label for="ma_phong" class="block text-sm font-medium text-gray-700 mb-2">
-                            Phòng trọ <span class="text-red-500">*</span>
-                        </label>
-                        <select id="ma_phong" name="ma_phong" required disabled
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 disabled:bg-gray-100 disabled:cursor-not-allowed">
-                            <option value="">Chọn phòng trọ</option>
-                        </select>
-                    </div>
-                    
-                    <div>
                         <label for="ngay_ghi_cs" class="block text-sm font-medium text-gray-700 mb-2">
-                            Ngày ghi chỉ số <span class="text-red-500">*</span>
+                            Ngày ghi chỉ số
                         </label>
                         <input type="date" id="ngay_ghi_cs" name="ngay_ghi_cs" required
                                value="{% now 'Y-m-d' %}"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200">
+                               class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-sm">
                     </div>
                 </div>
             </div>
 
-            <!-- Dịch vụ áp dụng -->
-            <div id="dich_vu_container" class="hidden">
-                <div class="bg-white border border-gray-200 rounded-xl p-6">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-6 flex items-center">
-                        <svg class="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                        </svg>
-                        Dịch vụ áp dụng
-                    </h3>
+            <!-- Room List -->
+            <div class="flex-1 overflow-hidden">
+                <div class="p-4 border-b border-gray-100">
+                    <h4 class="text-sm font-medium text-gray-700 uppercase tracking-wide">Phòng có hợp đồng hoạt động</h4>
+                    <p class="text-xs text-gray-500 mt-1">Chỉ hiển thị phòng có hợp đồng đang hoạt động</p>
+                </div>
+                
+                <div id="room_list_container" class="flex-1 overflow-y-auto">
+                    <div id="room_list" class="p-4">
+                        <div class="text-center py-12 text-gray-500">
+                            <svg class="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                            </svg>
+                            <p class="text-sm">Vui lòng chọn khu vực để xem danh sách phòng</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Content - 70% -->
+        <div class="w-[70%] bg-gray-50 flex flex-col overflow-auto">
+            <!-- Content Header -->
+            <div class="bg-white border-b border-gray-200 px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">Form ghi chỉ số dịch vụ</h3>
+                        <p class="text-sm text-gray-600" id="selected_room_info">Chưa chọn phòng</p>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <span id="service_count_badge" class="hidden px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full">
+                            0 dịch vụ
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Content -->
+            <div class="flex-1 overflow-y-auto">
+                <form method="post" id="ghiSoDichVuForm" class="h-full">
+                    {% csrf_token %}
+                    <input type="hidden" id="ma_phong" name="ma_phong" value="">
+                    <input type="hidden" id="hidden_ngay_ghi_cs" name="ngay_ghi_cs" value="">
                     
-                    <div id="dich_vu_list" class="space-y-4">
-                        <!-- Các dịch vụ sẽ được load động -->
-                    </div>
-                </div>
-            </div>
+                    <div id="main_content" class="p-6">
+                        <!-- Empty State -->
+                        <div id="empty_state" class="flex flex-col items-center justify-center h-96 text-gray-500">
+                            <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                            </svg>
+                            <h3 class="text-lg font-medium text-gray-900 mb-2">Chưa chọn phòng</h3>
+                            <p class="text-sm text-gray-600 text-center max-w-md">
+                                Vui lòng chọn một phòng từ danh sách bên trái để bắt đầu ghi chỉ số dịch vụ
+                            </p>
+                        </div>
 
-            <!-- Submit button -->
-            <div class="flex justify-center pt-6">
-                <button type="submit" id="btn_luu" disabled
-                        class="inline-flex items-center px-8 py-3 bg-green-600 text-white text-lg font-semibold rounded-lg hover:bg-green-700 transition duration-300 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-green-600">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path>
-                    </svg>
-                    Lưu chỉ số dịch vụ
-                </button>
+                        <!-- Service Form -->
+                        <div id="service_form" class="hidden">
+                            <div id="dich_vu_list" class="space-y-6">
+                                <!-- Các dịch vụ sẽ được load động -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sticky Footer -->
+                    <div id="form_footer" class="hidden bg-white border-t border-gray-200 px-6 py-4">
+                        <div class="flex items-center justify-between">
+                            <div class="text-sm text-gray-600">
+                                <span id="total_services">0</span> dịch vụ được ghi nhận
+                            </div>
+                            <button type="submit" id="btn_luu" disabled
+                                    class="inline-flex items-center px-6 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path>
+                                </svg>
+                                Lưu chỉ số dịch vụ
+                            </button>
+                        </div>
+                    </div>
+                </form>
             </div>
-        </form>
+        </div>
     </div>
 </div>
 {% endblock %}
@@ -131,25 +184,54 @@
 {% block extra_js %}
 <script>
 $(document).ready(function() {
+    let currentSelectedRoom = null;
+    let isEditMode = false;
+    let existingReadings = {};
+    let billingPeriod = null;
+    
+    // Sync ngày ghi chỉ số vào hidden input
+    function syncNgayGhiCS() {
+        const ngayGhiCS = $('#ngay_ghi_cs').val();
+        $('#hidden_ngay_ghi_cs').val(ngayGhiCS);
+    }
+
     // Khi chọn khu vực
     $('#khu_vuc').change(function() {
         const khuVucId = $(this).val();
         if (khuVucId) {
             loadPhongTro(khuVucId);
-            loadDichVu(khuVucId);
         } else {
             resetForm();
         }
     });
 
-    // Khi chọn phòng trọ
-    $('#ma_phong').change(function() {
-        const maPhong = $(this).val();
-        if (maPhong) {
-            loadChiSoCu();
-            $('#btn_luu').prop('disabled', false);
-        } else {
-            $('#btn_luu').prop('disabled', true);
+    // Đồng bộ ngày ghi chỉ số khi thay đổi
+    $('#ngay_ghi_cs').change(function() {
+        syncNgayGhiCS();
+    });
+
+    // Sync ngày ghi chỉ số ban đầu
+    syncNgayGhiCS();
+
+    // Kiểm tra nếu có thông báo thành công, reload phòng đã chọn
+    $(document).ready(function() {
+        // Kiểm tra có message success không (sau khi form submit)
+        if ($('.bg-green-50').length > 0) {
+            // Nếu có room được chọn trước đó, reload nó
+            const urlParams = new URLSearchParams(window.location.search);
+            const roomParam = urlParams.get('room');
+            const areaParam = urlParams.get('area');
+            
+            if (roomParam && areaParam) {
+                $('#khu_vuc').val(areaParam).trigger('change');
+                setTimeout(function() {
+                    // Chọn lại phòng sau khi load xong phòng list
+                    const roomElement = $(`.room-card[data-ma-phong="${roomParam}"]`);
+                    if (roomElement.length > 0) {
+                        roomElement.click();
+                    }
+                }, 500);
+            }
         }
     });
 
@@ -158,19 +240,145 @@ $(document).ready(function() {
             url: '{% url "dichvu:lay_phong_theo_khu_vuc" %}',
             data: { 'khu_vuc_id': khuVucId },
             success: function(data) {
-                $('#ma_phong').empty().append('<option value="">Chọn phòng trọ</option>');
-                $.each(data.phong_tros, function(index, phong) {
-                    $('#ma_phong').append(`<option value="${phong.MA_PHONG}">${phong.TEN_PHONG || 'Phòng ' + phong.MA_PHONG}</option>`);
-                });
-                $('#ma_phong').prop('disabled', false);
+                const roomList = $('#room_list');
+                roomList.empty();
+                
+                if (data.phong_tros.length > 0) {
+                    $.each(data.phong_tros, function(index, phong) {
+                        const roomCard = createRoomCard(phong);
+                        roomList.append(roomCard);
+                    });
+                } else {
+                    roomList.append(`
+                        <div class="text-center py-8 text-gray-500">
+                            <svg class="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                            </svg>
+                            <p class="text-sm">Không có phòng nào đủ điều kiện</p>
+                            <p class="text-xs text-gray-400 mt-1">Phòng cần có hợp đồng đang hoạt động</p>
+                        </div>
+                    `);
+                }
             },
             error: function() {
-                alert('Có lỗi khi tải danh sách phòng trọ');
+                showNotification('Có lỗi khi tải danh sách phòng trọ', 'error');
             }
         });
     }
 
-    function loadDichVu(khuVucId) {
+    function createRoomCard(phong) {
+        return `
+            <div class="room-card bg-white border border-gray-200 rounded-lg p-4 mb-3 hover:border-blue-300 hover:shadow-md transition-all duration-200 cursor-pointer"
+                 data-ma-phong="${phong.MA_PHONG}" 
+                 onclick="selectRoom(${phong.MA_PHONG}, '${phong.TEN_PHONG || 'Phòng ' + phong.MA_PHONG}')">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h4 class="font-medium text-gray-900">${phong.TEN_PHONG || 'Phòng ' + phong.MA_PHONG}</h4>
+                            <p class="text-sm text-gray-500">Mã phòng: ${phong.MA_PHONG}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            <span class="w-1.5 h-1.5 bg-green-400 rounded-full mr-1.5"></span>
+                            Đang hoạt động
+                        </span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Global function để chọn phòng
+    window.selectRoom = function(maPhong, tenPhong) {
+        // Remove previous selection
+        $('.room-card').removeClass('border-blue-500 bg-blue-50');
+        
+        // Add selection to current room
+        $(`.room-card[data-ma-phong="${maPhong}"]`).addClass('border-blue-500 bg-blue-50');
+        
+        // Update hidden input
+        $('#ma_phong').val(maPhong);
+        currentSelectedRoom = { maPhong, tenPhong };
+        
+        // Update UI
+        $('#selected_room_info').text(`Đã chọn: ${tenPhong}`);
+        $('#empty_state').addClass('hidden');
+        $('#service_form').removeClass('hidden');
+        $('#form_footer').removeClass('hidden');
+        
+        // Kiểm tra chỉ số đã ghi trong kỳ
+        checkExistingReadings(maPhong);
+        
+        // Load services for this area
+        const khuVucId = $('#khu_vuc').val();
+        if (khuVucId) {
+            loadDichVu(khuVucId, maPhong);
+        }
+    };
+
+    // Kiểm tra chỉ số đã ghi trong kỳ thanh toán hiện tại
+    function checkExistingReadings(maPhong) {
+        // Clear previous notifications
+        $('.bg-amber-50').remove();
+        
+        $.ajax({
+            url: '{% url "dichvu:kiem_tra_chi_so_da_ghi" %}',
+            data: { 'ma_phong': maPhong },
+            success: function(data) {
+                console.log('Check existing readings response:', data); // Debug log
+                if (data.has_readings) {
+                    showEditModeNotification(data);
+                    isEditMode = true;
+                    existingReadings = data.readings;
+                    billingPeriod = data.billing_period;
+                } else {
+                    isEditMode = false;
+                    existingReadings = {};
+                    billingPeriod = null;
+                }
+            },
+            error: function(xhr) {
+                console.log('Lỗi khi kiểm tra chỉ số đã ghi:', xhr.responseJSON?.error);
+                isEditMode = false;
+                existingReadings = {};
+                billingPeriod = null;
+            }
+        });
+    }
+
+    // Hiển thị thông báo chế độ chỉnh sửa
+    function showEditModeNotification(data) {
+        const readingCount = Object.keys(data.readings).length;
+        const period = data.billing_period;
+        const notification = `
+            <div class="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <div class="flex items-start">
+                    <div class="flex-shrink-0">
+                        <svg class="w-5 h-5 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-amber-800">Chế độ chỉnh sửa</h3>
+                        <div class="mt-1 text-sm text-amber-700">
+                            <p>Phòng này đã có <strong>${readingCount} chỉ số</strong> được ghi trong kỳ thanh toán hiện tại 
+                               (${period.start} - ${period.end}, chu kỳ: ${period.chu_ky}).</p>
+                            <p class="mt-1">Bạn có thể chỉnh sửa, xóa hoặc thêm mới chỉ số dịch vụ.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        $('#main_content').prepend(notification);
+    }
+
+    function loadDichVu(khuVucId, maPhong) {
         $.ajax({
             url: '{% url "dichvu:lay_dich_vu_theo_khu_vuc" %}',
             data: { 'khu_vuc_id': khuVucId },
@@ -180,121 +388,244 @@ $(document).ready(function() {
                 
                 if (data.dich_vus.length > 0) {
                     $.each(data.dich_vus, function(index, dv) {
-                        const isCodinh = dv.MA_DICH_VU__LOAI_DICH_VU === 'Cố định';
+                        const serviceId = dv.MA_DICH_VU__MA_DICH_VU;
+                        const existingReading = existingReadings[serviceId] || null;
+                        const isCodinh = ['Cố định', 'Co dinh'].includes(dv.MA_DICH_VU__LOAI_DICH_VU);
+                        
                         const inputHtml = isCodinh ? 
-                            createSoLuongInput(dv) : 
-                            createChiSoInput(dv);
+                            createSoLuongInput(dv, existingReading) : 
+                            createChiSoInput(dv, existingReading);
                         dichVuList.append(inputHtml);
                     });
-                    $('#dich_vu_container').removeClass('hidden');
+                    
+                    // Update service count
+                    updateServiceCount(data.dich_vus.length);
+                    
+                    // Load previous readings
+                    loadChiSoCu(maPhong);
+                    
+                    // Enable save button
+                    $('#btn_luu').prop('disabled', false);
                 } else {
                     dichVuList.append(`
                         <div class="text-center py-12">
                             <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                             </svg>
-                            <p class="text-lg font-medium text-gray-600 mb-2">Không có dịch vụ nào</p>
+                            <h3 class="text-lg font-medium text-gray-900 mb-2">Không có dịch vụ nào</h3>
                             <p class="text-sm text-gray-500">Khu vực này chưa có dịch vụ nào được áp dụng.</p>
                         </div>
                     `);
-                    $('#dich_vu_container').removeClass('hidden');
+                    updateServiceCount(0);
                 }
             },
             error: function() {
-                alert('Có lỗi khi tải danh sách dịch vụ');
+                showNotification('Có lỗi khi tải danh sách dịch vụ', 'error');
             }
         });
     }
 
-    function createChiSoInput(dv) {
+    function updateServiceCount(count) {
+        $('#service_count_badge').removeClass('hidden').text(`${count} dịch vụ`);
+        $('#total_services').text(count);
+    }
+
+    function createChiSoInput(dv, existingReading = null) {
+        const isEdit = existingReading !== null;
+        const maChiSo = isEdit ? existingReading.MA_CHI_SO : '';
+        
+        // Trong edit mode: hiển thị đúng CHI_SO_CU và CHI_SO_MOI từ bản ghi đã lưu
+        // Trong new mode: CHI_SO_CU sẽ được load từ AJAX, CHI_SO_MOI để trống
+        const chiSoCu = isEdit ? existingReading.CHI_SO_CU : 0;
+        const chiSoMoi = isEdit ? existingReading.CHI_SO_MOI : '';
+        const soLuong = isEdit ? existingReading.SO_LUONG : 0;
+        const ngayGhiCS = isEdit ? existingReading.NGAY_GHI_CS : '';
+        
+        const editButtons = isEdit ? `
+            <div class="flex items-center space-x-2">
+                <button type="button" onclick="updateChiSo(${dv.MA_DICH_VU__MA_DICH_VU})" 
+                        class="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition">
+                    <svg class="w-3 h-3 mr-1 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                    </svg>
+                    Cập nhật
+                </button>
+                <button type="button" onclick="deleteChiSo(${dv.MA_DICH_VU__MA_DICH_VU}, '${dv.MA_DICH_VU__TEN_DICH_VU}')" 
+                        class="px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded-lg hover:bg-red-700 transition">
+                    <svg class="w-3 h-3 mr-1 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                    Xóa
+                </button>
+            </div>
+        ` : '';
+        
         return `
-            <div class="service-input-group bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6 shadow-sm" data-ma-dich-vu="${dv.MA_DICH_VU__MA_DICH_VU}">
-                <div class="flex items-center mb-4">
-                    <div class="w-3 h-3 bg-blue-500 rounded-full mr-3"></div>
-                    <h4 class="text-lg font-semibold text-gray-800">
-                        ${dv.MA_DICH_VU__TEN_DICH_VU} 
-                        <span class="text-sm font-normal text-gray-600">(${dv.MA_DICH_VU__DON_VI_TINH})</span>
-                    </h4>
-                </div>
-                <div class="mb-4 p-3 bg-blue-100 rounded-lg">
-                    <p class="text-sm text-blue-800 font-medium">
-                        Giá: ${formatCurrency(dv.GIA_DICH_VU_AD)}/${dv.MA_DICH_VU__DON_VI_TINH}
-                    </p>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Chỉ số cũ</label>
-                        <input type="number" 
-                               name="chi_so_cu_${dv.MA_DICH_VU__MA_DICH_VU}" 
-                               id="chi_so_cu_${dv.MA_DICH_VU__MA_DICH_VU}" 
-                               value="0" readonly
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed">
+            
+           <div class="service-input-group bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 ${isEdit ? 'border-amber-300 bg-amber-50' : ''}" 
+                data-ma-dich-vu="${dv.MA_DICH_VU__MA_DICH_VU}" 
+                data-ma-chi-so="${maChiSo}" 
+                data-is-edit="${isEdit}">
+                <div class="flex items-start justify-between mb-6">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-gray-900">
+                                ${dv.MA_DICH_VU__TEN_DICH_VU}
+                                ${isEdit ? '<span class="ml-2 px-2 py-1 bg-amber-200 text-amber-800 text-xs rounded-full">Đã ghi</span>' : ''}
+                            </h4>
+                            <p class="text-sm text-gray-500">Đơn vị: ${dv.MA_DICH_VU__DON_VI_TINH}</p>
+                            ${isEdit ? `<p class="text-xs text-amber-600">Đã ghi ngày: ${ngayGhiCS}</p>` : ''}
+                        </div>
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <div class="text-right">
+                        <p class="text-lg font-bold text-blue-600">${formatCurrency(dv.GIA_DICH_VU_AD)}</p>
+                        <p class="text-xs text-gray-500">/${dv.MA_DICH_VU__DON_VI_TINH}</p>
+                        ${editButtons}
+                    </div>
+                </div>
+                
+                <!-- Sửa đổi bố cục grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <div class="space-y-2">
+                        <label class="block text-sm font-medium text-gray-700">Chỉ số cũ</label>
+                        <div class="relative">
+                            <input type="number" 
+                                name="chi_so_cu_${dv.MA_DICH_VU__MA_DICH_VU}" 
+                                id="chi_so_cu_${dv.MA_DICH_VU__MA_DICH_VU}" 
+                                value="${chiSoCu}" readonly
+                                class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-600 font-medium cursor-not-allowed">
+                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <label class="block text-sm font-medium text-gray-700">
                             Chỉ số mới <span class="text-red-500">*</span>
                         </label>
                         <input type="number" 
-                               name="chi_so_moi_${dv.MA_DICH_VU__MA_DICH_VU}" 
-                               id="chi_so_moi_${dv.MA_DICH_VU__MA_DICH_VU}" 
-                               min="0" step="1" required
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200">
+                            name="chi_so_moi_${dv.MA_DICH_VU__MA_DICH_VU}" 
+                            id="chi_so_moi_${dv.MA_DICH_VU__MA_DICH_VU}" 
+                            min="0" step="1" ${isEdit ? '' : 'required'}
+                            value="${chiSoMoi}"
+                            placeholder="Nhập chỉ số mới"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200">
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Số lượng sử dụng</label>
+                </div>
+                
+                <!-- Cột tiêu thụ giữ nguyên -->
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">Tiêu thụ</label>
+                    <div class="relative">
                         <input type="number" 
-                               name="so_luong_display_${dv.MA_DICH_VU__MA_DICH_VU}" 
-                               value="0" readonly
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed">
+                            name="so_luong_display_${dv.MA_DICH_VU__MA_DICH_VU}" 
+                            value="${soLuong}" readonly
+                            class="w-full px-4 py-3 bg-green-50 border border-green-200 rounded-lg text-green-700 font-semibold cursor-not-allowed">
+                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                            <span class="text-xs text-green-600 font-medium">${dv.MA_DICH_VU__DON_VI_TINH}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-4 p-3 bg-gray-50 rounded-lg">
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="text-gray-600">Thành tiền dự kiến:</span>
+                        <span class="font-semibold text-gray-900" id="thanh_tien_${dv.MA_DICH_VU__MA_DICH_VU}">
+                            ${isEdit ? formatCurrency(soLuong * dv.GIA_DICH_VU_AD) : '0 ₫'}
+                        </span>
                     </div>
                 </div>
             </div>
         `;
     }
 
-    function createSoLuongInput(dv) {
+    function createSoLuongInput(dv, existingReading = null) {
+        const isEdit = existingReading !== null;
+        const maChiSo = isEdit ? existingReading.MA_CHI_SO : '';
+        const soLuong = isEdit ? existingReading.SO_LUONG : 1;
+        const ngayGhiCS = isEdit ? existingReading.NGAY_GHI_CS : '';
+        
+        const editButtons = isEdit ? `
+            <div class="flex items-center space-x-2">
+                <button type="button" onclick="updateChiSo(${dv.MA_DICH_VU__MA_DICH_VU})" 
+                        class="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition">
+                    Cập nhật
+                </button>
+                <button type="button" onclick="deleteChiSo(${dv.MA_DICH_VU__MA_DICH_VU}, '${dv.MA_DICH_VU__TEN_DICH_VU}')" 
+                        class="px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded-lg hover:bg-red-700 transition">
+                    Xóa
+                </button>
+            </div>
+        ` : '';
+        
         return `
-            <div class="service-input-group bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6 shadow-sm" data-ma-dich-vu="${dv.MA_DICH_VU__MA_DICH_VU}">
-                <div class="flex items-center mb-4">
-                    <div class="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
-                    <h4 class="text-lg font-semibold text-gray-800">
-                        ${dv.MA_DICH_VU__TEN_DICH_VU} 
-                        <span class="text-sm font-normal text-gray-600">(${dv.MA_DICH_VU__DON_VI_TINH})</span>
-                    </h4>
+            <div class="service-input-group bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 ${isEdit ? 'border-amber-300 bg-amber-50' : ''}" 
+                 data-ma-dich-vu="${dv.MA_DICH_VU__MA_DICH_VU}" 
+                 data-ma-chi-so="${maChiSo}" 
+                 data-is-edit="${isEdit}">
+                <div class="flex items-start justify-between mb-6">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-gray-900">
+                                ${dv.MA_DICH_VU__TEN_DICH_VU}
+                                ${isEdit ? '<span class="ml-2 px-2 py-1 bg-amber-200 text-amber-800 text-xs rounded-full">Đã ghi</span>' : ''}
+                            </h4>
+                            <p class="text-sm text-gray-500">Đơn vị: ${dv.MA_DICH_VU__DON_VI_TINH}</p>
+                            ${isEdit ? `<p class="text-xs text-amber-600">Đã ghi ngày: ${ngayGhiCS}</p>` : ''}
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-lg font-bold text-green-600">${formatCurrency(dv.GIA_DICH_VU_AD)}</p>
+                        <p class="text-xs text-gray-500">/${dv.MA_DICH_VU__DON_VI_TINH}</p>
+                        ${editButtons}
+                    </div>
                 </div>
-                <div class="mb-4 p-3 bg-green-100 rounded-lg">
-                    <p class="text-sm text-green-800 font-medium">
-                        Giá: ${formatCurrency(dv.GIA_DICH_VU_AD)}/${dv.MA_DICH_VU__DON_VI_TINH}
-                    </p>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Số lượng sử dụng</label>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                        <label class="block text-sm font-medium text-gray-700">Số lượng sử dụng</label>
                         <input type="number" 
                                name="so_luong_${dv.MA_DICH_VU__MA_DICH_VU}" 
-                               value="1" min="1" step="1"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition duration-200">
+                               value="${soLuong}" min="1" step="1"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition duration-200">
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Thành tiền</label>
-                        <input type="text" 
-                               value="${formatCurrency(dv.GIA_DICH_VU_AD)}" readonly
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed">
+                    
+                    <div class="space-y-2">
+                        <label class="block text-sm font-medium text-gray-700">Thành tiền</label>
+                        <div class="relative">
+                            <input type="text" 
+                                   value="${isEdit ? formatCurrency(soLuong * dv.GIA_DICH_VU_AD) : formatCurrency(dv.GIA_DICH_VU_AD)}" readonly
+                                   class="w-full px-4 py-3 bg-green-50 border border-green-200 rounded-lg text-green-700 font-semibold cursor-not-allowed">
+                        </div>
                     </div>
                 </div>
             </div>
         `;
     }
 
-    function loadChiSoCu() {
-        const maPhong = $('#ma_phong').val();
+    function loadChiSoCu(maPhong) {
         if (!maPhong) return;
 
         $('.service-input-group').each(function() {
             const maDichVu = $(this).data('ma-dich-vu');
+            const isEditMode = $(this).data('is-edit') === true || $(this).data('is-edit') === 'true';
             const chiSoCuInput = $(this).find(`#chi_so_cu_${maDichVu}`);
             
-            if (chiSoCuInput.length > 0) {
+            // Chỉ load chỉ số cũ nếu KHÔNG ở edit mode
+            if (chiSoCuInput.length > 0 && !isEditMode) {
                 $.ajax({
                     url: '{% url "dichvu:lay_chi_so_cu" %}',
                     data: { 
@@ -304,8 +635,14 @@ $(document).ready(function() {
                     success: function(data) {
                         chiSoCuInput.val(data.chi_so_cu);
                         updateSoLuong(maDichVu);
+                    },
+                    error: function() {
+                        console.log(`Không thể tải chỉ số cũ cho dịch vụ ${maDichVu}`);
                     }
                 });
+            } else if (isEditMode) {
+                // Trong edit mode, tính lại số lượng từ dữ liệu hiện có
+                updateSoLuong(maDichVu);
             }
         });
     }
@@ -316,11 +653,34 @@ $(document).ready(function() {
         updateSoLuong(maDichVu);
     });
 
+    // Tính toán thành tiền khi nhập số lượng dịch vụ cố định
+    $(document).on('input', 'input[name^="so_luong_"]', function() {
+        const maDichVu = $(this).attr('name').split('_').pop();
+        updateThanhTienCodinh(maDichVu);
+    });
+
     function updateSoLuong(maDichVu) {
         const chiSoCu = parseInt($(`#chi_so_cu_${maDichVu}`).val()) || 0;
         const chiSoMoi = parseInt($(`#chi_so_moi_${maDichVu}`).val()) || 0;
         const soLuong = Math.max(0, chiSoMoi - chiSoCu);
+        
         $(`input[name="so_luong_display_${maDichVu}"]`).val(soLuong);
+        
+        // Tính thành tiền
+        const serviceCard = $(`.service-input-group[data-ma-dich-vu="${maDichVu}"]`);
+        const giaDichVu = parseFloat(serviceCard.find('.text-blue-600').text().replace(/[^\d]/g, '')) || 0;
+        const thanhTien = soLuong * giaDichVu;
+        
+        $(`#thanh_tien_${maDichVu}`).text(formatCurrency(thanhTien));
+    }
+
+    function updateThanhTienCodinh(maDichVu) {
+        const soLuong = parseInt($(`input[name="so_luong_${maDichVu}"]`).val()) || 0;
+        const serviceCard = $(`.service-input-group[data-ma-dich-vu="${maDichVu}"]`);
+        const giaDichVu = parseFloat(serviceCard.find('.text-green-600').text().replace(/[^\d]/g, '')) || 0;
+        const thanhTien = soLuong * giaDichVu;
+        
+        serviceCard.find('input[readonly]').last().val(formatCurrency(thanhTien));
     }
 
     function formatCurrency(amount) {
@@ -331,13 +691,149 @@ $(document).ready(function() {
     }
 
     function resetForm() {
-        $('#ma_phong').empty().append('<option value="">Chọn phòng trọ</option>').prop('disabled', true);
-        $('#dich_vu_container').addClass('hidden');
+        $('#room_list').html(`
+            <div class="text-center py-12 text-gray-500">
+                <svg class="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                </svg>
+                <p class="text-sm">Vui lòng chọn khu vực để xem danh sách phòng</p>
+            </div>
+        `);
+        $('#empty_state').removeClass('hidden');
+        $('#service_form').addClass('hidden');
+        $('#form_footer').addClass('hidden');
+        $('#service_count_badge').addClass('hidden');
+        $('#selected_room_info').text('Chưa chọn phòng');
         $('#btn_luu').prop('disabled', true);
+        
+        // Reset all state variables
+        currentSelectedRoom = null;
+        isEditMode = false;
+        existingReadings = {};
+        billingPeriod = null;
+        
+        // Clear any notifications
+        $('.bg-amber-50').remove();
+        $('.border-l-4').parent().remove();
     }
+
+    function showNotification(message, type = 'success') {
+        const alertClass = type === 'error' ? 'bg-red-50 border-red-400 text-red-800' : 'bg-green-50 border-green-400 text-green-800';
+        const iconClass = type === 'error' ? 'text-red-400' : 'text-green-400';
+        const iconPath = type === 'error' ? 
+            'M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z' :
+            'M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z';
+        
+        const notification = $(`
+            <div class="p-4 mb-3 rounded-lg border-l-4 ${alertClass}">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="w-5 h-5 ${iconClass}" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="${iconPath}" clip-rule="evenodd"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm font-medium">${message}</p>
+                    </div>
+                </div>
+            </div>
+        `);
+        
+        // Remove existing notifications
+        $('.border-l-4').remove();
+        
+        // Add new notification
+        $('.min-h-screen > .px-6').first().after(`<div class="px-6 py-4">${notification.prop('outerHTML')}</div>`);
+        
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            $('.border-l-4').parent().fadeOut();
+        }, 5000);
+    }
+
+    // Hàm cập nhật chỉ số dịch vụ
+    window.updateChiSo = function(maDichVu) {
+        const serviceCard = $(`.service-input-group[data-ma-dich-vu="${maDichVu}"]`);
+        const maChiSo = serviceCard.data('ma-chi-so');
+        const isCodinh = serviceCard.find('input[name^="chi_so_moi_"]').length > 0;
+        let data = {
+            ma_chi_so: maChiSo,
+            ngay_ghi_cs: $('#ngay_ghi_cs').val()
+        };
+        
+        if (isCodinh) {
+            data.chi_so_moi = serviceCard.find(`input[name="chi_so_moi_${maDichVu}"]`).val();
+        } else {
+            data.so_luong = serviceCard.find(`input[name="so_luong_${maDichVu}"]`).val();
+        }
+        $.ajax({
+            url: '{% url "dichvu:cap_nhat_chi_so_dich_vu" %}',
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': $('[name=csrfmiddlewaretoken]').val(),
+                'Content-Type': 'application/json'
+            },
+            data: JSON.stringify(data),
+            success: function(response) {
+                showNotification(response.message, 'success');
+                // Reload dịch vụ để cập nhật UI
+                const khuVucId = $('#khu_vuc').val();
+                if (khuVucId && currentSelectedRoom) {
+                    checkExistingReadings(currentSelectedRoom.maPhong);
+                    loadDichVu(khuVucId, currentSelectedRoom.maPhong);
+                }
+            },
+            error: function(xhr) {
+                const error = xhr.responseJSON?.error || 'Có lỗi xảy ra khi cập nhật chỉ số';
+                showNotification(error, 'error');
+            }
+        });
+    };
+
+    // Hàm xóa chỉ số dịch vụ
+    window.deleteChiSo = function(maDichVu, tenDichVu) {
+        if (!confirm(`Bạn có chắc chắn muốn xóa chỉ số dịch vụ "${tenDichVu}"?`)) {
+            return;
+        }
+        
+        const serviceCard = $(`.service-input-group[data-ma-dich-vu="${maDichVu}"]`);
+        const maChiSo = serviceCard.data('ma-chi-so');
+        
+        $.ajax({
+            url: '{% url "dichvu:xoa_chi_so_dich_vu" %}',
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': $('[name=csrfmiddlewaretoken]').val(),
+                'Content-Type': 'application/json'
+            },
+            data: JSON.stringify({ ma_chi_so: maChiSo }),
+            success: function(response) {
+                showNotification(response.message, 'success');
+                // Reload dịch vụ để cập nhật UI
+                const khuVucId = $('#khu_vuc').val();
+                if (khuVucId && currentSelectedRoom) {
+                    checkExistingReadings(currentSelectedRoom.maPhong);
+                    loadDichVu(khuVucId, currentSelectedRoom.maPhong);
+                }
+            },
+            error: function(xhr) {
+                const error = xhr.responseJSON?.error || 'Có lỗi xảy ra khi xóa chỉ số';
+                showNotification(error, 'error');
+            }
+        });
+    };
 
     // Validation form trước khi submit
     $('#ghiSoDichVuForm').submit(function(e) {
+        // Đồng bộ ngày ghi chỉ số trước khi submit
+        syncNgayGhiCS();
+        
+        if (!currentSelectedRoom) {
+            e.preventDefault();
+            showNotification('Vui lòng chọn phòng trước khi lưu.', 'error');
+            return;
+        }
+
         let hasValue = false;
         $('input[name^="chi_so_moi_"], input[name^="so_luong_"]').each(function() {
             if ($(this).val() && $(this).val() > 0) {
@@ -348,8 +844,18 @@ $(document).ready(function() {
 
         if (!hasValue) {
             e.preventDefault();
-            alert('Vui lòng nhập ít nhất một chỉ số dịch vụ sử dụng.');
+            showNotification('Vui lòng nhập ít nhất một chỉ số dịch vụ sử dụng.', 'error');
+            return;
         }
+
+        // Show loading state
+        $('#btn_luu').prop('disabled', true).html(`
+            <svg class="animate-spin w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Đang lưu...
+        `);
     });
 });
 </script>

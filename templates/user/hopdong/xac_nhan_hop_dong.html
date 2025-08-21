@@ -1,0 +1,213 @@
+{% extends 'index/index_layout.html' %}
+
+{% block title %}Xác nhận hợp đồng{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <!-- Header -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <div class="text-center">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 mb-4">
+                    <i class="fas fa-file-contract text-blue-600 text-xl"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-gray-900 mb-2">Xác nhận hợp đồng thuê phòng</h1>
+                <p class="text-gray-600">Vui lòng kiểm tra thông tin và xác nhận hợp đồng để bắt đầu thuê phòng</p>
+            </div>
+        </div>
+
+        <!-- Thông tin hợp đồng -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <i class="fas fa-info-circle text-blue-600 mr-2"></i>
+                Thông tin hợp đồng
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Mã hợp đồng</label>
+                    <p class="text-gray-900 font-medium">{{ hop_dong.MA_HOP_DONG }}</p>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Phòng</label>
+                    <p class="text-gray-900 font-medium">{{ hop_dong.MA_PHONG.TEN_PHONG }}</p>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Giá thuê</label>
+                    <p class="text-gray-900 font-medium">{{ hop_dong.GIA_THUE|floatformat:0 }} VNĐ/tháng</p>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Tiền cọc</label>
+                    <p class="text-gray-900 font-medium">{{ hop_dong.GIA_COC_HD|floatformat:0 }} VNĐ</p>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Ngày nhận phòng</label>
+                    <p class="text-gray-900 font-medium">{{ hop_dong.NGAY_NHAN_PHONG|date:"d/m/Y" }}</p>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Ngày trả phòng</label>
+                    <p class="text-gray-900 font-medium">{{ hop_dong.NGAY_TRA_PHONG|date:"d/m/Y" }}</p>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Thời hạn</label>
+                    <p class="text-gray-900 font-medium">{{ hop_dong.THOI_HAN_HD }}</p>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Chu kỳ thanh toán</label>
+                    <p class="text-gray-900 font-medium">{{ hop_dong.CHU_KY_THANH_TOAN }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hóa đơn bắt đầu (nếu đã có) -->
+        {% if hoa_don_bat_dau %}
+        <div class="bg-green-50 rounded-lg border border-green-200 p-6 mb-6">
+            <h2 class="text-lg font-semibold text-green-800 mb-4 flex items-center">
+                <i class="fas fa-receipt text-green-600 mr-2"></i>
+                Hóa đơn bắt đầu hợp đồng
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-green-700 mb-1">Mã hóa đơn</label>
+                    <p class="text-green-900 font-medium">{{ hoa_don_bat_dau.MA_HOA_DON }}</p>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-green-700 mb-1">Ngày lập</label>
+                    <p class="text-green-900 font-medium">{{ hoa_don_bat_dau.NGAY_LAP_HDON|date:"d/m/Y" }}</p>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-green-700 mb-1">Tiền phòng</label>
+                    <p class="text-green-900 font-medium">{{ hoa_don_bat_dau.TIEN_PHONG|floatformat:0 }} VNĐ</p>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-green-700 mb-1">Tiền cọc</label>
+                    <p class="text-green-900 font-medium">{{ hoa_don_bat_dau.TIEN_COC|floatformat:0 }} VNĐ</p>
+                </div>
+                
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-green-700 mb-1">Tổng tiền</label>
+                    <p class="text-green-900 font-bold text-lg">{{ hoa_don_bat_dau.TONG_TIEN|floatformat:0 }} VNĐ</p>
+                </div>
+            </div>
+            
+            <div class="mt-4 flex gap-3">
+                <a href="{% url 'user_hopdong:xem_hoa_don' hoa_don_bat_dau.MA_HOA_DON %}" 
+                   class="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition">
+                    <i class="fas fa-eye mr-2"></i>
+                    Xem chi tiết
+                </a>
+                
+                <a href="{% url 'user_hopdong:xuat_hoa_don_pdf' hoa_don_bat_dau.MA_HOA_DON %}" 
+                   class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition">
+                    <i class="fas fa-download mr-2"></i>
+                    Tải PDF
+                </a>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Trạng thái xác nhận -->
+        {% if da_xac_nhan %}
+        <div class="bg-blue-50 rounded-lg border border-blue-200 p-6 mb-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-check-circle text-blue-600 text-2xl"></i>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-lg font-medium text-blue-900">Hợp đồng đã được xác nhận</h3>
+                    <p class="text-blue-700">Bạn đã xác nhận hợp đồng này vào {{ hop_dong.NGAY_KHACH_XAC_NHAN|date:"d/m/Y H:i" }}</p>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <!-- Form xác nhận -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <i class="fas fa-signature text-blue-600 mr-2"></i>
+                Xác nhận hợp đồng
+            </h2>
+            
+            <div class="bg-yellow-50 border border-yellow-200 rounded-md p-4 mb-6">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-exclamation-triangle text-yellow-600"></i>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-yellow-800">Lưu ý quan trọng</h3>
+                        <div class="mt-2 text-sm text-yellow-700">
+                            <ul class="list-disc pl-5 space-y-1">
+                                <li>Khi xác nhận hợp đồng, hóa đơn bắt đầu sẽ được tự động tạo</li>
+                                <li>Hóa đơn bao gồm tiền phòng tháng đầu và tiền cọc</li>
+                                <li>Vui lòng kiểm tra kỹ thông tin trước khi xác nhận</li>
+                                <li>Sau khi xác nhận, bạn không thể thay đổi thông tin hợp đồng</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <form method="post" class="space-y-6">
+                {% csrf_token %}
+                
+                <div class="flex items-center">
+                    <input id="confirm-checkbox" name="confirm" type="checkbox" required
+                           class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                    <label for="confirm-checkbox" class="ml-2 block text-sm text-gray-900">
+                        Tôi đã đọc và đồng ý với các điều khoản trong hợp đồng thuê phòng
+                    </label>
+                </div>
+                
+                <div class="flex gap-4">
+                    <button type="submit" 
+                            class="flex-1 bg-blue-600 text-white py-3 px-4 rounded-md font-medium hover:bg-blue-700 transition focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                        <i class="fas fa-check mr-2"></i>
+                        Xác nhận hợp đồng
+                    </button>
+                    
+                    <a href="{% url 'user_hopdong:thong_tin_hop_dong' hop_dong.MA_HOP_DONG %}" 
+                       class="flex-1 bg-gray-300 text-gray-700 py-3 px-4 rounded-md font-medium hover:bg-gray-400 transition text-center">
+                        <i class="fas fa-arrow-left mr-2"></i>
+                        Quay lại
+                    </a>
+                </div>
+            </form>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Enable/disable submit button based on checkbox
+    const checkbox = document.getElementById('confirm-checkbox');
+    const submitButton = document.querySelector('button[type="submit"]');
+    
+    if (checkbox && submitButton) {
+        function updateButton() {
+            submitButton.disabled = !checkbox.checked;
+            if (checkbox.checked) {
+                submitButton.classList.remove('opacity-50', 'cursor-not-allowed');
+            } else {
+                submitButton.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+        }
+        
+        checkbox.addEventListener('change', updateButton);
+        updateButton(); // Initial state
+    }
+});
+</script>
+{% endblock %}

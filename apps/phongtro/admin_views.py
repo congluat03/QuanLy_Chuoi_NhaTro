@@ -14,10 +14,21 @@ from django.db import transaction
 from django.views.decorators.http import require_POST
 from datetime import date
 from django.db.models import Q
+from apps.hopdong.services import HopDongWorkflowService
+import json
 
 
 
 def phongtro_list(request):
+    # Check user authentication and permissions
+    if not request.session.get('is_authenticated'):
+        return redirect('auth:login')
+    
+    vai_tro = request.session.get('vai_tro')
+    if vai_tro not in ['Chủ trọ', 'admin']:
+        messages.error(request, 'Bạn không có quyền truy cập chức năng này.')
+        return redirect('index:trang_chu')
+    
     # Lấy ma_khu_vuc và page_number từ query string (?ma_khu_vuc=...&page_number=...)
     ma_khu_vuc = request.GET.get('ma_khu_vuc')
     page_number = request.GET.get('page_number', 1)
@@ -66,7 +77,140 @@ def phongtro_list(request):
         'khu_vucs': khu_vucs,
     }
     
-    return render(request, 'admin/phongtro/phongtro.html', context)    
+    # Thêm thông tin workflow cho các phòng có hợp đồng
+    for phong in phong_tros_page:
+        # Lấy hợp đồng hiện tại của phòng (nếu có)
+        hop_dong = phong.hopdong.filter(TRANG_THAI_HD__in=['Hoạt động', 'Chưa ký', 'Sắp hết hạn']).first()
+        phong.current_contract = hop_dong
+        
+        # Thêm thông tin các actions có thể thực hiện
+        if hop_dong:
+            phong.workflow_actions = hop_dong.get_available_workflow_actions()
+        else:
+            phong.workflow_actions = []
+
+    return render(request, 'admin/phongtro/phongtro.html', context)
+
+
+def room_workflow_action(request):
+    """
+    Xử lý các thao tác workflow cho phòng trọ qua AJAX
+    """
+    # Check authentication and permissions
+    if not request.session.get('is_authenticated'):
+        return JsonResponse({'success': False, 'message': 'Bạn cần đăng nhập để thực hiện thao tác này'})
+    
+    vai_tro = request.session.get('vai_tro')
+    if vai_tro not in ['Chủ trọ', 'admin']:
+        return JsonResponse({'success': False, 'message': 'Bạn không có quyền thực hiện thao tác này'})
+    
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            action = data.get('action')
+            room_id = data.get('room_id')
+            contract_id = data.get('contract_id')
+            additional_data = data.get('data', {})
+            
+            if not room_id:
+                return JsonResponse({'success': False, 'message': 'ID phòng không hợp lệ'})
+            
+            # Lấy phòng trọ
+            phong = get_object_or_404(PhongTro, MA_PHONG=room_id)
+            
+            # Nếu có contract_id, lấy hợp đồng cụ thể
+            if contract_id:
+                hop_dong = get_object_or_404(HopDong, MA_HOP_DONG=contract_id)
+            else:
+                # Tìm hợp đồng hiện tại của phòng
+                hop_dong = phong.hopdong.filter(
+                    TRANG_THAI_HD__in=['Hoạt động', 'Chưa ký', 'Sắp hết hạn']
+                ).first()
+                
+                if not hop_dong:
+                    return JsonResponse({'success': False, 'message': 'Không tìm thấy hợp đồng hiện tại'})
+            
+            # Xử lý từng loại action
+            if action == 'create_contract':
+                # Tạo hợp đồng mới cho phòng trống
+                if phong.TRANG_THAI_P != 'Đang trống':
+                    return JsonResponse({'success': False, 'message': 'Phòng không ở trạng thái trống'})
+                
+                # Redirect đến trang tạo hợp đồng với MA_PHONG
+                return JsonResponse({
+                    'success': True, 
+                    'redirect': f'/admin/hopdong/viewthem/?ma_phong={room_id}',
+                    'message': 'Chuyển đến trang tạo hợp đồng'
+                })
+            
+            elif action == 'confirm':
+                result, message, errors = HopDongWorkflowService.xac_nhan_va_kich_hoat_hop_dong(hop_dong)
+                if result:
+                    return JsonResponse({'success': True, 'message': message})
+                else:
+                    return JsonResponse({'success': False, 'message': message, 'errors': errors})
+            
+            elif action == 'create_invoice':
+                result, message, errors = HopDongWorkflowService.tao_hoa_don_cho_hop_dong(hop_dong)
+                if result:
+                    return JsonResponse({'success': True, 'message': message})
+                else:
+                    return JsonResponse({'success': False, 'message': message, 'errors': errors})
+            
+            elif action == 'extend':
+                new_end_date = additional_data.get('new_end_date')
+                reason = additional_data.get('reason', '')
+                
+                if not new_end_date:
+                    return JsonResponse({'success': False, 'message': 'Ngày kết thúc mới không hợp lệ'})
+                
+                result, message, errors = HopDongWorkflowService.gia_han_hop_dong(
+                    hop_dong, new_end_date, reason
+                )
+                if result:
+                    return JsonResponse({'success': True, 'message': message})
+                else:
+                    return JsonResponse({'success': False, 'message': message, 'errors': errors})
+            
+            elif action == 'early_end':
+                early_end_date = additional_data.get('early_end_date')
+                reason = additional_data.get('reason', '')
+                
+                if not early_end_date or not reason:
+                    return JsonResponse({'success': False, 'message': 'Thiếu thông tin ngày và lý do'})
+                
+                result, message, errors = HopDongWorkflowService.bao_ket_thuc_som(
+                    hop_dong, early_end_date, reason
+                )
+                if result:
+                    return JsonResponse({'success': True, 'message': message})
+                else:
+                    return JsonResponse({'success': False, 'message': message, 'errors': errors})
+            
+            elif action == 'end':
+                result, message, errors = HopDongWorkflowService.ket_thuc_hop_dong(hop_dong)
+                if result:
+                    return JsonResponse({'success': True, 'message': message})
+                else:
+                    return JsonResponse({'success': False, 'message': message, 'errors': errors})
+            
+            elif action == 'cancel':
+                reason = additional_data.get('reason', 'Hủy từ giao diện quản lý')
+                result, message, errors = HopDongWorkflowService.huy_hop_dong(hop_dong, reason)
+                if result:
+                    return JsonResponse({'success': True, 'message': message})
+                else:
+                    return JsonResponse({'success': False, 'message': message, 'errors': errors})
+            
+            else:
+                return JsonResponse({'success': False, 'message': 'Thao tác không được hỗ trợ'})
+                
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'message': 'Dữ liệu JSON không hợp lệ'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'Lỗi hệ thống: {str(e)}'})
+    
+    return JsonResponse({'success': False, 'message': 'Chỉ hỗ trợ POST request'})
 
 
 
@@ -311,12 +455,6 @@ def view_lap_hop_dong(request, ma_phong):
                     'GIA_COC_HD': gia_coc,
                 }
                 
-                # Debug: Kiểm tra các giá trị quan trọng
-                print(f"DEBUG - SO_THANH_VIEN_TOI_DA: {request.POST.get('SO_THANH_VIEN_TOI_DA')} -> so_thanh_vien: {so_thanh_vien}")
-                print(f"DEBUG - GIA_COC_HD: {request.POST.get('GIA_COC_HD')} -> gia_coc: {gia_coc}")
-                print(f"DEBUG - THOI_HAN_HD: {request.POST.get('THOI_HAN_HD')}")
-                print(f"DEBUG - CHU_KY_THANH_TOAN: {request.POST.get('CHU_KY_THANH_TOAN')}")
-                print(f"DEBUG - NGAY_THU_TIEN: {request.POST.get('NGAY_THU_TIEN')}")
                 
                 # Tạo hợp đồng
                 hop_dong = HopDong.tao_hop_dong(hop_dong_data)

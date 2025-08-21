@@ -21,4 +21,8 @@ urlpatterns = [
     
     # User URLs  
     path('phong-tro/', include(('apps.phongtro.user_urls', 'phongtro'), namespace='user_phongtro')),
+    path('user/', include(('apps.hopdong.user_urls', 'user_hopdong'), namespace='user_hopdong')),
+    
+    # API URLs
+    path('api/hopdong/', include(('apps.hopdong.api_urls', 'hopdong_api'), namespace='hopdong_api')),
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -15,12 +15,14 @@ from dateutil.relativedelta import relativedelta
 from django.db import transaction
 from django.contrib import messages
 from django.forms.models import model_to_dict
+from apps.nhatro.models import KhuVuc
 
 
 
 def get_phongtro_list():
+    """Lấy danh sách phòng trọ có hợp đồng đang hoạt động"""
     return PhongTro.objects.filter(
-        Q(hopdong__TRANG_THAI_HD__in=['Đang hoạt động', 'Đang báo kết thúc', 'Sắp kết thúc', 'Đã xác nhận'])
+        Q(hopdong__TRANG_THAI_HD='Đang hoạt động')
     ).distinct()
 def get_dich_vu_ap_dung(ma_khu_vuc, ma_phong, current_month=None):
     errors = []
@@ -57,14 +59,28 @@ def hoadon_list(request):
     year = int(request.GET.get('year', datetime.now().year))
 
     # Lấy danh sách hóa đơn theo tháng/năm
-    hoa_dons = HoaDon.objects.filter(
+    hoa_dons_queryset = HoaDon.objects.filter(
         NGAY_LAP_HDON__year=year,
         NGAY_LAP_HDON__month=month
     ).select_related('MA_PHONG').prefetch_related('khautru').order_by('MA_HOA_DON')
 
-    # Phân trang (10 bản ghi/trang)
-    paginator = Paginator(hoa_dons, 10)
-    page_number = request.GET.get('page')
+    # Tính tổng số hóa đơn
+    total_invoices = hoa_dons_queryset.count()
+    
+    # Tính thống kê theo trạng thái
+    paid_invoices_count = hoa_dons_queryset.filter(TRANG_THAI_HDON='Đã thu tiền').count()
+    unpaid_invoices_count = hoa_dons_queryset.filter(TRANG_THAI_HDON='Chưa thu tiền').count()
+    overdue_invoices_count = hoa_dons_queryset.filter(TRANG_THAI_HDON='Đang nợ').count()
+
+    # Lấy page_size từ request, mặc định là 10
+    page_size = int(request.GET.get('page_size', 10))
+    # Giới hạn page_size để tránh quá tải
+    if page_size not in [5, 10, 25, 50, 100]:
+        page_size = 10
+
+    # Phân trang
+    paginator = Paginator(hoa_dons_queryset, page_size)
+    page_number = request.GET.get('page', 1)
     page_obj = paginator.get_page(page_number)
 
     # Tạo danh sách tháng để hiển thị
@@ -125,6 +141,11 @@ def hoadon_list(request):
         'current_month': f'{month:02d}/{year}',
         'year': year,
         'status_mapping': status_mapping,
+        'total_invoices': total_invoices,
+        'current_page_size': page_size,
+        'paid_invoices_count': paid_invoices_count,
+        'unpaid_invoices_count': unpaid_invoices_count,
+        'overdue_invoices_count': overdue_invoices_count,
     }
     return render(request, 'admin/hoadon/danhsach_hoadon.html', context)
 
@@ -213,8 +234,12 @@ def them_hoa_don(request, ma_phong=None):
         return JsonResponse({'success': False, 'error': dich_vu_errors[0]}, status=500)
     # return JsonResponse(model_to_dict(hop_dong_hieu_luc))
     # return JsonResponse(dict(hop_dong_hieu_luc))
+    # Lấy danh sách khu vực
+    khu_vucs = KhuVuc.objects.filter(MA_NHA_TRO=1).order_by('MA_KHU_VUC')
+    
     context = {
         'phong_tro': phong_tro,
+        'khu_vucs': khu_vucs,
         'trang_thai_choices': ['Đã thu tiền', 'Chưa thu tiền', 'Đang nợ', 'Đã hủy'],
         'loai_hoa_don_choices': ['Hóa đơn phòng', 'Hóa đơn điện', 'Hóa đơn nước', 'Hóa đơn khác'],
         'ma_phong': ma_phong,
@@ -333,9 +358,13 @@ def sua_hoa_don(request, ma_hoa_don):
         'TIEN_KHAU_TRU': str(hoa_don.TIEN_KHAU_TRU),
         'TONG_TIEN': str(hoa_don.TONG_TIEN)
     }
+    # Lấy danh sách khu vực
+    khu_vucs = KhuVuc.objects.filter(MA_NHA_TRO=1).order_by('MA_KHU_VUC')
+    
     context = {
         'hoa_don': hoa_don,
         'phong_tro': get_phongtro_list(),
+        'khu_vucs': khu_vucs,
         'chi_so_dich_vu': chi_so_dich_vu_list,
         'khau_tru': khau_tru_list,
         'form_data': form_data,
@@ -397,3 +426,160 @@ def xoa_hoa_don(request, ma_hoa_don):
 def hoadon_detail(request, ma_hoa_don):
     hoadon = get_object_or_404(HoaDon, MA_HOA_DON=ma_hoa_don)
     return render(request, 'admin/hoadon/chitiet_hoadon.html', {'hoadon': hoadon})
+
+
+def lay_khu_vuc_list(request):
+    """API - Lấy danh sách khu vực"""
+    try:
+        khu_vucs = KhuVuc.objects.filter(MA_NHA_TRO=1).order_by('MA_KHU_VUC').values(
+            'MA_KHU_VUC', 'TEN_KHU_VUC'
+        )
+        khu_vuc_list = list(khu_vucs)
+        return JsonResponse({'success': True, 'khu_vucs': khu_vuc_list})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+def lay_phong_theo_khu_vuc_hoa_don(request):
+    """API - Lấy danh sách phòng có hợp đồng hoạt động theo khu vực cho hóa đơn"""
+    khu_vuc_id = request.GET.get('khu_vuc_id')
+    if not khu_vuc_id:
+        return JsonResponse({'error': 'Thiếu mã khu vực'}, status=400)
+    
+    try:
+        # Lấy phòng có hợp đồng đang hoạt động
+        phong_tros = PhongTro.objects.filter(
+            MA_KHU_VUC_id=khu_vuc_id,
+            hopdong__TRANG_THAI_HD='Đang hoạt động'
+        ).distinct().values('MA_PHONG', 'TEN_PHONG')
+        
+        phong_list = list(phong_tros)
+        return JsonResponse({'phong_tros': phong_list})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+def lay_thong_tin_phong_hoa_don(request, ma_phong):
+    """API - Lấy thông tin chi tiết phòng và dịch vụ để lập hóa đơn"""
+    try:
+        thang_hoa_don = request.GET.get('thang_hoa_don')
+        
+        # Parse tháng hóa đơn
+        if thang_hoa_don:
+            try:
+                from datetime import datetime
+                current_month = datetime.strptime(thang_hoa_don, '%Y-%m').replace(
+                    day=1, hour=0, minute=0, second=0, microsecond=0
+                )
+            except ValueError:
+                current_month = timezone.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        else:
+            current_month = timezone.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        
+        # Lấy thông tin phòng
+        phong = get_object_or_404(PhongTro, MA_PHONG=ma_phong)
+        
+        # Lấy hợp đồng đang hoạt động
+        hop_dong = HopDong.objects.filter(
+            MA_PHONG=phong,
+            TRANG_THAI_HD='Đang hoạt động'
+        ).first()
+        
+        if not hop_dong:
+            return JsonResponse({'success': False, 'error': 'Không tìm thấy hợp đồng hiệu lực cho phòng này'}, status=404)
+        
+        # Lấy danh sách dịch vụ áp dụng
+        dich_vu_list, dich_vu_errors = get_dich_vu_ap_dung(phong.MA_KHU_VUC, ma_phong, current_month)
+        if dich_vu_errors:
+            return JsonResponse({'success': False, 'error': dich_vu_errors[0]}, status=500)
+        
+        # Chuẩn bị dữ liệu phản hồi
+        response_data = {
+            'success': True,
+            'phong_info': {
+                'MA_PHONG': phong.MA_PHONG,
+                'TEN_PHONG': phong.TEN_PHONG,
+                'MA_KHU_VUC': phong.MA_KHU_VUC_id
+            },
+            'hop_dong': {
+                'MA_HOP_DONG': hop_dong.MA_HOP_DONG,
+                'GIA_THUE': float(hop_dong.GIA_THUE or 0),
+                'GIA_COC_HD': float(hop_dong.GIA_COC_HD or 0),
+                'NGAY_NHAN_PHONG': hop_dong.NGAY_NHAN_PHONG.isoformat() if hop_dong.NGAY_NHAN_PHONG else None,
+                'CHU_KY_THANH_TOAN': hop_dong.CHU_KY_THANH_TOAN,
+                'NGAY_THU_TIEN': hop_dong.NGAY_THU_TIEN
+            },
+            'dich_vu_list': dich_vu_list
+        }
+        
+        return JsonResponse(response_data)
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': f'Lỗi không xác định: {str(e)}'}, status=500)
+
+
+@csrf_exempt  
+def them_khau_tru_ajax(request):
+    """API - Thêm khấu trừ mới qua AJAX"""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Chỉ hỗ trợ POST method'}, status=405)
+        
+    try:
+        import json
+        data = json.loads(request.body)
+        
+        khau_tru_data = {
+            'LOAI_KHAU_TRU': data.get('LOAI_KHAU_TRU'),
+            'SO_TIEN_KT': float(data.get('SO_TIEN_KT', 0)),
+            'NGAYKHAUTRU': data.get('NGAYKHAUTRU'),
+            'LY_DO_KHAU_TRU': data.get('LY_DO_KHAU_TRU')
+        }
+        
+        # Validation
+        if not all([khau_tru_data['LOAI_KHAU_TRU'], khau_tru_data['SO_TIEN_KT'], 
+                   khau_tru_data['NGAYKHAUTRU'], khau_tru_data['LY_DO_KHAU_TRU']]):
+            return JsonResponse({'success': False, 'error': 'Thiếu thông tin bắt buộc'}, status=400)
+            
+        # Tạm thời trả về dữ liệu để frontend xử lý, 
+        # sẽ lưu vào DB khi submit form chính
+        return JsonResponse({
+            'success': True, 
+            'message': 'Đã thêm khấu trừ thành công',
+            'khau_tru_data': khau_tru_data
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@csrf_exempt
+def cap_nhat_khau_tru_ajax(request):
+    """API - Cập nhật khấu trừ qua AJAX"""
+    if request.method != 'PUT':
+        return JsonResponse({'success': False, 'error': 'Chỉ hỗ trợ PUT method'}, status=405)
+        
+    try:
+        import json
+        data = json.loads(request.body)
+        
+        khau_tru_data = {
+            'index': data.get('index'),
+            'LOAI_KHAU_TRU': data.get('LOAI_KHAU_TRU'),
+            'SO_TIEN_KT': float(data.get('SO_TIEN_KT', 0)),
+            'NGAYKHAUTRU': data.get('NGAYKHAUTRU'),
+            'LY_DO_KHAU_TRU': data.get('LY_DO_KHAU_TRU')
+        }
+        
+        # Validation
+        if not all([khau_tru_data['LOAI_KHAU_TRU'], khau_tru_data['SO_TIEN_KT'], 
+                   khau_tru_data['NGAYKHAUTRU'], khau_tru_data['LY_DO_KHAU_TRU']]):
+            return JsonResponse({'success': False, 'error': 'Thiếu thông tin bắt buộc'}, status=400)
+            
+        return JsonResponse({
+            'success': True,
+            'message': 'Đã cập nhật khấu trừ thành công', 
+            'khau_tru_data': khau_tru_data
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)

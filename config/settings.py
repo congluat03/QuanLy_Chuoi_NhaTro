@@ -156,3 +156,78 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Google Maps API Key
 GOOGLE_MAPS_API_KEY = config('GOOGLE_MAPS_API_KEY', default='AIzaSyBTsZNDJQJjjqOTx2WktpIJ6YfkM9Z1bxc')
+
+# ============ HỢP ĐỒNG WORKFLOW SETTINGS ============
+
+# APScheduler Settings
+AUTO_START_SCHEDULER = config('AUTO_START_SCHEDULER', default=True, cast=bool)
+
+SCHEDULER_CONFIG = {
+    'apscheduler.jobstores.default': {
+        'type': 'memory'
+    },
+    'apscheduler.executors.default': {
+        'class': 'apscheduler.executors.pool:ThreadPoolExecutor',
+        'max_workers': 3
+    },
+    'apscheduler.job_defaults.coalesce': False,
+    'apscheduler.job_defaults.max_instances': 1,
+    'apscheduler.timezone': TIME_ZONE,
+}
+
+# Logging Configuration
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '[{levelname}] {asctime} {name} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '[{levelname}] {asctime} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+        'file': {
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs', 'hopdong.log'),
+            'maxBytes': 1024*1024*5,  # 5MB
+            'backupCount': 3,
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'apps.hopdong': {
+            'handlers': ['console', 'file'],
+            'level': config('LOG_LEVEL', default='INFO'),
+            'propagate': False,
+        },
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'WARNING',
+    },
+}
+
+# Tạo thư mục logs nếu chưa có
+LOGS_DIR = os.path.join(BASE_DIR, 'logs')
+os.makedirs(LOGS_DIR, exist_ok=True)
+
+# Contract Workflow Settings
+CONTRACT_SETTINGS = {
+    'AUTO_CONFIRM_CONTRACTS': config('AUTO_CONFIRM_CONTRACTS', default=False, cast=bool),
+    'MONTHLY_INVOICE_DAY': config('MONTHLY_INVOICE_DAY', default=1, cast=int),
+    'CONTRACT_EXPIRY_WARNING_DAYS': config('CONTRACT_EXPIRY_WARNING_DAYS', default=30, cast=int),
+    'AUTO_END_EXPIRED_CONTRACTS': config('AUTO_END_EXPIRED_CONTRACTS', default=True, cast=bool),
+}

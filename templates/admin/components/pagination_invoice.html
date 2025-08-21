@@ -1,0 +1,370 @@
+<!-- Premium Advanced Pagination Component for Invoices -->
+
+{% if page_obj %}
+<div class="bg-gradient-to-r from-slate-50 to-green-50 border-t-2 border-green-200 shadow-lg rounded-t-xl overflow-hidden">
+    <!-- Top Section: Stats & Controls -->
+    <div class="bg-white/80 backdrop-blur-sm px-6 py-4 border-b border-green-100">
+        <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between space-y-4 lg:space-y-0">
+            <!-- Enhanced Results Info -->
+            <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-6">
+                <div class="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-4 py-2 rounded-full shadow-md">
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-file-invoice-dollar text-sm"></i>
+                        <span class="text-sm font-semibold">
+                            {{ page_obj.start_index }}-{{ page_obj.end_index }} / {{ total_count|default:page_obj.paginator.count }} hóa đơn
+                        </span>
+                    </div>
+                </div>
+                
+                <!-- Enhanced Page Size Selector -->
+                <div class="flex items-center space-x-3 bg-white rounded-lg px-4 py-2 shadow-sm border border-gray-200">
+                    <i class="fas fa-eye text-green-500 text-sm"></i>
+                    <label class="text-sm font-medium text-gray-700">Hiển thị:</label>
+                    <select id="pageSizeSelect" onchange="changePageSize(this.value)" 
+                            class="text-sm font-medium bg-transparent border-0 focus:outline-none focus:ring-0 text-green-600 cursor-pointer">
+                        <option value="5" {% if current_page_size == 5 %}selected{% endif %}>5</option>
+                        <option value="10" {% if current_page_size == 10 %}selected{% endif %}>10</option>
+                        <option value="25" {% if current_page_size == 25 %}selected{% endif %}>25</option>
+                        <option value="50" {% if current_page_size == 50 %}selected{% endif %}>50</option>
+                        <option value="100" {% if current_page_size == 100 %}selected{% endif %}>100</option>
+                    </select>
+                    <span class="text-sm text-gray-500">/ trang</span>
+                </div>
+                
+                <!-- Quick Actions -->
+                <div class="flex items-center space-x-2">
+                    <button onclick="showQuickJumpModal()" 
+                            class="inline-flex items-center space-x-1 text-xs font-medium text-green-600 hover:text-green-700 bg-green-50 hover:bg-green-100 px-3 py-1.5 rounded-lg transition-colors duration-200">
+                        <i class="fas fa-rocket text-xs"></i>
+                        <span>Nhảy nhanh</span>
+                    </button>
+                    <div class="text-xs text-gray-400 hidden sm:block">Ctrl+G</div>
+                </div>
+            </div>
+            
+            <!-- Page Info Badge -->
+            <div class="bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 px-4 py-2 rounded-full border shadow-sm">
+                <div class="flex items-center space-x-2">
+                    <i class="fas fa-bookmark text-sm text-green-500"></i>
+                    <span class="text-sm font-medium">Trang {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Pagination Section -->
+    <div class="px-6 py-6 bg-white">
+        <!-- Desktop Pagination Controls -->
+        {% if page_obj.has_other_pages %}
+        <div class="flex justify-center">
+            <nav class="flex items-center space-x-1" aria-label="Pagination">
+                <!-- Previous Page -->
+                {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}{% if current_page_size != 10 %}&page_size={{ current_page_size }}{% endif %}{% if request.GET.month %}&month={{ request.GET.month }}{% endif %}{% if request.GET.year %}&year={{ request.GET.year }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" 
+                   class="group relative inline-flex items-center justify-center w-10 h-10 bg-white border-2 border-gray-200 hover:border-green-400 text-gray-500 hover:text-green-600 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 transform hover:scale-105"
+                   title="Trang trước">
+                    <i class="fas fa-chevron-left text-sm group-hover:animate-pulse"></i>
+                </a>
+                {% else %}
+                <span class="relative inline-flex items-center justify-center w-10 h-10 bg-gray-50 border-2 border-gray-200 text-gray-300 rounded-xl cursor-not-allowed"
+                      title="Đã ở trang đầu">
+                    <i class="fas fa-chevron-left text-sm"></i>
+                </span>
+                {% endif %}
+
+                <!-- Page Numbers -->
+                {% for page_num in page_obj.paginator.page_range %}
+                    {% if page_num == page_obj.number %}
+                        <!-- Current Page -->
+                        <span aria-current="page" 
+                              class="relative inline-flex items-center justify-center w-12 h-10 bg-gradient-to-r from-green-500 to-emerald-600 border-2 border-green-400 text-white text-sm font-bold rounded-xl shadow-lg transform scale-110 z-20">
+                            {{ page_num }}
+                            <div class="absolute inset-0 rounded-xl bg-gradient-to-r from-green-400 to-emerald-500 opacity-50 animate-pulse"></div>
+                        </span>
+                    {% elif page_num > page_obj.number|add:'-3' and page_num < page_obj.number|add:'3' %}
+                        <!-- Nearby Pages -->
+                        <a href="?page={{ page_num }}{% if current_page_size != 10 %}&page_size={{ current_page_size }}{% endif %}{% if request.GET.month %}&month={{ request.GET.month }}{% endif %}{% if request.GET.year %}&year={{ request.GET.year }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" 
+                           class="group relative inline-flex items-center justify-center w-10 h-10 bg-white border-2 border-gray-200 hover:border-green-300 text-gray-600 hover:text-green-600 text-sm font-medium rounded-xl shadow-sm hover:shadow-md transition-all duration-300 transform hover:scale-105"
+                           title="Đi đến trang {{ page_num }}">
+                            {{ page_num }}
+                            <div class="absolute inset-0 rounded-xl bg-green-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                        </a>
+                    {% elif page_num == 1 %}
+                        <!-- First Page -->
+                        <a href="?page=1{% if current_page_size != 10 %}&page_size={{ current_page_size }}{% endif %}{% if request.GET.month %}&month={{ request.GET.month }}{% endif %}{% if request.GET.year %}&year={{ request.GET.year }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" 
+                           class="group relative inline-flex items-center justify-center w-10 h-10 bg-white border-2 border-gray-200 hover:border-green-300 text-gray-600 hover:text-green-600 text-sm font-medium rounded-xl shadow-sm hover:shadow-md transition-all duration-300 transform hover:scale-105"
+                           title="Trang đầu">
+                            1
+                        </a>
+                        {% if page_obj.number > 4 %}
+                        <span class="relative inline-flex items-center justify-center w-8 h-10 text-gray-400 text-sm">
+                            <i class="fas fa-ellipsis-h"></i>
+                        </span>
+                        {% endif %}
+                    {% elif page_num == page_obj.paginator.num_pages %}
+                        <!-- Last Page -->
+                        {% if page_obj.number < page_obj.paginator.num_pages|add:'-3' %}
+                        <span class="relative inline-flex items-center justify-center w-8 h-10 text-gray-400 text-sm">
+                            <i class="fas fa-ellipsis-h"></i>
+                        </span>
+                        {% endif %}
+                        <a href="?page={{ page_obj.paginator.num_pages }}{% if current_page_size != 10 %}&page_size={{ current_page_size }}{% endif %}{% if request.GET.month %}&month={{ request.GET.month }}{% endif %}{% if request.GET.year %}&year={{ request.GET.year }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" 
+                           class="group relative inline-flex items-center justify-center w-10 h-10 bg-white border-2 border-gray-200 hover:border-green-300 text-gray-600 hover:text-green-600 text-sm font-medium rounded-xl shadow-sm hover:shadow-md transition-all duration-300 transform hover:scale-105"
+                           title="Trang cuối">
+                            {{ page_obj.paginator.num_pages }}
+                        </a>
+                    {% endif %}
+                {% endfor %}
+
+                <!-- Next Page -->
+                {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}{% if current_page_size != 10 %}&page_size={{ current_page_size }}{% endif %}{% if request.GET.month %}&month={{ request.GET.month }}{% endif %}{% if request.GET.year %}&year={{ request.GET.year }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" 
+                   class="group relative inline-flex items-center justify-center w-10 h-10 bg-white border-2 border-gray-200 hover:border-green-400 text-gray-500 hover:text-green-600 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 transform hover:scale-105"
+                   title="Trang sau">
+                    <i class="fas fa-chevron-right text-sm group-hover:animate-pulse"></i>
+                </a>
+                {% else %}
+                <span class="relative inline-flex items-center justify-center w-10 h-10 bg-gray-50 border-2 border-gray-200 text-gray-300 rounded-xl cursor-not-allowed"
+                      title="Đã ở trang cuối">
+                    <i class="fas fa-chevron-right text-sm"></i>
+                </span>
+                {% endif %}
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Mobile Pagination (Premium Design for small screens) -->
+    {% if page_obj.has_other_pages %}
+    <div class="sm:hidden px-6 py-4 bg-gradient-to-r from-gray-50 to-green-50">
+        <div class="flex justify-between items-center space-x-4 mb-4">
+            {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}{% if current_page_size != 10 %}&page_size={{ current_page_size }}{% endif %}{% if request.GET.month %}&month={{ request.GET.month }}{% endif %}{% if request.GET.year %}&year={{ request.GET.year }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" 
+               class="group flex items-center px-4 py-3 text-sm font-semibold text-green-600 bg-white border-2 border-green-200 hover:border-green-400 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 transform hover:scale-105">
+                <i class="fas fa-chevron-left mr-2 text-xs group-hover:animate-pulse"></i>
+                <span>Trước</span>
+            </a>
+            {% else %}
+            <span class="flex items-center px-4 py-3 text-sm font-medium text-gray-400 bg-gray-100 border-2 border-gray-200 rounded-xl cursor-not-allowed">
+                <i class="fas fa-chevron-left mr-2 text-xs"></i>
+                <span>Trước</span>
+            </span>
+            {% endif %}
+
+            <!-- Mobile Page Info -->
+            <div class="flex-1 flex justify-center">
+                <div class="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-3 rounded-xl shadow-lg">
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-bookmark text-xs"></i>
+                        <span class="text-sm font-bold">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+                    </div>
+                </div>
+            </div>
+
+            {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}{% if current_page_size != 10 %}&page_size={{ current_page_size }}{% endif %}{% if request.GET.month %}&month={{ request.GET.month }}{% endif %}{% if request.GET.year %}&year={{ request.GET.year }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" 
+               class="group flex items-center px-4 py-3 text-sm font-semibold text-green-600 bg-white border-2 border-green-200 hover:border-green-400 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 transform hover:scale-105">
+                <span>Sau</span>
+                <i class="fas fa-chevron-right ml-2 text-xs group-hover:animate-pulse"></i>
+            </a>
+            {% else %}
+            <span class="flex items-center px-4 py-3 text-sm font-medium text-gray-400 bg-gray-100 border-2 border-gray-200 rounded-xl cursor-not-allowed">
+                <span>Sau</span>
+                <i class="fas fa-chevron-right ml-2 text-xs"></i>
+            </span>
+            {% endif %}
+        </div>
+        
+        <!-- Mobile Quick Jump -->
+        <div class="flex justify-center">
+            <div class="bg-white rounded-xl px-4 py-3 shadow-sm border-2 border-gray-200">
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-rocket text-green-500 text-sm"></i>
+                    <label class="text-sm font-medium text-gray-700">Nhảy đến:</label>
+                    <select onchange="goToPage(this.value)" class="text-sm font-medium bg-green-50 border border-green-200 rounded-lg px-3 py-1 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 cursor-pointer">
+                        {% for page_num in page_obj.paginator.page_range %}
+                        <option value="{{ page_num }}" {% if page_num == page_obj.number %}selected{% endif %}>Trang {{ page_num }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Premium Quick Jump Modal for Invoices -->
+<div id="quickJumpModal" class="fixed inset-0 bg-black bg-opacity-60 z-50 hidden flex items-center justify-center backdrop-blur-sm transition-all duration-300">
+    <div class="bg-white rounded-2xl shadow-2xl p-8 w-96 transform transition-all duration-300 scale-95 hover:scale-100">
+        <!-- Modal Header -->
+        <div class="text-center mb-6">
+            <div class="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-rocket text-white text-xl"></i>
+            </div>
+            <h3 class="text-xl font-bold text-gray-800">Nhảy nhanh đến trang</h3>
+            <p class="text-sm text-gray-500 mt-2">Nhập số trang hóa đơn bạn muốn xem</p>
+        </div>
+        
+        <!-- Input Section -->
+        <div class="space-y-4">
+            <div class="relative">
+                <input type="number" id="jumpToPage" min="1" max="{{ page_obj.paginator.num_pages }}" 
+                       class="w-full border-2 border-gray-200 focus:border-green-500 rounded-xl px-4 py-3 text-center text-lg font-semibold focus:outline-none transition-all duration-300"
+                       placeholder="Nhập số trang">
+                <div class="absolute right-3 top-3 text-gray-400">
+                    <i class="fas fa-keyboard text-sm"></i>
+                </div>
+            </div>
+            
+            <!-- Page Range Info -->
+            <div class="text-center text-sm text-gray-500">
+                Từ trang <span class="font-semibold text-green-600">1</span> đến <span class="font-semibold text-green-600">{{ page_obj.paginator.num_pages }}</span>
+            </div>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="flex space-x-3 mt-6">
+            <button onclick="quickJumpToPage()" 
+                    class="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl">
+                <i class="fas fa-paper-plane mr-2"></i>
+                Đi ngay
+            </button>
+            <button onclick="closeQuickJumpModal()" 
+                    class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-xl transition-all duration-300">
+                <i class="fas fa-times mr-2"></i>
+                Hủy
+            </button>
+        </div>
+        
+        <!-- Keyboard Hint -->
+        <div class="text-center mt-4 text-xs text-gray-400">
+            <i class="fas fa-keyboard mr-1"></i>
+            Nhấn <kbd class="px-1 py-0.5 bg-gray-100 rounded text-gray-600">Enter</kbd> để xác nhận
+        </div>
+    </div>
+</div>
+
+<script>
+// Enhanced Pagination utility functions for invoices
+function showQuickJumpModal() {
+    const modal = document.getElementById('quickJumpModal');
+    modal.classList.remove('hidden');
+    
+    // Animation
+    const modalContent = modal.querySelector('div > div');
+    modalContent.classList.add('scale-95');
+    setTimeout(() => {
+        modalContent.classList.remove('scale-95');
+        modalContent.classList.add('scale-100');
+    }, 50);
+    
+    // Focus and select all text
+    setTimeout(() => {
+        const input = document.getElementById('jumpToPage');
+        input.focus();
+        input.select();
+    }, 100);
+}
+
+function closeQuickJumpModal() {
+    const modal = document.getElementById('quickJumpModal');
+    const modalContent = modal.querySelector('div > div');
+    
+    modalContent.classList.add('scale-95');
+    setTimeout(() => {
+        modal.classList.add('hidden');
+        modalContent.classList.remove('scale-95');
+        modalContent.classList.add('scale-100');
+    }, 150);
+}
+
+function quickJumpToPage() {
+    const input = document.getElementById('jumpToPage');
+    const page = parseInt(input.value);
+    const maxPage = {{ page_obj.paginator.num_pages|default:1 }};
+    
+    if (page && page >= 1 && page <= maxPage) {
+        closeQuickJumpModal();
+        goToPage(page);
+    } else {
+        // Error animation
+        input.classList.add('border-red-400', 'bg-red-50');
+        input.classList.remove('border-gray-200');
+        setTimeout(() => {
+            input.classList.remove('border-red-400', 'bg-red-50');
+            input.classList.add('border-gray-200');
+        }, 2000);
+        
+        // Show error message with invoice styling
+        const errorMsg = `Vui lòng nhập số trang từ 1 đến ${maxPage}`;
+        showInvoiceToast(errorMsg, 'error');
+        input.focus();
+        input.select();
+    }
+}
+
+// Enhanced toast notification for invoices (Green theme)
+function showInvoiceToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    const bgColor = type === 'error' ? 'bg-red-500' : 'bg-green-500';
+    const icon = type === 'error' ? 'fa-exclamation-triangle' : 'fa-info-circle';
+    
+    toast.className = `fixed top-4 right-4 ${bgColor} text-white px-6 py-3 rounded-xl shadow-lg z-[60] transform translate-x-full transition-transform duration-300`;
+    toast.innerHTML = `
+        <div class="flex items-center space-x-2">
+            <i class="fas ${icon}"></i>
+            <span class="font-medium">${message}</span>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    // Animate in
+    setTimeout(() => toast.classList.remove('translate-x-full'), 100);
+    
+    // Animate out and remove
+    setTimeout(() => {
+        toast.classList.add('translate-x-full');
+        setTimeout(() => document.body.removeChild(toast), 300);
+    }, 3000);
+}
+
+// Enhanced keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+    // Quick jump modal shortcut
+    if (e.ctrlKey && e.key === 'g') {
+        e.preventDefault();
+        showQuickJumpModal();
+    }
+    
+    // Close modal with Escape
+    if (e.key === 'Escape') {
+        const modal = document.getElementById('quickJumpModal');
+        if (!modal.classList.contains('hidden')) {
+            closeQuickJumpModal();
+        }
+    }
+    
+    // Submit jump with Enter when modal is open
+    if (e.key === 'Enter') {
+        const modal = document.getElementById('quickJumpModal');
+        if (!modal.classList.contains('hidden')) {
+            e.preventDefault();
+            quickJumpToPage();
+        }
+    }
+});
+
+// Click outside to close modal
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('quickJumpModal');
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeQuickJumpModal();
+            }
+        });
+    }
+});
+</script>
+{% endif %}

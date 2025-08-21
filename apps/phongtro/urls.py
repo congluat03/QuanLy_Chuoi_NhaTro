@@ -15,7 +15,9 @@ urlpatterns = [
     path('phongtro/ghi-so-dich-vu/<int:ma_phong_tro>/', admin_views.ghi_so_dich_vu, name='ghi_so_dich_vu'),
 
     path('phongtro/xoa-phongtro/<int:ma_phong_tro>/', admin_views.xoa_phong_tro, name='xoa_phongtro'),
-
+    
+    # Workflow URLs
+    path('phongtro/room-workflow-action/', admin_views.room_workflow_action, name='room_workflow_action'),
 
     path('phongtro/lap-hop-dong/<int:ma_phong>/', admin_views.view_lap_hop_dong, name='lap_hop_dong'),
     

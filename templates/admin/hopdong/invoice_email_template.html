@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hóa đơn #{{ hoa_don.MA_HOA_DON }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8fafc;
+        }
+        
+        .email-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #2563eb;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2563eb;
+            margin-bottom: 10px;
+        }
+        
+        .invoice-title {
+            font-size: 20px;
+            color: #1f2937;
+            margin-bottom: 5px;
+        }
+        
+        .invoice-number {
+            background: #e0f2fe;
+            color: #2563eb;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            display: inline-block;
+        }
+        
+        .greeting {
+            font-size: 16px;
+            margin-bottom: 20px;
+            color: #374151;
+        }
+        
+        .info-section {
+            background: #f8fafc;
+            border-left: 4px solid #2563eb;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .info-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #2563eb;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .info-label {
+            font-size: 12px;
+            color: #6b7280;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+        
+        .info-value {
+            font-size: 14px;
+            color: #1f2937;
+            font-weight: 500;
+        }
+        
+        .payment-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .payment-table th,
+        .payment-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .payment-table th {
+            background: #2563eb;
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+        }
+        
+        .payment-table .amount {
+            text-align: right;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+        }
+        
+        .payment-table .total-row {
+            background: #eff6ff;
+            border-top: 2px solid #2563eb;
+        }
+        
+        .payment-table .total-row td {
+            font-weight: bold;
+            font-size: 16px;
+            color: #2563eb;
+        }
+        
+        .alert {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            color: #92400e;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .alert-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .button {
+            display: inline-block;
+            background: #2563eb;
+            color: white;
+            padding: 12px 25px;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: 600;
+            text-align: center;
+            margin: 10px 0;
+            transition: background-color 0.3s;
+        }
+        
+        .button:hover {
+            background: #1d4ed8;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+            color: #6b7280;
+            font-size: 14px;
+        }
+        
+        .company-info {
+            background: #f9fafb;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        @media (max-width: 600px) {
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .email-container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">{{ company_name|default:"CÔNG TY CHO THUÊ PHÒNG TRỌ" }}</div>
+            <div class="invoice-title">Hóa đơn {{ hoa_don.LOAI_HOA_DON|default:"Dịch vụ" }}</div>
+            <div class="invoice-number">#{{ hoa_don.MA_HOA_DON }}</div>
+        </div>
+
+        <!-- Greeting -->
+        <div class="greeting">
+            Kính gửi <strong>{{ khach_thue.HO_TEN_KT|default:"Quý khách" }}</strong>,
+            <br><br>
+            Chúng tôi xin gửi đến Quý khách hóa đơn thanh toán với các thông tin chi tiết như sau:
+        </div>
+
+        <!-- Thông tin hóa đơn -->
+        <div class="info-section">
+            <div class="info-title">
+                📋 Thông tin hóa đơn
+            </div>
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">Số hóa đơn</div>
+                    <div class="info-value">#{{ hoa_don.MA_HOA_DON }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Ngày lập</div>
+                    <div class="info-value">{{ hoa_don.NGAY_LAP_HDON|date:"d/m/Y"|default:"-" }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Loại hóa đơn</div>
+                    <div class="info-value">{{ hoa_don.LOAI_HOA_DON|default:"Không xác định" }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Trạng thái</div>
+                    <div class="info-value">{{ hoa_don.TRANG_THAI_HDON|default:"Chưa thanh toán" }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Thông tin hợp đồng -->
+        {% if hop_dong %}
+        <div class="info-section">
+            <div class="info-title">
+                🏠 Thông tin hợp đồng thuê
+            </div>
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">Mã hợp đồng</div>
+                    <div class="info-value">{{ hop_dong.MA_HOP_DONG }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Phòng</div>
+                    <div class="info-value">{{ hop_dong.MA_PHONG.TEN_PHONG|default:"-" }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Ngày nhận phòng</div>
+                    <div class="info-value">{{ hop_dong.NGAY_NHAN_PHONG|date:"d/m/Y"|default:"-" }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Ngày trả phòng</div>
+                    <div class="info-value">{{ hop_dong.NGAY_TRA_PHONG|date:"d/m/Y"|default:"-" }}</div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Chi tiết thanh toán -->
+        <div class="info-section">
+            <div class="info-title">
+                💰 Chi tiết thanh toán
+            </div>
+            
+            <table class="payment-table">
+                <thead>
+                    <tr>
+                        <th>Khoản thu</th>
+                        <th style="text-align: right;">Số tiền (VNĐ)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if hoa_don.TIEN_PHONG and hoa_don.TIEN_PHONG > 0 %}
+                    <tr>
+                        <td>🏠 Tiền phòng</td>
+                        <td class="amount">{{ hoa_don.TIEN_PHONG|floatformat:0 }}</td>
+                    </tr>
+                    {% endif %}
+                    
+                    {% if hoa_don.TIEN_DICH_VU and hoa_don.TIEN_DICH_VU > 0 %}
+                    <tr>
+                        <td>🔧 Tiền dịch vụ</td>
+                        <td class="amount">{{ hoa_don.TIEN_DICH_VU|floatformat:0 }}</td>
+                    </tr>
+                    {% endif %}
+                    
+                    {% if hoa_don.TIEN_COC and hoa_don.TIEN_COC > 0 %}
+                    <tr>
+                        <td>🛡️ Tiền cọc</td>
+                        <td class="amount">{{ hoa_don.TIEN_COC|floatformat:0 }}</td>
+                    </tr>
+                    {% endif %}
+                    
+                    {% if hoa_don.TIEN_KHAU_TRU and hoa_don.TIEN_KHAU_TRU > 0 %}
+                    <tr>
+                        <td>➖ Khấu trừ</td>
+                        <td class="amount" style="color: #dc2626;">-{{ hoa_don.TIEN_KHAU_TRU|floatformat:0 }}</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+                <tfoot>
+                    <tr class="total-row">
+                        <td><strong>💸 TỔNG CỘNG</strong></td>
+                        <td class="amount">
+                            <strong>{{ hoa_don.TONG_TIEN|floatformat:0|default:"0" }}</strong>
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <!-- Cảnh báo thanh toán -->
+        <div class="alert">
+            <div class="alert-title">
+                ⚠️ Lưu ý thanh toán
+            </div>
+            <div>
+                • Vui lòng thanh toán đầy đủ số tiền <strong>{{ hoa_don.TONG_TIEN|floatformat:0|default:"0" }} VNĐ</strong><br>
+                • Hạn thanh toán: <strong>{{ hoa_don.NGAY_LAP_HDON|date:"d/m/Y"|default:"-" }}</strong><br>
+                • Phương thức: Tiền mặt hoặc chuyển khoản<br>
+                • Liên hệ quản lý nếu có thắc mắc về hóa đơn
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <div>
+                <strong>Cảm ơn Quý khách đã sử dụng dịch vụ của chúng tôi!</strong>
+            </div>
+            <div>
+                Email này được gửi tự động từ hệ thống quản lý nhà trọ.
+            </div>
+            
+            <div class="company-info">
+                <div><strong>{{ company_name|default:"CÔNG TY CHO THUÊ PHÒNG TRỌ" }}</strong></div>
+                <div>📧 Email: support@company.com | ☎️ Hotline: 1900-xxxx</div>
+                <div>🏢 Địa chỉ: [Địa chỉ công ty]</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

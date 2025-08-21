@@ -19,5 +19,10 @@ urlpatterns = [
     path('dichvu/ajax/lay-phong-theo-khu-vuc/', admin_views.lay_phong_theo_khu_vuc, name='lay_phong_theo_khu_vuc'),
     path('dichvu/ajax/lay-dich-vu-theo-khu-vuc/', admin_views.lay_dich_vu_theo_khu_vuc, name='lay_dich_vu_theo_khu_vuc'),
     path('dichvu/ajax/lay-chi-so-cu/', admin_views.lay_chi_so_cu, name='lay_chi_so_cu'),
+    path('dichvu/ajax/kiem-tra-chi-so-da-ghi/', admin_views.kiem_tra_chi_so_da_ghi, name='kiem_tra_chi_so_da_ghi'),
+    
+    # API endpoints cho edit/delete chỉ số
+    path('dichvu/api/cap-nhat-chi-so/', admin_views.cap_nhat_chi_so_dich_vu, name='cap_nhat_chi_so_dich_vu'),
+    path('dichvu/api/xoa-chi-so/', admin_views.xoa_chi_so_dich_vu, name='xoa_chi_so_dich_vu'),
 
 ]

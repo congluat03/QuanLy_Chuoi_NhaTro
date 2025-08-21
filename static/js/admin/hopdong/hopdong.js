@@ -304,3 +304,356 @@ function toggleElementsDisplay(elementIds) {
 function initThongTin() {
 }
 
+// ======================= FUNCTIONS CHO HÓA ĐƠN BẮT ĐẦU HỢP ĐỒNG =======================
+
+/**
+ * Hiển thị modal hóa đơn bắt đầu hợp đồng
+ * @param {Object} invoiceData - Dữ liệu hóa đơn từ server
+ */
+function showHoaDonModal(invoiceData) {
+    console.log('🧾 Hiển thị hóa đơn:', invoiceData);
+    
+    // Lấy template và clone
+    const template = document.getElementById('hoadon-template');
+    const modal = document.getElementById('hoadon-modal');
+    const content = document.getElementById('hoadon-content');
+    
+    if (!template || !modal || !content) {
+        console.error('❌ Không tìm thấy template hoặc modal hóa đơn');
+        return;
+    }
+    
+    // Clone template content
+    const templateContent = template.content.cloneNode(true);
+    
+    // Điền dữ liệu vào template
+    fillInvoiceTemplate(templateContent, invoiceData);
+    
+    // Thay thế nội dung modal
+    content.innerHTML = '';
+    content.appendChild(templateContent);
+    
+    // Hiển thị modal
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden'; // Ngăn scroll body
+}
+
+/**
+ * Điền dữ liệu vào template hóa đơn
+ * @param {DocumentFragment} template - Template đã clone
+ * @param {Object} data - Dữ liệu hóa đơn
+ */
+function fillInvoiceTemplate(template, data) {
+    const mappings = {
+        '.hd-ma-hoa-don': data.ma_hoa_don,
+        '.hd-ngay-lap': data.ngay_lap,
+        '.hd-loai': data.loai_hoa_don,
+        '.hd-ma-hop-dong': data.ma_hop_dong,
+        '.hd-ten-phong': data.ten_phong,
+        '.hd-ngay-nhan-phong': data.ngay_nhan_phong,
+        '.hd-ngay-tra-phong': data.ngay_tra_phong,
+        '.hd-ten-khach-thue': data.ten_khach_thue,
+        '.hd-sdt-khach-thue': data.sdt_khach_thue,
+        '.hd-ngay-sinh': data.ngay_sinh,
+        '.hd-tien-phong': data.tien_phong,
+        '.hd-tien-dich-vu': data.tien_dich_vu,
+        '.hd-tien-coc': data.tien_coc,
+        '.hd-tien-khau-tru': data.tien_khau_tru,
+        '.hd-tong-tien': data.tong_tien,
+        '.hd-trang-thai': data.trang_thai,
+        '.hd-han-thanh-toan': data.han_thanh_toan,
+        '.hd-ngay-tao': data.ngay_tao
+    };
+    
+    // Điền dữ liệu cho từng element
+    Object.entries(mappings).forEach(([selector, value]) => {
+        const elements = template.querySelectorAll(selector);
+        elements.forEach(el => {
+            if (el) {
+                el.textContent = value || '-';
+            }
+        });
+    });
+}
+
+/**
+ * Đóng modal hóa đơn
+ */
+function closeHoaDonModal() {
+    const modal = document.getElementById('hoadon-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        document.body.style.overflow = ''; // Khôi phục scroll body
+    }
+}
+
+/**
+ * In hóa đơn
+ */
+function printHoaDon() {
+    console.log('🖨️ In hóa đơn');
+    
+    // Ẩn các element không cần in
+    const noprint = document.querySelectorAll('.no-print');
+    noprint.forEach(el => el.style.display = 'none');
+    
+    // In
+    window.print();
+    
+    // Khôi phục hiển thị
+    noprint.forEach(el => el.style.display = '');
+}
+
+/**
+ * Tải hóa đơn dưới dạng PDF
+ */
+function downloadHoaDonPDF() {
+    console.log('📄 Tải PDF hóa đơn');
+    
+    // Lấy mã hóa đơn từ template
+    const ma_hoa_don = document.querySelector('.hd-ma-hoa-don')?.textContent;
+    if (!ma_hoa_don) {
+        showNotification('Không tìm thấy mã hóa đơn', 'error');
+        return;
+    }
+    
+    // Gọi API backend để tạo và tải PDF
+    const downloadUrl = `/admin/hopdong/api/export-invoice-pdf/${ma_hoa_don}/`;
+    
+    // Tạo link ẩn để tải file
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = `hoadon_${ma_hoa_don}.pdf`;
+    link.style.display = 'none';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    showNotification('Đang tải PDF hóa đơn...', 'info');
+}
+
+/**
+ * Chia sẻ hóa đơn
+ */
+function shareHoaDon() {
+    console.log('📤 Chia sẻ hóa đơn');
+    
+    const ma_hoa_don = document.querySelector('.hd-ma-hoa-don')?.textContent;
+    if (!ma_hoa_don) {
+        showNotification('Không tìm thấy mã hóa đơn', 'error');
+        return;
+    }
+    
+    // Hiển thị modal chia sẻ với các tùy chọn
+    showShareModal(ma_hoa_don);
+}
+
+/**
+ * Hiển thị modal chia sẻ với các tùy chọn
+ */
+function showShareModal(ma_hoa_don) {
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center';
+    modal.innerHTML = `
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+            <div class="flex justify-between items-center p-4 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900">Chia sẻ hóa đơn #${ma_hoa_don}</h3>
+                <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Email người nhận</label>
+                    <input type="email" id="shareEmail" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Nhập email...">
+                </div>
+                <div class="flex space-x-3">
+                    <button onclick="sendInvoiceEmail('${ma_hoa_don}')" class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition">
+                        <i class="fas fa-envelope mr-2"></i>
+                        Gửi Email
+                    </button>
+                    <button onclick="copyInvoiceLink('${ma_hoa_don}')" class="flex-1 bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition">
+                        <i class="fas fa-link mr-2"></i>
+                        Copy Link
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Focus vào input email
+    setTimeout(() => {
+        const emailInput = modal.querySelector('#shareEmail');
+        if (emailInput) emailInput.focus();
+    }, 100);
+}
+
+/**
+ * Gửi hóa đơn qua email
+ */
+function sendInvoiceEmail(ma_hoa_don) {
+    const emailInput = document.getElementById('shareEmail');
+    const email = emailInput?.value?.trim();
+    
+    if (!email) {
+        showNotification('Vui lòng nhập email người nhận', 'error');
+        return;
+    }
+    
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        showNotification('Email không hợp lệ', 'error');
+        return;
+    }
+    
+    // Gửi request tới API
+    fetch(`/admin/hopdong/api/send-invoice-email/${ma_hoa_don}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
+        },
+        body: JSON.stringify({ email: email })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(data.message, 'success');
+            // Đóng modal
+            document.querySelector('.fixed.inset-0')?.remove();
+        } else {
+            showNotification(data.message || 'Lỗi gửi email', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('❌ Lỗi gửi email:', error);
+        showNotification('Lỗi kết nối', 'error');
+    });
+}
+
+/**
+ * Copy link hóa đơn
+ */
+function copyInvoiceLink(ma_hoa_don) {
+    const link = `${window.location.origin}/admin/hopdong/api/export-invoice-pdf/${ma_hoa_don}/`;
+    
+    navigator.clipboard.writeText(link)
+        .then(() => {
+            showNotification('Đã copy link hóa đơn!', 'success');
+            // Đóng modal
+            document.querySelector('.fixed.inset-0')?.remove();
+        })
+        .catch(() => {
+            showNotification('Không thể copy link', 'error');
+        });
+}
+
+/**
+ * Utility function: Lấy timestamp hiện tại
+ */
+function getCurrentTimestamp() {
+    return new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+}
+
+/**
+ * Utility function: Hiển thị notification
+ */
+function showNotification(message, type = 'info') {
+    // Tạo notification element
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg text-white transition-all duration-300 ${
+        type === 'success' ? 'bg-green-500' : 
+        type === 'error' ? 'bg-red-500' : 
+        'bg-blue-500'
+    }`;
+    notification.textContent = message;
+    
+    // Thêm vào DOM
+    document.body.appendChild(notification);
+    
+    // Auto remove sau 3s
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
+
+// ======================= CẬP NHẬT WORKFLOW ACTION =======================
+
+/**
+ * Override workflow action handler để xử lý hiển thị hóa đơn
+ */
+if (typeof executeWorkflowAction === 'function') {
+    const originalExecuteWorkflowAction = executeWorkflowAction;
+    
+    executeWorkflowAction = function(action, contractId, additionalData = {}) {
+        console.log(`🔄 Executing workflow action: ${action} for contract ${contractId}`);
+        
+        // Gọi function gốc và xử lý response
+        const result = originalExecuteWorkflowAction(action, contractId, additionalData);
+        
+        // Nếu là Promise, handle response
+        if (result && typeof result.then === 'function') {
+            return result.then(response => {
+                if (response && response.show_invoice && response.invoice_data) {
+                    console.log('🧾 Response có hóa đơn, hiển thị modal');
+                    setTimeout(() => showHoaDonModal(response.invoice_data), 500);
+                }
+                return response;
+            });
+        }
+        
+        return result;
+    };
+} else {
+    console.warn('⚠️ Function executeWorkflowAction không tồn tại, tạo mới');
+    
+    // Tạo function mới nếu chưa có
+    window.executeWorkflowAction = function(action, contractId, additionalData = {}) {
+        console.log(`🔄 Executing workflow action: ${action} for contract ${contractId}`);
+        
+        const data = {
+            action: action,
+            ma_hop_dong: contractId,
+            ...additionalData
+        };
+        
+        return fetch('/admin/hopdong/workflow-action/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('📦 Workflow response:', data);
+            
+            if (data.success) {
+                showNotification(data.message, 'success');
+                
+                // Hiển thị modal hóa đơn nếu có
+                if (data.show_invoice && data.invoice_data) {
+                    setTimeout(() => showHoaDonModal(data.invoice_data), 500);
+                }
+                
+                // Reload trang sau 2s để cập nhật UI
+                setTimeout(() => window.location.reload(), 2000);
+            } else {
+                showNotification(data.message || 'Có lỗi xảy ra', 'error');
+            }
+            
+            return data;
+        })
+        .catch(error => {
+            console.error('❌ Workflow error:', error);
+            showNotification('Lỗi kết nối', 'error');
+            throw error;
+        });
+    };
+}
+

@@ -1,292 +1,1113 @@
 {% extends 'admin/admin_layout.html' %}
 {% load static %}
 
-{% block content_body %}
+{% block title %}{% if hoa_don %}Sửa hóa đơn{% else %}Lập hóa đơn mới{% endif %}{% endblock %}
 
-<div id="deduction-data" data-deduction-index="{{ khau_tru|length }}"></div>
-<div class="container mx-auto px-4 py-8 bg-gray-50 min-h-screen font-sans">
-    <!-- Thông báo -->
+{% block content_body %}
+<div class="max-w-7xl mx-auto px-6 sm:px-8 lg:px-10 py-8">
+    <!-- Header -->
+    <div class="bg-white border-b border-gray-200 px-6 py-4">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <div class="w-10 h-10 bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg flex items-center justify-center">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">
+                        {% if hoa_don %}Sửa hóa đơn #{{ hoa_don.MA_HOA_DON }}{% else %}Lập hóa đơn mới{% endif %}
+                    </h1>
+                    <p class="text-sm text-gray-600">Quản lý hóa đơn thanh toán theo phòng</p>
+                </div>
+            </div>
+            <a href="{% url 'hoadon:hoadon_list' %}" 
+               class="inline-flex items-center px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition duration-200">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+                Quay lại
+            </a>
+        </div>
+    </div>
+
+    <!-- Messages -->
     {% if messages %}
-        <div class="mb-4">
+        <div class="px-6 py-4">
             {% for message in messages %}
-                <div class="p-4 mb-2 rounded {% if message.tags == 'error' %}bg-red-100 text-red-800{% else %}bg-green-100 text-green-800{% endif %}">
-                    {{ message }}
+                <div class="p-4 mb-3 rounded-lg border-l-4 {% if message.tags == 'error' %}bg-red-50 border-red-400 text-red-800{% else %}bg-green-50 border-green-400 text-green-800{% endif %}">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            {% if message.tags == 'error' %}
+                                <svg class="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                                </svg>
+                            {% else %}
+                                <svg class="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                </svg>
+                            {% endif %}
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm font-medium">{{ message }}</p>
+                        </div>
+                    </div>
                 </div>
             {% endfor %}
         </div>
     {% endif %}
-    <!-- Main Form -->
-    <form id="invoice-form" method="POST" 
-      action="{% if hoa_don %}{% url 'hoadon:sua_hoa_don' ma_hoa_don=hoa_don.MA_HOA_DON %}{% else %}{% url 'hoadon:them_hoa_don_post'%}{% endif %}" 
-      class="bg-white shadow-lg rounded-xl p-6 md:p-8">
-    {% csrf_token %}
-    <input type="hidden" name="MA_HOP_DONG" value="{{ hop_dong_hieu_luc.MA_HOP_DONG }}">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <!-- Invoice Details -->
-            <div class="lg:col-span-1 space-y-5 bg-gray-100 p-5 rounded-lg">
-                <h2 class="text-lg font-semibold text-gray-800">Thông tin hóa đơn</h2>
-                <div>
-                    <label for="MA_PHONG" class="block text-sm font-medium text-gray-700 mb-1">Phòng</label>
-                    {% if hoa_don %}
-                        <!-- Trường hợp sửa hóa đơn: hiển thị phòng cố định -->
-                        <input type="hidden" name="MA_PHONG" value="{{ hoa_don.MA_PHONG.MA_PHONG }}">
-                        <div class="w-full border border-gray-200 rounded-lg py-2 px-3 text-sm bg-gray-50 text-gray-700 shadow-sm">
-                            {{ hoa_don.MA_PHONG.TEN_PHONG|default:'Không xác định' }}
-                        </div>
-                    {% else %}
-                        <input type="hidden" name="MA_PHONG" value="{{ phong.MA_PHONG }}">
-                        <div class="w-full border border-gray-200 rounded-lg py-2 px-3 text-sm bg-gray-50 text-gray-700 shadow-sm">
-                            {{ phong.TEN_PHONG|default:'Không xác định' }}
-                        </div>
-                    {% endif %}
-                </div>
-                <div>
-                    <label for="LOAI_HOA_DON" class="block text-sm font-medium text-gray-700 mb-1">Loại hóa đơn</label>
-                    <select name="LOAI_HOA_DON" id="LOAI_HOA_DON" class="w-full border border-gray-200 rounded-lg py-2 px-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white shadow-sm">
-                        <option value="">-- Chọn loại hóa đơn --</option>
-                        <option value="bat_dau_hd" {% if form_data.LOAI_HOA_DON == 'bat_dau_hd' %}selected{% endif %}>Hóa đơn bắt đầu hợp đồng</option>
-                        <option value="hang_thang" {% if form_data.LOAI_HOA_DON == 'hang_thang' %}selected{% endif %}>Hóa đơn hàng tháng</option>
-                        <option value="theo_chu_ky" {% if form_data.LOAI_HOA_DON == 'theo_chu_ky' %}selected{% endif %}>Hóa đơn theo chu kỳ</option>
-                        <option value="ket_thuc_hd" {% if form_data.LOAI_HOA_DON == 'ket_thuc_hd' %}selected{% endif %}>Hóa đơn kết thúc hợp đồng</option>
-                    </select>
-                </div>
-                <div>
-                    <label for="NGAY_LAP_HDON" class="block text-sm font-medium text-gray-700 mb-1">Ngày lập hóa đơn</label>
-                    <input name="NGAY_LAP_HDON" id="NGAY_LAP_HDON" type="date" class="w-full border border-gray-200 rounded-lg py-2 px-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white shadow-sm" value="{{ form_data.NGAY_LAP_HDON|default:'' }}" required>
-                </div>
-                <div>
-                    <label for="TRANG_THAI_HDON" class="block text-sm font-medium text-gray-700 mb-1">Trạng thái hóa đơn</label>
-                    <select name="TRANG_THAI_HDON" id="TRANG_THAI_HDON" class="w-full border border-gray-200 rounded-lg py-2 px-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white shadow-sm">
-                        <option value="" disabled selected>Chọn trạng thái</option>
-                        <option value="Chưa thanh toán" {% if form_data.TRANG_THAI_HDON == 'Chưa thanh toán' %}selected{% endif %}>Chưa thanh toán</option>
-                        <option value="Đã thanh toán" {% if form_data.TRANG_THAI_HDON == 'Đã thanh toán' %}selected{% endif %}>Đã thanh toán</option>
-                    </select>
+    
+    <!-- Main Layout -->
+    <div class="flex space-y-8">
+        <!-- Left Sidebar - 30% -->
+        <div class="w-[30%] bg-white border-r border-gray-200 flex flex-col">
+            <!-- Filter Section -->
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <svg class="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.414A1 1 0 013 6.707V4z"></path>
+                    </svg>
+                    Bộ lọc phòng
+                </h3>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label for="khu_vuc" class="block text-sm font-medium text-gray-700 mb-2">
+                            Khu vực
+                        </label>
+                        <select id="khu_vuc" name="khu_vuc"
+                                class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition duration-200 text-sm">
+                            <option value="">Chọn khu vực</option>
+                            {% for kv in khu_vucs %}
+                                <option value="{{ kv.MA_KHU_VUC }}">{{ kv.TEN_KHU_VUC }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label for="thang_hoa_don" class="block text-sm font-medium text-gray-700 mb-2">
+                            Tháng hóa đơn
+                        </label>
+                        <input type="month" id="thang_hoa_don" name="thang_hoa_don" 
+                               value="{% now 'Y-m' %}"
+                               class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition duration-200 text-sm">
+                    </div>
                 </div>
             </div>
-            <!-- Deduction and Payment -->
-            <div class="lg:col-span-2 space-y-6">
-                <!-- Service Invoice -->
-                <div class="bg-gray-100 p-5 rounded-lg">
-                    <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                        <i class="fas fa-cog text-blue-600"></i> Hóa đơn dịch vụ
-                    </h2>
-                    <div class="max-h-60 overflow-y-auto rounded-lg">
-                        <table class="w-full table-auto border-collapse text-sm bg-white rounded-lg">
-                            <thead class="bg-blue-100 text-blue-900 sticky top-0">
-                                <tr>
-                                    <th class="p-2 font-semibold text-center text-xs md:text-sm w-[5%]">#</th>
-                                    <th class="p-2 font-semibold text-center text-xs md:text-sm w-[15%]">Tên dịch vụ</th>
-                                    <th class="p-2 font-semibold text-center text-xs md:text-sm w-[15%]">Chỉ số cũ</th>
-                                    <th class="p-2 font-semibold text-center text-xs md:text-sm w-[15%]">Chỉ số mới</th>
-                                    <th class="p-2 font-semibold text-center text-xs md:text-sm w-[15%]">Số dịch vụ</th>
-                                    <th class="p-2 font-semibold text-center text-xs md:text-sm w-[15%]">Thành tiền</th>                                 
-                                </tr>
-                            </thead>
-                            
-                            {% if dich_vu_list %}
-                                <tbody id="service-details">
-                                    {% for dich_vu in dich_vu_list %}
-                                        <tr id="dichvu-{{ dich_vu.MA_CHI_SO }}" class="hover:bg-gray-50 transition duration-200 border-b border-gray-100" data-gia-dich-vu="{{ dich_vu.GIA_DICH_VU|default:'0' }}" ... >
-                                            <td class="p-2 text-center text-gray-700 text-sm">{{ forloop.counter }}</td>
-                                            <td class="p-2 text-center text-gray-700 text-sm">{{ dich_vu.TEN_DICH_VU }}</td>
-                                            
-                                            <td class="p-2 text-center">
-                                                {% if dich_vu.MA_CHI_SO %}
-                                                    <input type="hidden" name="chi_so_dich_vu[{{ forloop.counter0 }}][MA_CHI_SO]" value="{{ dich_vu.MA_CHI_SO }}">
-                                                {% endif %}
-                                                <input type="hidden" name="chi_so_dich_vu[{{ forloop.counter0 }}][MA_DICH_VU]" value="{{ dich_vu.MA_DICH_VU }}">
-                                                <input type="number" name="chi_so_dich_vu[{{ forloop.counter0 }}][CHI_SO_CU]" 
-                                                    value="{{ dich_vu.CHI_SO_CU|default:'0' }}" 
-                                                    class="w-full text-center border border-gray-200 rounded-lg py-1 px-2 text-sm bg-gray-50 focus:ring-2 focus:ring-blue-500" 
-                                                    id="CHISOCU-{{ forloop.counter0 }}" step="0.01" readonly>
-                                            </td>
-                                            <td class="p-2 text-center">
-                                                <input type="number" name="chi_so_dich_vu[{{ forloop.counter0 }}][CHI_SO_MOI]" 
-                                                    value="{{ dich_vu.CHI_SO_MOI|default:'0' }}" 
-                                                    class="w-full text-center border border-gray-200 rounded-lg py-1 px-2 text-sm focus:ring-2 focus:ring-blue-500" 
-                                                    id="CHISOMOI-{{ forloop.counter0 }}" step="0.01">
-                                            </td>
-                                            <td class="p-2 text-center">
-                                                <input type="number" name="chi_so_dich_vu[{{ forloop.counter0 }}][SO_DICH_VU]" 
-                                                    value="{{ dich_vu.SO_DICH_VU|default:'0' }}" 
-                                                    class="w-full text-center border border-gray-200 rounded-lg py-1 px-2 text-sm bg-gray-50 focus:ring-2 focus:ring-blue-500" 
-                                                    id="SODICHVUTONG-{{ forloop.counter0 }}" step="0.01" readonly>
-                                            </td>
-                                            <td class="p-2 text-center">
-                                                <input type="number" name="chi_so_dich_vu[{{ forloop.counter0 }}][THANH_TIEN]" 
-                                                    value="{{ dich_vu.THANH_TIEN|default:'0' }}" 
-                                                    class="w-full text-center border border-gray-200 rounded-lg py-1 px-2 text-sm bg-gray-50 focus:ring-2 focus:ring-blue-500" 
-                                                    id="TIENDICHVUGHIDUOC-{{ forloop.counter0 }}" step="0.01" readonly>
-                                            </td>                                       
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
+
+            <!-- Room List -->
+            <div class="flex-1 overflow-hidden">
+                <div class="p-4 border-b border-gray-100">
+                    <h4 class="text-sm font-medium text-gray-700 uppercase tracking-wide">Phòng có hợp đồng hoạt động</h4>
+                    <p class="text-xs text-gray-500 mt-1">Chỉ hiển thị phòng có hợp đồng đang hoạt động</p>
+                </div>
+                
+                <div id="room_list_container" class="flex-1 overflow-y-auto">
+                    <div id="room_list" class="p-4">
+                        {% if hoa_don or phong %}
+                            <!-- Show current room if editing -->
+                            <div class="room-card bg-white border border-green-500 bg-green-50 rounded-lg p-4 mb-3"
+                                 data-ma-phong="{% if hoa_don %}{{ hoa_don.MA_PHONG.MA_PHONG }}{% else %}{{ phong.MA_PHONG }}{% endif %}">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                                            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <h4 class="font-medium text-gray-900">{% if hoa_don %}{{ hoa_don.MA_PHONG.TEN_PHONG|default:"Phòng "|add:hoa_don.MA_PHONG.MA_PHONG }}{% else %}{{ phong.TEN_PHONG|default:"Phòng "|add:phong.MA_PHONG }}{% endif %}</h4>
+                                            <p class="text-sm text-gray-500">Mã phòng: {% if hoa_don %}{{ hoa_don.MA_PHONG.MA_PHONG }}{% else %}{{ phong.MA_PHONG }}{% endif %}</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            <span class="w-1.5 h-1.5 bg-green-400 rounded-full mr-1.5"></span>
+                                            Đã chọn
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="text-center py-12 text-gray-500">
+                                <svg class="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                </svg>
+                                <p class="text-sm">Vui lòng chọn khu vực để xem danh sách phòng</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Content - 70% -->
+        <div class="w-[70%] bg-gray-50 flex flex-col">
+            <!-- Content Header -->
+            <div class="bg-white border-b border-gray-200 px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">Form lập hóa đơn</h3>
+                        <p class="text-sm text-gray-600" id="selected_room_info">
+                            {% if hoa_don %}
+                                Đã chọn: {{ hoa_don.MA_PHONG.TEN_PHONG|default:"Phòng "|add:hoa_don.MA_PHONG.MA_PHONG }}
+                            {% elif phong %}
+                                Đã chọn: {{ phong.TEN_PHONG|default:"Phòng "|add:phong.MA_PHONG }}
                             {% else %}
-                                <tbody id="service-details">
-                                    <tr>
-                                        <td colspan="7" class="text-gray-500 text-center py-4 text-sm {% if chi_so_dich_vu %}hidden{% endif %}">
-                                            Không có thông tin dịch vụ.
-                                        </td>
-                                    </tr>
-                                </tbody>
+                                Chưa chọn phòng
                             {% endif %}
+                        </p>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <span id="invoice_status_badge" class="{% if not hoa_don and not phong %}hidden{% endif %} px-3 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full">
+                            Sẵn sàng lập hóa đơn
+                        </span>
+                    </div>
+                </div>
+            </div>
 
-                            
-                        </table>
-                    </div>
-                </div>
-                <!-- Deduction Management -->
-                <div class="bg-gray-100 p-5 rounded-lg">
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                            <i class="fas fa-minus-circle text-red-600"></i> Quản lý khấu trừ
-                        </h2>
-                        <button type="button" id="add-deduction-btn" class="bg-green-600 text-white font-medium px-4 py-2 rounded-lg hover:bg-green-700 transition duration-300 transform hover:scale-105" title="Thêm khấu trừ mới">
-                            <i class="fas fa-plus mr-1"></i> Thêm
-                        </button>
-                    </div>
-                    <div id="discount-info" class="max-h-60 overflow-y-auto rounded-lg">
-                        <table class="w-full table-auto border-collapse text-sm bg-white rounded-lg">
-                            <thead class="bg-blue-100 text-blue-900 sticky top-0">
-                                <tr>
-                                    <th class="p-2 font-semibold text-center text-xs md:text-sm w-[5%]">#</th>
-                                    <th class="p-2 font-semibold text-center text-xs md:text-sm w-[15%]">Loại</th>
-                                    <th class="p-2 font-semibold text-center text-xs md:text-sm w-[20%]">Số tiền</th>
-                                    <th class="p-2 font-semibold text-center text-xs md:text-sm w-[30%]">Lý do</th>
-                                    <th class="p-2 font-semibold text-center text-xs md:text-sm w-[15%]">Ngày</th>
-                                    <th class="p-2 font-semibold text-center text-xs md:text-sm w-[15%]">Chức năng</th>
-                                </tr>
-                            </thead>
-                            <tbody id="discount-details">
-                                {% for item in khau_tru %}
-                                    <tr id="khautru_new_{{ item.MA_KHAU_TRU }}" class="hover:bg-gray-50 transition duration-200 border-b border-gray-100">
-                                        <td class="p-2 text-center text-gray-700 text-sm">{{ forloop.counter }}</td>
-                                        <td class="p-2 text-center">
-                                            <select id="loai_khau_tru_new_{{ forloop.counter0 }}" name="khautru[{{ forloop.counter0 }}][LOAI_KHAU_TRU]" class="w-full text-center border border-gray-200 rounded-lg py-1 px-2 text-sm bg-transparent focus:ring-2 focus:ring-blue-500" disabled>
-                                                <option value="Cộng" {% if item.LOAI_KHAU_TRU == 'Cộng' %}selected{% endif %}>Cộng</option>
-                                                <option value="Trừ" {% if item.LOAI_KHAU_TRU == 'Trừ' %}selected{% endif %}>Trừ</option>
-                                            </select>
-                                        </td>
-                                        <td class="p-2 text-center">
-                                            <input type="hidden" name="khautru[{{ forloop.counter0 }}][MA_KHAU_TRU]" value="{{ item.MA_KHAU_TRU }}">
-                                            <input id="so_tien_kt_new_{{ forloop.counter0 }}" name="khautru[{{ forloop.counter0 }}][SO_TIEN_KT]" type="number" step="1000" value="{{ item.SO_TIEN_KT|floatformat:2 }}" class="w-full text-center border border-gray-200 rounded-lg py-1 px-2 text-sm bg-transparent focus:ring-2 focus:ring-blue-500" readonly>
-                                        </td>
-                                        <td class="p-2 text-center">
-                                            <input id="ly_do_khau_tru_new_{{ forloop.counter0 }}" name="khautru[{{ forloop.counter0 }}][LY_DO_KHAU_TRU]" type="text" value="{{ item.LY_DO_KHAU_TRU }}" class="w-full text-center border border-gray-200 rounded-lg py-1 px-2 text-sm bg-transparent focus:ring-2 focus:ring-blue-500" readonly>
-                                        </td>
-                                        <td class="p-2 text-center">
-                                            <input id="ngay_khau_tru_new_{{ forloop.counter0 }}" name="khautru[{{ forloop.counter0 }}][NGAYKHAUTRU]" type="date" value="{{ item.NGAYKHAUTRU|date:'Y-m-d' }}" class="w-full text-center border border-gray-200 rounded-lg py-1 px-2 text-sm bg-transparent focus:ring-2 focus:ring-blue-500" readonly>
-                                        </td>
-                                        <td class="p-2 text-center flex justify-center gap-1">
-                                            <a href="javascript:void(0);" 
-                                               class="bg-blue-600 text-white text-xs font-medium px-3 py-1 rounded-lg hover:bg-blue-700 transition duration-300" 
-                                               id="edit-{{ forloop.counter0 }}" 
-                                               onclick="editDiscount({{ item.MA_KHAU_TRU }})">
-                                                <i class="fa fa-edit"></i>
-                                            </a>
-                                            <a href="javascript:void(0);" 
-                                               class="bg-red-600 text-white text-xs font-medium px-3 py-1 rounded-lg hover:bg-red-700 transition duration-300 ml-1" 
-                                               onclick="deleteDeduction('{{ item.MA_KHAU_TRU }}')">
-                                                <i class="fa fa-trash"></i>
-                                            </a>
-                                        </td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                        <div id="no-deduction-message" class="text-gray-500 text-center py-4 text-sm {% if khau_tru %}hidden{% endif %}">Không có thông tin khấu trừ.</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="grid grid-cols-1 p-6 lg:grid-cols-1">
-            <!-- Tổng kết hóa đơn -->
-            <div class="bg-gray-100 p-5 rounded-lg border border-gray-200">
-                <h2 class="text-xl font-bold text-blue-700 mb-6 flex items-center gap-3">
-                    <i class="fas fa-file-invoice-dollar text-green-500 text-2xl"></i>
-                    Tổng kết hóa đơn
-                </h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label for="TIEN_PHONG" class="block text-sm font-medium text-gray-600 mb-1">Tiền phòng</label>
-                        <input name="TIEN_PHONG" id="TIEN_PHONG" type="number" step="0.01"
-                               class="w-full border border-gray-300 rounded-xl py-2 px-4 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white shadow-inner"
-                               value="{{ hop_dong_hieu_luc.GIA_THUE|default:'0.00' }}">
-                    </div>
-                    <div>
-                        <label for="TIEN_DICH_VU" class="block text-sm font-medium text-gray-600 mb-1">Tiền dịch vụ</label>
-                        <input name="TIEN_DICH_VU" id="TIEN_DICH_VU" type="number" step="0.01"
-                               class="w-full border border-gray-300 rounded-xl py-2 px-4 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white shadow-inner"
-                               value="{{ form_data.TIEN_DICH_VU|default:'0.00' }}" readonly>
-                    </div>
-                    <div>
-                        <label for="TIEN_COC" class="block text-sm font-medium text-gray-600 mb-1">Tiền cọc</label>
-                        <input name="TIEN_COC" id="TIEN_COC" type="number" step="0.01"
-                               class="w-full border border-gray-300 rounded-xl py-2 px-4 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white shadow-inner"
-                               value="{{ hop_dong_hieu_luc.GIA_COC_HD|default:'0.00' }}">
-                    </div>
-                    <div>
-                        <label for="TIEN_KHAU_TRU" class="block text-sm font-medium text-gray-600 mb-1">Tiền khấu trừ</label>
-                        <input name="TIEN_KHAU_TRU" id="TIEN_KHAU_TRU" type="number" step="0.01"
-                               class="w-full border border-gray-200 bg-gray-100 rounded-xl py-2 px-4 text-sm text-gray-500 cursor-not-allowed shadow-inner"
-                               value="{{ form_data.TIEN_KHAU_TRU|default:'0.00' }}" readonly>
-                    </div>
-                    <div class="md:col-span-2">
-                        <label for="TONG_TIEN" class="block text-sm font-medium text-gray-600 mb-1">Tổng tiền</label>
-                        <input name="TONG_TIEN" id="TONG_TIEN" type="number" step="0.01"
-                               class="w-full border border-gray-200 bg-gray-100 rounded-xl py-3 px-4 text-base font-semibold text-gray-700 cursor-not-allowed shadow-inner"
-                               value="{{ form_data.TONG_TIEN|default:'0.00' }}" readonly>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="text-center mt-6">
-            <button type="submit" class="bg-blue-600 text-white font-medium px-6 py-3 rounded-lg hover:bg-blue-700 transition duration-300 transform hover:scale-105 shadow-md flex items-center justify-center mx-auto">
-                <i class="fas fa-save mr-2"></i> Lưu hóa đơn
-            </button>
-        </div>
-    </form>
+            <!-- Form Content -->
+            <div class="flex-1 overflow-y-auto">
+                <form method="post" id="hoaDonForm" class="h-full"
+                      action="{% if hoa_don %}{% url 'hoadon:sua_hoa_don' ma_hoa_don=hoa_don.MA_HOA_DON %}{% else %}{% url 'hoadon:them_hoa_don_post'%}{% endif %}">
+                    {% csrf_token %}
+                    <input type="hidden" id="ma_phong" name="MA_PHONG" value="{% if hoa_don %}{{ hoa_don.MA_PHONG.MA_PHONG }}{% else %}{{ phong.MA_PHONG|default:'' }}{% endif %}">
+                    <input type="hidden" name="MA_HOP_DONG" value="{{ hop_dong_hieu_luc.MA_HOP_DONG|default:'' }}">
+                    
+                    <div id="main_content" class="p-6">
+                        <!-- Empty State -->
+                        <div id="empty_state" class="{% if hoa_don or phong %}hidden{% endif %} flex flex-col items-center justify-center h-96 text-gray-500">
+                            <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            <h3 class="text-lg font-medium text-gray-900 mb-2">Chưa chọn phòng</h3>
+                            <p class="text-sm text-gray-600 text-center max-w-md">
+                                Vui lòng chọn một phòng từ danh sách bên trái để bắt đầu lập hóa đơn
+                            </p>
+                        </div>
 
-    <!-- Deduction Modal -->
-    <div id="deduction-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center hidden transition-opacity duration-300">
-        <div class="bg-white rounded-xl p-6 w-full max-w-lg shadow-2xl">
-            <h3 id="modal-title" class="text-lg font-semibold text-gray-800 mb-4">Thêm khấu trừ</h3>
-            <div class="space-y-4">
-                <div>
-                    <label for="modal_NGAYKHAUTRU" class="block text-sm font-medium text-gray-700 mb-1">Ngày khấu trừ <span class="text-red-500">*</span></label>
-                    <input id="modal_NGAYKHAUTRU" type="date" class="w-full border border-gray-200 rounded-lg py-2 px-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" required>
-                    <p id="error_NGAYKHAUTRU" class="text-red-500 text-xs mt-1 hidden">Vui lòng chọn ngày khấu trừ.</p>
-                </div>
-                <div>
-                    <label for="modal_LOAI_KHAU_TRU" class="block text-sm font-medium text-gray-700 mb-1">Loại điều chỉnh <span class="text-red-500">*</span></label>
-                    <select id="modal_LOAI_KHAU_TRU" class="w-full border border-gray-200 rounded-lg py-2 px-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" required>
-                        <option value="" disabled selected>Chọn loại</option>
-                        <option value="Cộng">Cộng</option>
-                        <option value="Trừ">Trừ</option>
-                    </select>
-                    <p id="error_LOAI_KHAU_TRU" class="text-red-500 text-xs mt-1 hidden">Vui lòng chọn loại điều chỉnh.</p>
-                </div>
-                <div>
-                    <label for="modal_SO_TIEN_KT" class="block text-sm font-medium text-gray-700 mb-1">Số tiền <span class="text-red-500">*</span></label>
-                    <input id="modal_SO_TIEN_KT" type="number" step="1000" min="0" class="w-full border border-gray-200 rounded-lg py-2 px-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" required>
-                    <p id="error_SO_TIEN_KT" class="text-red-500 text-xs mt-1 hidden">Vui lòng nhập số tiền hợp lệ.</p>
-                </div>
-                <div>
-                    <label for="modal_LY_DO_KHAU_TRU" class="block text-sm font-medium text-gray-700 mb-1">Lý do <span class="text-red-500">*</span></label>
-                    <input id="modal_LY_DO_KHAU_TRU" type="text" class="w-full border border-gray-200 rounded-lg py-2 px-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" required>
-                    <p id="error_LY_DO_KHAU_TRU" class="text-red-500 text-xs mt-1 hidden">Vui lòng nhập lý do khấu trừ.</p>
-                </div>
-            </div>
-            <div class="mt-6 flex justify-end space-x-2">
-                <button type="button" id="cancel-deduction" class="bg-gray-200 text-gray-700 font-medium px-4 py-2 rounded-lg hover:bg-gray-300 transition duration-200">Hủy</button>
-                <button type="button" id="save-deduction" class="bg-blue-600 text-white font-medium px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-200 flex items-center">
-                    <i class="fas fa-save mr-2"></i> Lưu
-                </button>
+                        <!-- Invoice Form -->
+                        <div id="invoice_form" class="{% if not hoa_don and not phong %}hidden{% endif %} space-y-6">
+                            <!-- Thông tin cơ bản hóa đơn -->
+                            <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                                <h4 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                                    <div class="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center mr-3">
+                                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                    </div>
+                                    Thông tin hóa đơn
+                                </h4>
+                                
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label for="LOAI_HOA_DON" class="block text-sm font-medium text-gray-700 mb-2">
+                                            Loại hóa đơn <span class="text-red-500">*</span>
+                                        </label>
+                                        <select name="LOAI_HOA_DON" id="LOAI_HOA_DON" required
+                                                class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200">
+                                            <option value="Hóa đơn bắt đầu" {% if form_data.LOAI_HOA_DON == 'Hóa đơn bắt đầu' %}selected{% endif %}>Hóa đơn bắt đầu hợp đồng</option>
+                                            <option value="Hóa đơn hàng tháng" {% if form_data.LOAI_HOA_DON == 'Hóa đơn hàng tháng' or not form_data.LOAI_HOA_DON %}selected{% endif %}>Hóa đơn hàng tháng</option>
+                                            <option value="Hóa đơn kết thúc" {% if form_data.LOAI_HOA_DON == 'Hóa đơn kết thúc' %}selected{% endif %}>Hóa đơn kết thúc hợp đồng</option>
+                                            <option value="Hóa đơn khác" {% if form_data.LOAI_HOA_DON == 'Hóa đơn khác' %}selected{% endif %}>Hóa đơn khác</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div>
+                                        <label for="NGAY_LAP_HDON" class="block text-sm font-medium text-gray-700 mb-2">
+                                            Ngày lập hóa đơn <span class="text-red-500">*</span>
+                                        </label>
+                                        <input name="NGAY_LAP_HDON" id="NGAY_LAP_HDON" type="date" required
+                                               class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
+                                               value="{{ form_data.NGAY_LAP_HDON|default:'' }}">
+                                    </div>
+
+                                    <input type="hidden" name="TRANG_THAI_HDON" value="Chưa thu tiền">
+                                </div>
+                            </div>
+
+                            <!-- Chi tiết dịch vụ -->
+                            <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                                <div class="flex items-center justify-between mb-4">
+                                    <h4 class="text-lg font-semibold text-gray-900 flex items-center">
+                                        <div class="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg flex items-center justify-center mr-3">
+                                            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                            </svg>
+                                        </div>
+                                        Chi tiết dịch vụ
+                                        <div id="service_status_indicator" class="ml-3 hidden">
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                                                </svg>
+                                                Cần ghi chỉ số
+                                            </span>
+                                        </div>
+                                    </h4>
+                                    <div class="flex items-center space-x-2">
+                                        <button type="button" id="go_to_record_btn" class="hidden px-3 py-1.5 bg-orange-600 text-white text-xs font-medium rounded-lg hover:bg-orange-700 transition duration-200">
+                                            <svg class="w-3 h-3 mr-1 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                                            </svg>
+                                            Ghi chỉ số
+                                        </button>
+                                        <button type="button" id="reload_services_btn" class="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition duration-200">
+                                            <svg class="w-3 h-3 mr-1 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                            </svg>
+                                            Tải lại
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-sm">
+                                        <thead class="bg-gray-50 border-b border-gray-200">
+                                            <tr>
+                                                <th class="px-3 py-3 text-left font-medium text-gray-700">Dịch vụ</th>
+                                                <th class="px-3 py-3 text-center font-medium text-gray-700">Chỉ số cũ</th>
+                                                <th class="px-3 py-3 text-center font-medium text-gray-700">Chỉ số mới</th>
+                                                <th class="px-3 py-3 text-center font-medium text-gray-700">Tiêu thụ</th>
+                                                <th class="px-3 py-3 text-right font-medium text-gray-700">Thành tiền</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="service_details" class="divide-y divide-gray-200">
+                                            <!-- Services sẽ được load động -->
+                                            {% if dich_vu_list %}
+                                                {% for dich_vu in dich_vu_list %}
+                                                    <tr class="hover:bg-gray-50">
+                                                        <td class="px-3 py-3">
+                                                            <div class="flex items-center">
+                                                                <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                                                                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                                                    </svg>
+                                                                </div>
+                                                                <div>
+                                                                    <p class="font-medium text-gray-900">{{ dich_vu.TEN_DICH_VU }}</p>
+                                                                    <p class="text-sm text-gray-500">{{ dich_vu.GIA_DICH_VU|floatformat:0 }}đ/{{ dich_vu.DON_VI_TINH|default:'đơn vị' }}</p>
+                                                                </div>
+                                                            </div>
+                                                            <input type="hidden" name="chi_so_dich_vu[{{ forloop.counter0 }}][MA_DICH_VU]" value="{{ dich_vu.MA_DICH_VU }}">
+                                                            {% if dich_vu.MA_CHI_SO %}
+                                                                <input type="hidden" name="chi_so_dich_vu[{{ forloop.counter0 }}][MA_CHI_SO]" value="{{ dich_vu.MA_CHI_SO }}">
+                                                            {% endif %}
+                                                        </td>
+                                                        <td class="px-3 py-3 text-center">
+                                                            <input type="number" name="chi_so_dich_vu[{{ forloop.counter0 }}][CHI_SO_CU]" 
+                                                                   value="{{ dich_vu.CHI_SO_CU|default:0 }}" readonly
+                                                                   class="w-20 px-2 py-1 text-center border border-gray-300 bg-gray-50 rounded text-sm">
+                                                        </td>
+                                                        <td class="px-3 py-3 text-center">
+                                                            <input type="number" name="chi_so_dich_vu[{{ forloop.counter0 }}][CHI_SO_MOI]" 
+                                                                   value="{{ dich_vu.CHI_SO_MOI|default:'' }}" 
+                                                                   class="w-20 px-2 py-1 text-center border border-gray-300 rounded text-sm"
+                                                                   onchange="updateServiceCalculation({{ forloop.counter0 }})">
+                                                        </td>
+                                                        <td class="px-3 py-3 text-center">
+                                                            <input type="number" name="chi_so_dich_vu[{{ forloop.counter0 }}][SO_DICH_VU]" 
+                                                                   value="{{ dich_vu.SO_DICH_VU|default:0 }}" readonly
+                                                                   class="w-20 px-2 py-1 text-center border border-gray-300 bg-gray-50 rounded text-sm">
+                                                        </td>
+                                                        <td class="px-3 py-3 text-right">
+                                                            <input type="number" name="chi_so_dich_vu[{{ forloop.counter0 }}][THANH_TIEN]" 
+                                                                   value="{{ dich_vu.THANH_TIEN|default:0 }}" readonly
+                                                                   class="w-24 px-2 py-1 text-right border border-gray-300 bg-gray-50 rounded text-sm">
+                                                        </td>
+                                                    </tr>
+                                                {% endfor %}
+                                            {% else %}
+                                                <tr>
+                                                    <td colspan="5" class="px-3 py-8 text-center text-gray-500">
+                                                        <svg class="w-12 h-12 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                                        </svg>
+                                                        <p>Không có dịch vụ nào</p>
+                                                    </td>
+                                                </tr>
+                                            {% endif %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Khấu trừ -->
+                            <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                                <div class="flex items-center justify-between mb-4">
+                                    <h4 class="text-lg font-semibold text-gray-900 flex items-center">
+                                        <div class="w-8 h-8 bg-gradient-to-r from-red-500 to-pink-600 rounded-lg flex items-center justify-center mr-3">
+                                            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 12H6"></path>
+                                            </svg>
+                                        </div>
+                                        Quản lý khấu trừ
+                                    </h4>
+                                    <button type="button" id="add_deduction_btn" class="px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded-lg hover:bg-green-700 transition duration-200">
+                                        <svg class="w-3 h-3 mr-1 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                        </svg>
+                                        Thêm
+                                    </button>
+                                </div>
+                                
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-sm">
+                                        <thead class="bg-gray-50 border-b border-gray-200">
+                                            <tr>
+                                                <th class="px-3 py-3 text-left font-medium text-gray-700">Loại</th>
+                                                <th class="px-3 py-3 text-center font-medium text-gray-700">Số tiền</th>
+                                                <th class="px-3 py-3 text-center font-medium text-gray-700">Ngày</th>
+                                                <th class="px-3 py-3 text-left font-medium text-gray-700">Lý do</th>
+                                                <th class="px-3 py-3 text-center font-medium text-gray-700">Hành động</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="deduction_details" class="divide-y divide-gray-200">
+                                            {% if khau_tru %}
+                                                {% for item in khau_tru %}
+                                                    <tr class="hover:bg-gray-50">
+                                                        <td class="px-3 py-3">
+                                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if item.LOAI_KHAU_TRU == 'Cộng' %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+                                                                {{ item.LOAI_KHAU_TRU }}
+                                                            </span>
+                                                            <input type="hidden" name="khautru[{{ forloop.counter0 }}][LOAI_KHAU_TRU]" value="{{ item.LOAI_KHAU_TRU }}">
+                                                            {% if item.MA_KHAU_TRU %}<input type="hidden" name="khautru[{{ forloop.counter0 }}][MA_KHAU_TRU]" value="{{ item.MA_KHAU_TRU }}">{% endif %}
+                                                        </td>
+                                                        <td class="px-3 py-3 text-center">
+                                                            <span class="font-medium">{{ item.SO_TIEN_KT|floatformat:0 }}đ</span>
+                                                            <input type="hidden" name="khautru[{{ forloop.counter0 }}][SO_TIEN_KT]" value="{{ item.SO_TIEN_KT }}">
+                                                        </td>
+                                                        <td class="px-3 py-3 text-center">
+                                                            <span class="text-sm text-gray-600">{{ item.NGAYKHAUTRU|date:'d/m/Y' }}</span>
+                                                            <input type="hidden" name="khautru[{{ forloop.counter0 }}][NGAYKHAUTRU]" value="{{ item.NGAYKHAUTRU|date:'Y-m-d' }}">
+                                                        </td>
+                                                        <td class="px-3 py-3">
+                                                            <span class="text-sm">{{ item.LY_DO_KHAU_TRU }}</span>
+                                                            <input type="hidden" name="khautru[{{ forloop.counter0 }}][LY_DO_KHAU_TRU]" value="{{ item.LY_DO_KHAU_TRU }}">
+                                                        </td>
+                                                        <td class="px-3 py-3 text-center">
+                                                            <button type="button" onclick="editDeduction({{ forloop.counter0 }})" class="px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 mr-1">
+                                                                Sửa
+                                                            </button>
+                                                            <button type="button" onclick="deleteDeduction({{ forloop.counter0 }})" class="px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700">
+                                                                Xóa
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                {% endfor %}
+                                            {% else %}
+                                                <tr>
+                                                    <td colspan="5" class="px-3 py-8 text-center text-gray-500">
+                                                        <p>Chưa có khấu trừ nào</p>
+                                                    </td>
+                                                </tr>
+                                            {% endif %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Tổng kết hóa đơn -->
+                            <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                                <h4 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                                    <div class="w-8 h-8 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center mr-3">
+                                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                                        </svg>
+                                    </div>
+                                    Tổng kết hóa đơn
+                                </h4>
+                                
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label for="TIEN_PHONG" class="block text-sm font-medium text-gray-700 mb-2">Tiền phòng</label>
+                                        <div class="relative">
+                                            <input name="TIEN_PHONG" id="TIEN_PHONG" type="number" step="0.01"
+                                                   class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition duration-200"
+                                                   value="{{ hop_dong_hieu_luc.GIA_THUE|default:'0.00' }}">
+                                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                                <span class="text-gray-500 text-sm">VNĐ</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div>
+                                        <label for="TIEN_DICH_VU" class="block text-sm font-medium text-gray-700 mb-2">Tiền dịch vụ</label>
+                                        <div class="relative">
+                                            <input name="TIEN_DICH_VU" id="TIEN_DICH_VU" type="number" step="0.01" readonly
+                                                   class="w-full px-3 py-2.5 border border-gray-300 bg-gray-50 rounded-lg text-gray-600 cursor-not-allowed"
+                                                   value="{{ form_data.TIEN_DICH_VU|default:'0.00' }}">
+                                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                                <span class="text-gray-500 text-sm">VNĐ</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+<input type="hidden" name="TIEN_COC" id="TIEN_COC" value="0">
+                                    
+                                    <div>
+                                        <label for="TIEN_KHAU_TRU" class="block text-sm font-medium text-gray-700 mb-2">Tiền khấu trừ</label>
+                                        <div class="relative">
+                                            <input name="TIEN_KHAU_TRU" id="TIEN_KHAU_TRU" type="number" step="0.01" readonly
+                                                   class="w-full px-3 py-2.5 border border-gray-300 bg-gray-50 rounded-lg text-gray-600 cursor-not-allowed"
+                                                   value="{{ form_data.TIEN_KHAU_TRU|default:'0.00' }}">
+                                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                                <span class="text-gray-500 text-sm">VNĐ</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-span-2">
+                                        <label for="TONG_TIEN" class="block text-sm font-medium text-gray-700 mb-2">Tổng tiền</label>
+                                        <div class="relative">
+                                            <input name="TONG_TIEN" id="TONG_TIEN" type="number" step="0.01" readonly
+                                                   class="w-full px-3 py-3 border-2 border-purple-300 bg-purple-50 rounded-lg text-purple-800 font-semibold text-lg cursor-not-allowed"
+                                                   value="{{ form_data.TONG_TIEN|default:'0.00' }}">
+                                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                                <span class="text-purple-600 font-medium">VNĐ</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sticky Footer -->
+                    <div id="form_footer" class="{% if not hoa_don and not phong %}hidden{% endif %} bg-white border-t border-gray-200 px-6 py-4">
+                        <div class="flex items-center justify-between">
+                            <div class="text-sm text-gray-600">
+                                <span id="total_amount_display">Tổng tiền: {{ form_data.TONG_TIEN|default:'0' |floatformat:0 }} VNĐ</span>
+                            </div>
+                            <button type="submit" id="btn_luu" 
+                                    class="inline-flex items-center px-6 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition duration-200">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path>
+                                </svg>
+                                {% if hoa_don %}Cập nhật hóa đơn{% else %}Lưu hóa đơn{% endif %}
+                            </button>
+                        </div>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 </div>
-<script src="{% static 'js/admin/hoadon/chon_phong.js' %}"></script>
-<script src="{% static 'js/admin/hoadon/themsua_hoadon.js' %}"></script>
+
+<!-- Deduction Modal -->
+<div id="deduction_modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-white rounded-xl p-6 w-full max-w-md shadow-2xl">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4" id="modal_title">Thêm khấu trừ</h3>
+        
+        <div class="space-y-4">
+            <div>
+                <label for="modal_LOAI_KHAU_TRU" class="block text-sm font-medium text-gray-700 mb-2">
+                    Loại điều chỉnh <span class="text-red-500">*</span>
+                </label>
+                <select id="modal_LOAI_KHAU_TRU" required
+                        class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200">
+                    <option value="">Chọn loại</option>
+                    <option value="Cộng">Cộng thêm</option>
+                    <option value="Trừ">Khấu trừ</option>
+                </select>
+            </div>
+            
+            <div>
+                <label for="modal_SO_TIEN_KT" class="block text-sm font-medium text-gray-700 mb-2">
+                    Số tiền <span class="text-red-500">*</span>
+                </label>
+                <input id="modal_SO_TIEN_KT" type="number" step="1000" min="0" required
+                       class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
+                       placeholder="Nhập số tiền">
+            </div>
+            
+            <div>
+                <label for="modal_NGAYKHAUTRU" class="block text-sm font-medium text-gray-700 mb-2">
+                    Ngày <span class="text-red-500">*</span>
+                </label>
+                <input id="modal_NGAYKHAUTRU" type="date" required
+                       class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200">
+            </div>
+            
+            <div>
+                <label for="modal_LY_DO_KHAU_TRU" class="block text-sm font-medium text-gray-700 mb-2">
+                    Lý do <span class="text-red-500">*</span>
+                </label>
+                <textarea id="modal_LY_DO_KHAU_TRU" rows="3" required
+                          class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
+                          placeholder="Nhập lý do khấu trừ"></textarea>
+            </div>
+        </div>
+        
+        <div class="mt-6 flex justify-end space-x-3">
+            <button type="button" id="cancel_deduction" class="px-4 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition duration-200">
+                Hủy
+            </button>
+            <button type="button" id="save_deduction" class="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition duration-200">
+                Lưu
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    let currentSelectedRoom = null;
+    
+    // Event handlers
+    $('#khu_vuc').change(function() {
+        const khuVucId = $(this).val();
+        if (khuVucId) {
+            loadPhongTro(khuVucId);
+        } else {
+            resetForm();
+        }
+    });
+
+    function loadPhongTro(khuVucId) {
+        $.ajax({
+            url: '{% url "admin_hoadon:lay_phong_theo_khu_vuc_hoa_don" %}',
+            data: { 'khu_vuc_id': khuVucId },
+            success: function(data) {
+                const roomList = $('#room_list');
+                roomList.empty();
+                
+                if (data.phong_tros && data.phong_tros.length > 0) {
+                    $.each(data.phong_tros, function(index, phong) {
+                        const roomCard = createRoomCard(phong);
+                        roomList.append(roomCard);
+                    });
+                } else {
+                    roomList.append(`
+                        <div class="text-center py-8 text-gray-500">
+                            <svg class="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                            </svg>
+                            <p class="text-sm">Không có phòng nào đủ điều kiện</p>
+                            <p class="text-xs text-gray-400 mt-1">Phòng cần có hợp đồng đang hoạt động</p>
+                        </div>
+                    `);
+                }
+            },
+            error: function() {
+                showNotification('Có lỗi khi tải danh sách phòng trọ', 'error');
+            }
+        });
+    }
+
+    function createRoomCard(phong) {
+        return `
+            <div class="room-card bg-white border border-gray-200 rounded-lg p-4 mb-3 hover:border-green-300 hover:shadow-md transition-all duration-200 cursor-pointer"
+                 data-ma-phong="${phong.MA_PHONG}" 
+                 onclick="selectRoom(${phong.MA_PHONG}, '${phong.TEN_PHONG || 'Phòng ' + phong.MA_PHONG}')">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h4 class="font-medium text-gray-900">${phong.TEN_PHONG || 'Phòng ' + phong.MA_PHONG}</h4>
+                            <p class="text-sm text-gray-500">Mã phòng: ${phong.MA_PHONG}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            <span class="w-1.5 h-1.5 bg-green-400 rounded-full mr-1.5"></span>
+                            Đang hoạt động
+                        </span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Global function để chọn phòng
+    window.selectRoom = function(maPhong, tenPhong) {
+        // Remove previous selection
+        $('.room-card').removeClass('border-green-500 bg-green-50');
+        
+        // Add selection to current room
+        $(`.room-card[data-ma-phong="${maPhong}"]`).addClass('border-green-500 bg-green-50');
+        
+        // Update hidden input
+        $('#MA_PHONG').val(maPhong);
+        currentSelectedRoom = { maPhong, tenPhong };
+        
+        // Update UI
+        $('#selected_room_info').text(`Đã chọn: ${tenPhong}`);
+        $('#empty_state').addClass('hidden');
+        $('#invoice_form').removeClass('hidden');
+        $('#form_footer').removeClass('hidden');
+        $('#invoice_status_badge').removeClass('hidden');
+        
+        // Load service data
+        loadServiceData(maPhong);
+    };
+
+    function loadServiceData(maPhong) {
+        const thangHoaDon = $('#NGAY_LAP_HDON').val();
+        let url = `/admin/api/thong-tin-phong-hoa-don/${maPhong}/`;
+        if (thangHoaDon) {
+            url += `?thang_hoa_don=${thangHoaDon.substring(0, 7)}`;
+        }
+        
+        $.ajax({
+            url: url,
+            success: function(data) {
+                if (data.success) {
+                    populateInvoiceForm(data);
+                } else {
+                    showNotification(data.error || 'Có lỗi khi tải thông tin phòng', 'error');
+                }
+            },
+            error: function() {
+                showNotification('Có lỗi khi tải thông tin dịch vụ', 'error');
+            }
+        });
+    }
+
+    function populateInvoiceForm(data) {
+        // Thông tin cơ bản
+        $('#TIEN_PHONG').val(data.hop_dong.GIA_THUE);
+        $('#TIEN_COC').val(data.hop_dong.GIA_COC_HD);
+        $('#MA_HOP_DONG').val(data.hop_dong.MA_HOP_DONG);
+        
+        // Thông tin dịch vụ
+        populateServiceTable(data.dich_vu_list);
+        
+        // Tính toán tổng tiền
+        calculateTotals();
+    }
+
+    function populateServiceTable(dichVuList) {
+        const tbody = $('#service-details');
+        tbody.empty();
+        
+        let hasIncompleteService = false;
+        
+        if (dichVuList && dichVuList.length > 0) {
+            $('#no-service-message').addClass('hidden');
+            
+            dichVuList.forEach((dv, index) => {
+                // Kiểm tra xem dịch vụ có cần ghi chỉ số không
+                const needsReading = (dv.LOAI_DICH_VU !== 'Cố định' && dv.LOAI_DICH_VU !== 'Co dinh') && 
+                                   (dv.CHI_SO_MOI === null || dv.CHI_SO_MOI === undefined || dv.CHI_SO_MOI === '');
+                
+                if (needsReading) {
+                    hasIncompleteService = true;
+                }
+                
+                const rowHtml = `
+                    <tr class="hover:bg-gray-50 transition duration-200 border-b border-gray-100 ${needsReading ? 'bg-yellow-50 border-yellow-200' : ''}">
+                        <td class="p-2 text-center text-gray-700 text-sm">${index + 1}</td>
+                        <td class="p-2 text-center text-gray-800 text-sm font-medium">
+                            ${dv.TEN_DICH_VU}
+                            ${needsReading ? '<div class="inline-flex items-center ml-2"><span class="w-2 h-2 bg-yellow-400 rounded-full"></span></div>' : ''}
+                        </td>
+                        <td class="p-2 text-center">
+                            <input type="number" step="0.01" value="${dv.CHI_SO_CU || 0}" 
+                                   class="w-full text-center border border-gray-200 rounded-lg py-1 px-2 text-sm bg-gray-100" readonly>
+                            <input type="hidden" name="chi_so_dich_vu[${index}][CHI_SO_CU]" value="${dv.CHI_SO_CU || 0}">
+                        </td>
+                        <td class="p-2 text-center">
+                            <input type="number" step="0.01" value="${dv.CHI_SO_MOI || ''}" 
+                                   class="chi-so-moi w-full text-center border border-gray-200 rounded-lg py-1 px-2 text-sm focus:ring-2 focus:ring-green-500 ${needsReading ? 'border-yellow-300 bg-yellow-50' : ''}"
+                                   onchange="calculateServiceRow(${index})" ${needsReading ? 'placeholder="Cần ghi chỉ số"' : ''}>
+                            <input type="hidden" name="chi_so_dich_vu[${index}][CHI_SO_MOI]" value="${dv.CHI_SO_MOI || 0}">
+                        </td>
+                        <td class="p-2 text-center">
+                            <input type="number" step="0.01" value="${dv.SO_DICH_VU || 0}" 
+                                   class="so-dich-vu w-full text-center border border-gray-200 rounded-lg py-1 px-2 text-sm bg-gray-100" readonly>
+                            <input type="hidden" name="chi_so_dich_vu[${index}][SO_DICH_VU]" value="${dv.SO_DICH_VU || 0}">
+                        </td>
+                        <td class="p-2 text-center text-gray-700 text-sm">${parseFloat(dv.GIA_DICH_VU || 0).toLocaleString('vi-VN')} đ</td>
+                        <td class="p-2 text-center">
+                            <input type="number" step="0.01" value="${dv.THANH_TIEN || 0}" 
+                                   class="thanh-tien w-full text-center border border-gray-200 rounded-lg py-1 px-2 text-sm bg-gray-100" readonly>
+                            <input type="hidden" name="chi_so_dich_vu[${index}][THANH_TIEN]" value="${dv.THANH_TIEN || 0}">
+                        </td>
+                        <input type="hidden" name="chi_so_dich_vu[${index}][MA_DICH_VU]" value="${dv.MA_DICH_VU}">
+                        <input type="hidden" name="chi_so_dich_vu[${index}][MA_CHI_SO]" value="${dv.MA_CHI_SO || ''}">
+                    </tr>
+                `;
+                tbody.append(rowHtml);
+            });
+            
+            // Hiển thị/ẩn các indicator và nút
+            if (hasIncompleteService) {
+                $('#service_status_indicator').removeClass('hidden');
+                $('#go_to_record_btn').removeClass('hidden');
+            } else {
+                $('#service_status_indicator').addClass('hidden');
+                $('#go_to_record_btn').addClass('hidden');
+            }
+        } else {
+            $('#no-service-message').removeClass('hidden');
+            $('#service_status_indicator').addClass('hidden');
+            $('#go_to_record_btn').addClass('hidden');
+        }
+    }
+
+    // Tính toán cho từng dòng dịch vụ
+    window.calculateServiceRow = function(index) {
+        const row = document.querySelector(`#service-details tr:nth-child(${index + 1})`);
+        if (!row) return;
+        
+        const chiSoCu = parseFloat(row.querySelector('input[name*="[CHI_SO_CU]"]').value) || 0;
+        const chiSoMoi = parseFloat(row.querySelector('.chi-so-moi').value) || 0;
+        const giaDichVu = parseFloat(row.cells[5].textContent.replace(/[^\d.]/g, '')) || 0;
+        
+        const soDichVu = chiSoMoi - chiSoCu;
+        const thanhTien = soDichVu * giaDichVu;
+        
+        // Cập nhật giá trị hiển thị
+        row.querySelector('.so-dich-vu').value = soDichVu;
+        row.querySelector('.thanh-tien').value = thanhTien;
+        
+        // Cập nhật hidden inputs
+        row.querySelector('input[name*="[CHI_SO_MOI]"]').value = chiSoMoi;
+        row.querySelector('input[name*="[SO_DICH_VU]"]').value = soDichVu;
+        row.querySelector('input[name*="[THANH_TIEN]"]').value = thanhTien;
+        
+        // Tính lại tổng tiền
+        calculateTotals();
+    };
+
+    // Calculate totals when inputs change
+    $(document).on('input', '#TIEN_PHONG', function() {
+        calculateTotals();
+    });
+
+    function calculateTotals() {
+        let tienPhong = parseFloat($('#TIEN_PHONG').val()) || 0;
+        
+        // Tính tiền dịch vụ
+        let tienDichVu = 0;
+        $('.thanh-tien').each(function() {
+            tienDichVu += parseFloat($(this).val()) || 0;
+        });
+        
+        // Tính khấu trừ (nếu có)
+        let tienKhauTru = parseFloat($('#TIEN_KHAU_TRU').val()) || 0;
+        
+        let tongTien = tienPhong + tienDichVu + tienKhauTru;
+        
+        $('#TIEN_DICH_VU').val(tienDichVu.toFixed(2));
+        $('#TONG_TIEN').val(tongTien.toFixed(2));
+    }
+
+    function resetForm() {
+        $('#room_list').html(`
+            <div class="text-center py-12 text-gray-500">
+                <svg class="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                </svg>
+                <p class="text-sm">Vui lòng chọn khu vực để xem danh sách phòng</p>
+            </div>
+        `);
+        $('#empty_state').removeClass('hidden');
+        $('#invoice_form').addClass('hidden');
+        $('#form_footer').addClass('hidden');
+        $('#invoice_status_badge').addClass('hidden');
+        $('#selected_room_info').text('Chưa chọn phòng');
+        
+        currentSelectedRoom = null;
+    }
+
+    function showNotification(message, type = 'success') {
+        const alertClass = type === 'error' ? 'bg-red-50 border-red-400 text-red-800' : 'bg-green-50 border-green-400 text-green-800';
+        const iconClass = type === 'error' ? 'text-red-400' : 'text-green-400';
+        const iconPath = type === 'error' ? 
+            'M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z' :
+            'M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z';
+        
+        const notification = $(`
+            <div class="p-4 mb-3 rounded-lg border-l-4 ${alertClass}">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="w-5 h-5 ${iconClass}" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="${iconPath}" clip-rule="evenodd"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm font-medium">${message}</p>
+                    </div>
+                </div>
+            </div>
+        `);
+        
+        $('.border-l-4').remove();
+        $('.max-w-6xl').first().prepend(`<div class="px-6 py-4">${notification.prop('outerHTML')}</div>`);
+        
+        setTimeout(() => {
+            $('.border-l-4').parent().fadeOut();
+        }, 5000);
+    }
+
+    // Handle go to record button
+    $('#go_to_record_btn').click(function() {
+        if (currentSelectedRoom && currentSelectedRoom.maPhong) {
+            const thangHoaDon = $('#NGAY_LAP_HDON').val();
+            let url = `/admin/dichvu/ghi-so/${currentSelectedRoom.maPhong}/`;
+            if (thangHoaDon) {
+                url += `?thang=${thangHoaDon.substring(0, 7)}`;
+            }
+            
+            // Store current form data in sessionStorage for returning
+            const formData = {
+                maPhong: currentSelectedRoom.maPhong,
+                tenPhong: currentSelectedRoom.tenPhong,
+                thangHoaDon: thangHoaDon,
+                returnUrl: window.location.href
+            };
+            sessionStorage.setItem('invoice_form_data', JSON.stringify(formData));
+            
+            showNotification('Chuyển đến trang ghi chỉ số dịch vụ...', 'success');
+            setTimeout(() => {
+                window.location.href = url;
+            }, 1000);
+        }
+    });
+
+    // Validation form trước khi submit
+    $('#hoaDonForm').submit(function(e) {
+        if (!currentSelectedRoom) {
+            e.preventDefault();
+            showNotification('Vui lòng chọn phòng trước khi lưu.', 'error');
+            return;
+        }
+        
+        // Kiểm tra xem có dịch vụ nào cần ghi chỉ số không
+        let hasIncompleteService = false;
+        $('.chi-so-moi').each(function() {
+            const $input = $(this);
+            const row = $input.closest('tr');
+            const isFixedService = row.find('input[name*="[LOAI_DICH_VU]"]').val() === 'Cố định' || 
+                                 row.find('input[name*="[LOAI_DICH_VU]"]').val() === 'Co dinh';
+            
+            if (!isFixedService && (!$input.val() || $input.val() === '')) {
+                hasIncompleteService = true;
+                return false;
+            }
+        });
+        
+        if (hasIncompleteService) {
+            e.preventDefault();
+            showNotification('Vui lòng ghi đầy đủ chỉ số dịch vụ trước khi lập hóa đơn. Click nút "Ghi chỉ số" để chuyển đến trang ghi chỉ số.', 'error');
+            // Highlight the incomplete services
+            $('.chi-so-moi').each(function() {
+                const $input = $(this);
+                if (!$input.val() || $input.val() === '') {
+                    $input.addClass('border-red-300 bg-red-50').focus();
+                }
+            });
+            return;
+        }
+
+        // Show loading state
+        $('#btn_luu').prop('disabled', true).html(`
+            <svg class="animate-spin w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Đang lưu...
+        `);
+    });
+    
+    // ==========================================================================
+    // DEDUCTION MANAGEMENT FUNCTIONS
+    // ==========================================================================
+    let deductionData = []; // Lưu trữ dữ liệu khấu trừ tạm thời
+    let editingDeductionIndex = -1;
+    
+    // Khởi tạo dữ liệu khấu trừ có sẵn
+    function initializeDeductions() {
+        // Load existing deductions from template
+        $('#deduction_details tr').each(function(index) {
+            if ($(this).find('td').length > 1) { // Skip empty rows
+                const loai = $(this).find('input[name*="[LOAI_KHAU_TRU]"]').val();
+                const soTien = $(this).find('input[name*="[SO_TIEN_KT]"]').val();
+                const ngay = $(this).find('input[name*="[NGAYKHAUTRU]"]').val();
+                const lyDo = $(this).find('input[name*="[LY_DO_KHAU_TRU]"]').val();
+                const maKhauTru = $(this).find('input[name*="[MA_KHAU_TRU]"]').val();
+                
+                if (loai && soTien && ngay && lyDo) {
+                    deductionData.push({
+                        loai: loai,
+                        soTien: parseFloat(soTien),
+                        ngay: ngay,
+                        lyDo: lyDo,
+                        maKhauTru: maKhauTru || null
+                    });
+                }
+            }
+        });
+    }
+    
+    // Call initialize on page load
+    initializeDeductions();
+    
+    // Modal handlers
+    $('#add_deduction_btn').click(function() {
+        editingDeductionIndex = -1;
+        showDeductionModal();
+    });
+    
+    $('#cancel_deduction').click(function() {
+        hideDeductionModal();
+    });
+    
+    $('#save_deduction').click(function() {
+        saveDeduction();
+    });
+    
+    function showDeductionModal(data = null) {
+        if (data) {
+            // Edit mode
+            $('#modal_title').text('Sửa khấu trừ');
+            $('#modal_LOAI_KHAU_TRU').val(data.loai);
+            $('#modal_SO_TIEN_KT').val(data.soTien);
+            $('#modal_NGAYKHAUTRU').val(data.ngay);
+            $('#modal_LY_DO_KHAU_TRU').val(data.lyDo);
+        } else {
+            // Add mode
+            $('#modal_title').text('Thêm khấu trừ');
+            $('#modal_LOAI_KHAU_TRU').val('');
+            $('#modal_SO_TIEN_KT').val('');
+            $('#modal_NGAYKHAUTRU').val(new Date().toISOString().split('T')[0]);
+            $('#modal_LY_DO_KHAU_TRU').val('');
+        }
+        $('#deduction_modal').removeClass('hidden');
+    }
+    
+    function hideDeductionModal() {
+        $('#deduction_modal').addClass('hidden');
+        editingDeductionIndex = -1;
+    }
+    
+    function saveDeduction() {
+        const loai = $('#modal_LOAI_KHAU_TRU').val();
+        const soTien = parseFloat($('#modal_SO_TIEN_KT').val());
+        const ngay = $('#modal_NGAYKHAUTRU').val();
+        const lyDo = $('#modal_LY_DO_KHAU_TRU').val();
+        
+        // Validation
+        if (!loai || !soTien || !ngay || !lyDo) {
+            showNotification('Vui lòng điền đầy đủ thông tin', 'error');
+            return;
+        }
+        
+        if (soTien <= 0) {
+            showNotification('Số tiền phải lớn hơn 0', 'error');
+            return;
+        }
+        
+        const deductionItem = {
+            loai: loai,
+            soTien: soTien,
+            ngay: ngay,
+            lyDo: lyDo,
+            maKhauTru: null // New items don't have ID yet
+        };
+        
+        if (editingDeductionIndex >= 0) {
+            // Update existing
+            if (deductionData[editingDeductionIndex].maKhauTru) {
+                deductionItem.maKhauTru = deductionData[editingDeductionIndex].maKhauTru;
+            }
+            deductionData[editingDeductionIndex] = deductionItem;
+        } else {
+            // Add new
+            deductionData.push(deductionItem);
+        }
+        
+        updateDeductionTable();
+        calculateTotals();
+        hideDeductionModal();
+        showNotification(editingDeductionIndex >= 0 ? 'Cập nhật khấu trừ thành công' : 'Thêm khấu trừ thành công');
+    }
+    
+    function updateDeductionTable() {
+        const tbody = $('#deduction_details');
+        tbody.empty();
+        
+        if (deductionData.length === 0) {
+            tbody.append(`
+                <tr>
+                    <td colspan="5" class="px-3 py-8 text-center text-gray-500">
+                        <p>Chưa có khấu trừ nào</p>
+                    </td>
+                </tr>
+            `);
+            $('#TIEN_KHAU_TRU').val(0);
+            return;
+        }
+        
+        let totalDeduction = 0;
+        deductionData.forEach((item, index) => {
+            const adjustedAmount = item.loai === 'Cộng' ? item.soTien : -item.soTien;
+            totalDeduction += adjustedAmount;
+            
+            const rowHtml = `
+                <tr class="hover:bg-gray-50">
+                    <td class="px-3 py-3">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${item.loai === 'Cộng' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                            ${item.loai}
+                        </span>
+                        <input type="hidden" name="khautru[${index}][LOAI_KHAU_TRU]" value="${item.loai}">
+                        ${item.maKhauTru ? `<input type="hidden" name="khautru[${index}][MA_KHAU_TRU]" value="${item.maKhauTru}">` : ''}
+                    </td>
+                    <td class="px-3 py-3 text-center">
+                        <span class="font-medium">${item.soTien.toLocaleString('vi-VN')}đ</span>
+                        <input type="hidden" name="khautru[${index}][SO_TIEN_KT]" value="${item.soTien}">
+                    </td>
+                    <td class="px-3 py-3 text-center">
+                        <span class="text-sm text-gray-600">${formatDate(item.ngay)}</span>
+                        <input type="hidden" name="khautru[${index}][NGAYKHAUTRU]" value="${item.ngay}">
+                    </td>
+                    <td class="px-3 py-3">
+                        <span class="text-sm">${item.lyDo}</span>
+                        <input type="hidden" name="khautru[${index}][LY_DO_KHAU_TRU]" value="${item.lyDo}">
+                    </td>
+                    <td class="px-3 py-3 text-center">
+                        <button type="button" onclick="editDeduction(${index})" class="px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 mr-1">
+                            Sửa
+                        </button>
+                        <button type="button" onclick="deleteDeduction(${index})" class="px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700">
+                            Xóa
+                        </button>
+                    </td>
+                </tr>
+            `;
+            tbody.append(rowHtml);
+        });
+        
+        $('#TIEN_KHAU_TRU').val(totalDeduction);
+    }
+    
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('vi-VN');
+    }
+    
+    // Global functions for edit/delete buttons
+    window.editDeduction = function(index) {
+        editingDeductionIndex = index;
+        showDeductionModal(deductionData[index]);
+    };
+    
+    window.deleteDeduction = function(index) {
+        if (confirm('Bạn có chắc chắn muốn xóa khấu trừ này?')) {
+            deductionData.splice(index, 1);
+            updateDeductionTable();
+            calculateTotals();
+            showNotification('Xóa khấu trừ thành công');
+        }
+    };
+});
+</script>
 {% endblock %}

@@ -1,0 +1,132 @@
+<!-- Modal Gia hạn Hợp đồng -->
+<div id="modalGiaHanHopDong" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-t-2xl">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center">
+                    <i class="fas fa-calendar-plus text-2xl mr-3"></i>
+                    <div>
+                        <h3 class="text-xl font-bold">Gia hạn Hợp đồng</h3>
+                        <p class="text-blue-100 text-sm mt-1">Hợp đồng #<span id="modalHopDongId"></span></p>
+                    </div>
+                </div>
+                <button type="button" onclick="dongModalGiaHan()" class="text-white hover:text-red-200 transition-colors">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+        </div>
+        <!-- Form Content -->
+        <div class="p-6">         
+            <!-- Form gia hạn -->
+            <form id="formGiaHanHopDong" class="space-y-6">
+                {% csrf_token %}
+                <input type="hidden" id="hiddenHopDongId" name="ma_hop_dong">
+
+                <!-- Ngày trả phòng mới -->
+                <div class="space-y-2">
+                    <label for="ngayTraPhongMoi" class="block text-sm font-semibold text-gray-700 flex items-center">
+                        <i class="fas fa-calendar-alt text-red-600 mr-2"></i>
+                        Ngày trả phòng mới <span class="text-red-500">*</span>
+                    </label>
+                    <input type="date" 
+                           id="ngayTraPhongMoi" 
+                           name="ngay_tra_phong_moi" 
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                           required>
+                    <p class="text-xs text-gray-500 flex items-center">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Ngày trả phòng mới phải sau ngày trả phòng hiện tại
+                    </p>
+                </div>
+
+                <!-- Thời hạn mới -->
+                <div class="space-y-2">
+                    <label for="thoiHanMoi" class="block text-sm font-semibold text-gray-700 flex items-center">
+                        <i class="fas fa-clock text-blue-600 mr-2"></i>
+                        Thời hạn mới
+                    </label>
+                    <select id="thoiHanMoi" 
+                            name="thoi_han_moi" 
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+                        <option value="">Giữ nguyên thời hạn hiện tại</option>
+                        <option value="1 tháng">1 tháng</option>
+                        <option value="3 tháng">3 tháng</option>
+                        <option value="6 tháng">6 tháng</option>
+                        <option value="1 năm">1 năm</option>
+                        <option value="2 năm">2 năm</option>
+                        <option value="Không thời hạn">Không thời hạn</option>
+                    </select>
+                </div>
+
+                <!-- Giá thuê mới -->
+                <div class="space-y-2">
+                    <label for="giaThueHangThang" class="block text-sm font-semibold text-gray-700 flex items-center">
+                        <i class="fas fa-money-bill-wave text-green-600 mr-2"></i>
+                        Giá thuê mới (VNĐ/tháng)
+                    </label>
+                    <div class="relative">
+                        <input type="number" 
+                               id="giaThueHangThang" 
+                               name="gia_thue_moi" 
+                               placeholder="Nhập giá thuê mới (để trống nếu không thay đổi)"
+                               min="0" 
+                               step="10000"
+                               class="w-full px-4 py-3 pr-16 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+                        <span class="absolute right-3 top-3 text-gray-500 text-sm">VNĐ</span>
+                    </div>
+                    <p class="text-xs text-gray-500 flex items-center">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Để trống nếu không thay đổi giá thuê
+                    </p>
+                </div>
+
+                <!-- Lý do gia hạn -->
+                <div class="space-y-2">
+                    <label for="lyDoGiaHan" class="block text-sm font-semibold text-gray-700 flex items-center">
+                        <i class="fas fa-comment-alt text-purple-600 mr-2"></i>
+                        Lý do gia hạn
+                    </label>
+                    <textarea id="lyDoGiaHan" 
+                              name="ly_do_gia_han" 
+                              rows="3" 
+                              placeholder="Nhập lý do gia hạn hợp đồng..."
+                              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"></textarea>
+                </div>
+
+                <!-- Thông tin bổ sung -->
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <div class="flex items-start">
+                        <i class="fas fa-exclamation-triangle text-yellow-600 mt-1 mr-3"></i>
+                        <div>
+                            <h5 class="font-semibold text-yellow-800 mb-2">Lưu ý quan trọng:</h5>
+                            <ul class="text-sm text-yellow-700 space-y-1">
+                                <li>• Gia hạn sẽ cập nhật ngày trả phòng và có thể thay đổi giá thuê, thời hạn</li>
+                                <li>• Thông tin gia hạn sẽ được lưu vào lịch sử để theo dõi</li>
+                                <li>• Hợp đồng sẽ chuyển về trạng thái "Đang hoạt động" sau khi gia hạn</li>
+                                <li>• Không thể hoàn tác sau khi gia hạn thành công</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Footer với buttons -->
+        <div class="bg-gray-50 px-6 py-4 rounded-b-2xl flex flex-col sm:flex-row justify-end gap-3">
+            <button type="button" 
+                    onclick="dongModalGiaHan()" 
+                    class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-medium">
+                <i class="fas fa-times mr-2"></i>Hủy bỏ
+            </button>
+            <button type="button" 
+                    onclick="xuLyGiaHanHopDong()" 
+                    class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center">
+                <i class="fas fa-calendar-check mr-2"></i>
+                <span>Xác nhận gia hạn</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript functions moved to parent template to avoid loading issues -->

@@ -1,0 +1,115 @@
+{% extends 'index/index_layout.html' %}
+{% load custom_filters %}
+
+{% block title %}Danh sách hợp đồng của tôi{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="bg-white rounded-lg shadow-md">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-t-lg">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold">Hợp đồng của tôi</h1>
+                    <p class="text-blue-100 mt-1">Xem và quản lý các hợp đồng thuê phòng</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-sm text-blue-100">Khách thuê</p>
+                    <p class="font-semibold">{{ khach_thue.HO_TEN_KT }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="p-6">
+            {% if hop_dongs %}
+                <div class="grid gap-6">
+                    {% for hop_dong in hop_dongs %}
+                    <div class="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-800">
+                                    Hợp đồng #{{ hop_dong.MA_HOP_DONG }}
+                                </h3>
+                                <p class="text-gray-600">
+                                    <i class="fas fa-map-marker-alt mr-2"></i>
+                                    {{ hop_dong.MA_PHONG.TEN_PHONG }} - {{ hop_dong.MA_PHONG.MA_KHU_VUC.TEN_KHU_VUC }}
+                                </p>
+                            </div>
+                            <div class="text-right">
+                                {% if hop_dong.TRANG_THAI_HD == 'Đang hoạt động' %}
+                                    <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+                                        Đang hoạt động
+                                    </span>
+                                {% elif hop_dong.TRANG_THAI_HD == 'Sắp kết thúc' %}
+                                    <span class="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium">
+                                        Sắp kết thúc
+                                    </span>
+                                {% elif hop_dong.TRANG_THAI_HD == 'Đã kết thúc' %}
+                                    <span class="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm font-medium">
+                                        Đã kết thúc
+                                    </span>
+                                {% else %}
+                                    <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                                        {{ hop_dong.TRANG_THAI_HD }}
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="grid md:grid-cols-3 gap-4 mb-4">
+                            <div>
+                                <p class="text-sm text-gray-500">Ngày bắt đầu</p>
+                                <p class="font-medium">{{ hop_dong.NGAY_NHAN_PHONG|date:"d/m/Y" }}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">Ngày kết thúc</p>
+                                <p class="font-medium">{{ hop_dong.NGAY_TRA_PHONG|date:"d/m/Y" }}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">Giá thuê</p>
+                                <p class="font-medium text-green-600">{{ hop_dong.GIA_THUE|floatformat:0|add_commas }}đ/tháng</p>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-between items-center">
+                            <div class="text-sm text-gray-500">
+                                <p>Thời hạn: {{ hop_dong.THOI_HAN_HD }}</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <a href="{% url 'user_hopdong:hop_dong_detail' hop_dong.MA_HOP_DONG %}" 
+                                   class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors">
+                                    <i class="fas fa-eye mr-2"></i>Xem chi tiết
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <!-- Empty state -->
+                <div class="text-center py-12">
+                    <div class="text-gray-400 mb-4">
+                        <i class="fas fa-file-contract text-6xl"></i>
+                    </div>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">Chưa có hợp đồng nào</h3>
+                    <p class="text-gray-500 mb-6">
+                        Bạn chưa có hợp đồng thuê phòng nào. Hãy liên hệ với quản lý để thuê phòng.
+                    </p>
+                    <a href="{% url 'user_phongtro:tim_phong' %}" 
+                       class="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors">
+                        <i class="fas fa-search mr-2"></i>Tìm phòng trọ
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto refresh mỗi 5 phút để cập nhật trạng thái
+setTimeout(function() {
+    location.reload();
+}, 300000);
+</script>
+{% endblock %}

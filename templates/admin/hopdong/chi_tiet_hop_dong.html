@@ -1,0 +1,346 @@
+{% extends 'admin/admin_layout.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}Chi tiết Hợp đồng {{ hop_dong.MA_HOP_DONG }}{% endblock %}
+
+{% block content_body %}
+<div class="max-w-7xl mx-auto py-6 space-y-6">
+    <!-- Header -->
+    <div class="bg-white rounded-xl shadow-lg p-6">
+        <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800 flex items-center">
+                    <i class="fas fa-file-contract text-blue-600 mr-3"></i>
+                    Chi tiết Hợp đồng #{{ hop_dong.MA_HOP_DONG }}
+                </h1>
+                <p class="text-gray-600 mt-2">
+                    Phòng {{ hop_dong.MA_PHONG.TEN_PHONG }} - 
+                    {% if khach_thue %}{{ khach_thue.MA_KHACH_THUE.HO_TEN_KT }}{% else %}Chưa có khách thuê{% endif %}
+                </p>
+            </div>
+            
+            <div class="flex flex-wrap gap-3">
+                <a href="{% url 'hopdong:hopdong_list' %}" 
+                   class="inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                    <i class="fas fa-arrow-left mr-2"></i>
+                    Quay lại
+                </a>
+                
+                {% if hop_dong.TRANG_THAI_HD == 'Chờ xác nhận' %}
+                <button onclick="xacNhanHopDong({{ hop_dong.MA_HOP_DONG }})"
+                        class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                    <i class="fas fa-check-circle mr-2"></i>
+                    Xác nhận hợp đồng
+                </button>
+                {% endif %}
+                
+                <a href="{% url 'hopdong:view_chinh_sua_hop_dong' hop_dong.MA_HOP_DONG %}" 
+                   class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                    <i class="fas fa-edit mr-2"></i>
+                    Chỉnh sửa
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Thông tin cơ bản -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Thông tin hợp đồng -->
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                <i class="fas fa-info-circle text-blue-600 mr-3"></i>
+                Thông tin Hợp đồng
+            </h3>
+            
+            <div class="space-y-3">
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Mã hợp đồng:</span>
+                    <span class="font-semibold">{{ hop_dong.MA_HOP_DONG }}</span>
+                </div>
+                
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Phòng:</span>
+                    <span class="font-semibold">{{ hop_dong.MA_PHONG.TEN_PHONG }}</span>
+                </div>
+                
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Ngày lập:</span>
+                    <span class="font-semibold">
+                        {% if hop_dong.NGAY_LAP_HD %}{{ hop_dong.NGAY_LAP_HD|date:"d/m/Y" }}{% else %}-{% endif %}
+                    </span>
+                </div>
+                
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Thời hạn:</span>
+                    <span class="font-semibold">{{ hop_dong.THOI_HAN_HD|default:"-" }}</span>
+                </div>
+                
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Ngày nhận phòng:</span>
+                    <span class="font-semibold text-green-600">
+                        {% if hop_dong.NGAY_NHAN_PHONG %}{{ hop_dong.NGAY_NHAN_PHONG|date:"d/m/Y" }}{% else %}-{% endif %}
+                    </span>
+                </div>
+                
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Ngày trả phòng:</span>
+                    <span class="font-semibold text-red-600">
+                        {% if hop_dong.NGAY_TRA_PHONG %}{{ hop_dong.NGAY_TRA_PHONG|date:"d/m/Y" }}{% else %}-{% endif %}
+                    </span>
+                </div>
+                
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Giá thuê:</span>
+                    <span class="font-bold text-green-700">
+                        {% if hop_dong.GIA_THUE %}{{ hop_dong.GIA_THUE|floatformat:0 }} VNĐ{% else %}-{% endif %}
+                    </span>
+                </div>
+                
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Tiền cọc:</span>
+                    <span class="font-semibold">
+                        {% if hop_dong.GIA_COC_HD %}{{ hop_dong.GIA_COC_HD|floatformat:0 }} VNĐ{% else %}-{% endif %}
+                    </span>
+                </div>
+                
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Trạng thái:</span>
+                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full
+                        {% if hop_dong.TRANG_THAI_HD == 'Đang hoạt động' %}bg-green-100 text-green-800
+                        {% elif hop_dong.TRANG_THAI_HD == 'Chờ xác nhận' %}bg-yellow-100 text-yellow-800
+                        {% elif hop_dong.TRANG_THAI_HD == 'Đã kết thúc' %}bg-red-100 text-red-800
+                        {% else %}bg-gray-100 text-gray-800{% endif %}">
+                        {{ hop_dong.TRANG_THAI_HD|default:"-" }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Thông tin khách thuê -->
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                <i class="fas fa-user text-green-600 mr-3"></i>
+                Thông tin Khách thuê
+            </h3>
+            
+            {% if khach_thue %}
+            <div class="space-y-3">
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Mã khách thuê:</span>
+                    <span class="font-semibold">{{ khach_thue.MA_KHACH_THUE.MA_KHACH_THUE }}</span>
+                </div>
+                
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Họ tên:</span>
+                    <span class="font-semibold">{{ khach_thue.MA_KHACH_THUE.HO_TEN_KT }}</span>
+                </div>
+                
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Số điện thoại:</span>
+                    <span class="font-semibold">{{ khach_thue.MA_KHACH_THUE.SDT_KT|default:"-" }}</span>
+                </div>
+                
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Ngày sinh:</span>
+                    <span class="font-semibold">
+                        {% if khach_thue.MA_KHACH_THUE.NGAY_SINH_KT %}{{ khach_thue.MA_KHACH_THUE.NGAY_SINH_KT|date:"d/m/Y" }}{% else %}-{% endif %}
+                    </span>
+                </div>
+                
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Giới tính:</span>
+                    <span class="font-semibold">{{ khach_thue.MA_KHACH_THUE.GIOI_TINH_KT|default:"-" }}</span>
+                </div>
+                
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Mối quan hệ:</span>
+                    <span class="font-semibold">{{ khach_thue.MOI_QUAN_HE|default:"-" }}</span>
+                </div>
+                
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Ngày tham gia:</span>
+                    <span class="font-semibold">
+                        {% if khach_thue.NGAY_THAM_GIA %}{{ khach_thue.NGAY_THAM_GIA|date:"d/m/Y" }}{% else %}-{% endif %}
+                    </span>
+                </div>
+            </div>
+            {% else %}
+            <div class="text-center py-8">
+                <i class="fas fa-user-slash text-gray-400 text-4xl mb-3"></i>
+                <p class="text-gray-500">Chưa có thông tin khách thuê</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Lịch sử Gia hạn -->
+    {% include 'admin/hopdong/lich_su_gia_han_section.html' %}
+
+    <!-- Danh sách Hóa đơn -->
+    <div class="bg-white rounded-xl shadow-lg p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-bold text-gray-800 flex items-center">
+                <i class="fas fa-file-invoice text-yellow-600 mr-3"></i>
+                Danh sách Hóa đơn
+                {% if danh_sach_hoa_don %}
+                    <span class="ml-2 bg-yellow-100 text-yellow-800 text-xs font-semibold px-2 py-1 rounded-full">
+                        {{ danh_sach_hoa_don|length }}
+                    </span>
+                {% endif %}
+            </h3>
+            
+            {% if can_sinh_hoa_don_bat_dau %}
+            <button onclick="taoHoaDonBatDau({{ hop_dong.MA_HOP_DONG }})"
+                    class="inline-flex items-center px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors">
+                <i class="fas fa-plus mr-2"></i>
+                Tạo hóa đơn bắt đầu
+            </button>
+            {% endif %}
+        </div>
+
+        {% if danh_sach_hoa_don %}
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Mã hóa đơn
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Loại hóa đơn
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Ngày lập
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Tổng tiền
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Trạng thái
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Thao tác
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for hoa_don in danh_sach_hoa_don %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {{ hoa_don.MA_HOA_DON }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full
+                                {% if hoa_don.LOAI_HOA_DON == 'Hóa đơn bắt đầu' %}bg-blue-100 text-blue-800
+                                {% elif hoa_don.LOAI_HOA_DON == 'Hóa đơn kết thúc' %}bg-red-100 text-red-800
+                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                {{ hoa_don.LOAI_HOA_DON }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {% if hoa_don.NGAY_LAP_HDON %}{{ hoa_don.NGAY_LAP_HDON|date:"d/m/Y" }}{% else %}-{% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600">
+                            {% if hoa_don.TONG_TIEN %}{{ hoa_don.TONG_TIEN|floatformat:0 }} VNĐ{% else %}-{% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full
+                                {% if hoa_don.TRANG_THAI_HDON == 'Đã thanh toán' %}bg-green-100 text-green-800
+                                {% elif hoa_don.TRANG_THAI_HDON == 'Chưa thanh toán' %}bg-red-100 text-red-800
+                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                {{ hoa_don.TRANG_THAI_HDON }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <div class="flex space-x-2">
+                                <button class="text-blue-600 hover:text-blue-900">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="text-green-600 hover:text-green-900">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-12">
+            <div class="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                <i class="fas fa-file-invoice text-gray-400 text-3xl"></i>
+            </div>
+            <h4 class="text-lg font-semibold text-gray-600 mb-2">Chưa có hóa đơn</h4>
+            <p class="text-gray-500 text-sm">Hợp đồng này chưa có hóa đơn nào được tạo</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Ghi chú -->
+    {% if hop_dong.GHI_CHU_HD %}
+    <div class="bg-white rounded-xl shadow-lg p-6">
+        <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+            <i class="fas fa-sticky-note text-orange-600 mr-3"></i>
+            Ghi chú
+        </h3>
+        <div class="bg-gray-50 rounded-lg p-4">
+            <p class="text-gray-700">{{ hop_dong.GHI_CHU_HD }}</p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function xacNhanHopDong(maHopDong) {
+    if (confirm('Bạn có chắc chắn muốn xác nhận hợp đồng này?')) {
+        fetch(`/admin/hopdong/xac-nhan/${maHopDong}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                alert('Có lỗi xảy ra khi xác nhận hợp đồng!');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Có lỗi xảy ra!');
+        });
+    }
+}
+
+function taoHoaDonBatDau(maHopDong) {
+    if (confirm('Bạn có muốn tạo hóa đơn bắt đầu cho hợp đồng này?')) {
+        fetch(`/admin/hopdong/thiet-lap-hoa-don-bat-dau/${maHopDong}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                window.location.reload();
+            } else {
+                alert('Lỗi: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Có lỗi xảy ra!');
+        });
+    }
+}
+</script>
+
+{% csrf_token %}
+{% endblock %}

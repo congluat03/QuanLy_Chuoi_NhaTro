@@ -1,0 +1,228 @@
+{% extends 'index/index_layout.html' %}
+{% load custom_filters %}
+
+{% block title %}Chi tiết hợp đồng #{{ hop_dong.MA_HOP_DONG }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Back button -->
+    <div class="mb-6">
+        <a href="{% url 'user_hopdong:hop_dong_list' %}" 
+           class="text-blue-600 hover:text-blue-800 font-medium">
+            <i class="fas fa-arrow-left mr-2"></i>Quay lại danh sách hợp đồng
+        </a>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-md">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-t-lg">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold">Hợp đồng #{{ hop_dong.MA_HOP_DONG }}</h1>
+                    <p class="text-blue-100 mt-1">{{ hop_dong.MA_PHONG.TEN_PHONG }} - {{ hop_dong.MA_PHONG.MA_KHU_VUC.TEN_KHU_VUC }}</p>
+                </div>
+                <div class="text-right">
+                    {% if hop_dong.TRANG_THAI_HD == 'Đang hoạt động' %}
+                        <span class="bg-green-100 text-green-800 px-4 py-2 rounded-full font-medium">
+                            Đang hoạt động
+                        </span>
+                    {% elif hop_dong.TRANG_THAI_HD == 'Sắp kết thúc' %}
+                        <span class="bg-yellow-100 text-yellow-800 px-4 py-2 rounded-full font-medium">
+                            Sắp kết thúc
+                        </span>
+                    {% elif hop_dong.TRANG_THAI_HD == 'Đã kết thúc' %}
+                        <span class="bg-gray-100 text-gray-800 px-4 py-2 rounded-full font-medium">
+                            Đã kết thúc
+                        </span>
+                    {% else %}
+                        <span class="bg-blue-100 text-blue-800 px-4 py-2 rounded-full font-medium">
+                            {{ hop_dong.TRANG_THAI_HD }}
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="p-6">
+            <!-- Thông tin hợp đồng -->
+            <div class="grid md:grid-cols-2 gap-8 mb-8">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Thông tin hợp đồng</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Ngày lập:</span>
+                            <span class="font-medium">{{ hop_dong.NGAY_LAP_HD|date:"d/m/Y" }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Ngày nhận phòng:</span>
+                            <span class="font-medium">{{ hop_dong.NGAY_NHAN_PHONG|date:"d/m/Y" }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Ngày trả phòng:</span>
+                            <span class="font-medium">{{ hop_dong.NGAY_TRA_PHONG|date:"d/m/Y" }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Thời hạn:</span>
+                            <span class="font-medium">{{ hop_dong.THOI_HAN_HD }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Chu kỳ thanh toán:</span>
+                            <span class="font-medium">{{ hop_dong.CHU_KY_THANH_TOAN }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Ngày thu tiền:</span>
+                            <span class="font-medium">Ngày {{ hop_dong.NGAY_THU_TIEN }} hàng tháng</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Chi phí</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Giá thuê:</span>
+                            <span class="font-medium text-green-600">{{ hop_dong.GIA_THUE|floatformat:0|add_commas }}đ/tháng</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Tiền cọc:</span>
+                            <span class="font-medium">{{ hop_dong.GIA_COC_HD|floatformat:0|add_commas }}đ</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Số thành viên:</span>
+                            <span class="font-medium">{{ hop_dong.SO_THANH_VIEN }} người</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ghi chú -->
+            {% if hop_dong.GHI_CHU_HD %}
+            <div class="mb-8">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Ghi chú</h3>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <p class="text-gray-700">{{ hop_dong.GHI_CHU_HD|linebreaks }}</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Lịch sử thành viên -->
+            <div class="mb-8">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Lịch sử thành viên</h3>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Họ tên
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Mối quan hệ
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Ngày tham gia
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Ngày rời đi
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for ls in lich_su %}
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm font-medium text-gray-900">
+                                        {{ ls.MA_KHACH_THUE.HO_TEN_KT }}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="text-sm text-gray-500">{{ ls.MOI_QUAN_HE }}</span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {{ ls.NGAY_THAM_GIA|date:"d/m/Y" }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {% if ls.NGAY_ROI_DI %}
+                                        {{ ls.NGAY_ROI_DI|date:"d/m/Y" }}
+                                    {% else %}
+                                        <span class="text-green-600 font-medium">Đang ở</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Danh sách hóa đơn -->
+            <div>
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Hóa đơn liên quan</h3>
+                {% if hoa_dons %}
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Mã hóa đơn
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Loại hóa đơn
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Ngày lập
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Tổng tiền
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Trạng thái
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for hoa_don in hoa_dons %}
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                    {{ hoa_don.MA_HOA_DON }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {{ hoa_don.LOAI_HOA_DON }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {{ hoa_don.NGAY_LAP_HDON|date:"d/m/Y" }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
+                                    {{ hoa_don.TONG_TIEN|floatformat:0|add_commas }}đ
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    {% if hoa_don.TRANG_THAI_HDON == 'Đã thanh toán' %}
+                                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                            Đã thanh toán
+                                        </span>
+                                    {% elif hoa_don.TRANG_THAI_HDON == 'Chưa thanh toán' %}
+                                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                                            Chưa thanh toán
+                                        </span>
+                                    {% else %}
+                                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                            {{ hoa_don.TRANG_THAI_HDON }}
+                                        </span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-8 text-gray-500">
+                    <i class="fas fa-file-invoice text-4xl mb-4"></i>
+                    <p>Chưa có hóa đơn nào</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

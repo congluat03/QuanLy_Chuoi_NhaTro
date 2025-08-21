@@ -1,6 +1,7 @@
         
 {% extends 'admin/admin_layout.html' %}
 {% load static %}
+{% load custom_filters %}
 
 {% block content_body %}
 <div class="max-w-7xl mx-auto py-6">
@@ -20,6 +21,63 @@
                 </button>
             </div>
         </div>
+        {% csrf_token %}
+        
+        <!-- Statistics Summary -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl p-4 text-white">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-blue-100 text-sm font-medium">Tổng hợp đồng</p>
+                        <p class="text-2xl font-bold">{{ total_contracts }}</p>
+                    </div>
+                    <div class="bg-blue-400 bg-opacity-50 rounded-full p-3">
+                        <i class="fas fa-file-contract text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-xl p-4 text-white">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-green-100 text-sm font-medium">Đang hoạt động</p>
+                        <p class="text-2xl font-bold">
+                            {% for stat in stats.thong_ke %}
+                                {% if stat.TRANG_THAI_HD == 'Đang hoạt động' %}{{ stat.so_luong }}{% endif %}
+                            {% empty %}0{% endfor %}
+                        </p>
+                    </div>
+                    <div class="bg-green-400 bg-opacity-50 rounded-full p-3">
+                        <i class="fas fa-check-circle text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-xl p-4 text-white">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-yellow-100 text-sm font-medium">Sắp kết thúc</p>
+                        <p class="text-2xl font-bold">{{ contracts_expiring_count }}</p>
+                    </div>
+                    <div class="bg-yellow-400 bg-opacity-50 rounded-full p-3">
+                        <i class="fas fa-exclamation-triangle text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl p-4 text-white">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-purple-100 text-sm font-medium">Đã gia hạn</p>
+                        <p class="text-2xl font-bold">{{ contracts_extended_count|default:0 }}</p>
+                    </div>
+                    <div class="bg-purple-400 bg-opacity-50 rounded-full p-3">
+                        <i class="fas fa-calendar-plus text-xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Filter and Search Section -->
         <div class="bg-white shadow-md rounded-xl p-4 mb-5 border border-gray-100">
             <div class="flex flex-col gap-1">
@@ -37,6 +95,16 @@
                     <label class="flex items-center gap-2 text-gray-700 text-sm border border-gray-300 rounded-lg px-3 py-1 cursor-pointer hover:border-blue-400 transition-colors select-none peer-checked:border-blue-600 peer-checked:bg-blue-50 whitespace-nowrap mt-2">
                         <input type="checkbox" name="invoice_status[]" value="warning" class="peer h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
                         <span>Đang báo kết thúc</span>
+                    </label>
+
+                    <label class="flex items-center gap-2 text-gray-700 text-sm border border-gray-300 rounded-lg px-3 py-1 cursor-pointer hover:border-purple-400 transition-colors select-none peer-checked:border-purple-600 peer-checked:bg-purple-50 whitespace-nowrap mt-2">
+                        <input type="checkbox" name="extension_status[]" value="extended" class="peer h-4 w-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500" />
+                        <span>Đã gia hạn</span>
+                    </label>
+
+                    <label class="flex items-center gap-2 text-gray-700 text-sm border border-gray-300 rounded-lg px-3 py-1 cursor-pointer hover:border-purple-400 transition-colors select-none peer-checked:border-purple-600 peer-checked:bg-purple-50 whitespace-nowrap mt-2">
+                        <input type="checkbox" name="extension_status[]" value="never_extended" class="peer h-4 w-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500" />
+                        <span>Chưa gia hạn</span>
                     </label>
 
                     <label class="flex items-center gap-2 text-gray-700 text-sm border border-gray-300 rounded-lg px-3 py-1 cursor-pointer hover:border-blue-400 transition-colors select-none peer-checked:border-blue-600 peer-checked:bg-blue-50 whitespace-nowrap mt-2">
@@ -74,6 +142,7 @@
                             <th class="p-3 text-center font-semibold">Ngày lập</th>
                             <th class="p-3 text-center font-semibold">Ngày vào ở</th>
                             <th class="p-3 text-center font-semibold">Thời hạn</th>
+                            <th class="p-3 text-center font-semibold">Gia hạn</th>
                             <th class="p-3 text-center font-semibold">Ký hợp đồng</th>
                             <th class="p-3 text-center font-semibold">Tình trạng</th>
                             <th class="p-3 text-center font-semibold"></th>
@@ -96,15 +165,35 @@
                                 </td>
                                 <td class="p-3 text-center">{{ contract.GIA_THUE|floatformat:0|default:0 }} đ</td>
                                 <td class="p-3 text-center">
-                                    {{ contract.MA_PHONG.SO_TIEN_CAN_COC|floatformat:0|default:0 }} đ <br>
+                                    {{ contract.GIA_COC_HD|floatformat:0|default:0 }} đ <br>
                                     <small class="font-medium {% if contract.MA_PHONG.SO_TIEN_CAN_COC|default:0 == 0 %}text-red-600{% else %}text-green-600{% endif %}">
                                         ({{ contract.MA_PHONG.SO_TIEN_CAN_COC|default:0|yesno:"Chưa thu tiền,Đã thu xong" }})
                                     </small>
                                 </td>
-                                <td class="p-3 text-center">{{ contract.NGAY_THU_TIEN|default:"-" }}</td>
-                                <td class="p-3 text-center">{{ contract.NGAY_LAP_HD|default:"-" }}</td>
-                                <td class="p-3 text-center">{{ contract.NGAY_NHAN_PHONG|default:"-" }}</td>
-                                <td class="p-3 text-center">{{ contract.NGAY_TRA_PHONG|default:"-" }}</td>
+                                <td class="p-3 text-center">{{ contract.NGAY_THU_TIEN|date_dd_mm_yy }}</td>
+                                <td class="p-3 text-center">{{ contract.NGAY_LAP_HD|date_dd_mm_yy }}</td>
+                                <td class="p-3 text-center">{{ contract.NGAY_NHAN_PHONG|date_dd_mm_yy }}</td>
+                                <td class="p-3 text-center">{{ contract.NGAY_TRA_PHONG|date_dd_mm_yy }}</td>
+                                <td class="p-3 text-center">
+                                    {% with so_lan_gia_han=contract.da_gia_han_bao_nhieu_lan %}
+                                        {% if so_lan_gia_han > 0 %}
+                                            <div class="flex flex-col items-center">
+                                                <span class="bg-purple-100 text-purple-800 text-xs font-semibold px-2 py-1 rounded-full mb-1">
+                                                    {{ so_lan_gia_han }} lần
+                                                </span>
+                                                {% with gia_han_cuoi=contract.gia_han_lan_cuoi %}
+                                                    {% if gia_han_cuoi %}
+                                                        <small class="text-gray-600">
+                                                            {{ gia_han_cuoi.NGAY_GIA_HAN|date:"d/m/Y" }}
+                                                        </small>
+                                                    {% endif %}
+                                                {% endwith %}
+                                            </div>
+                                        {% else %}
+                                            <span class="text-gray-400 text-xs">Chưa gia hạn</span>
+                                        {% endif %}
+                                    {% endwith %}
+                                </td>
                                 <td class="p-3 text-center">
                                     {% if contract.TRANG_THAI_HD == "Chưa ký" %}
                                         Khách chưa ký
@@ -113,17 +202,36 @@
                                     {% endif %}
                                 </td>
                                 <td class="p-3 text-center">
-                                    {% with status=contract.get_status_display %}
-                                        <span class="{{ status.color }} text-white font-medium px-3 py-1 rounded inline-block min-w-[120px]">
-                                            {{ status.text }}
-                                        </span>
-                                    {% endwith %}
+                                    <span class="{{ contract.status_display_color }} text-white font-medium px-3 py-1 rounded inline-block min-w-[120px]">
+                                        {{ contract.status_display_text }}
+                                    </span>
                                 </td>
                                 <td class="p-3 relative">
                                     <div class="inline-flex items-center justify-center w-8 h-8 bg-gray-200 rounded-full cursor-pointer hover:bg-gray-300 transition tooltipHopDong" onclick="toggleMenuHopDong({{ contract.MA_HOP_DONG }})">
                                         <i class="fas fa-ellipsis-v text-gray-600" aria-hidden="true"></i>
                                     </div>
                                     <div onmouseleave="hideMenuHopDong({{ contract.MA_HOP_DONG }})" class="absolute right-0 mt-2 w-64 origin-top-right bg-white border border-gray-200 rounded-xl shadow-lg z-20 hidden" id="menuHopDong-{{ contract.MA_HOP_DONG }}">
+                                        <!-- Workflow Actions -->
+                                        {% with actions=contract.get_available_workflow_actions %}
+                                        {% for action in actions %}
+                                        <a href="#" class="block px-4 py-2 text-{{ action.color }}-600 text-sm hover:bg-gray-100 rounded flex items-center" 
+                                           onclick="showWorkflowModal('{{ action.action }}', {{ contract.MA_HOP_DONG }})">
+                                            <i class="{{ action.icon }} mr-2"></i> {{ action.label }}
+                                        </a>
+                                        {% endfor %}
+                                        {% endwith %}
+                                        
+                                        <!-- Divider if workflow actions exist -->
+                                        {% if contract.get_available_workflow_actions %}
+                                        <hr class="my-2 border-gray-200">
+                                        {% endif %}
+                                        
+                                        <!-- Standard Actions -->
+                                        <a href="{% url 'hopdong:chi_tiet_hop_dong' contract.MA_HOP_DONG %}" class="block px-4 py-2 text-blue-600 text-sm hover:bg-gray-100 rounded flex items-center">
+                                            <i class="fas fa-info-circle mr-2"></i> Chi tiết hợp đồng
+                                        </a>
+
+                                        
                                         <a href="{% url 'hopdong:view_hopdong' hopdong_id=contract.MA_HOP_DONG %}" class="block px-4 py-2 text-gray-700 text-sm hover:bg-gray-100 rounded flex items-center" >
                                             <i class="fas fa-file-text mr-2"></i> Xem văn bản hợp đồng
                                         </a>                                     
@@ -136,9 +244,45 @@
                                             <i class="fas fa-edit mr-2"
                                             ></i> Chỉnh sửa hợp đồng
                                         </a>
-                                        <a href="#" class="block px-4 py-2 text-gray-700 text-sm hover:bg-gray-100 rounded flex items-center" onclick="huyHopDong({{ contract.MA_HOP_DONG }})">
-                                            <i class="fas fa-check-circle mr-2"></i> Khách Ký hợp đồng
-                                        </a>
+                                        
+                                        <!-- Invoice Setup Actions -->
+                                        {% if contract.TRANG_THAI_HD == 'Chờ xác nhận' %}
+                                            <hr class="my-2 border-gray-200">
+                                            <div class="px-3 py-1 text-xs font-medium text-gray-500 uppercase tracking-wide">
+                                                Quản lý Hóa đơn
+                                            </div>
+                                            
+                                            {% if contract.co_hoa_don_bat_dau %}
+                                                <!-- Đã có hóa đơn bắt đầu -->
+                                                <div class="px-4 py-2 text-xs text-green-600 flex items-center">
+                                                    <i class="fas fa-check-circle mr-2"></i>
+                                                    Đã có HĐ bắt đầu ({{ contract.NGAY_SINH_HOA_DON_BAT_DAU|date_dd_mm_yy }})
+                                                </div>
+                                                
+                                                <a href="#" class="block px-4 py-2 text-blue-600 text-sm hover:bg-blue-50 rounded flex items-center btn-xem-hoa-don" 
+                                                   data-ma-hop-dong="{{ contract.MA_HOP_DONG }}">
+                                                    <i class="fas fa-eye mr-2"></i> Xem hóa đơn bắt đầu
+                                                </a>
+                                                
+                                                <a href="#" class="block px-4 py-2 text-red-600 text-sm hover:bg-red-50 rounded flex items-center btn-xoa-hoa-don" 
+                                                   data-ma-hop-dong="{{ contract.MA_HOP_DONG }}">
+                                                    <i class="fas fa-trash mr-2"></i> Xóa hóa đơn bắt đầu
+                                                </a>
+                                            {% else %}
+                                                <!-- Chưa có hóa đơn bắt đầu -->
+                                                <div class="px-4 py-2 text-xs text-gray-500 flex items-center">
+                                                    <i class="fas fa-info-circle mr-2"></i>
+                                                    Chưa có hóa đơn bắt đầu
+                                                </div>
+                                                
+                                                <a href="#" class="block px-4 py-2 text-green-600 text-sm hover:bg-green-50 rounded flex items-center btn-tao-hoa-don" 
+                                                   data-ma-hop-dong="{{ contract.MA_HOP_DONG }}">
+                                                    <i class="fas fa-plus-circle mr-2"></i> Tạo hóa đơn bắt đầu
+                                                </a>
+                                            {% endif %}
+                                        {% endif %}
+                                        
+                                        <hr class="my-2 border-gray-200">
                                         <form action="{% url 'hopdong:xoa_hop_dong' contract.MA_HOP_DONG %}" method="POST" class="inline-block" onsubmit="return confirm('Bạn có chắc chắn muốn xóa hợp đồng này và lịch sử liên quan?');">
                                             {% csrf_token %}
                                             <button type="submit" class="block px-4 py-2 text-red-600 text-sm hover:bg-gray-100 rounded flex items-center">
@@ -156,6 +300,9 @@
                     </tbody>
                 </table>
         </div>
+        
+        <!-- Advanced Pagination -->
+        {% include 'admin/components/pagination.html' with page_obj=hop_dongs current_page_size=current_page_size total_count=total_contracts %}
     </div>
 </div>
     <!-- Modal chia sẻ -->
@@ -182,6 +329,55 @@
     </div> {% endcomment %}
   </div>
 </div>
+<!-- Workflow Modal -->
+<div id="workflowModal" tabindex="-1" role="dialog" aria-modal="true" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-60 hidden transition-opacity duration-300 ease-in-out" onclick="if(event.target === this) closeWorkflowModal()">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 transform transition-all duration-300">
+        <!-- Header -->
+        <div class="flex items-center justify-between px-6 py-4 bg-blue-600 rounded-t-xl">
+            <h4 id="workflowModalTitle" class="text-white text-xl font-semibold">
+                Thao tác Hợp đồng
+            </h4>
+            <button type="button" aria-label="Đóng" onclick="closeWorkflowModal()" class="text-white text-2xl font-bold hover:text-blue-200 focus:outline-none transition">
+                ×
+            </button>
+        </div>
+        <!-- Body -->
+        <div id="workflowModalBody" class="px-6 py-6">
+            <!-- Content will be dynamically loaded here -->
+        </div>
+    </div>
+</div>
+
+
+<!-- Early Termination Modal -->
+<div id="earlyEndModal" class="fixed inset-0 z-[9999] bg-black bg-opacity-60 hidden">
+    <div class="flex items-center justify-center min-h-screen px-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md">
+            <div class="px-6 py-4 bg-orange-600 rounded-t-xl">
+                <h4 class="text-white text-lg font-semibold">Báo kết thúc sớm</h4>
+            </div>
+            <form id="earlyEndForm" class="px-6 py-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Ngày dự kiến kết thúc</label>
+                    <input type="date" id="earlyEndDate" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Lý do kết thúc sớm</label>
+                    <textarea id="earlyEndReason" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="Nhập lý do kết thúc sớm..." required></textarea>
+                </div>
+                <div class="flex space-x-3 pt-4">
+                    <button type="submit" class="flex-1 bg-orange-600 text-white py-2 px-4 rounded-md hover:bg-orange-700 transition">
+                        Gửi thông báo
+                    </button>
+                    <button type="button" onclick="closeEarlyEndModal()" class="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400 transition">
+                        Hủy
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <!-- Modal -->
 <div id="hopDongModal" tabindex="-1" role="dialog" aria-modal="true" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-60 hidden transition-opacity duration-300 ease-in-out" onclick="if(event.target === this) toggleHopDongModal(false)">
     <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl mx-4 max-h-[90vh] overflow-y-auto transform transition-all duration-300">
@@ -205,7 +401,269 @@
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
 <script>
-  function toggleShareModal(show, url = '') {
+// Workflow Modal Functions
+let currentContractId = null;
+let currentAction = null;
+
+function showWorkflowModal(action, contractId, contractData = null) {
+    currentContractId = contractId;
+    currentAction = action;
+    
+    const modal = document.getElementById('workflowModal');
+    const title = document.getElementById('workflowModalTitle');
+    const body = document.getElementById('workflowModalBody');
+    
+    // Set title based on action
+    const actionTitles = {
+        'confirm': 'Xác nhận Hợp đồng',
+        'create_invoice': 'Tạo Hóa đơn',
+        'extend': 'Gia hạn Hợp đồng',
+        'early_end': 'Báo kết thúc sớm',
+        'end': 'Kết thúc Hợp đồng',
+        'cancel': 'Hủy Hợp đồng'
+    };
+    
+    title.textContent = actionTitles[action] || 'Thao tác Hợp đồng';
+    
+    // Set body content based on action
+    if (action === 'extend') {
+        // Close workflow modal and show extension modal
+        closeWorkflowModal();
+        showExtensionModalFromWorkflow(contractId);
+        return;
+    } else if (action === 'early_end') {
+        showEarlyEndModal();
+        return;
+    } else {
+        // Simple confirmation for other actions
+        body.innerHTML = `
+            <div class="text-center">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 mb-4">
+                    <i class="fas fa-question-circle text-yellow-600 text-xl"></i>
+                </div>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">
+                    Xác nhận thao tác
+                </h3>
+                <p class="text-sm text-gray-500 mb-6">
+                    Bạn có chắc chắn muốn ${actionTitles[action].toLowerCase()} này?
+                </p>
+                <div class="flex space-x-3">
+                    <button onclick="executeWorkflowAction()" class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition">
+                        Xác nhận
+                    </button>
+                    <button onclick="closeWorkflowModal()" class="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400 transition">
+                        Hủy
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+    
+    modal.classList.remove('hidden');
+}
+
+function closeWorkflowModal() {
+    document.getElementById('workflowModal').classList.add('hidden');
+    currentContractId = null;
+    currentAction = null;
+}
+
+// Function to show extension modal from workflow
+function showExtensionModalFromWorkflow(contractId) {
+    // Try to find contract data by looking for the specific contract ID in buttons
+    const allButtons = document.querySelectorAll('[onclick*="showWorkflowModal"]');
+    let targetRow = null;
+    
+    for (let button of allButtons) {
+        if (button.onclick.toString().includes(`'extend', ${contractId}`)) {
+            targetRow = button.closest('tr');
+            break;
+        }
+    }
+    
+    if (targetRow) {
+        const cells = targetRow.querySelectorAll('td');
+        if (cells.length >= 8) {
+            // Extract data from table cells - adjust indices based on actual table structure
+            const tenPhong = cells[1]?.textContent?.trim() || '-';
+            const tenKhachThue = cells[2]?.textContent?.trim() || '-';
+            const ngayLap = cells[3]?.textContent?.trim() || '';
+            const giaThueText = cells[4]?.textContent?.trim() || '';
+            const thoiHan = cells[5]?.textContent?.trim() || '-';
+            const ngayTraPhong = cells[6]?.textContent?.trim() || '';
+            const trangThaiElement = cells[7]?.querySelector('.px-2');
+            const trangThai = trangThaiElement?.textContent?.trim() || '-';
+            
+            // Debug logging
+            console.log('Extracted table data:', {
+                tenPhong, tenKhachThue, ngayTraPhong, giaThueText, thoiHan, trangThai
+            });
+            
+            // Extract numeric value from price text
+            const giaThue = parseInt(giaThueText.replace(/[^\d]/g, '')) || 0;
+            
+            // Convert date format from dd/mm/yyyy to yyyy-mm-dd
+            let ngayTraPhongFormatted = '';
+            if (ngayTraPhong && ngayTraPhong !== '-' && ngayTraPhong.trim() !== '') {
+                const dateParts = ngayTraPhong.trim().split('/');
+                if (dateParts.length === 3) {
+                    const day = dateParts[0].padStart(2, '0');
+                    const month = dateParts[1].padStart(2, '0');
+                    const year = dateParts[2];
+                    
+                    // Validate date parts are numbers
+                    if (!isNaN(day) && !isNaN(month) && !isNaN(year) && 
+                        year.length === 4 && parseInt(month) <= 12 && parseInt(day) <= 31) {
+                        ngayTraPhongFormatted = `${year}-${month}-${day}`;
+                        
+                        // Additional validation: check if date is actually valid
+                        const testDate = new Date(ngayTraPhongFormatted);
+                        if (isNaN(testDate.getTime())) {
+                            console.warn('Invalid date after parsing:', ngayTraPhongFormatted);
+                            ngayTraPhongFormatted = '';
+                        }
+                    } else {
+                        console.warn('Invalid date parts:', dateParts);
+                    }
+                }
+            }
+            
+            const contractData = {
+                MA_HOP_DONG: contractId,
+                TEN_PHONG: tenPhong,
+                TEN_KHACH_THUE: tenKhachThue,
+                NGAY_TRA_PHONG: ngayTraPhongFormatted,
+                GIA_THUE: giaThue,
+                THOI_HAN_HD: thoiHan,
+                TRANG_THAI_HD: trangThai
+            };
+            
+            hienThiModalGiaHan(contractData);
+            return;
+        }
+    }
+    
+    // Fallback: Create minimal contract data for modal
+    const contractData = {
+        MA_HOP_DONG: contractId,
+        TEN_PHONG: '-',
+        TEN_KHACH_THUE: '-',
+        NGAY_TRA_PHONG: '',
+        GIA_THUE: 0,
+        THOI_HAN_HD: '-',
+        TRANG_THAI_HD: '-'
+    };
+    
+    hienThiModalGiaHan(contractData);
+}
+
+function showEarlyEndModal() {
+    closeWorkflowModal();
+    const modal = document.getElementById('earlyEndModal');
+    modal.classList.remove('hidden');
+    
+    // Set minimum date to today
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('earlyEndDate').setAttribute('min', today);
+}
+
+function closeEarlyEndModal() {
+    document.getElementById('earlyEndModal').classList.add('hidden');
+    // Reset form
+    document.getElementById('earlyEndForm').reset();
+}
+
+function executeWorkflowAction() {
+    if (!currentContractId || !currentAction) {
+        alert('Lỗi: Không có thông tin hợp đồng hoặc thao tác.');
+        return;
+    }
+    
+    // Show loading
+    document.getElementById('workflowModalBody').innerHTML = `
+        <div class="text-center">
+            <div class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p class="text-blue-600 font-medium">Đang xử lý...</p>
+        </div>
+    `;
+    
+    // Make AJAX request
+    fetch('/admin/hopdong/workflow-action/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({
+            action: currentAction,
+            contract_id: currentContractId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message || 'Thao tác thành công!');
+            location.reload(); // Refresh the page to show updated data
+        } else {
+            alert(data.message || 'Có lỗi xảy ra!');
+        }
+        closeWorkflowModal();
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Lỗi kết nối!');
+        closeWorkflowModal();
+    });
+}
+
+// Extension form handler removed - now handled in modal_gia_han_hop_dong.html
+
+// Handle early termination form submission
+document.getElementById('earlyEndForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const earlyEndDate = document.getElementById('earlyEndDate').value;
+    const reason = document.getElementById('earlyEndReason').value;
+    
+    if (!earlyEndDate || !reason.trim()) {
+        alert('Vui lòng nhập đầy đủ thông tin!');
+        return;
+    }
+    
+    fetch('/admin/hopdong/workflow-action/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({
+            action: 'early_end',
+            contract_id: currentContractId,
+            data: {
+                early_end_date: earlyEndDate,
+                reason: reason
+            }
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message || 'Đã gửi thông báo kết thúc sớm!');
+            location.reload();
+        } else {
+            alert(data.message || 'Có lỗi xảy ra!');
+        }
+        closeEarlyEndModal();
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Lỗi kết nối!');
+        closeEarlyEndModal();
+    });
+});
+
+// Share modal functions  
+function toggleShareModal(show, url = '') {
     const modal = document.getElementById('shareModal');
     if (show) {
       const shareLink = url.startsWith('http') ? url : window.location.origin + url;
@@ -233,6 +691,245 @@
       foreground: 'black',
     });
   }
+
+  // ======================= PAGINATION FUNCTIONS =======================
+  
+  /**
+   * Thay đổi số lượng item mỗi trang
+   */
+  function changePageSize(newSize) {
+    showLoadingState();
+    const url = new URL(window.location);
+    url.searchParams.set('page_size', newSize);
+    url.searchParams.set('page', '1'); // Reset về trang 1 khi thay đổi page size
+    window.location.href = url.toString();
+  }
+
+  /**
+   * Hiển thị loading state khi chuyển trang
+   */
+  function showLoadingState() {
+    // Tạo overlay loading
+    const loadingOverlay = document.createElement('div');
+    loadingOverlay.id = 'loadingOverlay';
+    loadingOverlay.className = 'fixed inset-0 bg-black bg-opacity-25 z-50 flex items-center justify-center';
+    loadingOverlay.innerHTML = `
+      <div class="bg-white rounded-lg p-6 shadow-xl flex items-center space-x-3">
+        <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+        <span class="text-gray-700 font-medium">Đang tải...</span>
+      </div>
+    `;
+    document.body.appendChild(loadingOverlay);
+    
+    // Auto remove sau 5s để tránh stuck
+    setTimeout(() => {
+      const overlay = document.getElementById('loadingOverlay');
+      if (overlay) overlay.remove();
+    }, 5000);
+  }
+
+  /**
+   * Đi đến trang cụ thể
+   */
+  function goToPage(pageNumber) {
+    showLoadingState();
+    const url = new URL(window.location);
+    url.searchParams.set('page', pageNumber);
+    window.location.href = url.toString();
+  }
+
+  /**
+   * Thêm loading cho tất cả pagination links
+   */
+  function addLoadingToPaginationLinks() {
+    const paginationLinks = document.querySelectorAll('nav[aria-label="Pagination"] a, .sm\\:hidden a[href*="page="]');
+    paginationLinks.forEach(link => {
+      link.addEventListener('click', function(e) {
+        // Chỉ show loading nếu không phải cùng trang
+        const url = new URL(this.href);
+        const targetPage = url.searchParams.get('page');
+        const currentPage = {{ hop_dongs.number|default:1 }};
+        
+        if (targetPage != currentPage) {
+          showLoadingState();
+        }
+      });
+    });
+  }
+
+  /**
+   * Hiển thị thông tin phân trang đẹp hơn trên mobile
+   */
+  function updateMobilePaginationInfo() {
+    const currentPage = {{ hop_dongs.number|default:1 }};
+    const totalPages = {{ hop_dongs.paginator.num_pages|default:1 }};
+    const startIndex = {{ hop_dongs.start_index|default:0 }};
+    const endIndex = {{ hop_dongs.end_index|default:0 }};
+    const totalCount = {{ total_contracts|default:0 }};
+    
+    // Có thể sử dụng để cập nhật UI động nếu cần
+    console.log(`📄 Phân trang: Trang ${currentPage}/${totalPages}, Hiển thị ${startIndex}-${endIndex}/${totalCount}`);
+  }
+
+  // Gọi khi trang load xong
+  document.addEventListener('DOMContentLoaded', function() {
+    updateMobilePaginationInfo();
+    addLoadingToPaginationLinks();
+    
+    // Thêm keyboard shortcuts cho pagination
+    document.addEventListener('keydown', function(e) {
+      // Chỉ hoạt động khi không focus vào input/textarea
+      if (document.activeElement.tagName.toLowerCase() === 'input' || 
+          document.activeElement.tagName.toLowerCase() === 'textarea') {
+        return;
+      }
+      
+      const currentPage = {{ hop_dongs.number|default:1 }};
+      const totalPages = {{ hop_dongs.paginator.num_pages|default:1 }};
+      
+      // Arrow Left = Previous Page
+      if (e.key === 'ArrowLeft' && currentPage > 1) {
+        e.preventDefault();
+        goToPage(currentPage - 1);
+      }
+      
+      // Arrow Right = Next Page  
+      if (e.key === 'ArrowRight' && currentPage < totalPages) {
+        e.preventDefault();
+        goToPage(currentPage + 1);
+      }
+      
+      // Home = First Page
+      if (e.key === 'Home') {
+        e.preventDefault();
+        goToPage(1);
+      }
+      
+      // End = Last Page
+      if (e.key === 'End') {
+        e.preventDefault();
+        goToPage(totalPages);
+      }
+    });
+  });
 </script>
+
+<!-- Include modal gia hạn HTML only (no script) -->
+{% include 'admin/hopdong/modal_gia_han_hop_dong.html' %}
+
+<script>
+// Hiển thị modal gia hạn
+function hienThiModalGiaHan(hopDong) {
+    // Điền thông tin hợp đồng hiện tại
+    document.getElementById('modalHopDongId').textContent = hopDong.MA_HOP_DONG;
+    document.getElementById('hiddenHopDongId').value = hopDong.MA_HOP_DONG;
+    
+    // Set ngày tối thiểu cho input date
+    if (hopDong.NGAY_TRA_PHONG) {
+        try {
+            const ngayTraPhongCu = new Date(hopDong.NGAY_TRA_PHONG);
+            // Check if date is valid
+            if (!isNaN(ngayTraPhongCu.getTime())) {
+                const ngayToiThieu = new Date(ngayTraPhongCu);
+                ngayToiThieu.setDate(ngayToiThieu.getDate() + 1); // Phải sau ít nhất 1 ngày
+                document.getElementById('ngayTraPhongMoi').min = ngayToiThieu.toISOString().split('T')[0];
+            } else {
+                console.warn('Invalid date format for NGAY_TRA_PHONG:', hopDong.NGAY_TRA_PHONG);
+                // Set minimum to today if date is invalid
+                const today = new Date();
+                document.getElementById('ngayTraPhongMoi').min = today.toISOString().split('T')[0];
+            }
+        } catch (error) {
+            console.error('Error setting minimum date:', error);
+            // Fallback to today
+            const today = new Date();
+            document.getElementById('ngayTraPhongMoi').min = today.toISOString().split('T')[0];
+        }
+    } else {
+        // No date provided, set to today
+        const today = new Date();
+        document.getElementById('ngayTraPhongMoi').min = today.toISOString().split('T')[0];
+    }
+    
+    // Reset form
+    document.getElementById('formGiaHanHopDong').reset();
+    document.getElementById('hiddenHopDongId').value = hopDong.MA_HOP_DONG;
+    
+    // Hiển thị modal
+    document.getElementById('modalGiaHanHopDong').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+// Đóng modal
+function dongModalGiaHan() {
+    document.getElementById('modalGiaHanHopDong').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+}
+
+// Xử lý gia hạn hợp đồng
+async function xuLyGiaHanHopDong() {
+    const form = document.getElementById('formGiaHanHopDong');
+    const formData = new FormData(form);
+    const hopDongId = document.getElementById('hiddenHopDongId').value;
+    
+    // Validation
+    const ngayTraPhongMoi = formData.get('ngay_tra_phong_moi');
+    if (!ngayTraPhongMoi) {
+        alert('Vui lòng chọn ngày trả phòng mới!');
+        return;
+    }
+    
+    // Disable button để tránh double click
+    const btnSubmit = event.target;
+    const originalContent = btnSubmit.innerHTML;
+    btnSubmit.disabled = true;
+    btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Đang xử lý...';
+    
+    try {
+        const response = await fetch(`/admin/hopdong/gia-han/${hopDongId}/`, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+            }
+        });
+        
+        if (response.ok) {
+            // Thành công - reload trang để hiển thị thông báo
+            alert('Gia hạn hợp đồng thành công!');
+            window.location.reload();
+        } else {
+            // Lỗi
+            const errorText = await response.text();
+            alert('Có lỗi xảy ra khi gia hạn: ' + errorText);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Có lỗi xảy ra khi gia hạn hợp đồng!');
+    } finally {
+        // Restore button
+        btnSubmit.disabled = false;
+        btnSubmit.innerHTML = originalContent;
+        dongModalGiaHan();
+    }
+}
+
+// Đóng modal khi click outside
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('modalGiaHanHopDong');
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                dongModalGiaHan();
+            }
+        });
+    }
+});
+</script>
+
+{% endblock %}
+
+{% block extra_js %}
 <script src="{% static 'js/admin/hopdong/hopdong.js' %}"></script>
+<script src="{% static 'js/admin/hopdong/thiet_lap_hoa_don_bat_dau.js' %}"></script>
 {% endblock %}

@@ -5,6 +5,8 @@ from apps.dichvu.models import ChiSoDichVu
 from django.utils import timezone
 from datetime import datetime
 import uuid
+from django.db import transaction
+from decimal import Decimal
 
 # Create your models here.
 # Model for hoadon
@@ -16,7 +18,24 @@ class HoaDon(models.Model):
         db_column='MA_PHONG',
         related_name='hoadon'
     )
-    LOAI_HOA_DON = models.CharField(max_length=50, null=True, blank=True)
+    MA_HOP_DONG = models.ForeignKey(
+        'hopdong.HopDong',
+        on_delete=models.CASCADE,
+        db_column='MA_HOP_DONG',
+        related_name='hoadon',
+        null=True, blank=True
+    )
+    LOAI_HOA_DON = models.CharField(
+        max_length=50, 
+        null=True, 
+        blank=True,
+        choices=[
+            ('Hóa đơn bắt đầu', 'Hóa đơn bắt đầu hợp đồng'),
+            ('Hóa đơn hàng tháng', 'Hóa đơn hàng tháng'),
+            ('Hóa đơn kết thúc', 'Hóa đơn kết thúc hợp đồng'),
+            ('Hóa đơn khác', 'Hóa đơn khác'),
+        ]
+    )
     NGAY_LAP_HDON = models.DateField(null=True, blank=True)
     TIEN_PHONG = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     TIEN_DICH_VU = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
@@ -174,6 +193,417 @@ class HoaDon(models.Model):
             return True, []
         except Exception as e:
             return False, [f'Lỗi khi xóa hóa đơn: {str(e)}']
+
+    @classmethod
+    def sinh_hoa_don_bat_dau_hop_dong(cls, hop_dong):
+        """
+        Sinh hóa đơn bắt đầu hợp đồng
+        Bao gồm: Tiền phòng tháng đầu + Tiền dịch vụ + Tiền cọc
+        """
+        try:
+            with transaction.atomic():
+                # 1. Kiểm tra đã có hóa đơn bắt đầu chưa
+                if cls.objects.filter(
+                    MA_HOP_DONG=hop_dong,
+                    LOAI_HOA_DON='Bắt đầu hợp đồng'
+                ).exists():
+                    raise ValueError('Hợp đồng đã có hóa đơn bắt đầu')
+                
+                # 2. Tính tiền phòng (theo hợp đồng)
+                tien_phong = Decimal(hop_dong.GIA_THUE or 0)
+                
+                # 3. Tính tiền dịch vụ tháng đầu
+                tien_dich_vu = cls._tinh_tien_dich_vu_thang_dau(hop_dong)
+                
+                # 4. Tiền cọc (nếu có)
+                tien_coc = Decimal(hop_dong.GIA_COC_HD or 0)
+                
+                # 5. Tổng tiền
+                tong_tien = tien_phong + tien_dich_vu + tien_coc
+                
+                # 6. Tạo hóa đơn
+                hoa_don = cls.objects.create(
+                    MA_PHONG=hop_dong.MA_PHONG,
+                    MA_HOP_DONG=hop_dong,
+                    LOAI_HOA_DON='Bắt đầu hợp đồng',
+                    NGAY_LAP_HDON=hop_dong.NGAY_NHAN_PHONG or timezone.now().date(),
+                    TIEN_PHONG=tien_phong,
+                    TIEN_DICH_VU=tien_dich_vu,
+                    TIEN_COC=tien_coc,
+                    TIEN_KHAU_TRU=Decimal(0),
+                    TONG_TIEN=tong_tien,
+                    TRANG_THAI_HDON='Chưa thanh toán'
+                )
+                
+                # 7. Tạo chi tiết hóa đơn
+                cls._tao_chi_tiet_hoa_don_bat_dau(hoa_don, hop_dong)
+                
+                return hoa_don, None
+                
+        except Exception as e:
+            return None, str(e)
+
+    @classmethod  
+    def _tinh_tien_dich_vu_thang_dau(cls, hop_dong):
+        """Tính tiền dịch vụ tháng đầu của hợp đồng"""
+        from apps.dichvu.models import ChiSoDichVu, LichSuApDungDichVu
+        
+        try:
+            tong_tien_dv = Decimal(0)
+            
+            # Lấy danh sách dịch vụ áp dụng cho khu vực
+            dich_vu_ap_dung = LichSuApDungDichVu.objects.filter(
+                MA_KHU_VUC=hop_dong.MA_PHONG.MA_KHU_VUC,
+                NGAY_HUY_DV__isnull=True
+            ).select_related('MA_DICH_VU')
+            
+            for dv_ap_dung in dich_vu_ap_dung:
+                dich_vu = dv_ap_dung.MA_DICH_VU
+                gia_ap_dung = dv_ap_dung.GIA_DICH_VU_AD or dich_vu.GIA_DICH_VU or Decimal(0)
+                
+                if dich_vu.LOAI_DICH_VU == 'Cố định':
+                    # Dịch vụ cố định: wifi, rác, bảo vệ...
+                    tong_tien_dv += gia_ap_dung
+                    
+                else:
+                    # Dịch vụ theo chỉ số: điện, nước
+                    # Lấy chỉ số đầu từ ChiSoDichVu (nếu có)
+                    chi_so_dv = ChiSoDichVu.objects.filter(
+                        MA_HOP_DONG=hop_dong,
+                        MA_DICH_VU=dich_vu
+                    ).first()
+                    
+                    if chi_so_dv and chi_so_dv.CHI_SO_MOI:
+                        # Có chỉ số ban đầu
+                        so_luong = chi_so_dv.CHI_SO_MOI - (chi_so_dv.CHI_SO_CU or 0)
+                        tong_tien_dv += gia_ap_dung * Decimal(so_luong)
+                    else:
+                        # Chưa có chỉ số, tạm tính = 0 (sẽ cập nhật sau)
+                        tong_tien_dv += Decimal(0)
+            
+            return tong_tien_dv
+            
+        except Exception as e:
+            print(f"Lỗi tính tiền dịch vụ: {e}")
+            return Decimal(0)
+
+    @classmethod
+    def _tao_chi_tiet_hoa_don_bat_dau(cls, hoa_don, hop_dong):
+        """Tạo chi tiết hóa đơn bắt đầu"""
+        # 1. Chi tiết tiền phòng
+        if hoa_don.TIEN_PHONG > 0:
+            CHITIETHOADON.objects.create(
+                MA_HOA_DON=hoa_don,
+                LOAI_KHOAN='PHONG',
+                NOI_DUNG=f'Tiền phòng tháng đầu - {hoa_don.MA_PHONG.TEN_PHONG}',
+                SO_LUONG=1,
+                DON_GIA=hoa_don.TIEN_PHONG,
+                THANH_TIEN=hoa_don.TIEN_PHONG,
+                GHI_CHU_CTHD=f'Từ {hop_dong.NGAY_NHAN_PHONG} đến {hop_dong.NGAY_TRA_PHONG}'
+            )
+        
+        # 2. Chi tiết tiền cọc
+        if hoa_don.TIEN_COC > 0:
+            CHITIETHOADON.objects.create(
+                MA_HOA_DON=hoa_don,
+                LOAI_KHOAN='COC',
+                NOI_DUNG='Tiền cọc hợp đồng',
+                SO_LUONG=1,
+                DON_GIA=hoa_don.TIEN_COC,
+                THANH_TIEN=hoa_don.TIEN_COC,
+                GHI_CHU_CTHD='Tiền cọc sẽ hoàn trả khi kết thúc hợp đồng'
+            )
+        
+        # 3. Chi tiết dịch vụ (nếu có)
+        if hoa_don.TIEN_DICH_VU > 0:
+            CHITIETHOADON.objects.create(
+                MA_HOA_DON=hoa_don,
+                LOAI_KHOAN='DICH_VU',
+                NOI_DUNG='Dịch vụ tháng đầu',
+                SO_LUONG=1,
+                DON_GIA=hoa_don.TIEN_DICH_VU,
+                THANH_TIEN=hoa_don.TIEN_DICH_VU,
+                GHI_CHU_CTHD='Chi tiết dịch vụ xem phụ lục'
+            )
+
+    @classmethod
+    def sinh_hoa_don_ket_thuc_hop_dong(cls, hop_dong, ngay_ket_thuc):
+        """
+        Sinh hóa đơn kết thúc hợp đồng
+        Bao gồm: Tiền phòng (nếu có), Tiền dịch vụ cuối, Hoàn trả cọc
+        """
+        try:
+            with transaction.atomic():
+                # 1. Kiểm tra đã có hóa đơn kết thúc chưa
+                if cls.objects.filter(
+                    MA_HOP_DONG=hop_dong,
+                    LOAI_HOA_DON='Kết thúc hợp đồng'
+                ).exists():
+                    raise ValueError('Hợp đồng đã có hóa đơn kết thúc')
+                
+                # 2. Tính tiền phòng (nếu chưa đủ tháng)
+                tien_phong = cls._tinh_tien_phong_cuoi_ky(hop_dong, ngay_ket_thuc)
+                
+                # 3. Tính tiền dịch vụ cuối kỳ
+                tien_dich_vu = cls._tinh_tien_dich_vu_cuoi_ky(hop_dong, ngay_ket_thuc)
+                
+                # 4. Tiền hoàn cọc (âm = hoàn trả)
+                tien_hoan_coc = -Decimal(hop_dong.GIA_COC_HD or 0)
+                
+                # 5. Tổng tiền (có thể âm nếu hoàn cọc nhiều hơn phí)
+                tong_tien = tien_phong + tien_dich_vu + tien_hoan_coc
+                
+                # 6. Tạo hóa đơn
+                hoa_don = cls.objects.create(
+                    MA_PHONG=hop_dong.MA_PHONG,
+                    MA_HOP_DONG=hop_dong,
+                    LOAI_HOA_DON='Kết thúc hợp đồng',
+                    NGAY_LAP_HDON=ngay_ket_thuc,
+                    TIEN_PHONG=tien_phong,
+                    TIEN_DICH_VU=tien_dich_vu,
+                    TIEN_COC=tien_hoan_coc,
+                    TIEN_KHAU_TRU=Decimal(0),
+                    TONG_TIEN=tong_tien,
+                    TRANG_THAI_HDON='Chưa thanh toán' if tong_tien > 0 else 'Chờ hoàn trả'
+                )
+                
+                # 7. Tạo chi tiết hóa đơn
+                cls._tao_chi_tiet_hoa_don_ket_thuc(hoa_don, hop_dong, ngay_ket_thuc)
+                
+                return hoa_don, None
+                
+        except Exception as e:
+            return None, str(e)
+
+    @classmethod  
+    def _tinh_tien_phong_cuoi_ky(cls, hop_dong, ngay_ket_thuc):
+        """Tính tiền phòng cuối kỳ (nếu kết thúc giữa tháng)"""
+        from datetime import datetime
+        from calendar import monthrange
+        
+        try:
+            # Lấy ngày thu tiền gần nhất
+            ngay_thu_tien = int(hop_dong.NGAY_THU_TIEN or 1)
+            
+            # Tính chu kỳ thanh toán cuối
+            if ngay_ket_thuc.day <= ngay_thu_tien:
+                # Kết thúc trước ngày thu tiền = không tính tiền tháng này
+                return Decimal(0)
+            else:
+                # Kết thúc sau ngày thu tiền = tính tiền theo tỷ lệ
+                ngay_dau_thang = ngay_ket_thuc.replace(day=ngay_thu_tien)
+                so_ngay_thang = monthrange(ngay_ket_thuc.year, ngay_ket_thuc.month)[1]
+                so_ngay_su_dung = (ngay_ket_thuc - ngay_dau_thang).days + 1
+                
+                ty_le = so_ngay_su_dung / so_ngay_thang
+                return Decimal(hop_dong.GIA_THUE or 0) * Decimal(ty_le)
+                
+        except Exception as e:
+            print(f"Lỗi tính tiền phòng cuối kỳ: {e}")
+            return Decimal(0)
+
+    @classmethod
+    def _tinh_tien_dich_vu_cuoi_ky(cls, hop_dong, ngay_ket_thuc):
+        """Tính tiền dịch vụ cuối kỳ"""
+        from apps.dichvu.models import ChiSoDichVu, LichSuApDungDichVu
+        
+        try:
+            tong_tien_dv = Decimal(0)
+            
+            # Lấy danh sách dịch vụ áp dụng cho khu vực
+            dich_vu_ap_dung = LichSuApDungDichVu.objects.filter(
+                MA_KHU_VUC=hop_dong.MA_PHONG.MA_KHU_VUC,
+                NGAY_HUY_DV__isnull=True
+            ).select_related('MA_DICH_VU')
+            
+            for dv_ap_dung in dich_vu_ap_dung:
+                dich_vu = dv_ap_dung.MA_DICH_VU
+                gia_ap_dung = dv_ap_dung.GIA_DICH_VU_AD or dich_vu.GIA_DICH_VU or Decimal(0)
+                
+                if dich_vu.LOAI_DICH_VU == 'Cố định':
+                    # Dịch vụ cố định: tính theo tỷ lệ ngày
+                    from calendar import monthrange
+                    so_ngay_thang = monthrange(ngay_ket_thuc.year, ngay_ket_thuc.month)[1]
+                    ty_le = ngay_ket_thuc.day / so_ngay_thang
+                    tong_tien_dv += gia_ap_dung * Decimal(ty_le)
+                    
+                else:
+                    # Dịch vụ theo chỉ số: lấy chỉ số cuối cùng
+                    chi_so_cuoi = ChiSoDichVu.objects.filter(
+                        MA_HOP_DONG=hop_dong,
+                        MA_DICH_VU=dich_vu
+                    ).order_by('-NGAY_GHI_CS').first()
+                    
+                    if chi_so_cuoi and chi_so_cuoi.CHI_SO_MOI:
+                        # Có chỉ số cuối
+                        so_luong = chi_so_cuoi.CHI_SO_MOI - (chi_so_cuoi.CHI_SO_CU or 0)
+                        tong_tien_dv += gia_ap_dung * Decimal(so_luong)
+            
+            return tong_tien_dv
+            
+        except Exception as e:
+            print(f"Lỗi tính tiền dịch vụ cuối kỳ: {e}")
+            return Decimal(0)
+
+    @classmethod
+    def _tao_chi_tiet_hoa_don_ket_thuc(cls, hoa_don, hop_dong, ngay_ket_thuc):
+        """Tạo chi tiết hóa đơn kết thúc"""
+        # 1. Chi tiết tiền phòng (nếu có)
+        if hoa_don.TIEN_PHONG > 0:
+            CHITIETHOADON.objects.create(
+                MA_HOA_DON=hoa_don,
+                LOAI_KHOAN='PHONG',
+                NOI_DUNG=f'Tiền phòng cuối kỳ - {hoa_don.MA_PHONG.TEN_PHONG}',
+                SO_LUONG=1,
+                DON_GIA=hoa_don.TIEN_PHONG,
+                THANH_TIEN=hoa_don.TIEN_PHONG,
+                GHI_CHU_CTHD=f'Tính từ ngày thu tiền đến {ngay_ket_thuc}'
+            )
+        
+        # 2. Chi tiết hoàn cọc
+        if hoa_don.TIEN_COC < 0:
+            CHITIETHOADON.objects.create(
+                MA_HOA_DON=hoa_don,
+                LOAI_KHOAN='HOAN_COC',
+                NOI_DUNG='Hoàn trả tiền cọc hợp đồng',
+                SO_LUONG=1,
+                DON_GIA=hoa_don.TIEN_COC,
+                THANH_TIEN=hoa_don.TIEN_COC,
+                GHI_CHU_CTHD='Hoàn trả tiền cọc khi kết thúc hợp đồng'
+            )
+        
+        # 3. Chi tiết dịch vụ cuối kỳ (nếu có)
+        if hoa_don.TIEN_DICH_VU > 0:
+            CHITIETHOADON.objects.create(
+                MA_HOA_DON=hoa_don,
+                LOAI_KHOAN='DICH_VU',
+                NOI_DUNG='Dịch vụ cuối kỳ',
+                SO_LUONG=1,
+                DON_GIA=hoa_don.TIEN_DICH_VU,
+                THANH_TIEN=hoa_don.TIEN_DICH_VU,
+                GHI_CHU_CTHD='Chi tiết dịch vụ cuối kỳ xem phụ lục'
+            )
+
+    @classmethod
+    def sinh_hoa_don_hang_thang(cls, hop_dong, thang, nam):
+        """
+        Sinh hóa đơn hàng tháng
+        Bao gồm: Tiền phòng + Tiền dịch vụ
+        """
+        try:
+            with transaction.atomic():
+                # 1. Kiểm tra đã có hóa đơn tháng này chưa
+                if cls.objects.filter(
+                    MA_HOP_DONG=hop_dong,
+                    LOAI_HOA_DON='Hàng tháng',
+                    NGAY_LAP_HDON__year=nam,
+                    NGAY_LAP_HDON__month=thang
+                ).exists():
+                    raise ValueError(f'Đã có hóa đơn tháng {thang}/{nam}')
+                
+                # 2. Tính tiền phòng
+                tien_phong = Decimal(hop_dong.GIA_THUE or 0)
+                
+                # 3. Tính tiền dịch vụ tháng
+                tien_dich_vu = cls._tinh_tien_dich_vu_thang(hop_dong, thang, nam)
+                
+                # 4. Tổng tiền
+                tong_tien = tien_phong + tien_dich_vu
+                
+                # 5. Ngày lập hóa đơn (ngày thu tiền)
+                from datetime import date
+                ngay_thu = int(hop_dong.NGAY_THU_TIEN or 1)
+                ngay_lap = date(nam, thang, min(ngay_thu, 28))  # Tránh lỗi ngày 31
+                
+                # 6. Tạo hóa đơn
+                hoa_don = cls.objects.create(
+                    MA_PHONG=hop_dong.MA_PHONG,
+                    MA_HOP_DONG=hop_dong,
+                    LOAI_HOA_DON='Hàng tháng',
+                    NGAY_LAP_HDON=ngay_lap,
+                    TIEN_PHONG=tien_phong,
+                    TIEN_DICH_VU=tien_dich_vu,
+                    TIEN_COC=Decimal(0),
+                    TIEN_KHAU_TRU=Decimal(0),
+                    TONG_TIEN=tong_tien,
+                    TRANG_THAI_HDON='Chưa thanh toán'
+                )
+                
+                # 7. Tạo chi tiết hóa đơn
+                cls._tao_chi_tiet_hoa_don_hang_thang(hoa_don, hop_dong, thang, nam)
+                
+                return hoa_don, None
+                
+        except Exception as e:
+            return None, str(e)
+
+    @classmethod
+    def _tinh_tien_dich_vu_thang(cls, hop_dong, thang, nam):
+        """Tính tiền dịch vụ của tháng cụ thể"""
+        from apps.dichvu.models import ChiSoDichVu, LichSuApDungDichVu
+        
+        try:
+            tong_tien_dv = Decimal(0)
+            
+            # Lấy danh sách dịch vụ áp dụng cho khu vực
+            dich_vu_ap_dung = LichSuApDungDichVu.objects.filter(
+                MA_KHU_VUC=hop_dong.MA_PHONG.MA_KHU_VUC,
+                NGAY_HUY_DV__isnull=True
+            ).select_related('MA_DICH_VU')
+            
+            for dv_ap_dung in dich_vu_ap_dung:
+                dich_vu = dv_ap_dung.MA_DICH_VU
+                gia_ap_dung = dv_ap_dung.GIA_DICH_VU_AD or dich_vu.GIA_DICH_VU or Decimal(0)
+                
+                if dich_vu.LOAI_DICH_VU == 'Cố định':
+                    # Dịch vụ cố định: wifi, rác, bảo vệ...
+                    tong_tien_dv += gia_ap_dung
+                    
+                else:
+                    # Dịch vụ theo chỉ số: lấy chỉ số của tháng
+                    chi_so_thang = ChiSoDichVu.objects.filter(
+                        MA_HOP_DONG=hop_dong,
+                        MA_DICH_VU=dich_vu,
+                        NGAY_GHI_CS__year=nam,
+                        NGAY_GHI_CS__month=thang
+                    ).first()
+                    
+                    if chi_so_thang and chi_so_thang.CHI_SO_MOI:
+                        so_luong = chi_so_thang.CHI_SO_MOI - (chi_so_thang.CHI_SO_CU or 0)
+                        tong_tien_dv += gia_ap_dung * Decimal(so_luong)
+            
+            return tong_tien_dv
+            
+        except Exception as e:
+            print(f"Lỗi tính tiền dịch vụ tháng {thang}/{nam}: {e}")
+            return Decimal(0)
+
+    @classmethod
+    def _tao_chi_tiet_hoa_don_hang_thang(cls, hoa_don, hop_dong, thang, nam):
+        """Tạo chi tiết hóa đơn hàng tháng"""
+        # 1. Chi tiết tiền phòng
+        if hoa_don.TIEN_PHONG > 0:
+            CHITIETHOADON.objects.create(
+                MA_HOA_DON=hoa_don,
+                LOAI_KHOAN='PHONG',
+                NOI_DUNG=f'Tiền phòng tháng {thang}/{nam} - {hoa_don.MA_PHONG.TEN_PHONG}',
+                SO_LUONG=1,
+                DON_GIA=hoa_don.TIEN_PHONG,
+                THANH_TIEN=hoa_don.TIEN_PHONG,
+                GHI_CHU_CTHD=f'Tiền phòng tháng {thang}/{nam}'
+            )
+        
+        # 2. Chi tiết dịch vụ
+        if hoa_don.TIEN_DICH_VU > 0:
+            CHITIETHOADON.objects.create(
+                MA_HOA_DON=hoa_don,
+                LOAI_KHOAN='DICH_VU',
+                NOI_DUNG=f'Dịch vụ tháng {thang}/{nam}',
+                SO_LUONG=1,
+                DON_GIA=hoa_don.TIEN_DICH_VU,
+                THANH_TIEN=hoa_don.TIEN_DICH_VU,
+                GHI_CHU_CTHD=f'Chi tiết dịch vụ tháng {thang}/{nam} xem phụ lục'
+            )
 
 
 # Model for khautru
