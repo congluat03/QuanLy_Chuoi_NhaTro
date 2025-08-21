@@ -4,6 +4,8 @@ class ChatbotManager {
         this.conversationHistory = [];
         this.isTyping = false;
         this.apiUrl = '/api/chatbot/';
+        this.isAnimating = false; // Prevent rapid toggling during animation
+        this.toggleTimeout = null; // Debounce toggle actions
         
         this.init();
     }
@@ -76,9 +78,18 @@ class ChatbotManager {
         const input = document.getElementById('chatbot-input');
         const sendBtn = document.getElementById('chatbot-send');
         
-        // Toggle chatbot
-        toggleBtn.addEventListener('click', () => this.toggleChatbot());
-        closeBtn.addEventListener('click', () => this.closeChatbot());
+        // Toggle chatbot with debouncing
+        toggleBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.debouncedToggle();
+        });
+        
+        closeBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.closeChatbot();
+        });
         
         // Input events
         input.addEventListener('input', () => this.handleInputChange());
@@ -92,11 +103,15 @@ class ChatbotManager {
         // Send button
         sendBtn.addEventListener('click', () => this.sendMessage());
         
-        // Close on outside click
+        // Close on outside click with delay to prevent immediate closing
         document.addEventListener('click', (e) => {
             const chatbotContainer = document.querySelector('.chatbot-container');
-            if (!chatbotContainer.contains(e.target) && this.isOpen) {
-                this.closeChatbot();
+            if (!chatbotContainer.contains(e.target) && this.isOpen && !this.isAnimating) {
+                setTimeout(() => {
+                    if (this.isOpen && !this.isAnimating) {
+                        this.closeChatbot();
+                    }
+                }, 100);
             }
         });
         
@@ -104,9 +119,44 @@ class ChatbotManager {
         document.getElementById('chatbot-window').addEventListener('click', (e) => {
             e.stopPropagation();
         });
+        
+        // Prevent body scroll when chatbot is open (mobile)
+        document.addEventListener('touchmove', (e) => {
+            if (this.isOpen) {
+                const chatbotWindow = document.getElementById('chatbot-window');
+                if (!chatbotWindow.contains(e.target)) {
+                    e.preventDefault();
+                }
+            }
+        }, { passive: false });
+    }
+    
+    debouncedToggle() {
+        // Clear any existing timeout
+        if (this.toggleTimeout) {
+            clearTimeout(this.toggleTimeout);
+        }
+        
+        // If currently animating, ignore the click
+        if (this.isAnimating) {
+            console.log('Chatbot is animating, ignoring toggle');
+            return;
+        }
+        
+        // Set a small delay to prevent rapid toggling
+        this.toggleTimeout = setTimeout(() => {
+            this.toggleChatbot();
+        }, 50);
     }
     
     toggleChatbot() {
+        if (this.isAnimating) {
+            console.log('Animation in progress, skipping toggle');
+            return;
+        }
+        
+        console.log('Toggle chatbot - current state:', this.isOpen);
+        
         if (this.isOpen) {
             this.closeChatbot();
         } else {
@@ -115,40 +165,88 @@ class ChatbotManager {
     }
     
     openChatbot() {
+        if (this.isOpen || this.isAnimating) {
+            console.log('Chatbot already open or animating');
+            return;
+        }
+        
+        console.log('Opening chatbot');
+        this.isAnimating = true;
+        
         const window = document.getElementById('chatbot-window');
         const button = document.getElementById('chatbot-toggle');
         const icon = document.getElementById('chatbot-icon');
         
+        // Ensure elements exist
+        if (!window || !button || !icon) {
+            console.error('Chatbot elements not found');
+            this.isAnimating = false;
+            return;
+        }
+        
+        // Update state first
+        this.isOpen = true;
+        
+        // Add classes
         window.classList.add('active');
         button.classList.add('active');
+        
         // Change icon to close
         icon.innerHTML = `
             <svg class="w-6 h-6 transition-all duration-300 rotate-90" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
             </svg>
         `;
-        this.isOpen = true;
         
-        // Focus input with smooth delay
+        // Wait for animation to complete
         setTimeout(() => {
-            document.getElementById('chatbot-input').focus();
-        }, 200);
+            this.isAnimating = false;
+            // Focus input after animation
+            const input = document.getElementById('chatbot-input');
+            if (input) {
+                input.focus();
+            }
+        }, 400); // Match CSS animation duration
     }
     
     closeChatbot() {
+        if (!this.isOpen || this.isAnimating) {
+            console.log('Chatbot already closed or animating');
+            return;
+        }
+        
+        console.log('Closing chatbot');
+        this.isAnimating = true;
+        
         const window = document.getElementById('chatbot-window');
         const button = document.getElementById('chatbot-toggle');
         const icon = document.getElementById('chatbot-icon');
         
+        // Ensure elements exist
+        if (!window || !button || !icon) {
+            console.error('Chatbot elements not found');
+            this.isAnimating = false;
+            return;
+        }
+        
+        // Update state first
+        this.isOpen = false;
+        
+        // Remove classes
         window.classList.remove('active');
         button.classList.remove('active');
+        
         // Change back to chat icon
         icon.innerHTML = `
             <svg class="w-7 h-7 transition-all duration-300" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M18 5v8a2 2 0 01-2 2h-5l-5 4v-4H4a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2zM7 8H5v2h2V8zm2 0h2v2H9V8zm6 0h-2v2h2V8z" clip-rule="evenodd" />
             </svg>
         `;
-        this.isOpen = false;
+        
+        // Wait for animation to complete
+        setTimeout(() => {
+            this.isAnimating = false;
+        }, 400); // Match CSS animation duration
     }
     
     handleInputChange() {
@@ -374,15 +472,94 @@ class ChatbotManager {
             .replace(/\n/g, '<br>')                            // Line breaks
             .replace(/`(.*?)`/g, '<code style="background: rgba(59, 130, 246, 0.1); padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 13px;">$1</code>'); // Inline code
     }
+    
+    // Debug method to check current state
+    debugStatus() {
+        console.log('=== Chatbot Status ===');
+        console.log('isOpen:', this.isOpen);
+        console.log('isAnimating:', this.isAnimating);
+        console.log('isTyping:', this.isTyping);
+        
+        const elements = {
+            window: document.getElementById('chatbot-window'),
+            button: document.getElementById('chatbot-toggle'),
+            icon: document.getElementById('chatbot-icon')
+        };
+        
+        Object.entries(elements).forEach(([name, element]) => {
+            if (element) {
+                console.log(`${name}:`, {
+                    exists: true,
+                    classes: element.className,
+                    visible: getComputedStyle(element).visibility !== 'hidden'
+                });
+            } else {
+                console.log(`${name}: NOT FOUND`);
+            }
+        });
+        console.log('======================');
+    }
+    
+    // Force reset chatbot state
+    resetChatbot() {
+        console.log('Resetting chatbot state...');
+        this.isOpen = false;
+        this.isAnimating = false;
+        this.isTyping = false;
+        
+        const window = document.getElementById('chatbot-window');
+        const button = document.getElementById('chatbot-toggle');
+        const icon = document.getElementById('chatbot-icon');
+        
+        if (window) window.classList.remove('active');
+        if (button) button.classList.remove('active');
+        if (icon) {
+            icon.innerHTML = `
+                <svg class="w-7 h-7 transition-all duration-300" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M18 5v8a2 2 0 01-2 2h-5l-5 4v-4H4a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2zM7 8H5v2h2V8zm2 0h2v2H9V8zm6 0h-2v2h2V8z" clip-rule="evenodd" />
+                </svg>
+            `;
+        }
+        
+        console.log('Chatbot reset complete');
+    }
 }
+
+// Global chatbot instance
+let chatbotInstance = null;
 
 // Initialize chatbot when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     // Chờ một chút để đảm bảo trang đã load xong
     setTimeout(() => {
-        new ChatbotManager();
+        try {
+            console.log('Initializing chatbot...');
+            chatbotInstance = new ChatbotManager();
+            
+            // Expose debug methods globally for troubleshooting
+            window.debugChatbot = () => chatbotInstance.debugStatus();
+            window.resetChatbot = () => chatbotInstance.resetChatbot();
+            
+            console.log('Chatbot initialized successfully');
+            console.log('Use debugChatbot() or resetChatbot() in console for troubleshooting');
+        } catch (error) {
+            console.error('Failed to initialize chatbot:', error);
+        }
     }, 1000);
 });
 
 // Export for potential use in other scripts
 window.ChatbotManager = ChatbotManager;
+
+// Handle page visibility change to reset animation state
+document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'visible' && chatbotInstance) {
+        // Reset animation state when page becomes visible again
+        setTimeout(() => {
+            if (chatbotInstance.isAnimating) {
+                console.log('Resetting animation state after page visibility change');
+                chatbotInstance.isAnimating = false;
+            }
+        }, 500);
+    }
+});

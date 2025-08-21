@@ -52,12 +52,14 @@
     overflow: hidden;
     z-index: 999;
     border: 1px solid rgba(255, 255, 255, 0.3);
+    pointer-events: none;
 }
 
 .chatbot-window.active {
     opacity: 1;
     visibility: visible;
     transform: translateY(0) scale(1);
+    pointer-events: auto;
 }
 
 .chatbot-header {
