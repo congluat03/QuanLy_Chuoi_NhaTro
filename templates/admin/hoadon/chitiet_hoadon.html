@@ -1,3 +1,4 @@
+{% load custom_filters %}
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -43,8 +44,8 @@
         <!-- Thông tin khách hàng -->
         <div class="mb-6">
             <h2 class="text-xl font-semibold text-blue-700 mb-2">Thông tin khách hàng</h2>
-            <p class="text-sm"><span class="font-medium">Phòng:</span> {{ hoadon.MA_PHONG_id }}</p>
-            <p class="text-sm"><span class="font-medium">Mã khách hàng:</span> KH{{ hoadon.MA_PHONG_id|stringformat:"05d" }}</p>
+            <p class="text-sm"><span class="font-medium">Phòng:</span> {{ hoadon.phong_info.TEN_PHONG|default:"Không xác định" }}</p>
+            <p class="text-sm"><span class="font-medium">Mã phòng:</span> {{ hoadon.phong_info.MA_PHONG|default:"N/A" }}</p>
             <p class="text-sm"><span class="font-medium">Trạng thái hóa đơn:</span> {{ hoadon.TRANG_THAI_HDON|default:"Chưa thanh toán" }}</p>
         </div>
 
@@ -72,8 +73,8 @@
                             <td class="p-3 border">{{ chitiet.LOAI_KHOAN|default:"-" }}</td>
                             <td class="p-3 border">{{ chitiet.NOI_DUNG|default:"-" }}</td>
                             <td class="p-3 border number-format">{{ chitiet.SO_LUONG|default:"-" }}</td>
-                            <td class="p-3 border number-format">{{ chitiet.DON_GIA|floatformat:0|default:"-"|intcomma }}</td>
-                            <td class="p-3 border number-format">{{ chitiet.THANH_TIEN|floatformat:0|default:"-"|intcomma }}</td>
+                            <td class="p-3 border number-format">{{ chitiet.DON_GIA|currency_vn }}</td>
+                            <td class="p-3 border number-format">{{ chitiet.THANH_TIEN|currency_vn }}</td>
                             <td class="p-3 border">{{ chitiet.GHI_CHU_CTHD|default:"-" }}</td>
                         </tr>
                         {% endfor %}
@@ -108,7 +109,7 @@
                             <td class="p-3 border">{{ khautru.MA_KHAU_TRU }}</td>
                             <td class="p-3 border">{{ khautru.NGAYKHAUTRU|date:"d/m/Y"|default:"-" }}</td>
                             <td class="p-3 border">{{ khautru.LOAI_KHAU_TRU|default:"-" }}</td>
-                            <td class="p-3 border number-format">{{ khautru.SO_TIEN_KT|floatformat:0|default:"-"|intcomma }}</td>
+                            <td class="p-3 border number-format">{{ khautru.SO_TIEN_KT|currency_vn }}</td>
                             <td class="p-3 border">{{ khautru.LY_DO_KHAU_TRU|default:"-" }}</td>
                         </tr>
                         {% endfor %}
@@ -125,13 +126,13 @@
             <h2 class="text-xl font-semibold text-blue-700 mb-3">Tổng cộng</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div>
-                    <p><span class="font-medium">Tiền phòng:</span> {{ hoadon.TIEN_PHONG|floatformat:0|default:"0"|intcomma }}<span class="currency"></span></p>
-                    <p><span class="font-medium">Tiền dịch vụ:</span> {{ hoadon.TIEN_DICH_VU|floatformat:0|default:"0"|intcomma }}<span class="currency"></span></p>
-                    <p><span class="font-medium">Tiền cọc:</span> {{ hoadon.TIEN_COC|floatformat:0|default:"0"|intcomma }}<span class="currency"></span></p>
+                    <p><span class="font-medium">Tiền phòng:</span> {{ hoadon.tien_phong|currency_vn }}</p>
+                    <p><span class="font-medium">Tiền dịch vụ:</span> {{ hoadon.tien_dich_vu|currency_vn }}</p>
+                    <p><span class="font-medium">Tiền cọc:</span> {{ hoadon.tien_coc|currency_vn }}</p>
                 </div>
                 <div>
-                    <p><span class="font-medium">Tiền khấu trừ:</span> {{ hoadon.TIEN_KHAU_TRU|floatformat:0|default:"0"|intcomma }}<span class="currency"></span></p>
-                    <p class="font-bold"><span class="font-medium">Tổng tiền:</span> {{ hoadon.TONG_TIEN|floatformat:0|default:"0"|intcomma }}<span class="currency"></span></p>
+                    <p><span class="font-medium">Tiền khấu trừ:</span> {{ hoadon.tong_khau_tru|currency_vn }}</p>
+                    <p class="font-bold"><span class="font-medium">Tổng tiền:</span> {{ hoadon.TONG_TIEN|currency_vn }}</p>
                 </div>
             </div>
         </div>

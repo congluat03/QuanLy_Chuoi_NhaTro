@@ -34,14 +34,34 @@ saveDeductionBtn.addEventListener('click', () => {
 
     // Validation
     let hasError = false;
-    document.getElementById('error_NGAYKHAUTRU').classList.toggle('hidden', !!ngayKhauTru);
-    document.getElementById('error_LOAI_KHAU_TRU').classList.toggle('hidden', !!loaiKhauTru);
-    document.getElementById('error_SO_TIEN_KT').classList.toggle('hidden', soTienKt && soTienKt >= 0);
-    document.getElementById('error_LY_DO_KHAU_TRU').classList.toggle('hidden', !!lyDoKhauTru);
-
-    if (!ngayKhauTru || !loaiKhauTru || !soTienKt || soTienKt < 0 || !lyDoKhauTru) {
-        hasError = true;
+    
+    // Kiểm tra ngày khấu trừ
+    const errorNgay = document.getElementById('error_NGAYKHAUTRU');
+    if (errorNgay) {
+        errorNgay.classList.toggle('hidden', !!ngayKhauTru);
     }
+    if (!ngayKhauTru) hasError = true;
+    
+    // Kiểm tra loại khấu trừ
+    const errorLoai = document.getElementById('error_LOAI_KHAU_TRU');
+    if (errorLoai) {
+        errorLoai.classList.toggle('hidden', !!loaiKhauTru);
+    }
+    if (!loaiKhauTru) hasError = true;
+    
+    // Kiểm tra số tiền
+    const errorTien = document.getElementById('error_SO_TIEN_KT');
+    if (errorTien) {
+        errorTien.classList.toggle('hidden', soTienKt && parseFloat(soTienKt) > 0);
+    }
+    if (!soTienKt || parseFloat(soTienKt) <= 0) hasError = true;
+    
+    // Kiểm tra lý do
+    const errorLyDo = document.getElementById('error_LY_DO_KHAU_TRU');
+    if (errorLyDo) {
+        errorLyDo.classList.toggle('hidden', !!lyDoKhauTru);
+    }
+    if (!lyDoKhauTru) hasError = true;
 
     if (!hasError) {
         const form = document.getElementById('invoice-form');
@@ -55,11 +75,12 @@ saveDeductionBtn.addEventListener('click', () => {
                 row.querySelector(`#ngay_khau_tru_${editingDeductionId}`).value = ngayKhauTru;
 
                 // Update hidden inputs
+                const cleanId = editingDeductionId.replace('new_', '');
                 const inputs = [
-                    { name: `khautru[${editingDeductionId.replace('new_', '')}][NGAYKHAUTRU]`, value: ngayKhauTru },
-                    { name: `khautru[${editingDeductionId.replace('new_', '')}][LOAI_KHAU_TRU]`, value: loaiKhauTru },
-                    { name: `khautru[${editingDeductionId.replace('new_', '')}][SO_TIEN_KT]`, value: soTienKt },
-                    { name: `khautru[${editingDeductionId.replace('new_', '')}][LY_DO_KHAU_TRU]`, value: lyDoKhauTru }
+                    { name: `khautru[${cleanId}][NGAYKHAUTRU]`, value: ngayKhauTru },
+                    { name: `khautru[${cleanId}][LOAI_KHAU_TRU]`, value: loaiKhauTru },
+                    { name: `khautru[${cleanId}][SO_TIEN_KT]`, value: soTienKt },
+                    { name: `khautru[${cleanId}][LY_DO_KHAU_TRU]`, value: lyDoKhauTru }
                 ];
 
                 inputs.forEach(input => {
@@ -156,13 +177,16 @@ function deleteDeduction(id) {
         row.remove();
         // Remove hidden inputs
         const form = document.getElementById('invoice-form');
-        const inputs = form.querySelectorAll(`input[id^="hidden_khautru_${id.replace('new-', '')}_"]`);
+        const cleanId = id.replace('new_', '');
+        const inputs = form.querySelectorAll(`input[id^="hidden_khautru_${cleanId}_"]`);
         inputs.forEach(input => input.remove());
+        
         // Update row numbers
         const rows = discountDetails.children;
         for (let i = 0; i < rows.length; i++) {
             rows[i].children[0].textContent = i + 1;
         }
+        
         if (rows.length === 0) {
             noDeductionMessage.classList.remove('hidden');
         }
@@ -173,26 +197,61 @@ function deleteDeduction(id) {
 function calculateTotalDeduction() {
     let totalDeduction = 0;
     const rows = discountDetails.children;
+    
     for (let i = 0; i < rows.length; i++) {
         const row = rows[i];
-        const type = row.querySelector('select').value;
-        const amount = parseFloat(row.querySelector('input[type="number"]').value) || 0;
-        totalDeduction += (type === 'Cộng' ? amount : -amount);
+        const selectElement = row.querySelector('select');
+        const inputElement = row.querySelector('input[type="number"]');
+        
+        if (selectElement && inputElement) {
+            const type = selectElement.value;
+            const amount = parseFloat(inputElement.value) || 0;
+            totalDeduction += (type === 'Cộng' ? amount : -amount);
+        }
     }
+    
     document.getElementById('TIEN_KHAU_TRU').value = totalDeduction.toFixed(2);
-    calculateTotalInvoice();
+    
+    // Gọi hàm tính tổng hóa đơn từ template chính nếu có
+    if (typeof calculateTotals === 'function') {
+        calculateTotals();
+    } else if (typeof calculateTotalInvoice === 'function') {
+        calculateTotalInvoice();
+    }
 }
 
 function calculateTotalInvoice() {
-    const tienPhong = parseFloat(document.getElementById('TIEN_PHONG').value) || 0;
-    const tienDichVu = parseFloat(document.getElementById('TIEN_DICH_VU').value) || 0;
-    const tienCoc = parseFloat(document.getElementById('TIEN_COC').value) || 0;
-    const tienKhauTru = parseFloat(document.getElementById('TIEN_KHAU_TRU').value) || 0;
+    const tienPhongElement = document.getElementById('TIEN_PHONG');
+    const tienDichVuElement = document.getElementById('TIEN_DICH_VU');
+    const tienCocElement = document.getElementById('TIEN_COC');
+    const tienKhauTruElement = document.getElementById('TIEN_KHAU_TRU');
+    const tongTienElement = document.getElementById('TONG_TIEN');
+    
+    const tienPhong = parseFloat(tienPhongElement?.value) || 0;
+    const tienDichVu = parseFloat(tienDichVuElement?.value) || 0;
+    const tienCoc = parseFloat(tienCocElement?.value) || 0;
+    const tienKhauTru = parseFloat(tienKhauTruElement?.value) || 0;
+    
     const tongTien = tienPhong + tienDichVu + tienCoc + tienKhauTru;
-    document.getElementById('TONG_TIEN').value = tongTien.toFixed(2);
+    
+    if (tongTienElement) {
+        tongTienElement.value = tongTien.toFixed(2);
+    }
+    
+    // Cập nhật display trong footer nếu có
+    const totalAmountDisplay = document.getElementById('total_amount_display');
+    if (totalAmountDisplay) {
+        totalAmountDisplay.textContent = `Tổng tiền: ${tongTien.toLocaleString('vi-VN')} VNĐ`;
+    }
 }
 
-['TIEN_PHONG', 'TIEN_DICH_VU', 'TIEN_COC'].forEach(id => {
-    document.getElementById(id).addEventListener('input', calculateTotalInvoice);
+// Thêm event listeners khi DOM loaded
+document.addEventListener('DOMContentLoaded', function() {
+    ['TIEN_PHONG', 'TIEN_DICH_VU', 'TIEN_COC'].forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.addEventListener('input', calculateTotalInvoice);
+        }
+    });
 });
 

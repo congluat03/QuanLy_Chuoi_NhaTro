@@ -450,6 +450,11 @@ class DangTinPhong(models.Model):
         related_name='tin_dang'
     )
     
+    # Thông tin tin đăng
+    TIEU_DE = models.CharField(max_length=200, verbose_name="Tiêu đề tin đăng")
+    MO_TA_TIN = models.TextField(null=True, blank=True, verbose_name="Mô tả tin đăng")
+    NGAY_HET_HANG_TIN = models.DateField(null=True, blank=True, verbose_name="Ngày hết hạn tin")
+    
     # Thông tin liên hệ
     SDT_LIEN_HE = models.CharField(max_length=15, verbose_name="Số điện thoại liên hệ")
     EMAIL_LIEN_HE = models.EmailField(max_length=100, null=True, blank=True, verbose_name="Email liên hệ")
@@ -495,6 +500,46 @@ class DangTinPhong(models.Model):
         """Tăng lượt liên hệ tin đăng."""
         self.LUOT_LIEN_HE += 1
         self.save(update_fields=['LUOT_LIEN_HE'])
+    
+    def set_default_expiry_date(self, days=30):
+        """Đặt ngày hết hạn mặc định (30 ngày từ ngày đăng)."""
+        from datetime import timedelta
+        if not self.NGAY_HET_HANG_TIN:
+            self.NGAY_HET_HANG_TIN = (self.NGAY_DANG.date() if self.NGAY_DANG else date.today()) + timedelta(days=days)
+    
+    @property
+    def is_expired(self):
+        """Kiểm tra tin đăng đã hết hạn chưa."""
+        from datetime import date
+        if self.NGAY_HET_HANG_TIN:
+            return date.today() > self.NGAY_HET_HANG_TIN
+        return False
+    
+    @property
+    def days_until_expiry(self):
+        """Số ngày còn lại đến hết hạn."""
+        from datetime import date
+        if self.NGAY_HET_HANG_TIN:
+            delta = self.NGAY_HET_HANG_TIN - date.today()
+            return delta.days if delta.days >= 0 else 0
+        return None
+    
+    def clean(self):
+        """Validation cho model."""
+        from datetime import date
+        super().clean()
+        
+        if self.NGAY_HET_HANG_TIN and self.NGAY_HET_HANG_TIN <= date.today():
+            raise ValidationError('Ngày hết hạn tin phải sau ngày hiện tại.')
+        
+        if not self.TIEU_DE or len(self.TIEU_DE.strip()) < 10:
+            raise ValidationError('Tiêu đề tin đăng phải có ít nhất 10 ký tự.')
+    
+    def save(self, *args, **kwargs):
+        """Override save để tự động đặt ngày hết hạn."""
+        if not self.NGAY_HET_HANG_TIN:
+            self.set_default_expiry_date()
+        super().save(*args, **kwargs)
 
 
 def hinh_anh_tin_dang_path(instance, filename):

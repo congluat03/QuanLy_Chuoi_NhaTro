@@ -28,6 +28,8 @@ def tim_phong(request):
     dien_tich_max = request.GET.get('dien_tich_max', '').strip()
     khu_vuc = request.GET.get('khu_vuc', '').strip()
     loai_phong = request.GET.get('loai_phong', '').strip()
+    vi_tri = request.GET.get('vi_tri', '').strip()
+    sort_by = request.GET.get('sort', '').strip()
     
     # Áp dụng filters cho tin đăng
     if gia_min:
@@ -66,6 +68,29 @@ def tim_phong(request):
         except ValueError:
             pass
     
+    # Tìm kiếm theo vị trí (tên khu vực, tên nhà trọ, địa chỉ)
+    if vi_tri:
+        tin_dang_list = tin_dang_list.filter(
+            Q(MA_PHONG__MA_KHU_VUC__TEN_KHU_VUC__icontains=vi_tri) |
+            Q(MA_PHONG__MA_KHU_VUC__MA_NHA_TRO__TEN_NHA_TRO__icontains=vi_tri) |
+            Q(MA_PHONG__MA_KHU_VUC__MA_NHA_TRO__DIA_CHI__icontains=vi_tri) |
+            Q(TIEU_DE__icontains=vi_tri) |
+            Q(MO_TA_TIN__icontains=vi_tri)
+        )
+    
+    # Áp dụng sắp xếp
+    if sort_by == 'price_asc':
+        tin_dang_list = tin_dang_list.order_by('MA_PHONG__GIA_PHONG')
+    elif sort_by == 'price_desc':
+        tin_dang_list = tin_dang_list.order_by('-MA_PHONG__GIA_PHONG')
+    elif sort_by == 'area_desc':
+        tin_dang_list = tin_dang_list.order_by('-MA_PHONG__DIEN_TICH')
+    elif sort_by == 'newest':
+        tin_dang_list = tin_dang_list.order_by('-NGAY_DANG')
+    else:
+        # Mặc định sắp xếp theo lượt xem giảm dần và ngày đăng mới nhất
+        tin_dang_list = tin_dang_list.order_by('-LUOT_XEM', '-NGAY_DANG')
+    
     # Pagination
     paginator = Paginator(tin_dang_list, 12)  # 12 tin đăng mỗi trang
     page_number = request.GET.get('page')
@@ -86,8 +111,11 @@ def tim_phong(request):
             'dien_tich_max': dien_tich_max,
             'khu_vuc': khu_vuc,
             'loai_phong': loai_phong,
+            'vi_tri': vi_tri,
+            'sort': sort_by,
         },
         'total_phongs': paginator.count,
+        'request': request,  # Để template có thể truy cập request.GET
     }
     
     return render(request, 'user/phongtro/tim_phong.html', context)
@@ -287,6 +315,180 @@ def api_phong_autocomplete(request):
         ]
     
     return JsonResponse(phongs, safe=False)
+
+
+def api_location_autocomplete(request):
+    """API tự động hoàn thành địa điểm"""
+    term = request.GET.get('term', '').strip()
+    locations = []
+    
+    if term and len(term) >= 2:
+        # Tìm kiếm trong khu vực và nhà trọ
+        khu_vucs = KhuVuc.objects.filter(
+            Q(TEN_KHU_VUC__icontains=term) |
+            Q(MA_NHA_TRO__TEN_NHA_TRO__icontains=term) |
+            Q(MA_NHA_TRO__DIA_CHI__icontains=term)
+        ).select_related('MA_NHA_TRO').distinct()[:10]
+        
+        for kv in khu_vucs:
+            locations.append({
+                'display_name': f"{kv.TEN_KHU_VUC} - {kv.MA_NHA_TRO.TEN_NHA_TRO}",
+                'type': 'khu_vuc',
+                'id': kv.MA_KHU_VUC,
+                'address': kv.MA_NHA_TRO.DIA_CHI if kv.MA_NHA_TRO else '',
+            })
+        
+        # Thêm các gợi ý địa điểm phổ biến nếu cần
+        popular_locations = [
+            'Quận 1, Thành phố Hồ Chí Minh',
+            'Quận 3, Thành phố Hồ Chí Minh', 
+            'Quận Bình Thạnh, Thành phố Hồ Chí Minh',
+            'Quận 7, Thành phố Hồ Chí Minh',
+            'Quận Phú Nhuận, Thành phố Hồ Chí Minh',
+            'Quận Thủ Đức, Thành phố Hồ Chí Minh',
+            'Quận Gò Vấp, Thành phố Hồ Chí Minh',
+        ]
+        
+        # Thêm địa điểm phổ biến nếu khớp
+        for loc in popular_locations:
+            if term.lower() in loc.lower() and len(locations) < 10:
+                locations.append({
+                    'display_name': loc,
+                    'type': 'popular',
+                    'id': None,
+                    'address': loc,
+                })
+    
+    return JsonResponse(locations, safe=False)
+
+
+def api_provinces(request):
+    """API lấy danh sách tỉnh thành"""
+    provinces = [
+        {
+            'code': 'HCM',
+            'name': 'TP. Hồ Chí Minh',
+            'type': 'Thành phố Trung ương'
+        },
+        {
+            'code': 'HN', 
+            'name': 'Hà Nội',
+            'type': 'Thành phố Trung ương'
+        },
+        {
+            'code': 'DN',
+            'name': 'Đà Nẵng', 
+            'type': 'Thành phố Trung ương'
+        },
+        {
+            'code': 'HP',
+            'name': 'Hải Phòng',
+            'type': 'Thành phố Trung ương'
+        },
+        {
+            'code': 'CT',
+            'name': 'Cần Thơ',
+            'type': 'Thành phố Trung ương'
+        }
+    ]
+    return JsonResponse(provinces, safe=False)
+
+
+def api_districts(request, province_code):
+    """API lấy danh sách quận huyện theo tỉnh"""
+    districts_data = {
+        'HCM': [
+            {'code': 'Q1', 'name': 'Quận 1', 'type': 'Quận'},
+            {'code': 'Q3', 'name': 'Quận 3', 'type': 'Quận'},
+            {'code': 'Q4', 'name': 'Quận 4', 'type': 'Quận'},
+            {'code': 'Q5', 'name': 'Quận 5', 'type': 'Quận'},
+            {'code': 'Q6', 'name': 'Quận 6', 'type': 'Quận'},
+            {'code': 'Q7', 'name': 'Quận 7', 'type': 'Quận'},
+            {'code': 'Q8', 'name': 'Quận 8', 'type': 'Quận'},
+            {'code': 'Q10', 'name': 'Quận 10', 'type': 'Quận'},
+            {'code': 'Q11', 'name': 'Quận 11', 'type': 'Quận'},
+            {'code': 'Q12', 'name': 'Quận 12', 'type': 'Quận'},
+            {'code': 'BT', 'name': 'Quận Bình Thạnh', 'type': 'Quận'},
+            {'code': 'PN', 'name': 'Quận Phú Nhuận', 'type': 'Quận'},
+            {'code': 'TB', 'name': 'Quận Tân Bình', 'type': 'Quận'},
+            {'code': 'TD', 'name': 'Quận Thủ Đức', 'type': 'Quận'},
+            {'code': 'GV', 'name': 'Quận Gò Vấp', 'type': 'Quận'}
+        ],
+        'HN': [
+            {'code': 'HK', 'name': 'Quận Hoàn Kiếm', 'type': 'Quận'},
+            {'code': 'BD', 'name': 'Quận Ba Đình', 'type': 'Quận'},
+            {'code': 'CG', 'name': 'Quận Cầu Giấy', 'type': 'Quận'},
+            {'code': 'DD', 'name': 'Quận Đống Đa', 'type': 'Quận'},
+            {'code': 'HB', 'name': 'Quận Hai Bà Trưng', 'type': 'Quận'},
+            {'code': 'TX', 'name': 'Quận Thanh Xuân', 'type': 'Quận'}
+        ],
+        'DN': [
+            {'code': 'HC', 'name': 'Quận Hải Châu', 'type': 'Quận'},
+            {'code': 'TK', 'name': 'Quận Thanh Khê', 'type': 'Quận'},
+            {'code': 'SK', 'name': 'Quận Sơn Trà', 'type': 'Quận'},
+            {'code': 'NV', 'name': 'Quận Ngũ Hành Sơn', 'type': 'Quận'}
+        ]
+    }
+    
+    districts = districts_data.get(province_code, [])
+    return JsonResponse(districts, safe=False)
+
+
+def api_wards(request, province_code, district_code):
+    """API lấy danh sách phường xã theo quận huyện"""
+    wards_data = {
+        'HCM': {
+            'Q1': [
+                {'code': 'P01', 'name': 'Phường Bến Nghé', 'type': 'Phường'},
+                {'code': 'P02', 'name': 'Phường Bến Thành', 'type': 'Phường'},
+                {'code': 'P03', 'name': 'Phường Cầu Kho', 'type': 'Phường'},
+                {'code': 'P04', 'name': 'Phường Cầu Ông Lãnh', 'type': 'Phường'},
+                {'code': 'P05', 'name': 'Phường Cô Giang', 'type': 'Phường'},
+                {'code': 'P06', 'name': 'Phường Đa Kao', 'type': 'Phường'},
+                {'code': 'P07', 'name': 'Phường Nguyễn Cư Trinh', 'type': 'Phường'},
+                {'code': 'P08', 'name': 'Phường Nguyễn Thái Bình', 'type': 'Phường'},
+                {'code': 'P09', 'name': 'Phường Phạm Ngũ Lão', 'type': 'Phường'},
+                {'code': 'P10', 'name': 'Phường Tân Định', 'type': 'Phường'}
+            ],
+            'Q3': [
+                {'code': 'P01', 'name': 'Phường 1', 'type': 'Phường'},
+                {'code': 'P02', 'name': 'Phường 2', 'type': 'Phường'},
+                {'code': 'P03', 'name': 'Phường 3', 'type': 'Phường'},
+                {'code': 'P04', 'name': 'Phường 4', 'type': 'Phường'},
+                {'code': 'P05', 'name': 'Phường 5', 'type': 'Phường'},
+                {'code': 'P06', 'name': 'Phường 6', 'type': 'Phường'},
+                {'code': 'P07', 'name': 'Phường 7', 'type': 'Phường'},
+                {'code': 'P08', 'name': 'Phường 8', 'type': 'Phường'},
+                {'code': 'P09', 'name': 'Phường 9', 'type': 'Phường'},
+                {'code': 'P10', 'name': 'Phường 10', 'type': 'Phường'}
+            ],
+            'BT': [
+                {'code': 'P01', 'name': 'Phường 1', 'type': 'Phường'},
+                {'code': 'P02', 'name': 'Phường 2', 'type': 'Phường'},
+                {'code': 'P03', 'name': 'Phường 3', 'type': 'Phường'},
+                {'code': 'P11', 'name': 'Phường 11', 'type': 'Phường'},
+                {'code': 'P12', 'name': 'Phường 12', 'type': 'Phường'},
+                {'code': 'P13', 'name': 'Phường 13', 'type': 'Phường'},
+                {'code': 'P14', 'name': 'Phường 14', 'type': 'Phường'},
+                {'code': 'P15', 'name': 'Phường 15', 'type': 'Phường'}
+            ]
+        },
+        'HN': {
+            'HK': [
+                {'code': 'P01', 'name': 'Phường Chương Dương', 'type': 'Phường'},
+                {'code': 'P02', 'name': 'Phường Cửa Đông', 'type': 'Phường'},
+                {'code': 'P03', 'name': 'Phường Cửa Nam', 'type': 'Phường'},
+                {'code': 'P04', 'name': 'Phường Hàng Bạc', 'type': 'Phường'},
+                {'code': 'P05', 'name': 'Phường Hàng Bài', 'type': 'Phường'},
+                {'code': 'P06', 'name': 'Phường Hàng Buồm', 'type': 'Phường'},
+                {'code': 'P07', 'name': 'Phường Hàng Đào', 'type': 'Phường'},
+                {'code': 'P08', 'name': 'Phường Hàng Gai', 'type': 'Phường'}
+            ]
+        }
+    }
+    
+    wards = wards_data.get(province_code, {}).get(district_code, [])
+    return JsonResponse(wards, safe=False)
 
 
 def api_phong_info(request, ma_phong):

@@ -1,5 +1,6 @@
 {% extends 'admin/admin_layout.html' %}
 {% load static %}
+{% load custom_filters %}
 
 {% block content_body %}
 
@@ -49,7 +50,7 @@
             <div class="bg-gradient-to-r from-red-500 to-red-600 rounded-xl p-4 text-white">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-red-100 text-sm font-medium">Chưa thu tiền</p>
+                        <p class="text-red-100 text-sm font-medium">Chưa thanh toán</p>
                         <p class="text-2xl font-bold">{{ unpaid_invoices_count|default:0 }}</p>
                     </div>
                     <div class="bg-red-400 bg-opacity-50 rounded-full p-3">
@@ -88,44 +89,31 @@
             </div>
         </div>
 
-        <!-- Filter and Action Section -->
-        <div class="bg-white shadow-md rounded-xl p-4 mb-5 border border-gray-100">
-            <div class="flex flex-col">
-                <div class="flex items-center gap-3 overflow-x-auto whitespace-nowrap mb-4">
-                    <button class="shrink-0 px-5 py-2.5 bg-blue-100 text-blue-700 text-sm font-semibold rounded-lg hover:bg-blue-200 transition duration-300">
-                        <i class="fas fa-sliders-h mr-2"></i> Lọc
+        <!-- Advanced Filter Section -->
+        <div class="bg-white shadow-lg rounded-xl border border-gray-200 mb-6">
+            <!-- Filter Header -->
+            <div class="border-b border-gray-200 px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-filter text-white text-sm"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900">Bộ lọc hóa đơn</h3>
+                            <p class="text-sm text-gray-500">Tìm kiếm và lọc hóa đơn theo tiêu chí</p>
+                        </div>
+                    </div>
+                    <button id="toggleFilter" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors duration-200 text-sm font-medium text-gray-700">
+                        <i class="fas fa-chevron-down transition-transform duration-200" id="filterIcon"></i>
+                        <span class="ml-2">Thu gọn</span>
                     </button>
-                    <label class="shrink-0 flex items-center gap-2 text-gray-700 text-sm border border-gray-300 rounded-lg px-3 py-1 cursor-pointer hover:border-blue-400 transition-colors peer-checked:border-blue-600 peer-checked:bg-blue-50 select-none mt-2">
-                        <input type="checkbox" name="options[]" value="Đã thu tiền" class="peer h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
-                        <span>Hóa đơn đã thu tiền</span>
-                    </label>
-                    <label class="shrink-0 flex items-center gap-2 text-gray-700 text-sm border border-gray-300 rounded-lg px-3 py-1 cursor-pointer hover:border-blue-400 transition-colors peer-checked:border-blue-600 peer-checked:bg-blue-50 select-none mt-2">
-                        <input type="checkbox" name="options[]" value="Chưa thu tiền" class="peer h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
-                        <span>Hóa đơn chưa thu tiền</span>
-                    </label>
-                    <label class="shrink-0 flex items-center gap-2 text-gray-700 text-sm border border-gray-300 rounded-lg px-3 py-1 cursor-pointer hover:border-blue-400 transition-colors peer-checked:border-blue-600 peer-checked:bg-blue-50 select-none mt-2">
-                        <input type="checkbox" name="options[]" value="Đang nợ" class="peer h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
-                        <span>Hóa đơn đang nợ</span>
-                    </label>
-                    <label class="shrink-0 flex items-center gap-2 text-gray-700 text-sm border border-gray-300 rounded-lg px-3 py-1 cursor-pointer hover:border-blue-400 transition-colors peer-checked:border-blue-600 peer-checked:bg-blue-50 select-none mt-2">
-                        <input type="checkbox" name="options[]" value="Đã hủy" class="peer h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
-                        <span>Hóa đơn đã hủy</span>
-                    </label>
-                </div>
-                <div class="flex justify-end w-full gap-3">
-                    <select class="w-36 px-3 py-2 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-300 shadow-sm">
-                        <option value="asc">Số phòng tăng dần</option>
-                        <option value="desc">Số phòng giảm dần</option>
-                    </select>
-                    <select class="w-36 px-3 py-2 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-300 shadow-sm">
-                        <option value="">Tất cả loại hóa đơn</option>
-                        <option value="dien">Hóa đơn điện</option>
-                        <option value="nuoc">Hóa đơn nước</option>
-                        <option value="khac">Hóa đơn khác</option>
-                    </select>
                 </div>
             </div>
+            
+            
         </div>
+        
+       
 
         <!-- Table Section -->
         <div class="w-full">
@@ -149,20 +137,19 @@
                     {% for hoa_don in hoa_dons %}
                         <tr class="hover:bg-gray-100 transition duration-200 border-b border-gray-200">
                             <td class="text-center p-3">
-                                <strong class="text-gray-800 text-sm md:text-base block">{{ hoa_don.MA_PHONG.TEN_PHONG }}</strong>
-                                <span class="text-green-600 font-medium text-xs md:text-sm">{{ hoa_don.LOAI_HOA_DON }}</span><br>
-                                <span class="text-gray-500 text-xs">({{ hoa_don.NGAY_LAP_HDON|date:"d/m/Y" }})</span>
+                                <strong class="text-gray-800 block">{{ hoa_don.phong_info.TEN_PHONG }}</strong>
+                                <span class="text-green-600 font-medium text-sm">{{ hoa_don.LOAI_HOA_DON }}</span><br>
+                                <span class="text-gray-500 text-sm">({{ hoa_don.NGAY_LAP_HDON|date:"d/m/Y" }})</span>
                             </td>
-                            <td class="text-center p-3 text-gray-800 text-sm md:text-base">{{ hoa_don.TIEN_PHONG|floatformat:0 }} đ</td>
-                            <td class="text-center p-3 text-gray-800 text-sm md:text-base">{{ hoa_don.tien_dien|floatformat:0 }} đ</td>
-                            <td class="text-center p-3 text-gray-800 text-sm md:text-base">{{ hoa_don.tien_nuoc|floatformat:0 }} đ</td>
-                            <td class="text-center p-3 text-gray-800 text-sm md:text-base">{{ hoa_don.tien_dich_vu_khac|floatformat:0 }} đ</td>
-                            <td class="text-center p-3 text-gray-800 text-sm md:text-base">{{ hoa_don.TIEN_COC|floatformat:0 }} đ</td>
-                            <td class="text-center p-3 text-gray-800 text-sm md:text-base">{{ hoa_don.tong_khau_tru|floatformat:0 }} đ</td>
-                            <td class="text-center p-3 text-gray-800 font-semibold text-sm md:text-base">{{ hoa_don.TONG_TIEN|floatformat:0 }} đ</td>
-                            <td class="text-center p-3 text-gray-800 font-semibold text-sm md:text-base">{{ hoa_don.TONG_TIEN|floatformat:0 }} đ</td>
+                            <td class="text-center p-3">{{ hoa_don.tien_phong|currency_vn }}</td>
+                            <td class="text-center p-3">{{ hoa_don.tien_dien|currency_vn }}</td>
+                            <td class="text-center p-3">{{ hoa_don.tien_nuoc|currency_vn }}</td>
+                            <td class="text-center p-3">{{ hoa_don.tien_dich_vu_khac|currency_vn }}</td>
+                            <td class="text-center p-3">{{ hoa_don.tien_coc|currency_vn }}</td>
+                            <td class="text-center p-3">{{ hoa_don.tong_khau_tru|currency_vn }}</td>
+                            <td class="text-center p-3 font-semibold">{{ hoa_don.TONG_TIEN|currency_vn }}</td>
                             <td class="text-center p-3">
-                                <span class="{{ status_mapping.hoa_don.TRANG_THAI_HDON.color }} text-white font-medium px-3 py-1.5 rounded-full text-xs md:text-sm min-w-[120px] inline-block transition duration-300 hover:shadow-sm">
+                                <span class="{{ status_mapping.hoa_don.TRANG_THAI_HDON.color }} text-white font-medium px-3 py-1.5 rounded-full text-sm min-w-[120px] inline-block transition duration-300 hover:shadow-sm">
                                     {{ status_mapping.hoa_don.TRANG_THAI_HDON.text }}
                                 </span>
                             </td>
@@ -288,6 +275,303 @@
   function generateInvoiceQRCode(link) {
     const qrImg = document.getElementById('invoiceQRCode');
     qrImg.src = `https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=${encodeURIComponent(link)}`;
+  }
+
+  // ======================= FILTER FUNCTIONS =======================
+  
+  document.addEventListener('DOMContentLoaded', function() {
+    initializeFilterSystem();
+    loadAreaOptions();
+    
+    // Load current filter state from URL
+    loadCurrentFilters();
+  });
+  
+  function initializeFilterSystem() {
+    // Toggle filter section
+    const toggleBtn = document.getElementById('toggleFilter');
+    const filterContent = document.getElementById('filterContent');
+    const filterIcon = document.getElementById('filterIcon');
+    
+    toggleBtn.addEventListener('click', function() {
+      const isHidden = filterContent.classList.contains('hidden');
+      if (isHidden) {
+        filterContent.classList.remove('hidden');
+        filterIcon.classList.add('rotate-180');
+        toggleBtn.querySelector('span').textContent = 'Thu gọn';
+      } else {
+        filterContent.classList.add('hidden');
+        filterIcon.classList.remove('rotate-180');
+        toggleBtn.querySelector('span').textContent = 'Mở rộng';
+      }
+    });
+    
+
+    
+    // Real-time search
+    let searchTimeout;
+    document.getElementById('searchInput').addEventListener('input', function() {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        updateFilterSummary();
+      }, 300);
+    });
+    
+    // Update summary on filter change
+    ['statusFilter', 'typeFilter', 'sortFilter', 'minAmount', 'maxAmount'].forEach(id => {
+      document.getElementById(id).addEventListener('change', updateFilterSummary);
+    });
+  }
+  
+  async function loadAreaOptions() {
+    try {
+      const response = await fetch('/admin/api/khu-vuc-list/');
+      const data = await response.json();
+      
+      const areaSelect = document.getElementById('areaFilter');
+      areaSelect.innerHTML = '<option value="">Tất cả khu vực</option>';
+      
+      data.khu_vuc_list.forEach(area => {
+        const option = document.createElement('option');
+        option.value = area.MA_KHU_VUC;
+        option.textContent = area.TEN_KHU_VUC;
+        areaSelect.appendChild(option);
+      });
+    } catch (error) {
+      console.error('Error loading areas:', error);
+    }
+  }
+  
+  async function loadRoomOptions(areaId) {
+    const roomSelect = document.getElementById('roomFilter');
+    roomSelect.innerHTML = '<option value="">Tất cả phòng</option>';
+    
+    if (!areaId) return;
+    
+    try {
+      const response = await fetch('/admin/api/phong-theo-khu-vuc/?khu_vuc=' + areaId);
+      const data = await response.json();
+      
+      data.phong_tros.forEach(room => {
+        const option = document.createElement('option');
+        option.value = room.MA_PHONG;
+        option.textContent = room.TEN_PHONG || `Phòng ${room.MA_PHONG}`;
+        roomSelect.appendChild(option);
+      });
+    } catch (error) {
+      console.error('Error loading rooms:', error);
+    }
+  }
+  
+  function applyFilters() {
+    const filters = getCurrentFilters();
+    const url = new URL(window.location);
+    
+    // Clear existing filter params
+    ['search', 'area', 'room', 'status', 'type', 'sort', 'min_amount', 'max_amount'].forEach(param => {
+      url.searchParams.delete(param);
+    });
+    
+    // Add new filter params
+    Object.keys(filters).forEach(key => {
+      if (filters[key]) {
+        url.searchParams.set(key, filters[key]);
+      }
+    });
+    
+    // Preserve month and year
+    const currentMonth = url.searchParams.get('month');
+    const currentYear = url.searchParams.get('year');
+    
+    showLoadingState();
+    window.location.href = url.toString();
+  }
+  
+  function clearFilters() {
+    // Reset all filter inputs
+    document.getElementById('searchInput').value = '';
+    document.getElementById('areaFilter').value = '';
+    document.getElementById('roomFilter').innerHTML = '<option value="">Tất cả phòng</option>';
+    document.getElementById('statusFilter').value = '';
+    document.getElementById('typeFilter').value = '';
+    document.getElementById('sortFilter').value = 'date_desc';
+    document.getElementById('minAmount').value = '';
+    document.getElementById('maxAmount').value = '';
+    
+    // Update summary
+    updateFilterSummary();
+    
+    // Apply cleared filters
+    applyFilters();
+  }
+  
+  function getCurrentFilters() {
+    return {
+      search: document.getElementById('searchInput').value.trim(),
+      area: document.getElementById('areaFilter').value,
+      room: document.getElementById('roomFilter').value,
+      status: document.getElementById('statusFilter').value,
+      type: document.getElementById('typeFilter').value,
+      sort: document.getElementById('sortFilter').value,
+      min_amount: document.getElementById('minAmount').value,
+      max_amount: document.getElementById('maxAmount').value
+    };
+  }
+  
+  function loadCurrentFilters() {
+    const url = new URL(window.location);
+    
+    // Load filters from URL params
+    const filters = {
+      search: url.searchParams.get('search') || '',
+      area: url.searchParams.get('area') || '',
+      room: url.searchParams.get('room') || '',
+      status: url.searchParams.get('status') || '',
+      type: url.searchParams.get('type') || '',
+      sort: url.searchParams.get('sort') || 'date_desc',
+      min_amount: url.searchParams.get('min_amount') || '',
+      max_amount: url.searchParams.get('max_amount') || ''
+    };
+    
+    // Set form values
+    Object.keys(filters).forEach(key => {
+      const element = document.getElementById(key === 'search' ? 'searchInput' : 
+                                           key === 'area' ? 'areaFilter' :
+                                           key === 'room' ? 'roomFilter' :
+                                           key === 'status' ? 'statusFilter' :
+                                           key === 'type' ? 'typeFilter' :
+                                           key === 'sort' ? 'sortFilter' :
+                                           key === 'min_amount' ? 'minAmount' :
+                                           key === 'max_amount' ? 'maxAmount' : key);
+      if (element && filters[key]) {
+        element.value = filters[key];
+      }
+    });
+    
+    // Load rooms if area is selected
+    if (filters.area) {
+      loadRoomOptions(filters.area).then(() => {
+        if (filters.room) {
+          document.getElementById('roomFilter').value = filters.room;
+        }
+      });
+    }
+    
+    updateFilterSummary();
+  }
+  
+  function updateFilterSummary() {
+    const filters = getCurrentFilters();
+    const activeCount = Object.values(filters).filter(v => v && v !== 'date_desc').length;
+    
+    const summary = document.getElementById('filterSummary');
+    const activeFiltersDiv = document.getElementById('activeFilters');
+    const countSpan = document.getElementById('filterCount');
+    
+    countSpan.textContent = activeCount;
+    
+    if (activeCount > 0) {
+      summary.classList.remove('hidden');
+      showActiveFilterTags(filters);
+    } else {
+      summary.classList.add('hidden');
+      activeFiltersDiv.classList.add('hidden');
+    }
+  }
+  
+  function showActiveFilterTags(filters) {
+    const activeFiltersDiv = document.getElementById('activeFilters');
+    const container = activeFiltersDiv.querySelector('.flex');
+    
+    // Clear existing tags except label
+    const existingTags = container.querySelectorAll('.filter-tag');
+    existingTags.forEach(tag => tag.remove());
+    
+    const filterLabels = {
+      search: 'Tìm kiếm',
+      area: 'Khu vực',
+      room: 'Phòng',
+      status: 'Trạng thái',
+      type: 'Loại',
+      sort: 'Sắp xếp',
+      min_amount: 'Từ',
+      max_amount: 'Đến'
+    };
+    
+    let hasActiveTags = false;
+    
+    Object.keys(filters).forEach(key => {
+      if (filters[key] && filters[key] !== 'date_desc') {
+        hasActiveTags = true;
+        const tag = document.createElement('span');
+        tag.className = 'filter-tag inline-flex items-center px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full border border-blue-200';
+        
+        let displayValue = filters[key];
+        if (key === 'min_amount' || key === 'max_amount') {
+          displayValue = new Intl.NumberFormat('vi-VN').format(filters[key]) + 'đ';
+        }
+        
+        tag.innerHTML = `
+          <span class="mr-1 font-medium">${filterLabels[key]}:</span>
+          <span>${displayValue}</span>
+          <button onclick="removeFilter('${key}')" class="ml-2 text-blue-600 hover:text-blue-800">
+            <i class="fas fa-times text-xs"></i>
+          </button>
+        `;
+        container.appendChild(tag);
+      }
+    });
+    
+    if (hasActiveTags) {
+      activeFiltersDiv.classList.remove('hidden');
+    } else {
+      activeFiltersDiv.classList.add('hidden');
+    }
+  }
+  
+  function removeFilter(filterKey) {
+    const elementMap = {
+      search: 'searchInput',
+      area: 'areaFilter',
+      room: 'roomFilter',
+      status: 'statusFilter',
+      type: 'typeFilter',
+      sort: 'sortFilter',
+      min_amount: 'minAmount',
+      max_amount: 'maxAmount'
+    };
+    
+    const element = document.getElementById(elementMap[filterKey]);
+    if (element) {
+      element.value = filterKey === 'sort' ? 'date_desc' : '';
+      if (filterKey === 'area') {
+        document.getElementById('roomFilter').innerHTML = '<option value="">Tất cả phòng</option>';
+      }
+    }
+    
+    updateFilterSummary();
+    applyFilters();
+  }
+  
+  function exportWithFilters() {
+    const filters = getCurrentFilters();
+    const url = new URL('/admin/hoa-don/export/', window.location.origin);
+    
+    // Add filter params
+    Object.keys(filters).forEach(key => {
+      if (filters[key]) {
+        url.searchParams.set(key, filters[key]);
+      }
+    });
+    
+    // Add month/year
+    const currentUrl = new URL(window.location);
+    const month = currentUrl.searchParams.get('month');
+    const year = currentUrl.searchParams.get('year');
+    if (month) url.searchParams.set('month', month);
+    if (year) url.searchParams.set('year', year);
+    
+    window.open(url.toString(), '_blank');
   }
 
   // ======================= PAGINATION FUNCTIONS =======================

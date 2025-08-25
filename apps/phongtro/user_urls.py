@@ -17,5 +17,11 @@ urlpatterns = [
     
     # API endpoints
     path('api/phong-autocomplete/', user_views.api_phong_autocomplete, name='api_phong_autocomplete'),
+    path('api/location-autocomplete/', user_views.api_location_autocomplete, name='api_location_autocomplete'),
     path('api/phong-info/<int:ma_phong>/', user_views.api_phong_info, name='api_phong_info'),
+    
+    # Location API endpoints
+    path('api/provinces/', user_views.api_provinces, name='api_provinces'),
+    path('api/districts/<str:province_code>/', user_views.api_districts, name='api_districts'),
+    path('api/wards/<str:province_code>/<str:district_code>/', user_views.api_wards, name='api_wards'),
 ]

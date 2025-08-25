@@ -24,7 +24,8 @@ def get_phongtro_list():
     return PhongTro.objects.filter(
         Q(hopdong__TRANG_THAI_HD='Đang hoạt động')
     ).distinct()
-def get_dich_vu_ap_dung(ma_khu_vuc, ma_phong, current_month=None):
+def get_dich_vu_ap_dung(ma_khu_vuc, hop_dong, current_month=None):
+    """Lấy danh sách dịch vụ áp dụng cho hợp đồng đang hoạt động"""
     errors = []
     dich_vu_list = []
 
@@ -34,20 +35,39 @@ def get_dich_vu_ap_dung(ma_khu_vuc, ma_phong, current_month=None):
             current_month = timezone.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         next_month = current_month + relativedelta(months=1)
 
-        # Lấy danh sách dịch vụ áp dụng
+        # Lấy danh sách dịch vụ áp dụng cho khu vực
         dich_vu_ap_dung, dich_vu_errors = LichSuApDungDichVu.get_dich_vu_ap_dung(ma_khu_vuc)
         if dich_vu_errors:
             errors.extend(dich_vu_errors)
             return [], errors
 
-        # Tính toán chi tiết dịch vụ
+        # Kiểm tra nếu không có dịch vụ nào được áp dụng
+        if not dich_vu_ap_dung:
+            errors.append(f"Khu vực {ma_khu_vuc} chưa có dịch vụ nào được áp dụng")
+            return [], errors
+
+        # Tính toán chi tiết dịch vụ cho hợp đồng cụ thể
         for dv in dich_vu_ap_dung:
-            chi_so_data, chi_so_errors = ChiSoDichVu.tinh_chi_so_dich_vu(dv, ma_phong, current_month, next_month)
+            chi_so_data, chi_so_errors = ChiSoDichVu.tinh_chi_so_dich_vu(dv, hop_dong, current_month, next_month)
             if chi_so_errors:
                 errors.extend(chi_so_errors)
                 continue
             if chi_so_data:
                 dich_vu_list.append(chi_so_data)
+            else:
+                # Nếu không có chi_so_data, vẫn tạo dịch vụ cơ bản
+                dich_vu_list.append({
+                    'MA_CHI_SO': None,
+                    'MA_DICH_VU': dv.MA_DICH_VU.MA_DICH_VU,
+                    'TEN_DICH_VU': dv.MA_DICH_VU.TEN_DICH_VU,
+                    'LOAI_DICH_VU': dv.MA_DICH_VU.LOAI_DICH_VU,
+                    'GIA_DICH_VU': float(dv.GIA_DICH_VU_AD or 0),
+                    'DON_VI_TINH': dv.MA_DICH_VU.DON_VI_TINH,
+                    'CHI_SO_CU': 0,
+                    'CHI_SO_MOI': None,
+                    'SO_DICH_VU': 1 if dv.MA_DICH_VU.LOAI_DICH_VU in ['Cố định', 'Co dinh'] else 0,
+                    'THANH_TIEN': float(dv.GIA_DICH_VU_AD or 0) if dv.MA_DICH_VU.LOAI_DICH_VU in ['Cố định', 'Co dinh'] else 0
+                })
         return dich_vu_list, errors
 
     except Exception as e:
@@ -58,18 +78,20 @@ def hoadon_list(request):
     month = int(request.GET.get('month', datetime.now().month))
     year = int(request.GET.get('year', datetime.now().year))
 
-    # Lấy danh sách hóa đơn theo tháng/năm
+    # Lấy danh sách hóa đơn theo tháng/năm - sử dụng MA_HOP_DONG thay vì MA_PHONG
     hoa_dons_queryset = HoaDon.objects.filter(
         NGAY_LAP_HDON__year=year,
         NGAY_LAP_HDON__month=month
-    ).select_related('MA_PHONG').prefetch_related('khautru').order_by('MA_HOA_DON')
+    ).select_related('MA_HOP_DONG__MA_PHONG').prefetch_related(
+        'khautru', 'chitiethoadon'
+    ).order_by('MA_HOA_DON')
 
     # Tính tổng số hóa đơn
     total_invoices = hoa_dons_queryset.count()
     
     # Tính thống kê theo trạng thái
     paid_invoices_count = hoa_dons_queryset.filter(TRANG_THAI_HDON='Đã thu tiền').count()
-    unpaid_invoices_count = hoa_dons_queryset.filter(TRANG_THAI_HDON='Chưa thu tiền').count()
+    unpaid_invoices_count = hoa_dons_queryset.filter(TRANG_THAI_HDON='Chưa thanh toán').count()
     overdue_invoices_count = hoa_dons_queryset.filter(TRANG_THAI_HDON='Đang nợ').count()
 
     # Lấy page_size từ request, mặc định là 10
@@ -98,41 +120,60 @@ def hoadon_list(request):
         for i in range(12)
     ]
 
-    # Hàm tính tiền dịch vụ (điện, nước, khác) dựa trên ChiSoDichVu và LichSuApDungDichVu
-    def calculate_service_cost(hoa_don, service_name):
-        chi_so_dich_vu = ChiSoDichVu.objects.filter(
-            MA_PHONG=hoa_don.MA_PHONG,
-            MA_DICH_VU__TEN_DICH_VU=service_name,
-            NGAY_GHI_CS__year=year,
-            NGAY_GHI_CS__month=month
-        ).select_related('MA_DICH_VU').first()
-        
-        if chi_so_dich_vu and chi_so_dich_vu.CHI_SO_MOI is not None and chi_so_dich_vu.CHI_SO_CU is not None:
-            lich_su_dv = LichSuApDungDichVu.objects.filter(
-                MA_DICH_VU=chi_so_dich_vu.MA_DICH_VU,
-                NGAY_HUY_DV__isnull=True
-            ).first()
-            if lich_su_dv and lich_su_dv.GIA_DICH_VU_AD:
-                usage = chi_so_dich_vu.CHI_SO_MOI - chi_so_dich_vu.CHI_SO_CU
-                return usage * lich_su_dv.GIA_DICH_VU_AD
-        return Decimal('0.00')
-
-    # Thêm dữ liệu tính toán cho mỗi hóa đơn
-    for hoa_don in page_obj:
-        hoa_don.tien_dien = calculate_service_cost(hoa_don, 'Điện')
-        hoa_don.tien_nuoc = calculate_service_cost(hoa_don, 'Nước')
-        hoa_don.tien_dich_vu_khac = sum(
-            calculate_service_cost(hoa_don, dv.TEN_DICH_VU)
-            for dv in DichVu.objects.exclude(TEN_DICH_VU__in=['Điện', 'Nước'])
+    # Hàm lấy tiền từ chi tiết hóa đơn theo loại
+    def get_amount_from_details(hoa_don, loai_khoan):
+        from .models import CHITIETHOADON
+        chi_tiet_list = CHITIETHOADON.objects.filter(
+            MA_HOA_DON=hoa_don,
+            LOAI_KHOAN=loai_khoan
         )
-        hoa_don.tong_khau_tru = sum(kt.SO_TIEN_KT or Decimal('0.00') for kt in hoa_don.khautru.all())
+        return sum(ct.THANH_TIEN or Decimal('0.00') for ct in chi_tiet_list)
+
+    # Thêm dữ liệu tính toán cho mỗi hóa đơn từ bảng chi tiết
+    for hoa_don in page_obj:
+        # Lấy thông tin phòng từ hợp đồng
+        hoa_don.phong_info = hoa_don.MA_HOP_DONG.MA_PHONG if hoa_don.MA_HOP_DONG else None
+        
+        # Lấy tiền từ chi tiết hóa đơn thay vì cột trực tiếp
+        hoa_don.tien_phong = get_amount_from_details(hoa_don, 'PHONG')
+        hoa_don.tien_dich_vu = get_amount_from_details(hoa_don, 'DICH_VU')
+        hoa_don.tien_coc = get_amount_from_details(hoa_don, 'COC')
+        
+        # Tính khấu trừ
+        khau_tru_cong = sum(
+            kt.SO_TIEN_KT or Decimal('0.00') 
+            for kt in hoa_don.khautru.filter(LOAI_KHAU_TRU='Cộng')
+        )
+        khau_tru_tru = sum(
+            kt.SO_TIEN_KT or Decimal('0.00') 
+            for kt in hoa_don.khautru.filter(LOAI_KHAU_TRU='Trừ')
+        )
+        hoa_don.tong_khau_tru = khau_tru_cong - khau_tru_tru
+        
+        # Phân loại dịch vụ từ chi tiết hóa đơn
+        chi_tiet_dv = hoa_don.chitiethoadon.filter(LOAI_KHOAN='DICH_VU')
+        hoa_don.tien_dien = sum(
+            ct.THANH_TIEN or Decimal('0.00') 
+            for ct in chi_tiet_dv 
+            if 'điện' in ct.NOI_DUNG.lower()
+        )
+        hoa_don.tien_nuoc = sum(
+            ct.THANH_TIEN or Decimal('0.00') 
+            for ct in chi_tiet_dv 
+            if 'nước' in ct.NOI_DUNG.lower() or 'nuoc' in ct.NOI_DUNG.lower()
+        )
+        hoa_don.tien_dich_vu_khac = sum(
+            ct.THANH_TIEN or Decimal('0.00') 
+            for ct in chi_tiet_dv 
+            if 'điện' not in ct.NOI_DUNG.lower() and 'nước' not in ct.NOI_DUNG.lower() and 'nuoc' not in ct.NOI_DUNG.lower()
+        )
 
     # Trạng thái hóa đơn
     status_mapping = {
         'Đã thu tiền': {'text': 'Đã thu tiền', 'color': 'bg-green-600'},
         'Đang nợ': {'text': 'Đang nợ', 'color': 'bg-yellow-500'},
         'Đã hủy': {'text': 'Đã hủy', 'color': 'bg-orange-500'},
-        'Chưa thu tiền': {'text': 'Chưa thu tiền', 'color': 'bg-red-600'},
+        'Chưa thanh toán': {'text': 'Chưa thanh toán', 'color': 'bg-red-600'},
     }
 
     context = {
@@ -155,17 +196,30 @@ def them_hoa_don(request, ma_phong=None):
         try:
             with transaction.atomic():
                 # Lấy dữ liệu từ form
+                ma_hop_dong = request.POST.get('MA_HOP_DONG', '').strip()
+                ma_phong = request.POST.get('MA_PHONG', '').strip()
+                
+                # Validation cơ bản
+                if not ma_phong:
+                    messages.error(request, 'Vui lòng chọn phòng trước khi lập hóa đơn')
+                    return render(request, 'admin/hoadon/themsua_hoadon.html', {
+                        'khu_vucs': KhuVuc.objects.all()
+                    })
+                
+                # Tính tổng tiền từ dịch vụ và khấu trừ
+                tien_phong = float(request.POST.get('TIEN_PHONG', 0))
+                tien_dich_vu = float(request.POST.get('TIEN_DICH_VU', 0))
+                tien_khau_tru = float(request.POST.get('TIEN_KHAU_TRU', 0))
+                tong_tien = tien_phong + tien_dich_vu + tien_khau_tru
+                
                 data = {
-                    'MA_PHONG': request.POST.get('MA_PHONG'),
+                    'MA_PHONG': ma_phong,
                     'LOAI_HOA_DON': request.POST.get('LOAI_HOA_DON'),
                     'NGAY_LAP_HDON': request.POST.get('NGAY_LAP_HDON'),
                     'TRANG_THAI_HDON': request.POST.get('TRANG_THAI_HDON'),
-                    'TIEN_PHONG': request.POST.get('TIEN_PHONG'),
-                    'TIEN_DICH_VU': request.POST.get('TIEN_DICH_VU'),
-                    'TIEN_COC': request.POST.get('TIEN_COC'),
-                    'TIEN_KHAU_TRU': request.POST.get('TIEN_KHAU_TRU'),
-                    'TONG_TIEN': request.POST.get('TONG_TIEN'),
-                    'MA_HOP_DONG': request.POST.get('MA_HOP_DONG', None)  # Lấy MA_HOP_DONG nếu có
+                    'TIEN_PHONG': tien_phong,  # Chỉ để truyền vào save_related_data
+                    'TONG_TIEN': tong_tien,
+                    'MA_HOP_DONG': ma_hop_dong if ma_hop_dong else None
                 }
                 
 
@@ -204,7 +258,7 @@ def them_hoa_don(request, ma_phong=None):
                     for error in errors:
                         messages.error(request, error)
                     return render(request, 'admin/hoadon/themsua_hoadon.html', {
-                        'phong_tro': PhongTro.objects.all(),
+                        'khu_vucs': KhuVuc.objects.all(),
                         'chi_so_dich_vu': chi_so_dich_vu_list,
                         'khau_tru': khau_tru_list,
                         'form_data': data
@@ -216,32 +270,37 @@ def them_hoa_don(request, ma_phong=None):
         except Exception as e:
             messages.error(request, f'Lỗi khi thêm hóa đơn: {str(e)}')
             return render(request, 'admin/hoadon/themsua_hoadon.html', {
-                'phong_tro': PhongTro.objects.all(),
-                'chi_so_dich_vu': chi_so_dich_vu_list,
-                'khau_tru': khau_tru_list,
-                'form_data': data
+                'khu_vucs': KhuVuc.objects.all(),
+                'chi_so_dich_vu': chi_so_dich_vu_list if 'chi_so_dich_vu_list' in locals() else [],
+                'khau_tru': khau_tru_list if 'khau_tru_list' in locals() else [],
+                'form_data': data if 'data' in locals() else {}
             })
 
 
     # Hiển thị form thêm
-    phong_tro = get_phongtro_list()
-    # Lấy phòng để truy xuất khu vực
-    phong = PhongTro.objects.get(MA_PHONG=ma_phong)
-    hop_dong_hieu_luc = phong.get_hop_dong_con_hieu_luc()
-    # Lấy danh sách dịch vụ áp dụng
-    dich_vu_list, dich_vu_errors = get_dich_vu_ap_dung(phong.MA_KHU_VUC, ma_phong)
-    if dich_vu_errors:
-        return JsonResponse({'success': False, 'error': dich_vu_errors[0]}, status=500)
-    # return JsonResponse(model_to_dict(hop_dong_hieu_luc))
-    # return JsonResponse(dict(hop_dong_hieu_luc))
     # Lấy danh sách khu vực
     khu_vucs = KhuVuc.objects.filter(MA_NHA_TRO=1).order_by('MA_KHU_VUC')
     
+    # Nếu có ma_phong, load thông tin phòng
+    phong = None
+    hop_dong_hieu_luc = None
+    dich_vu_list = []
+    
+    if ma_phong:
+        try:
+            phong = PhongTro.objects.get(MA_PHONG=ma_phong)
+            hop_dong_hieu_luc = phong.get_hop_dong_con_hieu_luc()
+            # Lấy danh sách dịch vụ áp dụng
+            dich_vu_list, dich_vu_errors = get_dich_vu_ap_dung(phong.MA_KHU_VUC, ma_phong)
+            if dich_vu_errors:
+                messages.error(request, dich_vu_errors[0])
+        except PhongTro.DoesNotExist:
+            messages.error(request, 'Phòng không tồn tại')
+    
     context = {
-        'phong_tro': phong_tro,
         'khu_vucs': khu_vucs,
-        'trang_thai_choices': ['Đã thu tiền', 'Chưa thu tiền', 'Đang nợ', 'Đã hủy'],
-        'loai_hoa_don_choices': ['Hóa đơn phòng', 'Hóa đơn điện', 'Hóa đơn nước', 'Hóa đơn khác'],
+        'trang_thai_choices': ['Đã thu tiền', 'Chưa thanh toán', 'Đang nợ', 'Đã hủy'],
+        'loai_hoa_don_choices': ['Hóa đơn bắt đầu', 'Hóa đơn hàng tháng', 'Hóa đơn kết thúc', 'Hóa đơn khác'],
         'ma_phong': ma_phong,
         'phong': phong,
         'dich_vu_list': dich_vu_list,
@@ -256,17 +315,19 @@ def sua_hoa_don(request, ma_hoa_don):
     if request.method == 'POST':
         try:
             with transaction.atomic():
+                # Tính tổng tiền từ dịch vụ và khấu trừ
+                tien_phong = float(request.POST.get('TIEN_PHONG', 0))
+                tien_dich_vu = float(request.POST.get('TIEN_DICH_VU', 0))
+                tien_khau_tru = float(request.POST.get('TIEN_KHAU_TRU', 0))
+                tong_tien = tien_phong + tien_dich_vu + tien_khau_tru
+                
                 # Lấy dữ liệu từ form
                 data = {
                     'MA_PHONG': request.POST.get('MA_PHONG'),
                     'LOAI_HOA_DON': request.POST.get('LOAI_HOA_DON'),
                     'NGAY_LAP_HDON': request.POST.get('NGAY_LAP_HDON'),
                     'TRANG_THAI_HDON': request.POST.get('TRANG_THAI_HDON'),
-                    'TIEN_PHONG': request.POST.get('TIEN_PHONG'),
-                    'TIEN_DICH_VU': request.POST.get('TIEN_DICH_VU'),
-                    'TIEN_COC': request.POST.get('TIEN_COC'),
-                    'TIEN_KHAU_TRU': request.POST.get('TIEN_KHAU_TRU'),
-                    'TONG_TIEN': request.POST.get('TONG_TIEN')
+                    'TONG_TIEN': tong_tien
                 }
 
                 chi_so_dich_vu_list = []
@@ -347,15 +408,20 @@ def sua_hoa_don(request, ma_hoa_don):
     chi_so_dich_vu_list, dich_vu_errors = get_dich_vu_ap_dung(phong.MA_KHU_VUC, hoa_don.MA_PHONG.MA_PHONG, current_month)
     khau_tru_list = KhauTru.objects.filter(MA_HOA_DON=hoa_don)
     
+    # Tính toán các giá trị từ chi tiết hóa đơn
+    chi_tiet_list = hoa_don.chitiethoadon.all()
+    tien_phong = sum(ct.THANH_TIEN for ct in chi_tiet_list if ct.LOAI_KHOAN == 'PHONG')
+    tien_dich_vu = sum(ct.THANH_TIEN for ct in chi_tiet_list if ct.LOAI_KHOAN == 'DICH_VU')
+    tien_khau_tru = sum(kt.SO_TIEN_KT * (1 if kt.LOAI_KHAU_TRU == 'Cộng' else -1) for kt in khau_tru_list)
+    
     form_data = {
         'MA_PHONG': hoa_don.MA_PHONG.MA_PHONG,
         'LOAI_HOA_DON': hoa_don.LOAI_HOA_DON,
         'NGAY_LAP_HDON': hoa_don.NGAY_LAP_HDON.strftime('%Y-%m-%d') if hoa_don.NGAY_LAP_HDON else '',
         'TRANG_THAI_HDON': hoa_don.TRANG_THAI_HDON,
-        'TIEN_PHONG': str(hoa_don.TIEN_PHONG),
-        'TIEN_DICH_VU': str(hoa_don.TIEN_DICH_VU),
-        'TIEN_COC': str(hoa_don.TIEN_COC),
-        'TIEN_KHAU_TRU': str(hoa_don.TIEN_KHAU_TRU),
+        'TIEN_PHONG': str(tien_phong),
+        'TIEN_DICH_VU': str(tien_dich_vu), 
+        'TIEN_KHAU_TRU': str(tien_khau_tru),
         'TONG_TIEN': str(hoa_don.TONG_TIEN)
     }
     # Lấy danh sách khu vực
@@ -368,7 +434,7 @@ def sua_hoa_don(request, ma_hoa_don):
         'chi_so_dich_vu': chi_so_dich_vu_list,
         'khau_tru': khau_tru_list,
         'form_data': form_data,
-        'trang_thai_choices': ['Đã thu tiền', 'Chưa thu tiền', 'Đang nợ', 'Đã hủy'],
+        'trang_thai_choices': ['Đã thu tiền', 'Chưa thanh toán', 'Đang nợ', 'Đã hủy'],
         'loai_hoa_don_choices': ['Hóa đơn phòng', 'Hóa đơn điện', 'Hóa đơn nước', 'Hóa đơn khác']
     }
     return render(request, 'admin/hoadon/themsua_hoadon.html', context)
@@ -424,7 +490,42 @@ def xoa_hoa_don(request, ma_hoa_don):
 
 
 def hoadon_detail(request, ma_hoa_don):
-    hoadon = get_object_or_404(HoaDon, MA_HOA_DON=ma_hoa_don)
+    hoadon = get_object_or_404(
+        HoaDon.objects.select_related('MA_HOP_DONG__MA_PHONG').prefetch_related(
+            'chitiethoadon', 'khautru'
+        ), 
+        MA_HOA_DON=ma_hoa_don
+    )
+    
+    # Thêm thông tin từ chi tiết hóa đơn
+    from .models import CHITIETHOADON
+    
+    def get_amount_from_details(loai_khoan):
+        chi_tiet_list = CHITIETHOADON.objects.filter(
+            MA_HOA_DON=hoadon,
+            LOAI_KHOAN=loai_khoan
+        )
+        return sum(ct.THANH_TIEN or Decimal('0.00') for ct in chi_tiet_list)
+    
+    # Lấy thông tin phòng từ hợp đồng
+    hoadon.phong_info = hoadon.MA_HOP_DONG.MA_PHONG if hoadon.MA_HOP_DONG else None
+    
+    # Lấy tiền từ chi tiết hóa đơn
+    hoadon.tien_phong = get_amount_from_details('PHONG')
+    hoadon.tien_dich_vu = get_amount_from_details('DICH_VU') 
+    hoadon.tien_coc = get_amount_from_details('COC')
+    
+    # Tính khấu trừ
+    khau_tru_cong = sum(
+        kt.SO_TIEN_KT or Decimal('0.00') 
+        for kt in hoadon.khautru.filter(LOAI_KHAU_TRU='Cộng')
+    )
+    khau_tru_tru = sum(
+        kt.SO_TIEN_KT or Decimal('0.00') 
+        for kt in hoadon.khautru.filter(LOAI_KHAU_TRU='Trừ')
+    )
+    hoadon.tong_khau_tru = khau_tru_cong - khau_tru_tru
+    
     return render(request, 'admin/hoadon/chitiet_hoadon.html', {'hoadon': hoadon})
 
 
@@ -488,8 +589,8 @@ def lay_thong_tin_phong_hoa_don(request, ma_phong):
         if not hop_dong:
             return JsonResponse({'success': False, 'error': 'Không tìm thấy hợp đồng hiệu lực cho phòng này'}, status=404)
         
-        # Lấy danh sách dịch vụ áp dụng
-        dich_vu_list, dich_vu_errors = get_dich_vu_ap_dung(phong.MA_KHU_VUC, ma_phong, current_month)
+        # Lấy danh sách dịch vụ áp dụng cho hợp đồng
+        dich_vu_list, dich_vu_errors = get_dich_vu_ap_dung(phong.MA_KHU_VUC, hop_dong, current_month)
         if dich_vu_errors:
             return JsonResponse({'success': False, 'error': dich_vu_errors[0]}, status=500)
         

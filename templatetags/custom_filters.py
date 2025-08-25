@@ -108,3 +108,15 @@ def datetime_dd_mm_yy_hm(value):
         return value.strftime('%d/%m/%y %H:%M')
     except (ValueError, AttributeError, TypeError):
         return "-"
+
+@register.filter
+def div(value, divisor):
+    """Chia hai số"""
+    try:
+        value = float(value)
+        divisor = float(divisor)
+        if divisor == 0:
+            return 0
+        return value / divisor
+    except (ValueError, TypeError, ZeroDivisionError):
+        return 0

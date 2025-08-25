@@ -1,0 +1,830 @@
+{% extends 'index/index_layout.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block content %}
+<!-- External Libraries -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nouislider@15.7.0/dist/nouislider.min.css">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/nouislider@15.7.0/dist/nouislider.min.js"></script>
+
+<!-- Modern Design CSS -->
+<link rel="stylesheet" href="{% static 'css/modern-design.css' %}">
+
+<script>
+// Define Alpine.js components BEFORE Alpine loads
+window.searchForm = function() {
+    return {
+        showMobileFilter: false,
+        showLocationSuggestions: false,
+        locationSuggestions: [],
+        isLoading: false,
+        showFilters: false,
+        activeFilters: {},
+
+        toggleMobileFilter() {
+            this.showMobileFilter = !this.showMobileFilter;
+            if (this.showMobileFilter) {
+                document.body.style.overflow = 'hidden';
+            } else {
+                document.body.style.overflow = 'auto';
+            }
+        },
+
+        closeMobileFilter() {
+            this.showMobileFilter = false;
+            document.body.style.overflow = 'auto';
+        },
+
+        clearAllFilters() {
+            window.location.href = "{% url 'user_phongtro:tim_phong' %}";
+        },
+
+        applySort(sortValue) {
+            const form = document.getElementById('searchForm');
+            const sortInput = form.querySelector('[name="sort"]') || document.createElement('input');
+            sortInput.type = 'hidden';
+            sortInput.name = 'sort';
+            sortInput.value = sortValue;
+            if (!form.contains(sortInput)) {
+                form.appendChild(sortInput);
+            }
+            form.submit();
+        },
+
+        searchLocation(event) {
+            const query = event.target.value.trim();
+            if (query.length >= 2) {
+                // Debounce search
+                clearTimeout(this.searchTimeout);
+                this.searchTimeout = setTimeout(() => {
+                    this.performLocationSearch(query);
+                }, 500);
+            } else {
+                this.locationSuggestions = [];
+                this.showLocationSuggestions = false;
+            }
+        },
+
+        performLocationSearch(query) {
+            // Real API call using fetch
+            fetch(`{% url 'user_phongtro:api_location_autocomplete' %}?term=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    this.locationSuggestions = data;
+                    this.showLocationSuggestions = this.locationSuggestions.length > 0;
+                })
+                .catch(error => {
+                    console.log('Error searching location:', error);
+                    this.locationSuggestions = [];
+                    this.showLocationSuggestions = false;
+                });
+        },
+
+        selectLocation(suggestion) {
+            document.getElementById('locationSearch').value = suggestion.display_name;
+            this.showLocationSuggestions = false;
+        },
+
+        submitSearch() {
+            this.isLoading = true;
+            this.closeMobileFilter();
+            
+            // Add loading state to button
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `
+                <svg class="w-5 h-5 mr-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span class="font-semibold">Đang tìm kiếm...</span>
+            `;
+
+            // Show loading notification
+            this.showNotification('Đang tìm kiếm phòng trọ phù hợp...', 'info');
+
+            // Reset after form submission
+            setTimeout(() => {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+                this.isLoading = false;
+            }, 2000);
+        },
+
+        showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            const bgColor = type === 'success' ? 'bg-green-500' : 
+                           type === 'error' ? 'bg-red-500' : 
+                           'bg-blue-500';
+            
+            notification.className = `fixed top-6 right-6 ${bgColor} text-white px-6 py-4 rounded-xl shadow-lg z-50 flex items-center space-x-3 transform transition-all duration-300`;
+            notification.innerHTML = `
+                <svg class="w-5 h-5 ${type === 'info' ? 'animate-spin' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    ${type === 'success' ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>' :
+                      type === 'error' ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>' :
+                      '<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>'}
+                </svg>
+                <span class="font-medium">${message}</span>
+            `;
+            
+            document.body.appendChild(notification);
+
+            // Animate in
+            setTimeout(() => notification.style.transform = 'translateX(0)', 100);
+
+            // Remove notification
+            setTimeout(() => {
+                notification.style.transform = 'translateX(100%)';
+                setTimeout(() => notification.remove(), 300);
+            }, type === 'info' ? 1500 : 3000);
+        },
+
+        saveSearch() {
+            // Enhanced save functionality with better UX
+            this.showNotification('Đã lưu tìm kiếm thành công! 💾', 'success');
+            
+            // Optional: Save to localStorage for user convenience
+            try {
+                const searchData = {
+                    vi_tri: document.querySelector('[name="vi_tri"]')?.value || '',
+                    khu_vuc: document.querySelector('[name="khu_vuc"]')?.value || '',
+                    loai_phong: document.querySelector('[name="loai_phong"]')?.value || '',
+                    gia_min: document.querySelector('[name="gia_min"]')?.value || '',
+                    gia_max: document.querySelector('[name="gia_max"]')?.value || '',
+                    dien_tich_min: document.querySelector('[name="dien_tich_min"]')?.value || '',
+                    dien_tich_max: document.querySelector('[name="dien_tich_max"]')?.value || '',
+                    timestamp: new Date().toISOString()
+                };
+                
+                const savedSearches = JSON.parse(localStorage.getItem('savedSearches') || '[]');
+                savedSearches.unshift(searchData);
+                
+                // Keep only last 5 searches
+                if (savedSearches.length > 5) savedSearches.pop();
+                
+                localStorage.setItem('savedSearches', JSON.stringify(savedSearches));
+            } catch (e) {
+                console.log('Could not save search to localStorage:', e);
+            }
+        }
+    };
+};
+
+// Location Selector Component
+window.locationSelector = function() {
+    return {
+        showDropdown: false,
+        searchText: '',
+        selectedProvince: null,
+        selectedDistrict: null,
+        selectedWard: null,
+        filteredLocations: [],
+        isInitialized: false,
+        
+        // Safe initialization
+        init() {
+            try {
+                this.initializeData();
+            } catch (error) {
+                console.error('Error initializing locationSelector:', error);
+                this.isInitialized = true; // Still mark as initialized to prevent infinite loading
+            }
+        },
+        
+        async initializeData() {
+            await this.loadProvinces();
+            this.isInitialized = true;
+        },
+        
+        provinces: [
+            {
+                code: 'HCM',
+                name: 'TP. Hồ Chí Minh',
+                districts: [
+                    {
+                        code: 'Q1',
+                        name: 'Quận 1',
+                        wards: [
+                            { code: 'P1', name: 'Phường Bến Nghé' },
+                            { code: 'P2', name: 'Phường Bến Thành' },
+                            { code: 'P3', name: 'Phường Cầu Kho' },
+                            { code: 'P4', name: 'Phường Cầu Ông Lãnh' },
+                            { code: 'P5', name: 'Phường Cô Giang' }
+                        ]
+                    },
+                    {
+                        code: 'Q3',
+                        name: 'Quận 3',
+                        wards: [
+                            { code: 'P1', name: 'Phường 1' },
+                            { code: 'P2', name: 'Phường 2' },
+                            { code: 'P3', name: 'Phường 3' },
+                            { code: 'P4', name: 'Phường 4' },
+                            { code: 'P5', name: 'Phường 5' }
+                        ]
+                    },
+                    {
+                        code: 'BT',
+                        name: 'Quận Bình Thạnh',
+                        wards: [
+                            { code: 'P1', name: 'Phường 1' },
+                            { code: 'P2', name: 'Phường 2' },
+                            { code: 'P3', name: 'Phường 3' },
+                            { code: 'P11', name: 'Phường 11' },
+                            { code: 'P12', name: 'Phường 12' }
+                        ]
+                    }
+                ]
+            },
+            {
+                code: 'HN',
+                name: 'Hà Nội',
+                districts: [
+                    {
+                        code: 'HK',
+                        name: 'Quận Hoàn Kiếm',
+                        wards: [
+                            { code: 'P1', name: 'Phường Chương Dương' },
+                            { code: 'P2', name: 'Phường Cửa Đông' },
+                            { code: 'P3', name: 'Phường Cửa Nam' },
+                            { code: 'P4', name: 'Phường Hàng Bạc' },
+                            { code: 'P5', name: 'Phường Hàng Bài' }
+                        ]
+                    },
+                    {
+                        code: 'CG',
+                        name: 'Quận Cầu Giấy',
+                        wards: [
+                            { code: 'P1', name: 'Phường Dịch Vọng' },
+                            { code: 'P2', name: 'Phường Dịch Vọng Hậu' },
+                            { code: 'P3', name: 'Phường Mai Dịch' },
+                            { code: 'P4', name: 'Phường Nghĩa Đô' },
+                            { code: 'P5', name: 'Phường Nghĩa Tân' }
+                        ]
+                    }
+                ]
+            },
+            {
+                code: 'DN',
+                name: 'Đà Nẵng',
+                districts: [
+                    {
+                        code: 'HC',
+                        name: 'Quận Hải Châu',
+                        wards: [
+                            { code: 'P1', name: 'Phường Hải Châu I' },
+                            { code: 'P2', name: 'Phường Hải Châu II' },
+                            { code: 'P3', name: 'Phường Hoà Cường Bắc' },
+                            { code: 'P4', name: 'Phường Hoà Cường Nam' },
+                            { code: 'P5', name: 'Phường Nam Dương' }
+                        ]
+                    }
+                ]
+            }
+        ],
+
+        async loadProvinces() {
+            try {
+                const response = await fetch('{% url "user_phongtro:api_provinces" %}');
+                const data = await response.json();
+                this.provinces = data.map(province => ({
+                    ...province,
+                    districts: []
+                }));
+            } catch (error) {
+                console.error('Error loading provinces:', error);
+                // Use fallback data already defined above
+            }
+        },
+
+        getDisplayText() {
+            try {
+                if (this.selectedWard && this.selectedWard.name && this.selectedDistrict && this.selectedDistrict.name && this.selectedProvince && this.selectedProvince.name) {
+                    return `${this.selectedWard.name}, ${this.selectedDistrict.name}, ${this.selectedProvince.name}`;
+                } else if (this.selectedDistrict && this.selectedDistrict.name && this.selectedProvince && this.selectedProvince.name) {
+                    return `${this.selectedDistrict.name}, ${this.selectedProvince.name}`;
+                } else if (this.selectedProvince && this.selectedProvince.name) {
+                    return this.selectedProvince.name;
+                }
+                return 'Chọn vị trí';
+            } catch (error) {
+                console.error('Error in getDisplayText:', error);
+                return 'Chọn vị trí';
+            }
+        },
+
+        getLocationValue() {
+            try {
+                if (this.selectedWard && this.selectedWard.name && this.selectedDistrict && this.selectedDistrict.name && this.selectedProvince && this.selectedProvince.name) {
+                    return `${this.selectedWard.name}, ${this.selectedDistrict.name}, ${this.selectedProvince.name}`;
+                } else if (this.selectedDistrict && this.selectedDistrict.name && this.selectedProvince && this.selectedProvince.name) {
+                    return `${this.selectedDistrict.name}, ${this.selectedProvince.name}`;
+                } else if (this.selectedProvince && this.selectedProvince.name) {
+                    return this.selectedProvince.name;
+                }
+                return '';
+            } catch (error) {
+                console.error('Error in getLocationValue:', error);
+                return '';
+            }
+        },
+
+        async selectProvince(province) {
+            this.selectedProvince = province;
+            this.selectedDistrict = null;
+            this.selectedWard = null;
+            this.searchText = '';
+            
+            // Load districts for this province
+            await this.loadDistricts(province.code);
+        },
+
+        async selectDistrict(district) {
+            this.selectedDistrict = district;
+            this.selectedWard = null;
+            this.searchText = '';
+            
+            // Load wards for this district
+            if (this.selectedProvince && this.selectedProvince.code) {
+                await this.loadWards(this.selectedProvince.code, district.code);
+            }
+        },
+
+        async loadDistricts(provinceCode) {
+            try {
+                const response = await fetch(`/phong-tro/api/districts/${provinceCode}/`);
+                const data = await response.json();
+                if (this.selectedProvince) {
+                    this.selectedProvince.districts = data.map(district => ({
+                        ...district,
+                        wards: []
+                    }));
+                }
+            } catch (error) {
+                console.error('Error loading districts:', error);
+            }
+        },
+
+        async loadWards(provinceCode, districtCode) {
+            try {
+                const response = await fetch(`/phong-tro/api/wards/${provinceCode}/${districtCode}/`);
+                const data = await response.json();
+                if (this.selectedDistrict) {
+                    this.selectedDistrict.wards = data;
+                }
+            } catch (error) {
+                console.error('Error loading wards:', error);
+            }
+        },
+
+        selectWard(ward) {
+            this.selectedWard = ward;
+            this.showDropdown = false;
+            this.searchText = '';
+        },
+
+        selectFromSearch(location) {
+            // Parse the location from search and set appropriate selections
+            if (this.provinces && Array.isArray(this.provinces)) {
+                this.selectedProvince = this.provinces.find(p => p.code === location.provinceCode) || null;
+                
+                if (location.districtCode && this.selectedProvince && this.selectedProvince.districts && Array.isArray(this.selectedProvince.districts)) {
+                    this.selectedDistrict = this.selectedProvince.districts.find(d => d.code === location.districtCode) || null;
+                } else {
+                    this.selectedDistrict = null;
+                }
+                
+                if (location.wardCode && this.selectedDistrict && this.selectedDistrict.wards && Array.isArray(this.selectedDistrict.wards)) {
+                    this.selectedWard = this.selectedDistrict.wards.find(w => w.code === location.wardCode) || null;
+                } else {
+                    this.selectedWard = null;
+                }
+            }
+            this.showDropdown = false;
+            this.searchText = '';
+        },
+
+        resetToProvinces() {
+            this.selectedProvince = null;
+            this.selectedDistrict = null;
+            this.selectedWard = null;
+            this.searchText = '';
+        },
+
+        handleSearch() {
+            if (!this.searchText || !this.provinces || !Array.isArray(this.provinces)) {
+                this.filteredLocations = [];
+                return;
+            }
+
+            const searchLower = this.searchText.toLowerCase();
+            const results = [];
+
+            this.provinces.forEach(province => {
+                if (!province || !province.name) return;
+                // Search in province name
+                if (province.name.toLowerCase().includes(searchLower)) {
+                    results.push({
+                        fullCode: province.code,
+                        name: province.name,
+                        fullPath: province.name,
+                        provinceCode: province.code,
+                        districtCode: null,
+                        wardCode: null
+                    });
+                }
+
+                // Search in districts
+                if (province.districts && Array.isArray(province.districts)) {
+                    province.districts.forEach(district => {
+                        if (district.name.toLowerCase().includes(searchLower)) {
+                            results.push({
+                                fullCode: `${province.code}-${district.code}`,
+                                name: district.name,
+                                fullPath: `${district.name}, ${province.name}`,
+                                provinceCode: province.code,
+                                districtCode: district.code,
+                                wardCode: null
+                            });
+                        }
+
+                        // Search in wards
+                        if (district.wards && Array.isArray(district.wards)) {
+                            district.wards.forEach(ward => {
+                                if (ward.name.toLowerCase().includes(searchLower)) {
+                                    results.push({
+                                        fullCode: `${province.code}-${district.code}-${ward.code}`,
+                                        name: ward.name,
+                                        fullPath: `${ward.name}, ${district.name}, ${province.name}`,
+                                        provinceCode: province.code,
+                                        districtCode: district.code,
+                                        wardCode: ward.code
+                                    });
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+
+            this.filteredLocations = results.slice(0, 10); // Limit to 10 results
+        }
+    };
+};
+
+// Function to increment contact count
+function incrementContactCount(tinDangId) {
+    fetch(`/api/tin-dang/${tinDangId}/tang-luot-lien-he/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '',
+            'Content-Type': 'application/json',
+        },
+    }).catch(error => console.log('Error updating contact count:', error));
+}
+</script>
+
+<script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+<script>
+// Wait for Alpine to be loaded
+document.addEventListener('alpine:init', () => {
+    console.log('Alpine.js is ready');
+});
+
+// Additional safety for DOM ready
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM is ready');
+});
+</script>
+
+
+<div class="pb-16">
+    <!-- Hero Section -->
+    <div class="hero-modern text-white py-12 bg-blue-600">
+      <div class="hero-content max-w-screen-xl mx-auto px-4 text-center">
+        <div class="fade-in">
+          <div class="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-3 py-1 text-sm mb-4">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+            </svg>
+            Tìm kiếm thông minh
+          </div>
+          <h1 class="text-3xl md:text-4xl font-bold mb-3">Tìm Phòng Trọ Lý Tưởng</h1>
+          <p class="text-lg mb-6 text-white/90">Hơn 141 phòng trọ chất lượng đang chờ bạn khám phá</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="max-w-screen-xl mx-auto px-4 -mt-6">
+      <!-- Modern Filter Section -->
+      <div class="modern-card slide-up bg-white shadow p-4" style="animation-delay: 0.2s;">
+        <div class="modern-card-header">
+          <form method="GET" class="form-modern" id="searchForm">
+            <!-- Filter Header -->
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-lg font-bold text-gray-900 flex items-center">
+                <svg class="w-5 h-5 mr-2 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M9 9a2 2 0 114 0 2 2 0 01-4 0zm0 0a2 2 0 118 0 2 2 0 01-8 0zm-6 6a2 2 0 114 0 2 2 0 01-4 0zm0 0a2 2 0 118 0 2 2 0 01-8 0z" />
+                </svg>
+                Bộ lọc tìm kiếm thông minh
+              </h3>
+              <button type="button" class="md:hidden bg-gray-200 text-gray-700 px-2 py-1">Lọc</button>
+            </div>
+
+            <!-- Filter Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+              <!-- Location Search -->
+              <div class="relative">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Vị trí</label>
+                <select class="w-full px-2 py-1 border border-gray-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option>Tất cả khu vực</option>
+                  <option>Bình Thủy</option>
+                  <option>Ninh Kiều</option>
+                </select>
+              </div>
+
+              <!-- Price Range -->
+              <div class="relative">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Mức giá</label>
+                <select class="w-full px-2 py-1 border border-gray-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option>500K - 15M</option>
+                  <option>Dưới 2 triệu</option>
+                  <option>2 - 3 triệu</option>
+                </select>
+              </div>
+
+              <!-- Area -->
+              <div class="relative">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Diện tích</label>
+                <select class="w-full px-2 py-1 border border-gray-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option>Chọn diện tích</option>
+                  <option>Dưới 20 m²</option>
+                  <option>20 - 40 m²</option>
+                </select>
+              </div>
+
+              <!-- Area Selection -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Khu vực</label>
+                <select class="w-full px-2 py-1 border border-gray-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option>Tất cả khu vực</option>
+                  <option>Bình Thủy</option>
+                  <option>Ninh Kiều</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Modern Action Buttons -->
+            <div class="mt-3 flex space-x-2">
+              <button type="submit" class="bg-blue-600 text-white px-3 py-1 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">Tìm kiếm ngay</button>
+              <button type="button" class="bg-gray-200 text-gray-700 px-3 py-1 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500">Đặt lại bộ lọc</button>
+              <button type="button" class="bg-green-600 text-white px-3 py-1 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500">Lưu tìm kiếm</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Modern Results Header -->
+      <div class="modern-card bg-white shadow p-4 mt-4" style="animation-delay: 0.4s;">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          <div>
+            <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+              <svg class="w-6 h-6 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              Tìm thấy 141 phòng trọ
+            </h2>
+            <p class="text-sm text-gray-600 mt-1">Kết quả đã được lọc theo tiêu chí tìm kiếm</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <label class="text-sm font-medium text-gray-700">Sắp xếp:</label>
+            <select class="border px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option>Mặc định</option>
+              <option>Giá tăng dần</option>
+              <option>Giá giảm dần</option>
+            </select>
+          </div>
+        </div>
+        <div class="mt-3 pt-2 border-t border-gray-200">
+          <p class="text-sm text-gray-600 mb-1">Bộ lọc đang áp dụng:</p>
+          <div class="flex flex-wrap gap-2">
+            <span class="inline-flex items-center px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800">Bình Thủy</span>
+            <span class="inline-flex items-center px-2 py-1 text-xs font-medium bg-green-100 text-green-800">500K - 15M</span>
+            <a href="#" class="inline-flex items-center px-2 py-1 text-xs font-medium bg-red-100 text-red-800 hover:bg-red-200">Xóa tất cả</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Container: 70% Room List + 30% Sidebar Filter -->
+      <div class="flex flex-col lg:flex-row gap-4 mt-4">
+        <!-- Room List (70% width) -->
+        <div class="w-full lg:w-2/3">
+          <ul class="space-y-2">
+            <li class="bg-white shadow p-2">
+              <div class="flex items-start">
+                <img src="https://via.placeholder.com/100x80" alt="House" class="w-24 h-20 object-cover">
+                <div class="ml-2 flex-1">
+                  <span class="bg-green-100 text-green-800 text-xs px-1 py-0.5">Đang cho thuê</span>
+                  <p class="text-gray-800 mt-1">Nhà trọ sô 95/4 Khu vực Bình Nhựt</p>
+                  <p class="text-blue-500">Bình Thủy, Thành phố Cần Thơ</p>
+                  <div class="flex space-x-2 mt-1 text-gray-600">
+                    <span><i class="fas fa-tag"></i> Nhà trọ</span>
+                    <span><i class="fas fa-expand"></i> 20 m²</span>
+                  </div>
+                  <p class="text-xl font-bold text-blue-600 mt-1">2 triệu/tháng</p>
+                  <div class="flex space-x-2 mt-1">
+                    <a href="#" class="flex-1 bg-gray-100 text-gray-700 text-center py-1 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500">Chi tiết</a>
+                    <a href="#" class="flex-1 bg-blue-600 text-white text-center py-1 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">Đặt phòng</a>
+                  </div>
+                </div>
+              </div>
+            </li>
+            <li class="bg-white shadow p-2">
+              <div class="flex items-start">
+                <img src="https://via.placeholder.com/100x80" alt="House" class="w-24 h-20 object-cover">
+                <div class="ml-2 flex-1">
+                  <span class="bg-green-100 text-green-800 text-xs px-1 py-0.5">Đang cho thuê</span>
+                  <p class="text-gray-800 mt-1">Nhà trọ Kim Thoa sô 290/7</p>
+                  <p class="text-blue-500">Bình Thủy, Thành phố Cần Thơ</p>
+                  <div class="flex space-x-2 mt-1 text-gray-600">
+                    <span><i class="fas fa-tag"></i> Nhà trọ</span>
+                    <span><i class="fas fa-expand"></i> 25 m²</span>
+                  </div>
+                  <p class="text-xl font-bold text-blue-600 mt-1">1.6 triệu/tháng</p>
+                  <div class="flex space-x-2 mt-1">
+                    <a href="#" class="flex-1 bg-gray-100 text-gray-700 text-center py-1 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500">Chi tiết</a>
+                    <a href="#" class="flex-1 bg-blue-600 text-white text-center py-1 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">Đặt phòng</a>
+                  </div>
+                </div>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Filter Section (30% width) -->
+        <div class="w-full lg:w-1/3 bg-white shadow p-3 sticky top-4">
+          <h3 class="text-lg font-bold text-gray-800 mb-2">Bộ lọc tìm kiếm</h3>
+          <form method="GET">
+            <!-- Price Filter -->
+            <div class="mb-4 p-2 bg-gray-50">
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Khoảng giá</label>
+              <div class="space-y-1">
+                <label class="flex items-center p-1">
+                  <input type="checkbox" class="mr-2 accent-blue-600 w-4 h-4">Dưới 2 triệu
+                </label>
+                <label class="flex items-center p-1">
+                  <input type="checkbox" class="mr-2 accent-blue-600 w-4 h-4">2 - 3 triệu
+                </label>
+                <label class="flex items-center p-1">
+                  <input type="checkbox" class="mr-2 accent-blue-600 w-4 h-4">3 - 5 triệu
+                </label>
+              </div>
+            </div>
+
+            <!-- Area Filter -->
+            <div class="mb-4 p-2 bg-gray-50">
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Diện tích</label>
+              <div class="space-y-1">
+                <label class="flex items-center p-1">
+                  <input type="checkbox" class="mr-2 accent-blue-600 w-4 h-4">Dưới 20 m²
+                </label>
+                <label class="flex items-center p-1">
+                  <input type="checkbox" class="mr-2 accent-blue-600 w-4 h-4">20 - 30 m²
+                </label>
+                <label class="flex items-center p-1">
+                  <input type="checkbox" class="mr-2 accent-blue-600 w-4 h-4">30 - 50 m²
+                </label>
+              </div>
+            </div>
+
+            <!-- Apply Filters Button -->
+            <div class="flex space-x-2 mt-2">
+              <button type="submit" class="flex-1 bg-blue-600 text-white py-1 px-2 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">Tìm kiếm</button>
+              <a href="#" class="flex-1 bg-gray-100 text-gray-700 py-1 px-2 text-center hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500">Reset</a>
+            </div>
+          </form>
+          <div class="mt-3 p-2 bg-blue-50 border border-blue-100">
+            <div class="flex items-start">
+              <svg class="w-5 h-5 mr-1 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+              </svg>
+              <div class="text-sm text-blue-800">
+                <p class="font-medium mb-0.5">Mẹo tìm kiếm</p>
+                <p>Sử dụng bộ lọc để tìm phòng phù hợp nhất với nhu cầu của bạn.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pagination -->
+      <div class="flex justify-center mt-4">
+        <nav class="inline-flex shadow">
+          <a href="#" class="px-2 py-1 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+            </svg>
+          </a>
+          <span class="px-2 py-1 border border-gray-300 bg-blue-600 text-sm font-medium text-white">1</span>
+          <a href="#" class="px-2 py-1 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500">2</a>
+          <a href="#" class="px-2 py-1 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500">3</a>
+          <a href="#" class="px-2 py-1 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+            </svg>
+          </a>
+        </nav>
+      </div>
+    </div>
+
+    <!-- Quick Actions FAB -->
+    <div class="fixed bottom-4 right-4 z-10">
+      <div class="relative">
+        <button class="bg-blue-600 text-white p-2 shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+<script>
+$(document).ready(function() {
+    // Initialize Select2 for dropdowns
+    $('#areaSelect, #roomTypeSelect').select2({
+        width: '100%',
+        placeholder: function() {
+            return $(this).data('placeholder');
+        },
+        allowClear: true
+    });
+
+    // Initialize noUiSlider for price range
+    const priceSlider = document.getElementById('priceSlider');
+    const minPriceInput = document.getElementById('priceMinInput');
+    const maxPriceInput = document.getElementById('priceMaxInput');
+    const priceMinDisplay = document.getElementById('priceMin');
+    const priceMaxDisplay = document.getElementById('priceMax');
+
+    if (priceSlider) {
+        noUiSlider.create(priceSlider, {
+            start: [
+                parseInt(minPriceInput.value) || 500000,
+                parseInt(maxPriceInput.value) || 15000000
+            ],
+            connect: true,
+            range: {
+                'min': 500000,
+                'max': 15000000
+            },
+            step: 100000,
+            tooltips: [
+                {
+                    to: function(value) {
+                        return formatCurrency(value);
+                    }
+                },
+                {
+                    to: function(value) {
+                        return formatCurrency(value);
+                    }
+                }
+            ]
+        });
+
+        // Update inputs when slider changes
+        priceSlider.noUiSlider.on('update', function(values, handle) {
+            const value = parseInt(values[handle]);
+            if (handle === 0) {
+                minPriceInput.value = value;
+                priceMinDisplay.textContent = formatCurrency(value);
+                document.getElementById('priceDisplayMin').textContent = formatCurrency(value);
+            } else {
+                maxPriceInput.value = value;
+                priceMaxDisplay.textContent = formatCurrency(value);
+                document.getElementById('priceDisplayMax').textContent = formatCurrency(value);
+            }
+        });
+    }
+
+    // Enhanced currency formatting helper
+    function formatCurrency(value) {
+        if (value >= 1000000) {
+            const millions = value / 1000000;
+            return millions % 1 === 0 ? 
+                millions.toFixed(0) + 'M' : 
+                millions.toFixed(1) + 'M';
+        } else if (value >= 1000) {
+            return (value / 1000).toFixed(0) + 'K';
+        } else {
+            return value.toLocaleString('vi-VN');
+        }
+    }
+});
+</script>
+{% endblock %}

@@ -3,65 +3,512 @@
 {% load custom_filters %}
 
 {% block content %}
-<script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+<!-- External Libraries -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nouislider@15.7.0/dist/nouislider.min.css">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/nouislider@15.7.0/dist/nouislider.min.js"></script>
 <style>
-/* Custom Range Slider Styles for Better Cross-browser Support */
-.slider-input {
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  appearance: none;
-  background: transparent;
-  pointer-events: auto;
-}
-
-.slider-input::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 20px;
-  height: 20px;
-  background: #3B82F6;
-  border: 3px solid white;
-  border-radius: 50%;
-  cursor: pointer;
-  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3), 0 0 0 1px rgba(59, 130, 246, 0.1);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.slider-input::-webkit-slider-thumb:hover {
-  transform: scale(1.15);
-  background: #2563EB;
-  box-shadow: 0 6px 12px rgba(37, 99, 235, 0.4), 0 0 0 2px rgba(37, 99, 235, 0.2);
-}
-
-.slider-input::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
-  background: #3B82F6;
-  border: 3px solid white;
-  border-radius: 50%;
-  cursor: pointer;
-  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.slider-input::-moz-range-thumb:hover {
-  transform: scale(1.15);
-  background: #2563EB;
-  box-shadow: 0 6px 12px rgba(37, 99, 235, 0.4);
-}
-
-.slider-input:focus {
-  outline: none;
-}
-
-.slider-input:focus::-webkit-slider-thumb {
-  box-shadow: 0 6px 12px rgba(37, 99, 235, 0.4), 0 0 0 3px rgba(59, 130, 246, 0.3);
-}
-
-.slider-input:focus::-moz-range-thumb {
-  box-shadow: 0 6px 12px rgba(37, 99, 235, 0.4), 0 0 0 3px rgba(59, 130, 246, 0.3);
-}
+  @keyframes slide-up {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  .animate-slide-up {
+    animation: slide-up 0.3s ease-out forwards;
+  }
 </style>
+<!-- Modern Design CSS -->
+<link rel="stylesheet" href="{% static 'css/modern-design.css' %}">
+
+<script>
+// Define Alpine.js components BEFORE Alpine loads
+window.searchForm = function() {
+    return {
+        showMobileFilter: false,
+        showLocationSuggestions: false,
+        locationSuggestions: [],
+        isLoading: false,
+        showFilters: false,
+        activeFilters: {},
+
+        toggleMobileFilter() {
+            this.showMobileFilter = !this.showMobileFilter;
+            if (this.showMobileFilter) {
+                document.body.style.overflow = 'hidden';
+            } else {
+                document.body.style.overflow = 'auto';
+            }
+        },
+
+        closeMobileFilter() {
+            this.showMobileFilter = false;
+            document.body.style.overflow = 'auto';
+        },
+
+        clearAllFilters() {
+            window.location.href = "{% url 'user_phongtro:tim_phong' %}";
+        },
+
+        applySort(sortValue) {
+            const form = document.getElementById('searchForm');
+            const sortInput = form.querySelector('[name="sort"]') || document.createElement('input');
+            sortInput.type = 'hidden';
+            sortInput.name = 'sort';
+            sortInput.value = sortValue;
+            if (!form.contains(sortInput)) {
+                form.appendChild(sortInput);
+            }
+            form.submit();
+        },
+
+        searchLocation(event) {
+            const query = event.target.value.trim();
+            if (query.length >= 2) {
+                // Debounce search
+                clearTimeout(this.searchTimeout);
+                this.searchTimeout = setTimeout(() => {
+                    this.performLocationSearch(query);
+                }, 500);
+            } else {
+                this.locationSuggestions = [];
+                this.showLocationSuggestions = false;
+            }
+        },
+
+        performLocationSearch(query) {
+            // Real API call using fetch
+            fetch(`{% url 'user_phongtro:api_location_autocomplete' %}?term=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    this.locationSuggestions = data;
+                    this.showLocationSuggestions = this.locationSuggestions.length > 0;
+                })
+                .catch(error => {
+                    console.log('Error searching location:', error);
+                    this.locationSuggestions = [];
+                    this.showLocationSuggestions = false;
+                });
+        },
+
+        selectLocation(suggestion) {
+            document.getElementById('locationSearch').value = suggestion.display_name;
+            this.showLocationSuggestions = false;
+        },
+
+        submitSearch() {
+            this.isLoading = true;
+            this.closeMobileFilter();
+            
+            // Add loading state to button
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `
+                <svg class="w-5 h-5 mr-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span class="font-semibold">Đang tìm kiếm...</span>
+            `;
+
+            // Show loading notification
+            this.showNotification('Đang tìm kiếm phòng trọ phù hợp...', 'info');
+
+            // Reset after form submission
+            setTimeout(() => {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+                this.isLoading = false;
+            }, 2000);
+        },
+
+        showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            const bgColor = type === 'success' ? 'bg-green-500' : 
+                           type === 'error' ? 'bg-red-500' : 
+                           'bg-blue-500';
+            
+            notification.className = `fixed top-6 right-6 ${bgColor} text-white px-6 py-4 rounded-xl shadow-lg z-50 flex items-center space-x-3 transform transition-all duration-300`;
+            notification.innerHTML = `
+                <svg class="w-5 h-5 ${type === 'info' ? 'animate-spin' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    ${type === 'success' ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>' :
+                      type === 'error' ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>' :
+                      '<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>'}
+                </svg>
+                <span class="font-medium">${message}</span>
+            `;
+            
+            document.body.appendChild(notification);
+
+            // Animate in
+            setTimeout(() => notification.style.transform = 'translateX(0)', 100);
+
+            // Remove notification
+            setTimeout(() => {
+                notification.style.transform = 'translateX(100%)';
+                setTimeout(() => notification.remove(), 300);
+            }, type === 'info' ? 1500 : 3000);
+        },
+
+        saveSearch() {
+            // Enhanced save functionality with better UX
+            this.showNotification('Đã lưu tìm kiếm thành công! 💾', 'success');
+            
+            // Optional: Save to localStorage for user convenience
+            try {
+                const searchData = {
+                    vi_tri: document.querySelector('[name="vi_tri"]')?.value || '',
+                    khu_vuc: document.querySelector('[name="khu_vuc"]')?.value || '',
+                    loai_phong: document.querySelector('[name="loai_phong"]')?.value || '',
+                    gia_min: document.querySelector('[name="gia_min"]')?.value || '',
+                    gia_max: document.querySelector('[name="gia_max"]')?.value || '',
+                    dien_tich_min: document.querySelector('[name="dien_tich_min"]')?.value || '',
+                    dien_tich_max: document.querySelector('[name="dien_tich_max"]')?.value || '',
+                    timestamp: new Date().toISOString()
+                };
+                
+                const savedSearches = JSON.parse(localStorage.getItem('savedSearches') || '[]');
+                savedSearches.unshift(searchData);
+                
+                // Keep only last 5 searches
+                if (savedSearches.length > 5) savedSearches.pop();
+                
+                localStorage.setItem('savedSearches', JSON.stringify(savedSearches));
+            } catch (e) {
+                console.log('Could not save search to localStorage:', e);
+            }
+        }
+    };
+};
+
+// Location Selector Component
+window.locationSelector = function() {
+    return {
+        showDropdown: false,
+        searchText: '',
+        selectedProvince: null,
+        selectedDistrict: null,
+        selectedWard: null,
+        filteredLocations: [],
+        isInitialized: false,
+        
+        // Safe initialization
+        init() {
+            try {
+                this.initializeData();
+            } catch (error) {
+                console.error('Error initializing locationSelector:', error);
+                this.isInitialized = true; // Still mark as initialized to prevent infinite loading
+            }
+        },
+        
+        async initializeData() {
+            await this.loadProvinces();
+            this.isInitialized = true;
+        },
+        
+        provinces: [
+            {
+                code: 'HCM',
+                name: 'TP. Hồ Chí Minh',
+                districts: [
+                    {
+                        code: 'Q1',
+                        name: 'Quận 1',
+                        wards: [
+                            { code: 'P1', name: 'Phường Bến Nghé' },
+                            { code: 'P2', name: 'Phường Bến Thành' },
+                            { code: 'P3', name: 'Phường Cầu Kho' },
+                            { code: 'P4', name: 'Phường Cầu Ông Lãnh' },
+                            { code: 'P5', name: 'Phường Cô Giang' }
+                        ]
+                    },
+                    {
+                        code: 'Q3',
+                        name: 'Quận 3',
+                        wards: [
+                            { code: 'P1', name: 'Phường 1' },
+                            { code: 'P2', name: 'Phường 2' },
+                            { code: 'P3', name: 'Phường 3' },
+                            { code: 'P4', name: 'Phường 4' },
+                            { code: 'P5', name: 'Phường 5' }
+                        ]
+                    },
+                    {
+                        code: 'BT',
+                        name: 'Quận Bình Thạnh',
+                        wards: [
+                            { code: 'P1', name: 'Phường 1' },
+                            { code: 'P2', name: 'Phường 2' },
+                            { code: 'P3', name: 'Phường 3' },
+                            { code: 'P11', name: 'Phường 11' },
+                            { code: 'P12', name: 'Phường 12' }
+                        ]
+                    }
+                ]
+            },
+            {
+                code: 'HN',
+                name: 'Hà Nội',
+                districts: [
+                    {
+                        code: 'HK',
+                        name: 'Quận Hoàn Kiếm',
+                        wards: [
+                            { code: 'P1', name: 'Phường Chương Dương' },
+                            { code: 'P2', name: 'Phường Cửa Đông' },
+                            { code: 'P3', name: 'Phường Cửa Nam' },
+                            { code: 'P4', name: 'Phường Hàng Bạc' },
+                            { code: 'P5', name: 'Phường Hàng Bài' }
+                        ]
+                    },
+                    {
+                        code: 'CG',
+                        name: 'Quận Cầu Giấy',
+                        wards: [
+                            { code: 'P1', name: 'Phường Dịch Vọng' },
+                            { code: 'P2', name: 'Phường Dịch Vọng Hậu' },
+                            { code: 'P3', name: 'Phường Mai Dịch' },
+                            { code: 'P4', name: 'Phường Nghĩa Đô' },
+                            { code: 'P5', name: 'Phường Nghĩa Tân' }
+                        ]
+                    }
+                ]
+            },
+            {
+                code: 'DN',
+                name: 'Đà Nẵng',
+                districts: [
+                    {
+                        code: 'HC',
+                        name: 'Quận Hải Châu',
+                        wards: [
+                            { code: 'P1', name: 'Phường Hải Châu I' },
+                            { code: 'P2', name: 'Phường Hải Châu II' },
+                            { code: 'P3', name: 'Phường Hoà Cường Bắc' },
+                            { code: 'P4', name: 'Phường Hoà Cường Nam' },
+                            { code: 'P5', name: 'Phường Nam Dương' }
+                        ]
+                    }
+                ]
+            }
+        ],
+
+        async loadProvinces() {
+            try {
+                const response = await fetch('{% url "user_phongtro:api_provinces" %}');
+                const data = await response.json();
+                this.provinces = data.map(province => ({
+                    ...province,
+                    districts: []
+                }));
+            } catch (error) {
+                console.error('Error loading provinces:', error);
+                // Use fallback data already defined above
+            }
+        },
+
+        getDisplayText() {
+            try {
+                if (this.selectedWard && this.selectedWard.name && this.selectedDistrict && this.selectedDistrict.name && this.selectedProvince && this.selectedProvince.name) {
+                    return `${this.selectedWard.name}, ${this.selectedDistrict.name}, ${this.selectedProvince.name}`;
+                } else if (this.selectedDistrict && this.selectedDistrict.name && this.selectedProvince && this.selectedProvince.name) {
+                    return `${this.selectedDistrict.name}, ${this.selectedProvince.name}`;
+                } else if (this.selectedProvince && this.selectedProvince.name) {
+                    return this.selectedProvince.name;
+                }
+                return 'Chọn vị trí';
+            } catch (error) {
+                console.error('Error in getDisplayText:', error);
+                return 'Chọn vị trí';
+            }
+        },
+
+        getLocationValue() {
+            try {
+                if (this.selectedWard && this.selectedWard.name && this.selectedDistrict && this.selectedDistrict.name && this.selectedProvince && this.selectedProvince.name) {
+                    return `${this.selectedWard.name}, ${this.selectedDistrict.name}, ${this.selectedProvince.name}`;
+                } else if (this.selectedDistrict && this.selectedDistrict.name && this.selectedProvince && this.selectedProvince.name) {
+                    return `${this.selectedDistrict.name}, ${this.selectedProvince.name}`;
+                } else if (this.selectedProvince && this.selectedProvince.name) {
+                    return this.selectedProvince.name;
+                }
+                return '';
+            } catch (error) {
+                console.error('Error in getLocationValue:', error);
+                return '';
+            }
+        },
+
+        async selectProvince(province) {
+            this.selectedProvince = province;
+            this.selectedDistrict = null;
+            this.selectedWard = null;
+            this.searchText = '';
+            
+            // Load districts for this province
+            await this.loadDistricts(province.code);
+        },
+
+        async selectDistrict(district) {
+            this.selectedDistrict = district;
+            this.selectedWard = null;
+            this.searchText = '';
+            
+            // Load wards for this district
+            if (this.selectedProvince && this.selectedProvince.code) {
+                await this.loadWards(this.selectedProvince.code, district.code);
+            }
+        },
+
+        async loadDistricts(provinceCode) {
+            try {
+                const response = await fetch(`/phong-tro/api/districts/${provinceCode}/`);
+                const data = await response.json();
+                if (this.selectedProvince) {
+                    this.selectedProvince.districts = data.map(district => ({
+                        ...district,
+                        wards: []
+                    }));
+                }
+            } catch (error) {
+                console.error('Error loading districts:', error);
+            }
+        },
+
+        async loadWards(provinceCode, districtCode) {
+            try {
+                const response = await fetch(`/phong-tro/api/wards/${provinceCode}/${districtCode}/`);
+                const data = await response.json();
+                if (this.selectedDistrict) {
+                    this.selectedDistrict.wards = data;
+                }
+            } catch (error) {
+                console.error('Error loading wards:', error);
+            }
+        },
+
+        selectWard(ward) {
+            this.selectedWard = ward;
+            this.showDropdown = false;
+            this.searchText = '';
+        },
+
+        selectFromSearch(location) {
+            // Parse the location from search and set appropriate selections
+            if (this.provinces && Array.isArray(this.provinces)) {
+                this.selectedProvince = this.provinces.find(p => p.code === location.provinceCode) || null;
+                
+                if (location.districtCode && this.selectedProvince && this.selectedProvince.districts && Array.isArray(this.selectedProvince.districts)) {
+                    this.selectedDistrict = this.selectedProvince.districts.find(d => d.code === location.districtCode) || null;
+                } else {
+                    this.selectedDistrict = null;
+                }
+                
+                if (location.wardCode && this.selectedDistrict && this.selectedDistrict.wards && Array.isArray(this.selectedDistrict.wards)) {
+                    this.selectedWard = this.selectedDistrict.wards.find(w => w.code === location.wardCode) || null;
+                } else {
+                    this.selectedWard = null;
+                }
+            }
+            this.showDropdown = false;
+            this.searchText = '';
+        },
+
+        resetToProvinces() {
+            this.selectedProvince = null;
+            this.selectedDistrict = null;
+            this.selectedWard = null;
+            this.searchText = '';
+        },
+
+        handleSearch() {
+            if (!this.searchText || !this.provinces || !Array.isArray(this.provinces)) {
+                this.filteredLocations = [];
+                return;
+            }
+
+            const searchLower = this.searchText.toLowerCase();
+            const results = [];
+
+            this.provinces.forEach(province => {
+                if (!province || !province.name) return;
+                // Search in province name
+                if (province.name.toLowerCase().includes(searchLower)) {
+                    results.push({
+                        fullCode: province.code,
+                        name: province.name,
+                        fullPath: province.name,
+                        provinceCode: province.code,
+                        districtCode: null,
+                        wardCode: null
+                    });
+                }
+
+                // Search in districts
+                if (province.districts && Array.isArray(province.districts)) {
+                    province.districts.forEach(district => {
+                        if (district.name.toLowerCase().includes(searchLower)) {
+                            results.push({
+                                fullCode: `${province.code}-${district.code}`,
+                                name: district.name,
+                                fullPath: `${district.name}, ${province.name}`,
+                                provinceCode: province.code,
+                                districtCode: district.code,
+                                wardCode: null
+                            });
+                        }
+
+                        // Search in wards
+                        if (district.wards && Array.isArray(district.wards)) {
+                            district.wards.forEach(ward => {
+                                if (ward.name.toLowerCase().includes(searchLower)) {
+                                    results.push({
+                                        fullCode: `${province.code}-${district.code}-${ward.code}`,
+                                        name: ward.name,
+                                        fullPath: `${ward.name}, ${district.name}, ${province.name}`,
+                                        provinceCode: province.code,
+                                        districtCode: district.code,
+                                        wardCode: ward.code
+                                    });
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+
+            this.filteredLocations = results.slice(0, 10); // Limit to 10 results
+        }
+    };
+};
+
+// Function to increment contact count
+function incrementContactCount(tinDangId) {
+    fetch(`/api/tin-dang/${tinDangId}/tang-luot-lien-he/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '',
+            'Content-Type': 'application/json',
+        },
+    }).catch(error => console.log('Error updating contact count:', error));
+}
+</script>
+
+<script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+<script>
+// Wait for Alpine to be loaded
+document.addEventListener('alpine:init', () => {
+    console.log('Alpine.js is ready');
+});
+
+// Additional safety for DOM ready
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM is ready');
+});
+</script>
+
 
 <div class=" pb-16">
   <!-- Hero Section -->
@@ -81,286 +528,375 @@
   </div>
 
   <div class="max-w-screen-xl mx-auto px-6 -mt-8">
-    <!-- Search Filter Card -->
-    <div class="modern-card glass-effect p-6 mb-8 scale-in">
-      <form method="GET" class="space-y-6" id="searchForm">
-        <!-- Tất cả các bộ lọc trên 1 grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-          <!-- Khu vực -->
-          <div class="form-group-modern">
-            <label class="form-label-modern">Khu vực</label>
-            <select name="khu_vuc" class="form-input-modern">
-              <option value="">Tất cả khu vực</option>
-              {% for kv in khu_vucs %}
-                <option value="{{ kv.MA_KHU_VUC }}" {% if filters.khu_vuc == kv.MA_KHU_VUC|stringformat:"s" %}selected{% endif %}>
-                  {{ kv.TEN_KHU_VUC }} - {{ kv.MA_NHA_TRO.TEN_NHA_TRO }}
-                </option>
-              {% endfor %}
-            </select>
-          </div>
-
-          <!-- Loại phòng -->
-          <div class="form-group-modern">
-            <label class="form-label-modern">Loại phòng</label>
-            <select name="loai_phong" class="form-input-modern">
-              <option value="">Tất cả loại phòng</option>
-              {% for lp in loai_phongs %}
-                <option value="{{ lp.MA_LOAI_PHONG }}" {% if filters.loai_phong == lp.MA_LOAI_PHONG|stringformat:"s" %}selected{% endif %}>
-                  {{ lp.TEN_LOAI_PHONG }}
-                </option>
-              {% endfor %}
-            </select>
-          </div>
-
-          <div x-data="{ 
-              priceDropdownOpen: false,
-              minPrice: {{ filters.gia_min|default:500000 }}, 
-              maxPrice: {{ filters.gia_max|default:15000000 }},
-              tempMinPrice: {{ filters.gia_min|default:500000 }}, 
-              tempMaxPrice: {{ filters.gia_max|default:15000000 }},
-              minLimit: 500000,
-              maxLimit: 15000000,
-              formatShort: function(value) {
-                if (value >= 1000000) {
-                  return (value / 1000000).toFixed(value % 1000000 === 0 ? 0 : 1) + 'M';
-                } else if (value >= 1000) {
-                  return (value / 1000).toFixed(value % 1000 === 0 ? 0 : 0) + 'K';
-                } else {
-                  return value.toString();
-                }
-              },
-              applyPrices() {
-                this.minPrice = this.tempMinPrice;
-                this.maxPrice = this.tempMaxPrice;
-                this.priceDropdownOpen = false;
-              },
-              resetPrices() {
-                this.tempMinPrice = this.minLimit;
-                this.tempMaxPrice = this.maxLimit;
-              }
-            }" class="relative">
-            <label class="form-label-modern">Khoảng giá</label>
-            
-            <!-- Input hiển thị giá được chọn -->
-            <div @click="priceDropdownOpen = !priceDropdownOpen"
-                 class="form-input-modern cursor-pointer flex items-center justify-between"
-                 tabindex="0">
-              <span x-text="`${formatShort(minPrice)} - ${formatShort(maxPrice)}`" class="text-gray-700"></span>
-              <svg class="w-4 h-4 text-gray-400 transition-transform duration-200" 
-                   :class="{'rotate-180': priceDropdownOpen}"
-                   fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-              </svg>
-            </div>
-            
-            <!-- Dropdown Panel -->
-            <div x-show="priceDropdownOpen" 
-                 x-transition
-                 @click.outside="priceDropdownOpen = false"
-                 class="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-xl z-30 p-4"
-                 style="display: none;">
-              
-              <!-- Input giá thấp nhất và cao nhất -->
-              <div class="mb-4 grid grid-cols-2 gap-3">
-                <div>
-                  <label class="block text-xs font-medium text-gray-600 mb-1">Giá thấp nhất</label>
-                  <input type="number" 
-                         x-model.number="tempMinPrice"
-                         :min="minLimit" 
-                         :max="tempMaxPrice"
-                         step="100000"
-                         class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                </div>
-                <div>
-                  <label class="block text-xs font-medium text-gray-600 mb-1">Giá cao nhất</label>
-                  <input type="number" 
-                         x-model.number="tempMaxPrice"
-                         :min="tempMinPrice" 
-                         :max="maxLimit"
-                         step="100000"
-                         class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                </div>
-              </div>
-              
-              <!-- Range Slider -->
-              <div class="mb-4">
-                <div class="relative">
-                  <div class="h-2 bg-gray-200 rounded-full relative overflow-hidden">
-                    <div class="absolute h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full transition-all duration-300" 
-                         :style="`left: ${((tempMinPrice - minLimit) / (maxLimit - minLimit)) * 100}%; 
-                                 width: ${((tempMaxPrice - tempMinPrice) / (maxLimit - minLimit)) * 100}%`"></div>
-                  </div>
-                  
-                  <input type="range" 
-                         x-model.number="tempMinPrice"
-                         :min="minLimit" 
-                         :max="maxLimit" 
-                         step="100000"
-                         class="absolute w-full h-2 bg-transparent appearance-none cursor-pointer slider-input"
-                         style="pointer-events: auto;">
-                  
-                  <input type="range" 
-                         x-model.number="tempMaxPrice"
-                         :min="minLimit" 
-                         :max="maxLimit" 
-                         step="100000"
-                         class="absolute w-full h-2 bg-transparent appearance-none cursor-pointer slider-input"
-                         style="pointer-events: auto;">
-                </div>
-              </div>
-              
-              <!-- Action Buttons -->
-              <div class="flex justify-between space-x-2">
-                <button type="button" 
-                        @click="resetPrices()"
-                        class="px-3 py-1 text-xs text-gray-600 bg-gray-100 rounded transition-colors">
-                  Xóa bỏ
-                </button>
-                <button type="button" 
-                        @click="applyPrices()"
-                        class="px-4 py-1 text-xs bg-blue-600 text-white font-medium rounded transition-colors">
-                  Áp dụng
-                </button>
-              </div>
-            </div>
-            
-            <!-- Hidden inputs -->
-            <input type="hidden" name="gia_min" :value="minPrice">
-            <input type="hidden" name="gia_max" :value="maxPrice">
-          </div>
-
-          <!-- Diện tích -->
-          <div>
-            <label class="form-label-modern">Diện tích (m²)</label>
-            <div class="flex space-x-2">
-              <input type="number" 
-                     name="dien_tich_min" 
-                     value="{{ filters.dien_tich_min }}" 
-                     placeholder="Từ" 
-                     min="0" 
-                     step="1"
-                     class="flex-1 form-input-modern">
-              <span class="flex items-center text-gray-500">-</span>
-              <input type="number" 
-                     name="dien_tich_max" 
-                     value="{{ filters.dien_tich_max }}" 
-                     placeholder="Đến" 
-                     min="0" 
-                     step="1"
-                     class="flex-1 form-input-modern">
-            </div>
-          </div>
-
-          <!-- Nút tìm kiếm -->
-          <div class="flex items-end">
-            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-300 flex items-center justify-center">
-              <i class="fas fa-search mr-2"></i>
-              Tìm kiếm
-            </button>
-          </div>
-        </div>
-      </form>
+    <!-- Modern Filter Section -->
+    <div class="animate-slide-up">
+  <form method="GET" class="max-w-7xl mx-auto p-6 bg-white rounded-2xl shadow-lg" id="searchForm" x-data="window.searchForm()">
+    <!-- Filter Header -->
+    <div class="flex items-center justify-between mb-6">
+      <h3 class="text-xl font-semibold text-gray-900 flex items-center">
+        <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+        </svg>
+        Bộ lọc tìm kiếm thông minh
+      </h3>
+      <button type="button" class="md:hidden flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors" @click="toggleMobileFilter()">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h18M3 12h18m-7 8h7"></path>
+        </svg>
+        Lọc
+      </button>
     </div>
 
-    <!-- Results Header -->
-    <div class="flex justify-between items-center mb-6">
-      <h2 class="text-2xl font-bold text-gray-800">
-        Tìm thấy {{ total_phongs }} phòng trọ
-      </h2>
-      
-      <!-- Clear filters if any are active -->
-      {% if filters.khu_vuc or filters.loai_phong or filters.gia_min or filters.gia_max or filters.dien_tich_min or filters.dien_tich_max %}
-        <a href="{% url 'user_phongtro:tim_phong' %}" class="text-blue-600 hover:text-blue-800 font-medium">
-          <i class="fas fa-times mr-1"></i>
-          Xóa bộ lọc
+    <!-- Filter Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" :class="{'hidden md:grid': !showMobileFilter}">
+      <!-- Location Search -->
+      <div class="relative" x-data="window.locationSelector()">
+        <label class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+          <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+          </svg>
+          Vị trí
+        </label>
+        <button type="button" @click="showDropdown = !showDropdown" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-left text-sm text-gray-700 flex items-center justify-between hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all">
+          <span x-text="getDisplayText()"></span>
+          <svg class="w-4 h-4 text-gray-500" :class="{'rotate-180': showDropdown}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+          </svg>
+        </button>
+        <div x-show="showDropdown" x-transition @click.outside="showDropdown = false" class="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-xl z-50 max-h-[20rem] overflow-hidden">
+          <div class="p-3 border-b border-gray-100">
+            <input type="text" x-model="searchText" @input="handleSearch()" placeholder="Tìm kiếm tỉnh, quận, phường..." class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+          </div>
+          <div x-show="selectedProvince || selectedDistrict" class="p-2 bg-gray-50 border-b border-gray-100">
+            <div class="flex items-center space-x-2 text-xs text-gray-600">
+              <button type="button" @click="resetToProvinces()" class="hover:text-blue-600">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                </svg>
+              </button>
+              <template x-if="selectedProvince">
+                <span>
+                  <span x-text="selectedProvince.name"></span>
+                  <template x-if="selectedDistrict">
+                    <span> → <span x-text="selectedDistrict.name"></span></span>
+                  </template>
+                </span>
+              </template>
+            </div>
+          </div>
+          <div class="max-h-[15rem] overflow-y-auto">
+            <div x-show="!isInitialized" class="p-4 text-center text-gray-500 text-sm">
+              <svg class="w-6 h-6 mx-auto mb-2 animate-spin text-blue-500" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Đang tải dữ liệu...
+            </div>
+            <div x-show="!selectedProvince && !searchText && isInitialized" class="divide-y divide-gray-100">
+              <div class="p-2 bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wide">
+                Chọn Tỉnh/Thành phố
+              </div>
+              <template x-for="province in provinces" :key="province.code">
+                <div @click="selectProvince(province)" class="px-3 py-2 hover:bg-blue-50 cursor-pointer text-sm flex items-center">
+                  <svg class="w-4 h-4 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                  </svg>
+                  <span x-text="province.name"></span>
+                </div>
+              </template>
+            </div>
+            <div x-show="selectedProvince && selectedProvince.districts && !selectedDistrict && !searchText" class="divide-y divide-gray-100">
+              <div class="p-2 bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wide">
+                Chọn Quận/Huyện
+              </div>
+              <template x-for="district in (selectedProvince && selectedProvince.districts ? selectedProvince.districts : [])" :key="district.code">
+                <div @click="selectDistrict(district)" class="px-3 py-2 hover:bg-blue-50 cursor-pointer text-sm flex items-center">
+                  <svg class="w-4 h-4 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                  </svg>
+                  <span x-text="district.name"></span>
+                </div>
+              </template>
+            </div>
+            <div x-show="selectedDistrict && selectedDistrict.wards && !searchText" class="divide-y divide-gray-100">
+              <div class="p-2 bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wide">
+                Chọn Phường/Xã
+              </div>
+              <template x-for="ward in (selectedDistrict && selectedDistrict.wards ? selectedDistrict.wards : [])" :key="ward.code">
+                <div @click="selectWard(ward)" class="px-3 py-2 hover:bg-blue-50 cursor-pointer text-sm flex items-center">
+                  <svg class="w-4 h-4 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2v2z"></path>
+                  </svg>
+                  <span x-text="ward.name"></span>
+                </div>
+              </template>
+            </div>
+            <div x-show="searchText && filteredLocations.length > 0" class="divide-y divide-gray-100">
+              <div class="p-2 bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wide">
+                Kết quả tìm kiếm
+              </div>
+              <template x-for="location in filteredLocations" :key="location.fullCode">
+                <div @click="selectFromSearch(location)" class="px-3 py-2 hover:bg-blue-50 cursor-pointer text-sm">
+                  <div class="flex items-center">
+                    <svg class="w-4 h-4 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    <div>
+                      <div class="font-medium" x-text="location.name"></div>
+                      <div class="text-xs text-gray-500" x-text="location.fullPath"></div>
+                    </div>
+                  </div>
+                </div>
+              </template>
+            </div>
+            <div x-show="searchText && filteredLocations.length === 0" class="p-4 text-center text-gray-500 text-sm">
+              <svg class="w-8 h-8 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+              </svg>
+              Không tìm thấy kết quả
+            </div>
+          </div>
+        </div>
+        <input type="hidden" name="vi_tri" :value="getLocationValue()">
+      </div>
+
+      <!-- Price Range Dropdown -->
+      <div class="relative" x-data="{ showDropdown: false }">
+        <label class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+          <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+          </svg>
+          Mức giá
+        </label>
+        <button type="button" @click="showDropdown = !showDropdown" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-left text-sm text-gray-700 flex items-center justify-between hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all">
+          <span><span id="priceDisplayMin">{{ filters.gia_min|default:"500K" }}</span> - <span id="priceDisplayMax">{{ filters.gia_max|default:"15M" }}</span></span>
+          <svg class="w-4 h-4 text-gray-500" :class="{'rotate-180': showDropdown}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+          </svg>
+        </button>
+        <div x-show="showDropdown" x-transition @click.outside="showDropdown = false" class="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-xl z-40 p-4">
+          <div class="space-y-4">
+            <div class="flex justify-between text-xs text-gray-600">
+              <span>Từ: <span id="priceMin" class="font-medium">{{ filters.gia_min|default:"500K" }}</span></span>
+              <span>Đến: <span id="priceMax" class="font-medium">{{ filters.gia_max|default:"15M" }}</span></span>
+            </div>
+            <div id="priceSlider" class="mb-3"></div>
+            <div class="flex justify-between text-xs text-gray-500">
+              <span>500K</span>
+              <span>15M+</span>
+            </div>
+          </div>
+          <input type="hidden" name="gia_min" id="priceMinInput" value="{{ filters.gia_min|default:'500000' }}">
+          <input type="hidden" name="gia_max" id="priceMaxInput" value="{{ filters.gia_max|default:'15000000' }}">
+        </div>
+      </div>
+
+      <!-- Area Dropdown -->
+      <div class="relative" x-data="{ showDropdown: false }">
+        <label class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+          <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
+          </svg>
+          Diện tích
+        </label>
+        <button type="button" @click="showDropdown = !showDropdown" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-left text-sm text-gray-700 flex items-center justify-between hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all">
+          <span>Chọn diện tích</span>
+          <svg class="w-4 h-4 text-gray-500" :class="{'rotate-180': showDropdown}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+          </svg>
+        </button>
+        <div x-show="showDropdown" x-transition @click.outside="showDropdown = false" class="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-xl z-40 p-3">
+          <div class="space-y-2">
+            <input type="number" name="dien_tich_min" value="{{ filters.dien_tich_min }}" placeholder="Tối thiểu (m²)" min="0" step="1" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+            <input type="number" name="dien_tich_max" value="{{ filters.dien_tich_max }}" placeholder="Tối đa (m²)" min="0" step="1" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+          </div>
+        </div>
+      </div>
+
+      <!-- Room Type Selection -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+          <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+          </svg>
+          Loại phòng
+        </label>
+        <select name="loai_phong" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-sm text-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+          <option value="">Tất cả loại phòng</option>
+          {% for lp in loai_phongs %}
+            <option value="{{ lp.MA_LOAI_PHONG }}" {% if filters.loai_phong == lp.MA_LOAI_PHONG|stringformat:"s" %}selected{% endif %}>
+              {{ lp.TEN_LOAI_PHONG }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="mt-6 flex flex-col sm:flex-row gap-3">
+      <button type="submit" form="searchForm" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center" @click="submitSearch()">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+        </svg>
+        Tìm kiếm ngay
+      </button>
+      {% if filters.khu_vuc or filters.loai_phong or filters.gia_min or filters.gia_max or filters.dien_tich_min or filters.dien_tich_max or filters.vi_tri %}
+        <a href="{% url 'user_phongtro:tim_phong' %}" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0H11"></path>
+          </svg>
+          Đặt lại bộ lọc
         </a>
+      {% endif %}
+      <button type="button" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center" @click="saveSearch()">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+        </svg>
+        Lưu tìm kiếm
+      </button>
+    </div>
+  </form>
+</div>
+
+
+    <!-- Modern Results Header -->
+    <div class="modern-card slide-up" style="animation-delay: 0.4s;">
+      <div class="modern-card-body">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+            <svg class="w-6 h-6 mr-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            Tìm thấy {{ total_phongs }} phòng trọ
+          </h2>
+          {% if filters.khu_vuc or filters.loai_phong or filters.gia_min or filters.gia_max or filters.dien_tich_min or filters.dien_tich_max or filters.vi_tri %}
+            <p class="text-sm text-gray-600 mt-1">
+              Kết quả đã được lọc theo tiêu chí tìm kiếm
+            </p>
+          {% endif %}
+        </div>
+        
+        <!-- Sort Options -->
+        <div class="flex items-center gap-3">
+          <label class="text-sm font-medium text-gray-700">Sắp xếp:</label>
+          <select name="sort" class="form-select rounded-lg border-gray-300 text-sm" onchange="this.form.submit()">
+            <option value="">Mặc định</option>
+            <option value="price_asc" {% if request.GET.sort == 'price_asc' %}selected{% endif %}>Giá tăng dần</option>
+            <option value="price_desc" {% if request.GET.sort == 'price_desc' %}selected{% endif %}>Giá giảm dần</option>
+            <option value="area_desc" {% if request.GET.sort == 'area_desc' %}selected{% endif %}>Diện tích lớn nhất</option>
+            <option value="newest" {% if request.GET.sort == 'newest' %}selected{% endif %}>Mới nhất</option>
+          </select>
+        </div>
+      </div>
+      
+      <!-- Active Filters Display -->
+      {% if filters.khu_vuc or filters.loai_phong or filters.gia_min or filters.gia_max or filters.dien_tich_min or filters.dien_tich_max or filters.vi_tri %}
+        <div class="mt-4 pt-4 border-t border-gray-200">
+          <p class="text-sm text-gray-600 mb-2">Bộ lọc đang áp dụng:</p>
+          <div class="flex flex-wrap gap-2">
+            {% if filters.vi_tri %}
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
+                </svg>
+                {{ filters.vi_tri }}
+              </span>
+            {% endif %}
+            {% if filters.gia_min or filters.gia_max %}
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z"></path>
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clip-rule="evenodd"></path>
+                </svg>
+                {{ filters.gia_min|default:"500K"|floatformat:0 }} - {{ filters.gia_max|default:"15M"|floatformat:0 }}
+              </span>
+            {% endif %}
+            <a href="{% url 'user_phongtro:tim_phong' %}" 
+               class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 hover:bg-red-200 transition-colors">
+              <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+              </svg>
+              Xóa tất cả
+            </a>
+          </div>
+        </div>
       {% endif %}
     </div>
 
-    <!-- Main Container -->
-<div class="flex flex-col lg:flex-row gap-6 p-6">
-  <!-- Room List (70% width) -->
-  <div class="w-full lg:w-2/3">
-    <div class="space-y-6">
+    <!-- Main Container: 70% Room List + 30% Sidebar Filter -->
+
+    <div class="max-w-screen-xl mx-auto px-6">
+  
+      <div class="flex flex-col lg:flex-row gap-8">
+    <!-- Room List (70% width) -->
+    <div class="w-full lg:w-2/3">
+      <div class="space-y-4">
       {% for tin_dang in page_obj %}
-        <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col sm:flex-row">
-          <!-- Room Image -->
-          <div class="sm:w-1/3 h-48 relative overflow-hidden">
-            {% if tin_dang.hinh_anh_dai_dien %}
-              <img src="{{ tin_dang.hinh_anh_dai_dien.HINH_ANH.url }}" 
-                   alt="{{ tin_dang.MA_PHONG.TEN_PHONG }}"
-                   class="w-full h-full object-cover">
-            {% else %}
-              <div class="w-full h-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white">
-                <i class="fas fa-home text-4xl opacity-50"></i>
-              </div>
-            {% endif %}
-            
-            <!-- Status Badge -->
-            <div class="absolute top-3 left-3">
-              <span class="px-3 py-1 rounded-full text-xs font-semibold bg-green-500 text-white">
-                <i class="fas fa-eye mr-1"></i>
+        <div class="bg-white shadow rounded-lg p-4 hover:shadow-md transition-shadow duration-200">
+          <div class="flex items-start gap-4">
+            <!-- Room Image -->
+            <div class="flex-shrink-0 relative">
+              {% if tin_dang.hinh_anh_dai_dien %}
+                <img src="{{ tin_dang.hinh_anh_dai_dien.HINH_ANH.url }}" 
+                     alt="{{ tin_dang.MA_PHONG.TEN_PHONG }}"
+                     class="w-24 h-20 object-cover rounded-lg">
+                {% if tin_dang.hinh_anh.all|length > 1 %}
+                  <div class="absolute top-1 right-1 bg-black bg-opacity-50 text-white text-xs px-1 rounded">
+                    +{{ tin_dang.hinh_anh.all|length|add:"-1" }}
+                  </div>
+                {% endif %}
+              {% else %}
+                <div class="w-24 h-20 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center">
+                  <i class="fas fa-home text-white text-xl opacity-70"></i>
+                </div>
+              {% endif %}
+            </div>
+
+            <!-- Room Details -->
+            <div class="flex-1 min-w-0">
+              <!-- Status Badge -->
+              <span class="inline-flex items-center px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full mb-2">
+                <i class="fas fa-check-circle mr-1"></i>
                 Đang cho thuê
               </span>
-            </div>
-          </div>
-
-          <!-- Room Details -->
-          <div class="sm:w-2/3 p-4">
-            <div class="flex flex-col h-full">
-              <!-- Room Title -->
-              <h3 class="font-bold text-lg text-gray-800 mb-2 hover:text-blue-600 transition-colors">
-                {{ tin_dang.MA_PHONG.TEN_PHONG }}
+              
+              <!-- Title -->
+              <h3 class="text-gray-800 font-medium mb-1 hover:text-blue-600 transition-colors">
+                <a href="{% url 'user_phongtro:chi_tiet_phong' tin_dang.MA_PHONG.MA_PHONG %}">
+                  {{ tin_dang.TIEU_DE|default:tin_dang.MA_PHONG.TEN_PHONG }}
+                </a>
               </h3>
-
+              
               <!-- Location -->
-              <p class="text-gray-600 text-sm mb-3 flex items-center">
-                <i class="fas fa-map-marker-alt mr-2 text-blue-500"></i>
+              <p class="text-blue-500 text-sm mb-2">
                 {{ tin_dang.MA_PHONG.MA_KHU_VUC.TEN_KHU_VUC }}, {{ tin_dang.MA_PHONG.MA_KHU_VUC.MA_NHA_TRO.TEN_NHA_TRO }}
               </p>
-
-              <!-- Room Details -->
-              <div class="space-y-2 text-sm text-gray-600 mb-4">
-                <div class="flex justify-between">
-                  <span>Loại phòng:</span>
-                  <span class="font-medium">{{ tin_dang.MA_PHONG.MA_LOAI_PHONG.TEN_LOAI_PHONG|default:"Chưa phân loại" }}</span>
-                </div>
-                <div class="flex justify-between">
-                  <span>Diện tích:</span>
-                  <span class="font-medium">{{ tin_dang.MA_PHONG.DIEN_TICH|default:"N/A" }} m²</span>
-                </div>
-                <div class="flex justify-between">
-                  <span>Sức chứa:</span>
-                  <span class="font-medium">{{ tin_dang.MA_PHONG.SO_NGUOI_TOI_DA|default:"N/A" }} người</span>
-                </div>
-                <div class="flex justify-between">
-                  <span>Lượt xem:</span>
-                  <span class="font-medium text-blue-600">{{ tin_dang.LUOT_XEM }}</span>
-                </div>
-              </div>
-
-              <!-- Contact Info -->
-              <div class="bg-blue-50 rounded-lg p-3 mb-4">
-                <div class="flex items-center text-sm text-gray-700">
-                  <i class="fas fa-phone text-green-500 mr-2"></i>
-                  <span class="font-medium">{{ tin_dang.SDT_LIEN_HE }}</span>
-                </div>
-                {% if tin_dang.EMAIL_LIEN_HE %}
-                <div class="flex items-center text-sm text-gray-700 mt-1">
-                  <i class="fas fa-envelope text-blue-500 mr-2"></i>
-                  <span>{{ tin_dang.EMAIL_LIEN_HE }}</span>
-                </div>
+              
+              <!-- Room Specs -->
+              <div class="flex items-center space-x-3 text-sm text-gray-600 mb-2">
+                {% if tin_dang.MA_PHONG.MA_LOAI_PHONG %}
+                  <span><i class="fas fa-tag mr-1"></i>{{ tin_dang.MA_PHONG.MA_LOAI_PHONG.TEN_LOAI_PHONG }}</span>
+                {% endif %}
+                {% if tin_dang.MA_PHONG.DIEN_TICH %}
+                  <span><i class="fas fa-expand mr-1"></i>{{ tin_dang.MA_PHONG.DIEN_TICH }} m²</span>
                 {% endif %}
               </div>
-
+              
+              <!-- Contact Info -->
+              <div class="flex items-center text-sm text-gray-700 mb-2">
+                <i class="fas fa-phone text-green-500 mr-2"></i>
+                <span class="font-medium">{{ tin_dang.SDT_LIEN_HE }}</span>
+              </div>
+              
               <!-- Price -->
-              <div class="text-2xl font-bold text-blue-600 mb-4">
+              <p class="text-xl font-bold text-blue-600 mb-3">
                 {{ tin_dang.MA_PHONG.GIA_PHONG|currency_vn }}
                 <span class="text-sm font-normal text-gray-500">/tháng</span>
-              </div>
-
+              </p>
+              
               <!-- Action Buttons -->
-              <div class="flex space-x-2 mt-auto">
+              <div class="flex space-x-2">
                 <a href="{% url 'user_phongtro:chi_tiet_phong' tin_dang.MA_PHONG.MA_PHONG %}" 
                    class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-center py-2 px-3 rounded-lg transition duration-300 text-sm font-medium">
                   Chi tiết
@@ -388,86 +924,106 @@
   </div>
 
   <!-- Filter Section (30% width) -->
-  <div class="w-full lg:w-1/3 bg-white rounded-xl shadow-lg p-6 sticky top-6">
-    <h3 class="text-lg font-bold text-gray-800 mb-4">Bộ lọc tìm kiếm</h3>
+  <div class="w-full lg:w-1/3 bg-white shadow p-3 h-fit sticky top-4">
+    <h3 class="text-lg font-bold text-gray-800 mb-2">Bộ lọc tìm kiếm</h3>
     <form method="GET" action="{% url 'user_phongtro:tim_phong' %}">
       <!-- Price Filter -->
-      <div class="mb-6">
-        <label class="block text-sm font-medium text-gray-700 mb-2">Khoảng giá</label>
-        <div class="space-y-2">
-          <label class="flex items-center">
-            <input type="checkbox" name="gia_phong" value="0-2000000" class="mr-2 accent-blue-600">
-            <span>Dưới 2 triệu</span>
+      <div class="mb-4 p-2 bg-gray-50 rounded">
+        <label class="block text-sm font-semibold text-gray-700 mb-1">
+          <i class="fas fa-money-bill-wave mr-1 text-green-500"></i>
+          Khoảng giá
+        </label>
+        <div class="space-y-1">
+          <label class="flex items-center p-1">
+            <input type="checkbox" name="gia_phong" value="0-2000000" class="mr-2 accent-blue-600 w-4 h-4">
+            <span class="text-sm">Dưới 2 triệu</span>
           </label>
-          <label class="flex items-center">
-            <input type="checkbox" name="gia_phong" value="2000000-3000000" class="mr-2 accent-blue-600">
-            <span>2 - 3 triệu</span>
+          <label class="flex items-center p-1">
+            <input type="checkbox" name="gia_phong" value="2000000-3000000" class="mr-2 accent-blue-600 w-4 h-4">
+            <span class="text-sm">2 - 3 triệu</span>
           </label>
-          <label class="flex items-center">
-            <input type="checkbox" name="gia_phong" value="3000000-5000000" class="mr-2 accent-blue-600">
-            <span>3 - 5 triệu</span>
+          <label class="flex items-center p-1">
+            <input type="checkbox" name="gia_phong" value="3000000-5000000" class="mr-2 accent-blue-600 w-4 h-4">
+            <span class="text-sm">3 - 5 triệu</span>
           </label>
-          <label class="flex items-center">
-            <input type="checkbox" name="gia_phong" value="5000000-10000000" class="mr-2 accent-blue-600">
-            <span>5 - 10 triệu</span>
+          <label class="flex items-center p-1">
+            <input type="checkbox" name="gia_phong" value="5000000-10000000" class="mr-2 accent-blue-600 w-4 h-4">
+            <span class="text-sm">5 - 10 triệu</span>
           </label>
         </div>
       </div>
 
       <!-- Area Filter -->
-      <div class="mb-6">
-        <label class="block text-sm font-medium text-gray-700 mb-2">Diện tích</label>
-        <div class="space-y-2">
-          <label class="flex items-center">
-            <input type="checkbox" name="dien_tich" value="0-20" class="mr-2 accent-blue-600">
-            <span>Dưới 20 m²</span>
+      <div class="mb-4 p-2 bg-gray-50 rounded">
+        <label class="block text-sm font-semibold text-gray-700 mb-1">
+          <i class="fas fa-expand-arrows-alt mr-1 text-blue-500"></i>
+          Diện tích
+        </label>
+        <div class="space-y-1">
+          <label class="flex items-center p-1">
+            <input type="checkbox" name="dien_tich" value="0-20" class="mr-2 accent-blue-600 w-4 h-4">
+            <span class="text-sm">Dưới 20 m²</span>
           </label>
-          <label class="flex items-center">
-            <input type="checkbox" name="dien_tich" value="20-30" class="mr-2 accent-blue-600">
-            <span>20 - 30 m²</span>
+          <label class="flex items-center p-1">
+            <input type="checkbox" name="dien_tich" value="20-30" class="mr-2 accent-blue-600 w-4 h-4">
+            <span class="text-sm">20 - 30 m²</span>
           </label>
-          <label class="flex items-center">
-            <input type="checkbox" name="dien_tich" value="30-50" class="mr-2 accent-blue-600">
-            <span>30 - 50 m²</span>
+          <label class="flex items-center p-1">
+            <input type="checkbox" name="dien_tich" value="30-50" class="mr-2 accent-blue-600 w-4 h-4">
+            <span class="text-sm">30 - 50 m²</span>
           </label>
-          <label class="flex items-center">
-            <input type="checkbox" name="dien_tich" value="50-100" class="mr-2 accent-blue-600">
-            <span>50 - 100 m²</span>
+          <label class="flex items-center p-1">
+            <input type="checkbox" name="dien_tich" value="50-100" class="mr-2 accent-blue-600 w-4 h-4">
+            <span class="text-sm">50 - 100 m²</span>
           </label>
         </div>
       </div>
 
       <!-- Apply Filters Button -->
-      <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition duration-300">
-        Áp dụng bộ lọc
-      </button>
-      <!-- Reset Filters Link -->
-      <a href="{% url 'user_phongtro:tim_phong' %}" class="block text-center text-blue-600 hover:text-blue-800 text-sm mt-4">
-        Xóa tất cả bộ lọc
-      </a>
+      <div class="flex space-x-2 mt-2">
+        <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-2 rounded transition-all duration-300 font-medium text-sm">
+          <i class="fas fa-search mr-1"></i>
+          Tìm kiếm
+        </button>
+        <a href="{% url 'user_phongtro:tim_phong' %}" class="bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-2 rounded transition-all duration-300 font-medium text-center text-sm">
+          <i class="fas fa-undo mr-1"></i>
+          Reset
+        </a>
+      </div>
     </form>
+    
+    <!-- Additional Info -->
+    <div class="mt-3 p-2 bg-blue-50 border border-blue-100 rounded">
+      <div class="flex items-start">
+        <i class="fas fa-info-circle text-blue-500 mr-1 mt-0.5"></i>
+        <div class="text-sm text-blue-800">
+          <p class="font-medium mb-0.5">Mẹo tìm kiếm</p>
+          <p>Sử dụng bộ lọc để tìm phòng phù hợp nhất với nhu cầu của bạn.</p>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
     <!-- Pagination -->
     {% if page_obj.has_other_pages %}
-      <div class="flex justify-center">
-        <nav class="inline-flex rounded-md shadow">
+      <div class="flex justify-center mt-4">
+        <nav class="inline-flex shadow">
           {% if page_obj.has_previous %}
             <a href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
-               class="px-3 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+               class="px-2 py-1 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
               <i class="fas fa-chevron-left"></i>
             </a>
           {% endif %}
 
           {% for num in page_obj.paginator.page_range %}
             {% if page_obj.number == num %}
-              <span class="px-3 py-2 border border-gray-300 bg-blue-600 text-sm font-medium text-white">
+              <span class="px-2 py-1 border border-gray-300 bg-blue-600 text-sm font-medium text-white">
                 {{ num }}
               </span>
             {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
               <a href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
-                 class="px-3 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                 class="px-2 py-1 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                 {{ num }}
               </a>
             {% endif %}
@@ -475,7 +1031,7 @@
 
           {% if page_obj.has_next %}
             <a href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
-               class="px-3 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+               class="px-2 py-1 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
               <i class="fas fa-chevron-right"></i>
             </a>
           {% endif %}
@@ -503,15 +1059,77 @@
 </div>
 
 <script>
-// Function to increment contact count
-function incrementContactCount(tinDangId) {
-    fetch(`/api/tin-dang/${tinDangId}/tang-luot-lien-he/`, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '',
-            'Content-Type': 'application/json',
+$(document).ready(function() {
+    // Initialize Select2 for dropdowns
+    $('#areaSelect, #roomTypeSelect').select2({
+        width: '100%',
+        placeholder: function() {
+            return $(this).data('placeholder');
         },
-    }).catch(error => console.log('Error updating contact count:', error));
-}
+        allowClear: true
+    });
+
+    // Initialize noUiSlider for price range
+    const priceSlider = document.getElementById('priceSlider');
+    const minPriceInput = document.getElementById('priceMinInput');
+    const maxPriceInput = document.getElementById('priceMaxInput');
+    const priceMinDisplay = document.getElementById('priceMin');
+    const priceMaxDisplay = document.getElementById('priceMax');
+
+    if (priceSlider) {
+        noUiSlider.create(priceSlider, {
+            start: [
+                parseInt(minPriceInput.value) || 500000,
+                parseInt(maxPriceInput.value) || 15000000
+            ],
+            connect: true,
+            range: {
+                'min': 500000,
+                'max': 15000000
+            },
+            step: 100000,
+            tooltips: [
+                {
+                    to: function(value) {
+                        return formatCurrency(value);
+                    }
+                },
+                {
+                    to: function(value) {
+                        return formatCurrency(value);
+                    }
+                }
+            ]
+        });
+
+        // Update inputs when slider changes
+        priceSlider.noUiSlider.on('update', function(values, handle) {
+            const value = parseInt(values[handle]);
+            if (handle === 0) {
+                minPriceInput.value = value;
+                priceMinDisplay.textContent = formatCurrency(value);
+                document.getElementById('priceDisplayMin').textContent = formatCurrency(value);
+            } else {
+                maxPriceInput.value = value;
+                priceMaxDisplay.textContent = formatCurrency(value);
+                document.getElementById('priceDisplayMax').textContent = formatCurrency(value);
+            }
+        });
+    }
+
+    // Enhanced currency formatting helper
+    function formatCurrency(value) {
+        if (value >= 1000000) {
+            const millions = value / 1000000;
+            return millions % 1 === 0 ? 
+                millions.toFixed(0) + 'M' : 
+                millions.toFixed(1) + 'M';
+        } else if (value >= 1000) {
+            return (value / 1000).toFixed(0) + 'K';
+        } else {
+            return value.toLocaleString('vi-VN');
+        }
+    }
+});
 </script>
 {% endblock %}

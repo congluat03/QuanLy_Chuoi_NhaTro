@@ -32,19 +32,31 @@ def ghi_so_dich_vu(request):
         return luu_chi_so_dich_vu(request)
 
 def lay_phong_theo_khu_vuc(request):
-    """AJAX - Lấy danh sách phòng theo khu vực."""
+    """AJAX - Lấy danh sách phòng theo khu vực - Hybrid approach: qua hợp đồng nhưng group theo phòng."""
     khu_vuc_id = request.GET.get('khu_vuc_id')
     if not khu_vuc_id:
         return JsonResponse({'error': 'Thiếu mã khu vực'}, status=400)
     
     try:
         from apps.hopdong.models import HopDong
-        phong_tros = PhongTro.objects.filter(
-            MA_KHU_VUC_id=khu_vuc_id,
-            hopdong__TRANG_THAI_HD='Đang hoạt động'
-        ).distinct().values('MA_PHONG', 'TEN_PHONG')
         
-        phong_list = list(phong_tros)
+        # HYBRID APPROACH: Lấy phòng từ hợp đồng có hiệu lực và group theo MA_PHONG
+        hop_dong_qs = HopDong.objects.filter(
+            MA_PHONG__MA_KHU_VUC_id=khu_vuc_id,
+            TRANG_THAI_HD='Đang hoạt động'
+        ).select_related('MA_PHONG')
+        
+        # Group theo MA_PHONG để tránh trùng lặp
+        phong_dict = {}
+        for hop_dong in hop_dong_qs.values('MA_PHONG_id', 'MA_PHONG__TEN_PHONG'):
+            ma_phong = hop_dong['MA_PHONG_id']
+            if ma_phong not in phong_dict:
+                phong_dict[ma_phong] = {
+                    'MA_PHONG': ma_phong,
+                    'TEN_PHONG': hop_dong['MA_PHONG__TEN_PHONG']
+                }
+        
+        phong_list = list(phong_dict.values())
         return JsonResponse({'phong_tros': phong_list})
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
@@ -73,7 +85,7 @@ def lay_dich_vu_theo_khu_vuc(request):
         return JsonResponse({'error': str(e)}, status=500)
 
 def lay_chi_so_cu(request):
-    """AJAX - Lấy chỉ số cũ của dịch vụ."""
+    """AJAX - Lấy chỉ số cũ của dịch vụ - Hybrid approach: sử dụng hợp đồng để lấy chỉ số."""
     ma_phong = request.GET.get('ma_phong')
     ma_dich_vu = request.GET.get('ma_dich_vu')
     
@@ -81,7 +93,7 @@ def lay_chi_so_cu(request):
         return JsonResponse({'error': 'Thiếu thông tin phòng hoặc dịch vụ'}, status=400)
     
     try:
-        # Lấy hợp đồng hiệu lực của phòng
+        # HYBRID APPROACH: Lấy hợp đồng hiệu lực của phòng
         from apps.hopdong.models import HopDong
         from apps.phongtro.models import PhongTro
         
@@ -94,7 +106,7 @@ def lay_chi_so_cu(request):
         if not hop_dong:
             return JsonResponse({'chi_so_cu': 0})
         
-        # Lấy chỉ số mới nhất của dịch vụ trong hợp đồng này
+        # Sử dụng MA_HOP_DONG để lấy chỉ số mới nhất của dịch vụ
         chi_so_moi_nhat = ChiSoDichVu.objects.filter(
             MA_HOP_DONG=hop_dong,
             MA_DICH_VU_id=ma_dich_vu
@@ -109,7 +121,7 @@ def lay_chi_so_cu(request):
         return JsonResponse({'error': str(e)}, status=500)
 
 def kiem_tra_chi_so_da_ghi(request):
-    """AJAX - Kiểm tra chỉ số đã ghi trong kỳ thanh toán hiện tại"""
+    """AJAX - Kiểm tra chỉ số đã ghi trong kỳ thanh toán hiện tại - Hybrid approach: sử dụng hợp đồng"""
     ma_phong = request.GET.get('ma_phong')
     
     if not ma_phong:
@@ -120,6 +132,8 @@ def kiem_tra_chi_so_da_ghi(request):
         from apps.phongtro.models import PhongTro
         
         phong = get_object_or_404(PhongTro, MA_PHONG=ma_phong)
+        
+        # HYBRID APPROACH: Lấy hợp đồng hiệu lực của phòng
         hop_dong = HopDong.objects.filter(
             MA_PHONG=phong,
             TRANG_THAI_HD='Đang hoạt động'
@@ -128,7 +142,7 @@ def kiem_tra_chi_so_da_ghi(request):
         if not hop_dong:
             return JsonResponse({'error': 'Không tìm thấy hợp đồng hiệu lực'}, status=404)
         
-        # Lấy chỉ số có thể chỉnh sửa trong kỳ hiện tại
+        # Sử dụng MA_HOP_DONG để lấy chỉ số có thể chỉnh sửa trong kỳ hiện tại
         readings_by_service, start_period, end_period = ChiSoDichVu.get_editable_readings(hop_dong)
         
         
@@ -160,7 +174,7 @@ def kiem_tra_chi_so_da_ghi(request):
         return JsonResponse({'error': str(e)}, status=500)
 
 def luu_chi_so_dich_vu(request):
-    """Lưu chỉ số dịch vụ sử dụng."""
+    """Lưu chỉ số dịch vụ sử dụng - Hybrid approach: sử dụng hợp đồng để lưu chỉ số."""
     try:
         from datetime import datetime
         
@@ -179,7 +193,7 @@ def luu_chi_so_dich_vu(request):
             messages.error(request, 'Vui lòng chọn ngày ghi chỉ số.')
             return redirect('dichvu:ghi_so_dich_vu')
         
-        # Lấy thông tin phòng và hợp đồng
+        # HYBRID APPROACH: Lấy thông tin phòng và hợp đồng hiệu lực
         phong = get_object_or_404(PhongTro, MA_PHONG=ma_phong)
         from apps.hopdong.models import HopDong
         hop_dong = HopDong.objects.filter(
@@ -440,21 +454,52 @@ def dichvu_list(request):
     # Lấy toàn bộ danh sách khu vực (không phân trang)
     khu_vucs = KhuVuc.objects.filter(MA_NHA_TRO=1).order_by('MA_KHU_VUC')
 
-    # Lấy danh sách phòng trọ
-    phong_tros = PhongTro.objects.filter(MA_PHONG__in=[5, 6]).values('MA_PHONG', 'TEN_PHONG')
+    # HYBRID APPROACH: Lấy danh sách phòng từ hợp đồng nhưng group theo MA_PHONG
+    from apps.hopdong.models import HopDong
+    
+    # Lấy phòng từ hợp đồng có chỉ số dịch vụ
+    hop_dong_with_services = HopDong.objects.filter(
+        chisodichvu__isnull=False
+    ).select_related('MA_PHONG').distinct()
+    
+    # Group theo MA_PHONG để tránh trùng lặp
+    phong_dict = {}
+    for hop_dong in hop_dong_with_services.values('MA_PHONG_id', 'MA_PHONG__TEN_PHONG'):
+        ma_phong = hop_dong['MA_PHONG_id']
+        if ma_phong not in phong_dict:
+            phong_dict[ma_phong] = {
+                'MA_PHONG': ma_phong,
+                'TEN_PHONG': hop_dong['MA_PHONG__TEN_PHONG']
+            }
+    
+    phong_tros = list(phong_dict.values())
 
-    # Lấy dữ liệu chỉ số dịch vụ theo từng phòng trọ
-    chi_so_dich_vus = ChiSoDichVu.objects.select_related('MA_DICH_VU').values(
-        'MA_CHI_SO', 'MA_PHONG_id', 'MA_DICH_VU_id', 'CHI_SO_CU', 'CHI_SO_MOI', 'NGAY_GHI_CS',
-        'MA_DICH_VU__DON_VI_TINH', 'MA_DICH_VU__GIA_DICH_VU'
-    )
-    # Nhóm theo MA_PHONG
+    # HYBRID APPROACH: Lấy dữ liệu chỉ số dịch vụ qua hợp đồng nhưng group theo MA_PHONG
+    chi_so_dich_vus_qs = ChiSoDichVu.objects.select_related('MA_DICH_VU', 'MA_HOP_DONG', 'MA_HOP_DONG__MA_PHONG')
+    
+    chi_so_dich_vus = []
+    for chi_so in chi_so_dich_vus_qs:
+        chi_so_dich_vus.append({
+            'MA_CHI_SO': chi_so.MA_CHI_SO,
+            'MA_HOP_DONG_id': chi_so.MA_HOP_DONG_id,
+            'MA_HOP_DONG__MA_PHONG_id': chi_so.MA_HOP_DONG.MA_PHONG.MA_PHONG if chi_so.MA_HOP_DONG and chi_so.MA_HOP_DONG.MA_PHONG else None,
+            'MA_DICH_VU_id': chi_so.MA_DICH_VU_id,
+            'CHI_SO_CU': chi_so.CHI_SO_CU,
+            'CHI_SO_MOI': chi_so.CHI_SO_MOI,
+            'SO_LUONG': chi_so.SO_LUONG,
+            'NGAY_GHI_CS': chi_so.NGAY_GHI_CS,
+            'MA_DICH_VU__DON_VI_TINH': chi_so.MA_DICH_VU.DON_VI_TINH if chi_so.MA_DICH_VU else None,
+            'MA_DICH_VU__GIA_DICH_VU': chi_so.MA_DICH_VU.GIA_DICH_VU if chi_so.MA_DICH_VU else None,
+            'MA_DICH_VU__LOAI_DICH_VU': chi_so.MA_DICH_VU.LOAI_DICH_VU if chi_so.MA_DICH_VU else None,
+        })
+    
+    # Nhóm theo MA_PHONG (extracted từ hợp đồng)
     chi_so_grouped = {}
     for chi_so in chi_so_dich_vus:
-        ma_phong = chi_so['MA_PHONG_id']
-        if ma_phong not in chi_so_grouped:
-            chi_so_grouped[ma_phong] = []
-        chi_so_grouped[ma_phong].append(chi_so)
+        ma_phong_from_contract = chi_so['MA_HOP_DONG__MA_PHONG_id']
+        if ma_phong_from_contract not in chi_so_grouped:
+            chi_so_grouped[ma_phong_from_contract] = []
+        chi_so_grouped[ma_phong_from_contract].append(chi_so)
 
     # Xử lý thông báo
     success_message = request.session.pop('success', None)
@@ -473,7 +518,7 @@ def dichvu_list(request):
     return render(request, 'admin/dichvu/dansach_dichvu.html', context)
 
 def _prepare_thong_ke_data(request):
-    """Hàm chung để chuẩn bị dữ liệu thống kê dịch vụ."""
+    """Hàm chung để chuẩn bị dữ liệu thống kê dịch vụ - Hybrid approach: sử dụng MA_HOP_DONG internally nhưng group theo MA_PHONG."""
     khu_vuc_id = request.GET.get('khuVuc')
     thang = request.GET.get('thang')
     phong_tro_id = request.GET.get('phongTro')
@@ -493,22 +538,35 @@ def _prepare_thong_ke_data(request):
             start_of_month = datetime.now().replace(day=1)
             end_of_month = start_of_month + relativedelta(months=1) - relativedelta(days=1)
 
-    # Truy vấn phòng trọ
-    phong_tros_qs = PhongTro.objects.all().distinct()
+    # HYBRID APPROACH: Truy vấn hợp đồng thay vì phòng trực tiếp
+    from apps.hopdong.models import HopDong
+    hop_dong_qs = HopDong.objects.select_related('MA_PHONG', 'MA_PHONG__MA_KHU_VUC').distinct()
+    
+    # Lọc theo thời gian thông qua chỉ số dịch vụ của hợp đồng
     if start_of_month and end_of_month:
-        phong_tros_qs = phong_tros_qs.filter(
+        hop_dong_qs = hop_dong_qs.filter(
             chisodichvu__NGAY_GHI_CS__range=[start_of_month, end_of_month]
         ).distinct()
     
-    # Áp dụng bộ lọc khu vực
+    # Áp dụng bộ lọc khu vực thông qua phòng
     if khu_vuc_id and khu_vuc_id != 'all':
-        phong_tros_qs = phong_tros_qs.filter(MA_KHU_VUC_id=khu_vuc_id)
+        hop_dong_qs = hop_dong_qs.filter(MA_PHONG__MA_KHU_VUC_id=khu_vuc_id)
     
     # Áp dụng bộ lọc phòng trọ
     if phong_tro_id and phong_tro_id != 'all':
-        phong_tros_qs = phong_tros_qs.filter(MA_PHONG=phong_tro_id)
+        hop_dong_qs = hop_dong_qs.filter(MA_PHONG_id=phong_tro_id)
 
-    phong_tros = phong_tros_qs.values('MA_PHONG', 'TEN_PHONG')
+    # Lấy danh sách phòng từ các hợp đồng và group theo MA_PHONG
+    phong_dict = {}
+    for hop_dong in hop_dong_qs.values('MA_PHONG_id', 'MA_PHONG__TEN_PHONG'):
+        ma_phong = hop_dong['MA_PHONG_id']
+        if ma_phong not in phong_dict:
+            phong_dict[ma_phong] = {
+                'MA_PHONG': ma_phong,
+                'TEN_PHONG': hop_dong['MA_PHONG__TEN_PHONG']
+            }
+    
+    phong_tros = list(phong_dict.values())
     
     # Truy vấn dịch vụ
     dich_vus_qs = DichVu.objects.order_by('MA_DICH_VU')
@@ -517,33 +575,57 @@ def _prepare_thong_ke_data(request):
     if loai_dich_vu and loai_dich_vu != 'all':
         dich_vus_qs = dich_vus_qs.filter(LOAI_DICH_VU=loai_dich_vu)
     
-    dich_vus = dich_vus_qs.values('MA_DICH_VU', 'TEN_DICH_VU', 'DON_VI_TINH', 'GIA_DICH_VU')
+    dich_vus = dich_vus_qs.values('MA_DICH_VU', 'TEN_DICH_VU', 'DON_VI_TINH', 'GIA_DICH_VU', 'LOAI_DICH_VU')
 
-    # Truy vấn chỉ số dịch vụ
-    chi_so_dich_vus_qs = ChiSoDichVu.objects.select_related('MA_DICH_VU')
+    # HYBRID APPROACH: Truy vấn chỉ số dịch vụ qua MA_HOP_DONG
+    chi_so_dich_vus_qs = ChiSoDichVu.objects.select_related('MA_DICH_VU', 'MA_HOP_DONG', 'MA_HOP_DONG__MA_PHONG')
+    
     if start_of_month and end_of_month:
         chi_so_dich_vus_qs = chi_so_dich_vus_qs.filter(
             NGAY_GHI_CS__range=[start_of_month, end_of_month]
         )
     
+    # Áp dụng bộ lọc khu vực thông qua hợp đồng -> phòng
+    if khu_vuc_id and khu_vuc_id != 'all':
+        chi_so_dich_vus_qs = chi_so_dich_vus_qs.filter(MA_HOP_DONG__MA_PHONG__MA_KHU_VUC_id=khu_vuc_id)
+    
+    # Áp dụng bộ lọc phòng trọ
+    if phong_tro_id and phong_tro_id != 'all':
+        chi_so_dich_vus_qs = chi_so_dich_vus_qs.filter(MA_HOP_DONG__MA_PHONG_id=phong_tro_id)
+    
     # Áp dụng bộ lọc loại dịch vụ cho chỉ số dịch vụ
     if loai_dich_vu and loai_dich_vu != 'all':
         chi_so_dich_vus_qs = chi_so_dich_vus_qs.filter(MA_DICH_VU__LOAI_DICH_VU=loai_dich_vu)
 
-    chi_so_dich_vus = chi_so_dich_vus_qs.values(
-        'MA_PHONG_id', 'MA_DICH_VU_id', 'CHI_SO_CU', 'CHI_SO_MOI',
-        'MA_DICH_VU__DON_VI_TINH', 'MA_DICH_VU__GIA_DICH_VU'
-    )
+    # Lấy dữ liệu chỉ số với thông tin hợp đồng và group theo MA_PHONG từ hợp đồng
+    chi_so_dich_vus = []
+    for chi_so in chi_so_dich_vus_qs.select_related('MA_HOP_DONG__MA_PHONG', 'MA_DICH_VU'):
+        chi_so_dich_vus.append({
+            'MA_HOP_DONG_id': chi_so.MA_HOP_DONG_id,
+            'MA_HOP_DONG__MA_PHONG_id': chi_so.MA_HOP_DONG.MA_PHONG.MA_PHONG if chi_so.MA_HOP_DONG and chi_so.MA_HOP_DONG.MA_PHONG else None,
+            'MA_DICH_VU_id': chi_so.MA_DICH_VU_id,
+            'CHI_SO_CU': chi_so.CHI_SO_CU,
+            'CHI_SO_MOI': chi_so.CHI_SO_MOI,
+            'SO_LUONG': chi_so.SO_LUONG,
+            'MA_DICH_VU__DON_VI_TINH': chi_so.MA_DICH_VU.DON_VI_TINH if chi_so.MA_DICH_VU else None,
+            'MA_DICH_VU__GIA_DICH_VU': chi_so.MA_DICH_VU.GIA_DICH_VU if chi_so.MA_DICH_VU else None,
+            'MA_DICH_VU__LOAI_DICH_VU': chi_so.MA_DICH_VU.LOAI_DICH_VU if chi_so.MA_DICH_VU else None,
+        })
 
-    # Nhóm chỉ số theo phòng trọ
+    # Nhóm chỉ số theo phòng trọ (extracted từ hợp đồng)
     chi_so_by_phong = defaultdict(list)
     for chi_so in chi_so_dich_vus:
-        chi_so_by_phong[chi_so['MA_PHONG_id']].append(chi_so)
+        # Group theo MA_PHONG được lấy từ hợp đồng
+        ma_phong_from_contract = chi_so['MA_HOP_DONG__MA_PHONG_id']
+        chi_so_by_phong[ma_phong_from_contract].append(chi_so)
 
     # Tính toán tổng và chuẩn bị dữ liệu
     total_values = {dv['TEN_DICH_VU']: 0 for dv in dich_vus}
-    total_chiso = {dv['TEN_DICH_VU']: 0 for dv in dich_vus if dv['DON_VI_TINH'] != 'Tháng'}
-    total_so_lan_su_dung = {dv['TEN_DICH_VU']: 0 for dv in dich_vus if dv['DON_VI_TINH'] == 'Tháng'}
+    # Phân biệt dịch vụ cố định và dịch vụ theo chỉ số cho tổng kết
+    total_chiso = {dv['TEN_DICH_VU']: 0 for dv in dich_vus 
+                   if not (dv['DON_VI_TINH'] == 'Tháng' or dv['LOAI_DICH_VU'] in ['Cố định', 'Co dinh', 'thang'])}
+    total_so_lan_su_dung = {dv['TEN_DICH_VU']: 0 for dv in dich_vus 
+                            if dv['DON_VI_TINH'] == 'Tháng' or dv['LOAI_DICH_VU'] in ['Cố định', 'Co dinh', 'thang']}
     
     phong_data = []
     excel_data = []
@@ -558,18 +640,34 @@ def _prepare_thong_ke_data(request):
                 (cs for cs in chi_so_by_phong[ma_phong] if cs['MA_DICH_VU_id'] == dich_vu['MA_DICH_VU']),
                 None
             )
-            chi_so_cu = chi_so_moi = chiso_difference = service_total = 0
+            chi_so_cu = chi_so_moi = chiso_difference = service_total = so_luong_su_dung = 0
 
-            if dich_vu['DON_VI_TINH'] == 'Tháng':
-                service_total = chi_so['MA_DICH_VU__GIA_DICH_VU'] if chi_so else dich_vu['GIA_DICH_VU'] or 0
+            # Kiểm tra nếu là dịch vụ cố định (theo tháng, cố định, hoặc các loại tương tự)
+            is_fixed_service = (
+                dich_vu['DON_VI_TINH'] == 'Tháng' or 
+                (chi_so and chi_so.get('MA_DICH_VU__DON_VI_TINH') == 'Tháng') or
+                (chi_so and chi_so.get('MA_DICH_VU__LOAI_DICH_VU') in ['Cố định', 'Co dinh', 'thang'])
+            )
+            
+            if is_fixed_service:
+                # Dịch vụ cố định: Sử dụng SO_LUONG từ ChiSoDichVu
                 if chi_so:
-                    total_so_lan_su_dung[dich_vu['TEN_DICH_VU']] += 1
-                excel_row[f'{dich_vu["TEN_DICH_VU"]}_Sử_dụng'] = 1 if chi_so else 0
+                    # Lấy SO_LUONG từ bảng ChiSoDichVu thay vì mặc định = 1
+                    so_luong_su_dung = chi_so.get('SO_LUONG', 0) or 0
+                    service_total = so_luong_su_dung * (chi_so['MA_DICH_VU__GIA_DICH_VU'] or dich_vu['GIA_DICH_VU'] or 0)
+                    total_so_lan_su_dung[dich_vu['TEN_DICH_VU']] += so_luong_su_dung
+                else:
+                    so_luong_su_dung = 0
+                    service_total = 0
+                
+                excel_row[f'{dich_vu["TEN_DICH_VU"]}_Số_lượng_sử_dụng'] = so_luong_su_dung
                 excel_row[f'{dich_vu["TEN_DICH_VU"]}_Thành_tiền'] = service_total
             else:
-                chi_so_cu = chi_so['CHI_SO_CU'] if chi_so else 0
-                chi_so_moi = chi_so['CHI_SO_MOI'] if chi_so else 0
+                # Dịch vụ theo chỉ số: Giữ nguyên logic cũ
+                chi_so_cu = (chi_so['CHI_SO_CU'] if chi_so else 0) or 0
+                chi_so_moi = (chi_so['CHI_SO_MOI'] if chi_so else 0) or 0
                 chiso_difference = max(chi_so_moi - chi_so_cu, 0)
+
                 service_total = chiso_difference * (chi_so['MA_DICH_VU__GIA_DICH_VU'] if chi_so else dich_vu['GIA_DICH_VU'] or 0)
                 if chi_so:
                     total_chiso[dich_vu['TEN_DICH_VU']] += chiso_difference
@@ -584,7 +682,9 @@ def _prepare_thong_ke_data(request):
                 'chi_so_moi': chi_so_moi,
                 'chiso_difference': chiso_difference,
                 'service_total': service_total,
-                'don_vi_tinh': dich_vu['DON_VI_TINH']
+                'don_vi_tinh': dich_vu['DON_VI_TINH'],
+                'so_luong_su_dung': so_luong_su_dung,  # Thêm thông tin số lượng sử dụng
+                'is_fixed_service': is_fixed_service   # Thêm flag để phân biệt dịch vụ cố định
             })
 
         phong_data.append({'phong': phong, 'chi_so_data': chi_so_data})
@@ -602,16 +702,23 @@ def _prepare_thong_ke_data(request):
     }
 def thong_ke_dich_vu(request):
     """Hiển thị bảng thống kê dịch vụ trên giao diện."""
-    data = _prepare_thong_ke_data(request)
-    # return JsonResponse(dict(request.GET))
-    context = {
-        'phong_tros': data['phong_data'],
-        'dich_vus': data['dich_vus'],
-        'total_values': data['total_values'],
-        'total_chiso': data['total_chiso'],
-        'total_so_lan_su_dung': data['total_so_lan_su_dung']
-    }
-    return render(request, 'admin/dichvu/bang_thongke.html', context)
+    try:
+        data = _prepare_thong_ke_data(request)
+        # return JsonResponse(dict(request.GET))
+        context = {
+            'phong_tros': data['phong_data'],
+            'dich_vus': data['dich_vus'],
+            'total_values': data['total_values'],
+            'total_chiso': data['total_chiso'],
+            'total_so_lan_su_dung': data['total_so_lan_su_dung']
+        }
+        return render(request, 'admin/dichvu/bang_thongke.html', context)
+    except Exception as e:
+        import traceback
+        print(f"Error in thong_ke_dich_vu: {e}")
+        print(traceback.format_exc())
+        from django.http import JsonResponse
+        return JsonResponse({'error': str(e), 'traceback': traceback.format_exc()}, status=500)
 
 
 def export_thong_ke_dich_vu(request):
@@ -632,7 +739,7 @@ def export_thong_ke_dich_vu(request):
     headers = ['Tên phòng']
     for dich_vu in dich_vus:
         if dich_vu['DON_VI_TINH'] == 'Tháng':
-            headers.extend([f'{dich_vu["TEN_DICH_VU"]}_Sử_dụng', f'{dich_vu["TEN_DICH_VU"]}_Thành_tiền'])
+            headers.extend([f'{dich_vu["TEN_DICH_VU"]}_Số_lượng_sử_dụng', f'{dich_vu["TEN_DICH_VU"]}_Thành_tiền'])
         else:
             headers.extend([f'{dich_vu["TEN_DICH_VU"]}_Số_cũ', f'{dich_vu["TEN_DICH_VU"]}_Số_mới', f'{dich_vu["TEN_DICH_VU"]}_Thành_tiền'])
     ws.append(headers)

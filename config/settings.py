@@ -102,6 +102,8 @@ DATABASES = {
         'PORT': config('DB_PORT'),
         'OPTIONS': {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+            'charset': 'utf8mb4',
+            'use_unicode': True,
         },
     }
 }
@@ -156,6 +158,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Google Maps API Key
 GOOGLE_MAPS_API_KEY = config('GOOGLE_MAPS_API_KEY', default='AIzaSyBTsZNDJQJjjqOTx2WktpIJ6YfkM9Z1bxc')
+
+# Google Gemini AI API Key
+GEMINI_API_KEY = config('GEMINI_API_KEY', default='')
 
 # ============ HỢP ĐỒNG WORKFLOW SETTINGS ============
 

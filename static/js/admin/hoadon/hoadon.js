@@ -1,26 +1,3 @@
-const monthButtons = document.querySelectorAll(".month-btn");
-const prevYearButton = document.getElementById("prev-year");
-const nextYearButton = document.getElementById("next-year");
-const activeMonthButton = document.querySelector(".month-btn.active");
-
-monthButtons.forEach((button) => {
-    button.addEventListener("click", function () {
-        const month = this.dataset.month;
-        const year = this.dataset.year;
-        window.location.href =
-            "/hoadon/allHoaDon?month=" + month + "&year=" + year;
-    });
-});
-
-prevYearButton.addEventListener("click", function () {
-    const currentYear = parseInt(activeMonthButton.dataset.year);
-    window.location.href = "/hoadon/allHoaDon?month=12&year=" + (currentYear - 1);
-});
-
-nextYearButton.addEventListener("click", function () {
-    const currentYear = parseInt(activeMonthButton.dataset.year);
-    window.location.href = "/hoadon/allHoaDon?month=1&year=" + (currentYear + 1);
-});
 function toggleMenuHoaDon(khachThueId) {
     const menu = document.getElementById("menuHoaDon-" + khachThueId);
 

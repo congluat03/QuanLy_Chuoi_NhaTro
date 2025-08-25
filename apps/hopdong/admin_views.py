@@ -954,7 +954,7 @@ def handle_cancel_contract(hop_dong, data):
 
 @require_http_methods(['GET'])
 def dashboard_statistics(request):
-    """API để lấy thống kê dashboard"""
+    """API để lấy thống kê dashboard - chỉ sử dụng MA_HOP_DONG làm key thống kê"""
     # Check authentication and permissions
     if not request.session.get('is_authenticated'):
         return JsonResponse({'success': False, 'message': 'Bạn cần đăng nhập để xem thống kê'})
@@ -964,21 +964,39 @@ def dashboard_statistics(request):
         return JsonResponse({'success': False, 'message': 'Bạn không có quyền xem thống kê'})
         
     try:
-        # Thống kê cơ bản
+        # Thống kê cơ bản theo hợp đồng
         stats = HopDongReportService.thong_ke_hop_dong_theo_trang_thai()
         
         # Hợp đồng sắp hết hạn
         contracts_expiring = HopDongReportService.danh_sach_hop_dong_sap_het_han(30)
         
-        # Doanh thu tháng hiện tại
+        # Doanh thu tháng hiện tại từ hợp đồng
         current_month = datetime.now()
         revenue = HopDongReportService.bao_cao_doanh_thu_hop_dong(
             current_month.month, 
             current_month.year
         )
         
+        # Thống kê chi tiết cho dashboard
+        stats_detailed = HopDongReportService.thong_ke_chi_tiet_dashboard()
+        
         return JsonResponse({
             'success': True,
+            'stats': {
+                'total_contracts': stats_detailed.get('tong_hop_dong', 0),
+                'active_contracts': stats_detailed.get('dang_hoat_dong', 0),
+                'expiring_contracts': contracts_expiring.count(),
+                'pending_contracts': stats_detailed.get('cho_xac_nhan', 0)
+            },
+            'recent_activities': [
+                {
+                    'title': f'Hợp đồng #{hd.MA_HOP_DONG}',
+                    'description': f'Hết hạn còn {(hd.NGAY_TRA_PHONG - date.today()).days} ngày',
+                    'time': hd.NGAY_TRA_PHONG.strftime('%d/%m/%Y'),
+                    'color': 'orange',
+                    'icon': 'fas fa-calendar-times'
+                } for hd in contracts_expiring[:3]
+            ],
             'data': {
                 'contract_stats': stats,
                 'contracts_expiring': {
@@ -986,7 +1004,7 @@ def dashboard_statistics(request):
                     'list': [
                         {
                             'ma_hop_dong': hd.MA_HOP_DONG,
-                            'ten_phong': hd.MA_PHONG.TEN_PHONG,
+                            'ma_phong': hd.MA_PHONG_id,  # Chỉ ID, không lấy tên phòng
                             'ngay_het_han': hd.NGAY_TRA_PHONG.isoformat(),
                             'days_left': (hd.NGAY_TRA_PHONG - date.today()).days
                         } for hd in contracts_expiring[:5]  # Top 5

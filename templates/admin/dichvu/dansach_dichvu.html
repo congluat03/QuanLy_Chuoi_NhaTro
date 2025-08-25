@@ -202,18 +202,31 @@
    
 <script>
   document.addEventListener('DOMContentLoaded', function () {
-    new Choices('#phongTro1', {
-      removeItemButton: true,
-      placeholder: true,
-      placeholderValue: 'Chọn phòng trọ',
-      searchEnabled: true
-    });
-    new Choices('#dichVu1', {
-      removeItemButton: true,
-      placeholder: true,
-      placeholderValue: 'Chọn dịch vụ',
-      searchEnabled: true
-    });
+    // Function để khởi tạo Choices.js an toàn
+    function initChoicesJsSafe(elementId, placeholder, config = {}) {
+      try {
+        const element = document.getElementById(elementId);
+        if (element && typeof Choices !== 'undefined') {
+          const defaultConfig = {
+            removeItemButton: false,
+            placeholder: true,
+            searchEnabled: true,
+            shouldSort: false,
+            placeholderValue: placeholder
+          };
+          
+          return new Choices(`#${elementId}`, { ...defaultConfig, ...config });
+        }
+      } catch (error) {
+        console.warn(`Không thể khởi tạo Choices.js cho #${elementId}:`, error.message);
+      }
+      return null;
+    }
+    
+    // Khởi tạo Choices.js cho các select có trong trang
+    initChoicesJsSafe('khuVuc', 'Chọn khu vực');
+    initChoicesJsSafe('phongTro', 'Chọn phòng trọ');
+    initChoicesJsSafe('loaiDichVu', 'Chọn loại dịch vụ');
   });
   function toggleMonthInput(checkbox) {
     const monthInput = document.getElementById('month');

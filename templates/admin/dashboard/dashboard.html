@@ -112,47 +112,47 @@
 
     <!-- Statistics Cards -->
     <div class="lg:col-span-2 grid sm:grid-cols-2 gap-6">
-      <!-- Total Rooms -->
+      <!-- Total Contracts -->
       <div class="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-gray-600">Tổng số phòng</p>
+            <p class="text-sm font-medium text-gray-600">Tổng hợp đồng</p>
             <p class="text-3xl font-bold text-gray-900">{{ total_rooms|default:"--" }}</p>
             <p class="text-xs text-green-600 mt-1">
               <span class="inline-flex items-center">
                 <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                   <path fill-rule="evenodd" d="M3.293 9.707a1 1 0 010-1.414l6-6a1 1 0 011.414 0l6 6a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L4.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
                 </svg>
-                Đang cập nhật
+                Dựa trên hợp đồng
               </span>
             </p>
           </div>
           <div class="w-12 h-12 bg-sky-100 rounded-lg flex items-center justify-center">
             <svg class="w-6 h-6 text-sky-600" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+              <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z" clip-rule="evenodd" />
             </svg>
           </div>
         </div>
       </div>
 
-      <!-- Total Tenants -->
+      <!-- Active Contracts -->
       <div class="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-gray-600">Khách thuê</p>
+            <p class="text-sm font-medium text-gray-600">Hợp đồng hoạt động</p>
             <p class="text-3xl font-bold text-gray-900">{{ total_tenants|default:"--" }}</p>
             <p class="text-xs text-green-600 mt-1">
               <span class="inline-flex items-center">
                 <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                   <path fill-rule="evenodd" d="M3.293 9.707a1 1 0 010-1.414l6-6a1 1 0 011.414 0l6 6a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L4.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
                 </svg>
-                Đang cập nhật
+                Đang hoạt động
               </span>
             </p>
           </div>
           <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
             <svg class="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+              <path fill-rule="evenodd" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" clip-rule="evenodd" />
             </svg>
           </div>
         </div>
@@ -393,13 +393,13 @@ function refreshWorkflowStats() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Update statistics
+            // Update statistics using new response format
             document.getElementById('totalContracts').textContent = data.stats.total_contracts || '0';
             document.getElementById('activeContracts').textContent = data.stats.active_contracts || '0';
             document.getElementById('expiringContracts').textContent = data.stats.expiring_contracts || '0';
             document.getElementById('pendingContracts').textContent = data.stats.pending_contracts || '0';
             
-            // Update recent activities
+            // Update recent activities with contract-based data
             updateRecentActivities(data.recent_activities || []);
         } else {
             console.error('Failed to fetch stats:', data.message);

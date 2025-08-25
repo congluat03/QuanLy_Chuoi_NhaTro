@@ -665,6 +665,9 @@ def dang_tin_create(request):
             with transaction.atomic():
                 # Lấy dữ liệu từ form
                 ma_phong = request.POST.get('ma_phong')
+                tieu_de = request.POST.get('tieu_de')
+                mo_ta_tin = request.POST.get('mo_ta_tin')
+                ngay_het_hang_tin = request.POST.get('ngay_het_hang_tin')
                 sdt_lien_he = request.POST.get('sdt_lien_he')
                 email_lien_he = request.POST.get('email_lien_he')
                 
@@ -673,9 +676,25 @@ def dang_tin_create(request):
                     messages.error(request, 'Vui lòng chọn phòng.')
                     return redirect('admin_phongtro:dang_tin_create')
                 
+                if not tieu_de or len(tieu_de.strip()) < 10:
+                    messages.error(request, 'Tiêu đề tin đăng phải có ít nhất 10 ký tự.')
+                    return redirect('admin_phongtro:dang_tin_create')
+                
                 if not sdt_lien_he:
                     messages.error(request, 'Vui lòng nhập số điện thoại liên hệ.')
                     return redirect('admin_phongtro:dang_tin_create')
+                
+                # Validation ngày hết hạn
+                if ngay_het_hang_tin:
+                    from datetime import datetime, date
+                    try:
+                        ngay_het_hang = datetime.strptime(ngay_het_hang_tin, '%Y-%m-%d').date()
+                        if ngay_het_hang <= date.today():
+                            messages.error(request, 'Ngày hết hạn tin phải sau ngày hiện tại.')
+                            return redirect('admin_phongtro:dang_tin_create')
+                    except ValueError:
+                        messages.error(request, 'Định dạng ngày hết hạn không hợp lệ.')
+                        return redirect('admin_phongtro:dang_tin_create')
                 
                 # Kiểm tra phòng có tồn tại và chưa có tin đăng
                 phong = get_object_or_404(PhongTro, MA_PHONG=ma_phong)
@@ -684,12 +703,23 @@ def dang_tin_create(request):
                     return redirect('admin_phongtro:dang_tin_create')
                 
                 # Tạo tin đăng
-                tin_dang = DangTinPhong.objects.create(
-                    MA_PHONG=phong,
-                    SDT_LIEN_HE=sdt_lien_he,
-                    EMAIL_LIEN_HE=email_lien_he,
-                    TRANG_THAI='DANG_HIEN_THI'
-                )
+                tin_dang_data = {
+                    'MA_PHONG': phong,
+                    'TIEU_DE': tieu_de.strip(),
+                    'SDT_LIEN_HE': sdt_lien_he,
+                    'EMAIL_LIEN_HE': email_lien_he,
+                    'TRANG_THAI': 'DANG_HIEN_THI'
+                }
+                
+                # Thêm mô tả nếu có
+                if mo_ta_tin:
+                    tin_dang_data['MO_TA_TIN'] = mo_ta_tin.strip()
+                
+                # Thêm ngày hết hạn nếu có
+                if ngay_het_hang_tin:
+                    tin_dang_data['NGAY_HET_HANG_TIN'] = ngay_het_hang
+                
+                tin_dang = DangTinPhong.objects.create(**tin_dang_data)
                 
                 # Xử lý upload hình ảnh
                 hinh_anhs = request.FILES.getlist('hinh_anh')
@@ -719,8 +749,12 @@ def dang_tin_create(request):
         TRANG_THAI_P='Trống'
     ).select_related('MA_KHU_VUC', 'MA_LOAI_PHONG')
     
+    # Lấy danh sách khu vực cho filter
+    khu_vucs = KhuVuc.objects.filter(MA_NHA_TRO=1).order_by('TEN_KHU_VUC')
+    
     context = {
         'phong_chua_dang': phong_chua_dang,
+        'khu_vucs': khu_vucs,
     }
     
     return render(request, 'admin/dangtin/dang_tin_create.html', context)
@@ -734,6 +768,23 @@ def dang_tin_edit(request, ma_tin_dang):
         try:
             with transaction.atomic():
                 # Cập nhật thông tin tin đăng
+                tieu_de = request.POST.get('tieu_de', '').strip()
+                if tieu_de and len(tieu_de) >= 10:
+                    tin_dang.TIEU_DE = tieu_de
+                
+                mo_ta_tin = request.POST.get('mo_ta_tin', '').strip()
+                tin_dang.MO_TA_TIN = mo_ta_tin if mo_ta_tin else None
+                
+                ngay_het_hang_tin = request.POST.get('ngay_het_hang_tin')
+                if ngay_het_hang_tin:
+                    from datetime import datetime, date
+                    try:
+                        ngay_het_hang = datetime.strptime(ngay_het_hang_tin, '%Y-%m-%d').date()
+                        if ngay_het_hang > date.today():
+                            tin_dang.NGAY_HET_HANG_TIN = ngay_het_hang
+                    except ValueError:
+                        pass  # Giữ nguyên giá trị cũ nếu format không hợp lệ
+                
                 tin_dang.SDT_LIEN_HE = request.POST.get('sdt_lien_he', tin_dang.SDT_LIEN_HE)
                 tin_dang.EMAIL_LIEN_HE = request.POST.get('email_lien_he', tin_dang.EMAIL_LIEN_HE)
                 tin_dang.TRANG_THAI = request.POST.get('trang_thai', tin_dang.TRANG_THAI)

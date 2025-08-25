@@ -719,24 +719,6 @@ class LichSuHopDong(models.Model):
         self.save()
 
 
-# Model for chukythanhtoan
-class ChuKyThanhToan(models.Model):
-    MA_CHU_KY = models.AutoField(primary_key=True)
-    MA_HOP_DONG = models.ForeignKey(
-        'HopDong',
-        on_delete=models.CASCADE,
-        db_column='MA_HOP_DONG',
-        related_name='chukythanhtoan'
-    )
-    NGAY_BAT_DAU_CK = models.DateField(null=True, blank=True)
-    NGAY_KET_THUC_CK = models.DateField(null=True, blank=True)
-
-    def __str__(self):
-        return f"Chu kỳ thanh toán {self.MA_CHU_KY}"
-
-    class Meta:
-        db_table = 'chukythanhtoan'
-
 
 # Model for lichsugiahan
 class LichSuGiaHan(models.Model):

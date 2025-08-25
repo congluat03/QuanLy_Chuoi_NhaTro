@@ -5,7 +5,7 @@
 
 {% block content_body %}
 <div class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
-    <div class="container mx-auto px-4 py-8">
+    <div class="container mx-auto px-4 py-6">
         <!-- Header -->
         <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
             <div class="flex items-center justify-between">
@@ -23,185 +23,687 @@
             </div>
         </div>
 
-        <!-- Form -->
-        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
-            <form method="POST" enctype="multipart/form-data" id="dangTinForm">
-                {% csrf_token %}
-                
-                <div class="p-6">
-                    <!-- Chọn phòng -->
-                    <div class="mb-6">
-                        <label class="block text-sm font-medium text-gray-700 mb-3">
-                            <i class="fas fa-door-open text-blue-500 mr-2"></i>
-                            Chọn phòng <span class="text-red-500">*</span>
-                        </label>
+        <!-- Main Layout -->
+        <div class="max-w-screen-xl mx-auto flex h-screen">
+            <!-- Left Sidebar - 30% -->
+            <div class="w-[30%] bg-white border-r border-gray-200 flex flex-col rounded-l-xl shadow-lg">
+                <!-- Filter Section -->
+                <div class="p-6 border-b border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                        <svg class="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.414A1 1 0 013 6.707V4z"></path>
+                        </svg>
+                        Danh sách phòng
+                    </h3>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label for="searchRoom" class="block text-sm font-medium text-gray-700 mb-2">
+                                Tìm kiếm phòng
+                            </label>
+                            <input type="text" id="searchRoom" placeholder="Nhập tên phòng..."
+                                   class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-sm">
+                        </div>
                         
-                        {% if phong_chua_dang %}
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {% for phong in phong_chua_dang %}
-                            <div class="border-2 border-gray-200 rounded-lg p-4 hover:border-blue-500 transition-colors cursor-pointer phong-option"
-                                 data-phong-id="{{ phong.MA_PHONG }}">
-                                <input type="radio" name="ma_phong" value="{{ phong.MA_PHONG }}" class="hidden">
-                                <div class="flex items-center justify-between mb-2">
-                                    <h3 class="font-semibold text-gray-800">{{ phong.TEN_PHONG }}</h3>
-                                    <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">{{ phong.TRANG_THAI_P }}</span>
+                        <div>
+                            <label for="filterKhuVuc" class="block text-sm font-medium text-gray-700 mb-2">
+                                Khu vực
+                            </label>
+                            <select id="filterKhuVuc" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-sm">
+                                <option value="">Tất cả khu vực</option>
+                                {% for khu_vuc in khu_vucs %}
+                                <option value="{{ khu_vuc.MA_KHU_VUC }}">{{ khu_vuc.TEN_KHU_VUC }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Room List -->
+                <div class="flex-1 overflow-hidden">
+                    <div class="p-4 border-b border-gray-100">
+                        <h4 class="text-sm font-medium text-gray-700 uppercase tracking-wide">Phòng có thể đăng tin</h4>
+                        <p class="text-xs text-gray-500 mt-1">Chọn phòng để đăng tin</p>
+                    </div>
+                    
+                    <div id="room_list_container" class="flex-1 overflow-y-auto">
+                        <div id="room_list" class="p-4">
+                            {% if phong_chua_dang %}
+                                {% for phong in phong_chua_dang %}
+                                <div class="room-card bg-white border border-gray-200 rounded-lg p-4 mb-3 hover:border-blue-300 hover:shadow-md transition-all duration-200 cursor-pointer"
+                                     data-ma-phong="{{ phong.MA_PHONG }}"
+                                     data-khu-vuc="{{ phong.MA_KHU_VUC.MA_KHU_VUC }}"
+                                     data-ten-phong="{{ phong.TEN_PHONG|lower }}"
+                                     onclick="selectRoom({{ phong.MA_PHONG }}, '{{ phong.TEN_PHONG }}', {{ phong.GIA_PHONG }}, '{{ phong.MA_KHU_VUC.TEN_KHU_VUC }}', '{{ phong.MA_LOAI_PHONG.TEN_LOAI_PHONG }}', {{ phong.DIEN_TICH }})">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <h4 class="font-medium text-gray-900">{{ phong.TEN_PHONG }}</h4>
+                                                <p class="text-sm text-gray-500">{{ phong.MA_KHU_VUC.TEN_KHU_VUC }}</p>
+                                            </div>
+                                        </div>
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            <span class="w-1.5 h-1.5 bg-green-400 rounded-full mr-1.5"></span>
+                                            {{ phong.TRANG_THAI_P }}
+                                        </span>
+                                    </div>
+                                    <div class="text-xs text-gray-600 space-y-1">
+                                        <div class="flex items-center">
+                                            <i class="fas fa-tag text-blue-500 w-4 mr-1"></i>
+                                            <span>{{ phong.MA_LOAI_PHONG.TEN_LOAI_PHONG }}</span>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <i class="fas fa-money-bill-wave text-green-500 w-4 mr-1"></i>
+                                            <span>{{ phong.GIA_PHONG|floatformat:0 }} VNĐ/tháng</span>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <i class="fas fa-expand-arrows-alt text-purple-500 w-4 mr-1"></i>
+                                            <span>{{ phong.DIEN_TICH }} m²</span>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="text-sm text-gray-600 space-y-1">
-                                    <div><i class="fas fa-map-marker-alt text-red-500 w-4"></i> {{ phong.MA_KHU_VUC.TEN_KHU_VUC }}</div>
-                                    <div><i class="fas fa-tag text-blue-500 w-4"></i> {{ phong.MA_LOAI_PHONG.TEN_LOAI_PHONG }}</div>
-                                    <div><i class="fas fa-money-bill-wave text-green-500 w-4"></i> {{ phong.GIA_PHONG|floatformat:0 }} VNĐ/tháng</div>
-                                    <div><i class="fas fa-expand-arrows-alt text-purple-500 w-4"></i> {{ phong.DIEN_TICH }} m²</div>
+                                {% endfor %}
+                            {% else %}
+                            <div class="text-center py-12 text-gray-500">
+                                <svg class="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                </svg>
+                                <p class="text-sm">Không có phòng nào để đăng tin</p>
+                                <p class="text-xs text-gray-400 mt-1">Phòng cần có trạng thái "Trống"</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Content - 70% -->
+            <div class="w-[70%] bg-gray-50 flex flex-col overflow-auto rounded-r-xl shadow-lg">
+                <!-- Content Header -->
+                <div class="bg-white border-b border-gray-200 px-6 py-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900">Form đăng tin phòng</h3>
+                            <p class="text-sm text-gray-600" id="selected_room_info">Chưa chọn phòng</p>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <span id="room_info_badge" class="hidden px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full">
+                                Phòng chưa chọn
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Content -->
+                <div class="flex-1 overflow-y-auto">
+                    <form method="POST" enctype="multipart/form-data" id="dangTinForm" class="h-full">
+                        {% csrf_token %}
+                        <input type="hidden" id="ma_phong" name="ma_phong" value="">
+                        
+                        <div id="main_content" class="p-6">
+                            <!-- Empty State -->
+                            <div id="empty_state" class="flex flex-col items-center justify-center h-96 text-gray-500">
+                                <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                                </svg>
+                                <h3 class="text-lg font-medium text-gray-900 mb-2">Chưa chọn phòng</h3>
+                                <p class="text-sm text-gray-600 text-center max-w-md">
+                                    Vui lòng chọn một phòng từ danh sách bên trái để bắt đầu tạo tin đăng
+                                </p>
+                            </div>
+
+                            <!-- Posting Form -->
+                            <div id="posting_form" class="hidden space-y-6">
+                                <!-- Room Info Display -->
+                                <div id="room_display" class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                    <h4 class="font-semibold text-blue-900 mb-2">Thông tin phòng đã chọn</h4>
+                                    <div id="room_details" class="text-sm text-blue-800">
+                                        <!-- Room details will be filled by JavaScript -->
+                                    </div>
+                                </div>
+
+                                <!-- Posting Information -->
+                                <div class="bg-white border border-gray-200 rounded-lg p-6">
+                                    <h4 class="text-lg font-semibold text-gray-800 mb-4">
+                                        <i class="fas fa-edit text-blue-500 mr-2"></i>
+                                        Thông tin tin đăng
+                                    </h4>
+                                    <div class="space-y-4">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                                Tiêu đề tin đăng <span class="text-red-500">*</span>
+                                            </label>
+                                            <input type="text" name="tieu_de" required maxlength="200"
+                                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                   placeholder="Nhập tiêu đề hấp dẫn cho tin đăng (tối thiểu 10 ký tự)">
+                                            <p class="text-xs text-gray-500 mt-1">Tiêu đề nên ngắn gọn, súc tích và hấp dẫn</p>
+                                        </div>
+                                        
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                                <i class="fas fa-align-left text-purple-500 mr-2"></i>
+                                                Mô tả chi tiết
+                                            </label>
+                                            
+                                            <!-- Rich Text Editor Container -->
+                                            <div class="bg-white border border-gray-300 rounded-lg overflow-hidden">
+                                                <div class="border-b border-gray-200 bg-gray-50 px-4 py-2">
+                                                    <div class="flex items-center gap-2 text-sm text-gray-600">
+                                                        <i class="fas fa-info-circle text-blue-500"></i>
+                                                        <span class="font-medium">Gợi ý nội dung:</span>
+                                                        <span class="hidden lg:inline">Diện tích, tiện nghi, vị trí, giá điện nước, quy định...</span>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="relative">
+                                                    <textarea id="mo_ta_tin_editor" name="mo_ta_tin" 
+                                                              class="w-full min-h-[300px] border-0 focus:ring-0 resize-none"
+                                                              placeholder="Nhập mô tả chi tiết về phòng trọ của bạn..."></textarea>
+                                                </div>
+                                                
+                                                <!-- Quick Insert Templates -->
+                                                <div class="border-t border-gray-200 bg-gray-50 p-3">
+                                                    <div class="flex items-center justify-between mb-2">
+                                                        <span class="text-xs font-medium text-gray-600 uppercase tracking-wide">Mẫu nội dung nhanh</span>
+                                                        <button type="button" id="toggle-templates" class="text-xs text-blue-600 hover:text-blue-800">
+                                                            <i class="fas fa-chevron-down mr-1"></i>Xem mẫu
+                                                        </button>
+                                                    </div>
+                                                    
+                                                    <div id="content-templates" class="hidden space-y-2">
+                                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                                            <button type="button" class="template-btn bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg p-2 text-left text-xs transition-colors"
+                                                                    data-template="room-info">
+                                                                <div class="font-medium text-blue-800">📏 Thông tin phòng</div>
+                                                                <div class="text-blue-600">Diện tích, nội thất, tiện nghi...</div>
+                                                            </button>
+                                                            
+                                                            <button type="button" class="template-btn bg-green-50 hover:bg-green-100 border border-green-200 rounded-lg p-2 text-left text-xs transition-colors"
+                                                                    data-template="location">
+                                                                <div class="font-medium text-green-800">📍 Vị trí & Giao thông</div>
+                                                                <div class="text-green-600">Địa chỉ, gần trường học, bệnh viện...</div>
+                                                            </button>
+                                                            
+                                                            <button type="button" class="template-btn bg-yellow-50 hover:bg-yellow-100 border border-yellow-200 rounded-lg p-2 text-left text-xs transition-colors"
+                                                                    data-template="utilities">
+                                                                <div class="font-medium text-yellow-800">💡 Tiện ích & Dịch vụ</div>
+                                                                <div class="text-yellow-600">Internet, giặt ủi, bảo vệ...</div>
+                                                            </button>
+                                                            
+                                                            <button type="button" class="template-btn bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-lg p-2 text-left text-xs transition-colors"
+                                                                    data-template="rules">
+                                                                <div class="font-medium text-purple-800">📋 Quy định & Chính sách</div>
+                                                                <div class="text-purple-600">Giờ giấc, thú cưng, khách...</div>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Character Counter -->
+                                            <div class="flex items-center justify-between mt-2">
+                                                <p class="text-xs text-gray-500">Mô tả chi tiết giúp thu hút nhiều khách thuê hơn</p>
+                                                <span id="char-count" class="text-xs text-gray-400">0 ký tự</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                                Ngày hết hạn tin
+                                            </label>
+                                            <input type="date" name="ngay_het_hang_tin"
+                                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                            <p class="text-xs text-gray-500 mt-1">Để trống sẽ tự động đặt hạn 30 ngày</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Contact Information -->
+                                <div class="bg-white border border-gray-200 rounded-lg p-6">
+                                    <h4 class="text-lg font-semibold text-gray-800 mb-4">
+                                        <i class="fas fa-phone text-green-500 mr-2"></i>
+                                        Thông tin liên hệ
+                                    </h4>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                                Số điện thoại <span class="text-red-500">*</span>
+                                            </label>
+                                            <input type="tel" name="sdt_lien_he" required
+                                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                   placeholder="Nhập số điện thoại">
+                                        </div>
+                                        
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                                Email liên hệ
+                                            </label>
+                                            <input type="email" name="email_lien_he"
+                                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                   placeholder="Nhập email (tùy chọn)">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Upload Images -->
+                                <div class="bg-white border border-gray-200 rounded-lg p-6">
+                                    <h4 class="text-lg font-semibold text-gray-800 mb-4">
+                                        <i class="fas fa-images text-purple-500 mr-2"></i>
+                                        Hình ảnh phòng <span class="text-red-500">*</span>
+                                    </h4>
+                                    <p class="text-gray-500 text-sm mb-4">Chọn nhiều hình ảnh để hiển thị phòng một cách tốt nhất. Hình đầu tiên sẽ làm ảnh đại diện.</p>
+                                    
+                                    <!-- Drop zone -->
+                                    <div id="dropZone" class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-500 transition-colors cursor-pointer">
+                                        <i class="fas fa-cloud-upload-alt text-gray-400 text-4xl mb-4"></i>
+                                        <p class="text-gray-600 mb-2">Kéo thả hình ảnh vào đây hoặc <span class="text-blue-600 font-semibold">nhấp để chọn</span></p>
+                                        <p class="text-gray-500 text-sm">Hỗ trợ: JPG, PNG, WEBP. Tối đa 5MB mỗi ảnh.</p>
+                                        <input type="file" id="fileInput" name="hinh_anh" multiple accept="image/*" class="hidden" required>
+                                    </div>
+                                    
+                                    <!-- Preview container -->
+                                    <div id="imagePreview" class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4 hidden"></div>
                                 </div>
                             </div>
-                            {% endfor %}
                         </div>
-                        {% else %}
-                        <div class="text-center py-8 bg-gray-50 rounded-lg">
-                            <i class="fas fa-info-circle text-blue-500 text-4xl mb-4"></i>
-                            <p class="text-gray-600 text-lg">Không có phòng trống nào để đăng tin</p>
-                            <p class="text-gray-500 text-sm mt-2">Chỉ có thể đăng tin cho phòng có trạng thái "Trống" và chưa có tin đăng</p>
-                        </div>
-                        {% endif %}
-                    </div>
 
-                    <!-- Thông tin liên hệ -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                <i class="fas fa-phone text-green-500 mr-2"></i>
-                                Số điện thoại liên hệ <span class="text-red-500">*</span>
-                            </label>
-                            <input type="tel" name="sdt_lien_he" required
-                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                   placeholder="Nhập số điện thoại">
+                        <!-- Sticky Footer -->
+                        <div id="form_footer" class="hidden bg-white border-t border-gray-200 px-6 py-4">
+                            <div class="flex items-center justify-between">
+                                <div class="text-sm text-gray-600">
+                                    Đăng tin phòng trọ lên giao diện tìm phòng
+                                </div>
+                                <div class="flex gap-4">
+                                    <button type="button" onclick="history.back()" 
+                                            class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+                                        Hủy
+                                    </button>
+                                    <button type="submit" id="submitBtn" disabled
+                                            class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed">
+                                        <i class="fas fa-paper-plane mr-2"></i>
+                                        Đăng tin
+                                    </button>
+                                </div>
+                            </div>
                         </div>
-                        
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                <i class="fas fa-envelope text-blue-500 mr-2"></i>
-                                Email liên hệ
-                            </label>
-                            <input type="email" name="email_lien_he"
-                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                   placeholder="Nhập email (tùy chọn)">
-                        </div>
-                    </div>
-
-                    <!-- Upload hình ảnh -->
-                    <div class="mb-6">
-                        <label class="block text-sm font-medium text-gray-700 mb-3">
-                            <i class="fas fa-images text-purple-500 mr-2"></i>
-                            Hình ảnh phòng <span class="text-red-500">*</span>
-                        </label>
-                        <p class="text-gray-500 text-sm mb-4">Chọn nhiều hình ảnh để hiển thị phòng một cách tốt nhất. Hình đầu tiên sẽ làm ảnh đại diện.</p>
-                        
-                        <!-- Drop zone -->
-                        <div id="dropZone" class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-500 transition-colors cursor-pointer">
-                            <i class="fas fa-cloud-upload-alt text-gray-400 text-4xl mb-4"></i>
-                            <p class="text-gray-600 mb-2">Kéo thả hình ảnh vào đây hoặc <span class="text-blue-600 font-semibold">nhấp để chọn</span></p>
-                            <p class="text-gray-500 text-sm">Hỗ trợ: JPG, PNG, WEBP. Tối đa 5MB mỗi ảnh.</p>
-                            <input type="file" id="fileInput" name="hinh_anh" multiple accept="image/*" class="hidden" required>
-                        </div>
-                        
-                        <!-- Preview container -->
-                        <div id="imagePreview" class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4 hidden"></div>
-                    </div>
+                    </form>
                 </div>
-
-                <!-- Footer -->
-                <div class="bg-gray-50 px-6 py-4 flex justify-end gap-4">
-                    <button type="button" onclick="history.back()" 
-                            class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
-                        Hủy
-                    </button>
-                    <button type="submit" id="submitBtn" disabled
-                            class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed">
-                        <i class="fas fa-paper-plane mr-2"></i>
-                        Đăng tin
-                    </button>
-                </div>
-            </form>
+            </div>
         </div>
     </div>
 </div>
 
+{% endblock %}
+
+{% block extra_js %}
+<!-- TinyMCE from official CDN - more reliable -->
+<script src="https://cdn.jsdelivr.net/npm/tinymce@7/tinymce.min.js"></script>
+
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const phongOptions = document.querySelectorAll('.phong-option');
-    const fileInput = document.getElementById('fileInput');
-    const dropZone = document.getElementById('dropZone');
-    const imagePreview = document.getElementById('imagePreview');
-    const submitBtn = document.getElementById('submitBtn');
+// Global variables
+let selectedFiles = [];
+let currentSelectedRoom = null;
+
+// Content templates for quick insertion
+const contentTemplates = {
+    'room-info': `
+<h3>🏠 Thông tin phòng</h3>
+<ul>
+<li><strong>Diện tích:</strong> [Điền diện tích] m²</li>
+<li><strong>Nội thất:</strong> [Giường, tủ, bàn ghế, tủ lạnh, máy lạnh...]</li>
+<li><strong>Tiện nghi:</strong> [WC riêng, ban công, cửa sổ lớn...]</li>
+<li><strong>Tình trạng:</strong> [Mới xây, đã qua sử dụng, được tu sửa...]</li>
+</ul>`,
     
-    let selectedFiles = [];
-    let selectedPhong = null;
+    'location': `
+<h3>📍 Vị trí & Giao thông</h3>
+<ul>
+<li><strong>Địa chỉ:</strong> [Địa chỉ cụ thể]</li>
+<li><strong>Gần trường học:</strong> [Tên trường, khoảng cách]</li>
+<li><strong>Gần bệnh viện:</strong> [Tên bệnh viện, khoảng cách]</li>
+<li><strong>Giao thông công cộng:</strong> [Xe bus, tàu điện, xe ôm...]</li>
+<li><strong>Chợ, siêu thị:</strong> [Các điểm mua sắm gần đó]</li>
+</ul>`,
     
-    // Xử lý chọn phòng
-    phongOptions.forEach(option => {
-        option.addEventListener('click', function() {
-            phongOptions.forEach(opt => opt.classList.remove('border-blue-500', 'bg-blue-50'));
-            this.classList.add('border-blue-500', 'bg-blue-50');
-            this.querySelector('input[type="radio"]').checked = true;
-            selectedPhong = this.dataset.phongId;
-            checkFormValid();
+    'utilities': `
+<h3>💡 Tiện ích & Dịch vụ</h3>
+<ul>
+<li><strong>Internet:</strong> [WiFi miễn phí, tốc độ cao]</li>
+<li><strong>Điện nước:</strong> [Giá điện/số, giá nước/số]</li>
+<li><strong>Dịch vụ giặt ủi:</strong> [Có/không, giá cả]</li>
+<li><strong>Bảo vệ 24/7:</strong> [Có/không]</li>
+<li><strong>Camera an ninh:</strong> [Có/không]</li>
+<li><strong>Chỗ để xe:</strong> [Có/không, giá cả]</li>
+</ul>`,
+    
+    'rules': `
+<h3>📋 Quy định & Chính sách</h3>
+<ul>
+<li><strong>Giờ giấc:</strong> [Giờ vào ra, giờ im lặng]</li>
+<li><strong>Thú cưng:</strong> [Có được nuôi hay không]</li>
+<li><strong>Khách đến thăm:</strong> [Quy định về khách]</li>
+<li><strong>Tiền cọc:</strong> [Số tiền, chính sách hoàn trả]</li>
+<li><strong>Hợp đồng:</strong> [Thời hạn tối thiểu]</li>
+<li><strong>Thanh toán:</strong> [Hàng tháng, định kỳ]</li>
+</ul>`
+};
+
+// Character counter function - Define before TinyMCE init
+function updateCharCount() {
+    let charCount = 0;
+    const maxChars = 5000;
+    
+    // Try TinyMCE first
+    const editor = tinymce.get('mo_ta_tin_editor');
+    if (editor) {
+        const content = editor.getContent({ format: 'text' });
+        charCount = content.length;
+    } else {
+        // Fallback to textarea
+        const textarea = $('#mo_ta_tin_editor');
+        if (textarea.length) {
+            charCount = textarea.val().length;
+        }
+    }
+    
+    $('#char-count').text(`${charCount.toLocaleString()} / ${maxChars.toLocaleString()} ký tự`);
+    
+    // Color coding based on usage
+    if (charCount > maxChars * 0.9) {
+        $('#char-count').removeClass('text-gray-400 text-yellow-500').addClass('text-red-500');
+    } else if (charCount > maxChars * 0.7) {
+        $('#char-count').removeClass('text-gray-400 text-red-500').addClass('text-yellow-500');
+    } else {
+        $('#char-count').removeClass('text-red-500 text-yellow-500').addClass('text-gray-400');
+    }
+}
+
+// Form validation function - Define before TinyMCE init
+function checkFormValid() {
+    const tieuDe = $('input[name="tieu_de"]').val() || '';
+    const isValid = currentSelectedRoom && selectedFiles.length > 0 && tieuDe.trim().length >= 10;
+    $('#submitBtn').prop('disabled', !isValid);
+}
+
+// Try alternative CDN if first one fails
+function loadTinyMCEFallback() {
+    console.log('Loading TinyMCE from alternative CDN...');
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/tinymce@7/tinymce.min.js';
+    script.onload = function() {
+        console.log('TinyMCE loaded from alternative CDN');
+        setTimeout(initTinyMCE, 100);
+    };
+    script.onerror = function() {
+        console.error('Failed to load TinyMCE from alternative CDN, using fallback editor');
+        initFallbackEditor();
+    };
+    document.head.appendChild(script);
+}
+
+// Initialize TinyMCE
+function initTinyMCE() {
+    if (typeof tinymce === 'undefined') {
+        console.error('TinyMCE not loaded from primary CDN. Trying alternative...');
+        loadTinyMCEFallback();
+        return;
+    }
+    
+    // Suppress TinyMCE deprecation warnings in development
+    const originalWarn = console.warn;
+    console.warn = function(message) {
+        if (typeof message === 'string' && message.includes('-ms-high-contrast')) {
+            return; // Suppress this specific warning
+        }
+        originalWarn.apply(console, arguments);
+    };
+    
+    // Clear any existing TinyMCE instances
+    tinymce.remove('#mo_ta_tin_editor');
+
+    tinymce.init({
+        selector: '#mo_ta_tin_editor',
+        height: 350,
+        menubar: false,
+        branding: false,
+        resize: true,
+        readonly: false,
+        disabled: false,
+        
+        // Fix for read-only issue
+        init_instance_callback: function(editor) {
+            // TinyMCE 6.x doesn't use setMode, ensure editor is not readonly
+            if (editor.getParam('readonly')) {
+                editor.setParam('readonly', false);
+            }
+        },
+        
+        // Plugins for rich functionality
+        plugins: [
+            'advlist', 'autolink', 'lists', 'link', 'charmap', 'preview',
+            'searchreplace', 'visualblocks', 'code', 'fullscreen',
+            'table', 'wordcount'
+        ],
+        
+        // Simplified toolbar to avoid conflicts
+        toolbar: 'undo redo | formatselect | bold italic underline | forecolor backcolor | alignleft aligncenter alignright | bullist numlist | outdent indent | removeformat | code fullscreen',
+        
+        // Content formatting
+        formats: {
+            h1: { block: 'h1', styles: { fontSize: '24px', fontWeight: 'bold', color: '#111827', marginBottom: '12px' } },
+            h2: { block: 'h2', styles: { fontSize: '20px', fontWeight: '600', color: '#1f2937', marginBottom: '8px' } },
+            h3: { block: 'h3', styles: { fontSize: '18px', fontWeight: '500', color: '#374151', marginBottom: '8px' } },
+        },
+        
+        // Content styles - Updated for modern CSS
+        content_style: `
+            body { 
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+                font-size: 14px; 
+                line-height: 1.6;
+                color: #374151;
+                padding: 15px;
+                background-color: white;
+            }
+            h1, h2, h3 { margin-top: 20px; margin-bottom: 10px; }
+            ul, ol { margin: 10px 0; padding-left: 30px; }
+            li { margin: 5px 0; }
+            p { margin: 10px 0; }
+            strong { font-weight: 600; color: #1f2937; }
+            
+            /* Modern high contrast support */
+            @media (forced-colors: active) {
+                body { color: CanvasText; background: Canvas; }
+                strong { color: CanvasText; }
+                h1, h2, h3 { color: CanvasText; }
+            }
+        `,
+        
+        // Setup callback
+        setup: function(editor) {
+            editor.on('init', function() {
+                // TinyMCE 6.x: Ensure editor is not readonly instead of setMode
+                if (editor.getParam('readonly')) {
+                    editor.setParam('readonly', false);
+                }
+                editor.focus();
+                updateCharCount();
+            });
+            
+            editor.on('keyup change paste', function() {
+                updateCharCount();
+                checkFormValid();
+            });
+        },
+        
+        // Paste settings
+        paste_auto_cleanup_on_paste: true,
+        paste_remove_styles: false,
+        
+        // Remove read-only restrictions
+        forced_root_block: 'p',
+        force_br_newlines: false,
+        convert_urls: false
+    }).catch(function(error) {
+        console.error('TinyMCE initialization failed:', error);
+        initFallbackEditor();
+    });
+}
+
+// Fallback editor if TinyMCE fails
+function initFallbackEditor() {
+    console.log('Using fallback textarea editor');
+    
+    const textarea = $('#mo_ta_tin_editor');
+    textarea.removeClass('hidden').show();
+    
+    // Add basic formatting buttons
+    const toolbar = $(`
+        <div class="tinymce-fallback-toolbar border-b p-2 bg-gray-50 flex gap-2 flex-wrap">
+            <button type="button" class="format-btn px-2 py-1 text-xs border rounded hover:bg-gray-100" data-format="bold">
+                <strong>B</strong>
+            </button>
+            <button type="button" class="format-btn px-2 py-1 text-xs border rounded hover:bg-gray-100" data-format="italic">
+                <em>I</em>
+            </button>
+            <button type="button" class="format-btn px-2 py-1 text-xs border rounded hover:bg-gray-100" data-format="h3">
+                H3
+            </button>
+            <button type="button" class="format-btn px-2 py-1 text-xs border rounded hover:bg-gray-100" data-format="ul">
+                • List
+            </button>
+        </div>
+    `);
+    
+    textarea.parent().prepend(toolbar);
+    
+    // Handle formatting buttons
+    $('.format-btn').click(function(e) {
+        e.preventDefault();
+        const format = $(this).data('format');
+        const textArea = document.getElementById('mo_ta_tin_editor');
+        const start = textArea.selectionStart;
+        const end = textArea.selectionEnd;
+        const selectedText = textArea.value.substring(start, end);
+        
+        let replacement = '';
+        switch(format) {
+            case 'bold':
+                replacement = `**${selectedText || 'text'}**`;
+                break;
+            case 'italic':
+                replacement = `*${selectedText || 'text'}*`;
+                break;
+            case 'h3':
+                replacement = `### ${selectedText || 'Tiêu đề'}`;
+                break;
+            case 'ul':
+                replacement = `• ${selectedText || 'Mục danh sách'}`;
+                break;
+        }
+        
+        textArea.setRangeText(replacement, start, end, 'end');
+        textArea.focus();
+        updateCharCount();
+    });
+    
+    // Update character count for fallback
+    textarea.on('input keyup paste', updateCharCount);
+    updateCharCount();
+}
+
+// Initialize main functionality
+function initializeDangTin() {
+    // Check jQuery
+    if (typeof $ === 'undefined') {
+        console.error('jQuery is not loaded. Retrying in 100ms...');
+        setTimeout(initializeDangTin, 100);
+        return;
+    }
+
+    console.log('jQuery loaded successfully');
+    $(document).ready(function() {
+    // Define DOM elements first
+    const fileInput = $('#fileInput')[0];
+    const dropZone = $('#dropZone')[0];
+    const imagePreview = $('#imagePreview')[0];
+    
+    // Define functions first
+    function filterRooms() {
+        const searchTerm = $('#searchRoom').val().toLowerCase();
+        const selectedKhuVuc = $('#filterKhuVuc').val();
+        
+        $('.room-card').each(function() {
+            const roomName = $(this).data('ten-phong');
+            const khuVuc = $(this).data('khu-vuc').toString();
+            
+            const matchesSearch = !searchTerm || roomName.includes(searchTerm);
+            const matchesKhuVuc = !selectedKhuVuc || khuVuc === selectedKhuVuc;
+            
+            if (matchesSearch && matchesKhuVuc) {
+                $(this).show();
+            } else {
+                $(this).hide();
+            }
         });
+    }
+    
+    // Search and filter event listeners
+    $('#searchRoom').on('input', function() {
+        const searchTerm = $(this).val().toLowerCase();
+        filterRooms();
     });
     
-    // Xử lý drop zone
-    dropZone.addEventListener('click', () => fileInput.click());
-    
-    dropZone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        dropZone.classList.add('border-blue-500', 'bg-blue-50');
+    $('#filterKhuVuc').on('change', function() {
+        filterRooms();
     });
     
-    dropZone.addEventListener('dragleave', () => {
-        dropZone.classList.remove('border-blue-500', 'bg-blue-50');
-    });
-    
-    dropZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dropZone.classList.remove('border-blue-500', 'bg-blue-50');
-        handleFiles(e.dataTransfer.files);
-    });
-    
-    fileInput.addEventListener('change', (e) => {
-        handleFiles(e.target.files);
-    });
+    // Define image handling functions first
+    function updateImagePreview() {
+        $(imagePreview).html('');
+        if (selectedFiles.length > 0) {
+            $(imagePreview).removeClass('hidden');
+            
+            selectedFiles.forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const div = $(`
+                        <div class="relative group">
+                            <img src="${e.target.result}" class="w-full h-24 object-cover rounded-lg border">
+                            <button type="button" onclick="removeImage(${index})" 
+                                    class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 transition-colors">
+                                ×
+                            </button>
+                            ${index === 0 ? '<div class="absolute bottom-1 left-1 bg-green-500 text-white px-1 py-0.5 rounded text-xs">Ảnh đại diện</div>' : ''}
+                        </div>
+                    `);
+                    $(imagePreview).append(div);
+                };
+                reader.readAsDataURL(file);
+            });
+        } else {
+            $(imagePreview).addClass('hidden');
+        }
+    }
     
     function handleFiles(files) {
         selectedFiles = Array.from(files);
         updateImagePreview();
         checkFormValid();
     }
-    
-    function updateImagePreview() {
-        imagePreview.innerHTML = '';
-        if (selectedFiles.length > 0) {
-            imagePreview.classList.remove('hidden');
-            
-            selectedFiles.forEach((file, index) => {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const div = document.createElement('div');
-                    div.className = 'relative group';
-                    div.innerHTML = `
-                        <img src="${e.target.result}" class="w-full h-24 object-cover rounded-lg border">
-                        <button type="button" onclick="removeImage(${index})" 
-                                class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <i class="fas fa-times"></i>
-                        </button>
-                        ${index === 0 ? '<div class="absolute bottom-1 left-1 bg-green-500 text-white px-1 py-0.5 rounded text-xs">Ảnh đại diện</div>' : ''}
-                    `;
-                    imagePreview.appendChild(div);
-                };
-                reader.readAsDataURL(file);
-            });
-        } else {
-            imagePreview.classList.add('hidden');
-        }
+
+    function updateFileInput() {
+        const dt = new DataTransfer();
+        selectedFiles.forEach(file => dt.items.add(file));
+        fileInput.files = dt.files;
     }
     
+    // Global function to remove image
     window.removeImage = function(index) {
         selectedFiles.splice(index, 1);
         updateFileInput();
@@ -209,16 +711,196 @@ document.addEventListener('DOMContentLoaded', function() {
         checkFormValid();
     }
     
-    function updateFileInput() {
-        const dt = new DataTransfer();
-        selectedFiles.forEach(file => dt.items.add(file));
-        fileInput.files = dt.files;
+    // Global function to select room
+    window.selectRoom = function(maPhong, tenPhong, giaPhong, khuVuc, loaiPhong, dienTich) {
+        // Remove previous selection
+        $('.room-card').removeClass('border-blue-500 bg-blue-50');
+        
+        // Add selection to current room
+        $(`.room-card[data-ma-phong="${maPhong}"]`).addClass('border-blue-500 bg-blue-50');
+        
+        // Update hidden input
+        $('#ma_phong').val(maPhong);
+        currentSelectedRoom = { maPhong, tenPhong, giaPhong, khuVuc, loaiPhong, dienTich };
+        
+        // Update UI
+        $('#selected_room_info').text(`Đã chọn: ${tenPhong}`);
+        $('#room_info_badge').removeClass('hidden').text(tenPhong);
+        
+        // Show form content
+        $('#empty_state').addClass('hidden');
+        $('#posting_form').removeClass('hidden');
+        $('#form_footer').removeClass('hidden');
+        
+        // Update room display
+        $('#room_details').html(`
+            <div class="grid grid-cols-2 gap-4 text-sm">
+                <div><strong>Tên phòng:</strong> ${tenPhong}</div>
+                <div><strong>Khu vực:</strong> ${khuVuc}</div>
+                <div><strong>Loại phòng:</strong> ${loaiPhong}</div>
+                <div><strong>Diện tích:</strong> ${dienTich} m²</div>
+                <div class="col-span-2"><strong>Giá phòng:</strong> ${formatCurrency(giaPhong)}/tháng</div>
+            </div>
+        `);
+        
+        checkFormValid();
+    };
+    
+    // Drop zone events
+    $('#dropZone').on('click', () => fileInput.click());
+    
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        $(dropZone).addClass('border-blue-500 bg-blue-50');
+    });
+    
+    dropZone.addEventListener('dragleave', () => {
+        $(dropZone).removeClass('border-blue-500 bg-blue-50');
+    });
+    
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        $(dropZone).removeClass('border-blue-500 bg-blue-50');
+        handleFiles(e.dataTransfer.files);
+    });
+    
+    $(fileInput).on('change', (e) => {
+        handleFiles(e.target.files);
+    });
+    
+    // Real-time validation for title
+    $(document).on('input', 'input[name="tieu_de"]', function() {
+        const value = $(this).val();
+        const parent = $(this).parent();
+        
+        // Remove existing validation message
+        parent.find('.validation-message').remove();
+        
+        if (value.length > 0 && value.length < 10) {
+            $(this).addClass('border-red-500');
+            parent.append('<p class="validation-message text-xs text-red-500 mt-1">Tiêu đề phải có ít nhất 10 ký tự</p>');
+        } else if (value.length >= 10) {
+            $(this).removeClass('border-red-500').addClass('border-green-500');
+            parent.append('<p class="validation-message text-xs text-green-500 mt-1">Tiêu đề hợp lệ</p>');
+        } else {
+            $(this).removeClass('border-red-500 border-green-500');
+        }
+        
+        checkFormValid();
+    });
+    
+    // Set minimum date for expiry date
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    $('input[name="ngay_het_hang_tin"]').attr('min', tomorrow.toISOString().split('T')[0]);
+    
+    // Initialize TinyMCE
+    initTinyMCE();
+    
+    // Template functionality
+    $('#toggle-templates').click(function() {
+        const $templates = $('#content-templates');
+        const $icon = $(this).find('i');
+        
+        $templates.toggleClass('hidden');
+        
+        if ($templates.hasClass('hidden')) {
+            $icon.removeClass('fa-chevron-up').addClass('fa-chevron-down');
+            $(this).find('span').text('Xem mẫu');
+        } else {
+            $icon.removeClass('fa-chevron-down').addClass('fa-chevron-up');
+            $(this).find('span').text('Ẩn mẫu');
+        }
+    });
+    
+    // Template insertion
+    $('.template-btn').click(function() {
+        const template = $(this).data('template');
+        const content = contentTemplates[template];
+        
+        if (content && tinymce.get('mo_ta_tin_editor')) {
+            const editor = tinymce.get('mo_ta_tin_editor');
+            const currentContent = editor.getContent();
+            
+            // Add template content
+            if (currentContent.trim()) {
+                editor.setContent(currentContent + '<br><br>' + content);
+            } else {
+                editor.setContent(content);
+            }
+            
+            // Focus editor
+            editor.focus();
+            
+            // Update character count
+            updateCharCount();
+            
+            // Visual feedback
+            $(this).addClass('bg-gray-100 scale-95').removeClass('hover:bg-blue-100 hover:bg-green-100 hover:bg-yellow-100 hover:bg-purple-100');
+            setTimeout(() => {
+                $(this).removeClass('bg-gray-100 scale-95');
+                // Re-add appropriate hover class based on template type
+                const templateType = $(this).data('template');
+                if (templateType === 'room-info') $(this).addClass('hover:bg-blue-100');
+                else if (templateType === 'location') $(this).addClass('hover:bg-green-100');
+                else if (templateType === 'utilities') $(this).addClass('hover:bg-yellow-100');
+                else if (templateType === 'rules') $(this).addClass('hover:bg-purple-100');
+            }, 200);
+        }
+    });
+    
+    function formatCurrency(amount) {
+        return new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND'
+        }).format(amount);
     }
     
-    function checkFormValid() {
-        const isValid = selectedPhong && selectedFiles.length > 0;
-        submitBtn.disabled = !isValid;
-    }
-});
+    // Form validation before submit
+    $('#dangTinForm').submit(function(e) {
+        if (!currentSelectedRoom) {
+            e.preventDefault();
+            alert('Vui lòng chọn phòng trước khi đăng tin.');
+            return;
+        }
+        
+        if (selectedFiles.length === 0) {
+            e.preventDefault();
+            alert('Vui lòng chọn ít nhất một hình ảnh.');
+            return;
+        }
+        
+        // Sync TinyMCE content to textarea before submit
+        const editor = tinymce.get('mo_ta_tin_editor');
+        if (editor) {
+            editor.save(); // This saves the content to the original textarea
+            
+            // Check content length
+            const content = editor.getContent({ format: 'text' });
+            if (content.length > 5000) {
+                e.preventDefault();
+                alert('Mô tả quá dài. Vui lòng giảm xuống dưới 5,000 ký tự.');
+                return;
+            }
+        }
+        
+        // Show loading state
+        $('#submitBtn').prop('disabled', true).html(`
+            <svg class="animate-spin w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Đang đăng tin...
+        `);
+    });
+    });
+}
+
+// Khởi tạo khi DOM loaded hoặc khi jQuery sẵn sàng
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeDangTin);
+} else {
+    initializeDangTin();
+}
 </script>
 {% endblock %}

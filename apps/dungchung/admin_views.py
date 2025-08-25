@@ -32,16 +32,45 @@ def dashboard(request):
         messages.error(request, 'Không tìm thấy thông tin tài khoản.')
         return redirect('dungchung:logout')
     
+    # Lấy thống kê dựa trên hợp đồng thay vì phòng
+    try:
+        from apps.hopdong.services import HopDongReportService
+        from django.apps import apps
+        HoaDon = apps.get_model('hoadon', 'HoaDon')
+        from datetime import datetime
+        
+        # Thống kê hợp đồng
+        contract_stats = HopDongReportService.thong_ke_chi_tiet_dashboard()
+        
+        # Doanh thu tháng hiện tại từ hợp đồng
+        current_month = datetime.now()
+        revenue = HopDongReportService.bao_cao_doanh_thu_hop_dong(
+            current_month.month, 
+            current_month.year
+        )
+        
+        total_contracts = contract_stats.get('tong_hop_dong', 0)
+        active_contracts = contract_stats.get('dang_hoat_dong', 0)
+        monthly_revenue = f"{revenue.get('tong_doanh_thu', 0):,.0f} VNĐ"
+        pending_contracts = contract_stats.get('cho_xac_nhan', 0)
+        
+    except Exception as e:
+        # Fallback values nếu có lỗi
+        total_contracts = 0
+        active_contracts = 0  
+        monthly_revenue = "0 VNĐ"
+        pending_contracts = 0
+    
     context = {
         'username': request.session.get('username'),
         'vai_tro': vai_tro,
         'tai_khoan': tai_khoan,
         'nguoi_quan_ly': nguoi_quan_ly,
-        # Thống kê (placeholder - có thể thêm sau)
-        'total_rooms': 0,  # Sẽ tính từ database
-        'total_tenants': 0,  # Sẽ tính từ database
-        'monthly_revenue': 0,  # Sẽ tính từ database
-        'pending_contracts': 0,  # Sẽ tính từ database
+        # Thống kê dựa trên hợp đồng (MA_HOP_DONG)
+        'total_rooms': total_contracts,  # Đổi thành tổng hợp đồng
+        'total_tenants': active_contracts,  # Đổi thành hợp đồng đang hoạt động  
+        'monthly_revenue': monthly_revenue,  # Doanh thu từ hợp đồng
+        'pending_contracts': pending_contracts,  # Hợp đồng chờ xác nhận
     }
     return render(request, 'admin/dashboard/dashboard.html', context)
 

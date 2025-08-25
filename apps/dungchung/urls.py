@@ -24,6 +24,9 @@ urlpatterns = [
     path('hoa-don/', views.user_hoa_don_list_view, name='user_hoa_don_list'),
     path('hoa-don/<int:ma_hoa_don>/', views.user_hoa_don_detail_view, name='user_hoa_don_detail'),
     
+    # Chatbot API
+    path('api/chatbot/', views.chatbot_api, name='chatbot_api'),
+    
     # Admin views
     path('admin-profile/', admin_views.admin_profile, name='admin_profile'),
     path('admin-logout/', admin_views.admin_logout, name='admin_logout'),

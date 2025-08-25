@@ -69,12 +69,6 @@ class ChiSoDichVu(models.Model):
         db_column='MA_HOP_DONG',
         related_name='chisodichvu'
     )
-    MA_PHONG = models.ForeignKey(
-        'phongtro.PhongTro',
-        on_delete=models.CASCADE,
-        db_column='MA_PHONG',
-        related_name='chisodichvu'
-    )
     CHI_SO_CU = models.IntegerField(null=True, blank=True)
     CHI_SO_MOI = models.IntegerField(null=True, blank=True)
     NGAY_GHI_CS = models.DateField(null=True, blank=True)
@@ -116,11 +110,10 @@ class ChiSoDichVu(models.Model):
             return None, errors
 
     @staticmethod
-    def create_chi_so_dich_vu(phong, dich_vu, chi_so_data, ngay_ghi_cs, hop_dong):
+    def create_chi_so_dich_vu(dich_vu, chi_so_data, ngay_ghi_cs, hop_dong):
         return ChiSoDichVu(
             MA_HOP_DONG=hop_dong,
             MA_DICH_VU=dich_vu,
-            MA_PHONG=phong,
             CHI_SO_CU=int(chi_so_data['CHI_SO_CU']),
             CHI_SO_MOI=int(chi_so_data['CHI_SO_MOI']),
             NGAY_GHI_CS=ngay_ghi_cs
@@ -147,7 +140,7 @@ class ChiSoDichVu(models.Model):
         chi_so_dv.NGAY_GHI_CS = ngay_ghi_cs
         return chi_so_dv
     @staticmethod
-    def save_chi_so_dich_vu(phong, chi_so_dich_vu_list, ngay_ghi_cs, hop_dong):
+    def save_chi_so_dich_vu(chi_so_dich_vu_list, ngay_ghi_cs, hop_dong):
         errors = []
         for chi_so in chi_so_dich_vu_list:
             ma_dich_vu = int(chi_so.get('MA_DICH_VU'))
@@ -178,7 +171,7 @@ class ChiSoDichVu(models.Model):
                     continue
             else:
                 # Tạo bản ghi mới
-                chi_so_dv = ChiSoDichVu.create_chi_so_dich_vu(phong, dich_vu, chi_so_data, ngay_ghi_cs, hop_dong)
+                chi_so_dv = ChiSoDichVu.create_chi_so_dich_vu(dich_vu, chi_so_data, ngay_ghi_cs, hop_dong)
                 chi_so_dv.save()
 
         return errors
@@ -379,10 +372,12 @@ class ChiSoDichVu(models.Model):
                 'TEN_DICH_VU': dich_vu_ap_dung.MA_DICH_VU.TEN_DICH_VU,
                 'LOAI_DICH_VU': dich_vu_ap_dung.MA_DICH_VU.LOAI_DICH_VU,
                 'GIA_DICH_VU': float(dich_vu_ap_dung.GIA_DICH_VU_AD),
+                'DON_VI_TINH': dich_vu_ap_dung.MA_DICH_VU.DON_VI_TINH,
                 'CHI_SO_CU': float(chi_so_cu),
                 'CHI_SO_MOI': float(chi_so_moi) if chi_so_moi is not None else None,
                 'SO_DICH_VU': float(so_dich_vu),
-                'THANH_TIEN': float(thanh_tien)
+                'THANH_TIEN': float(thanh_tien),
+                'SO_LUONG': chi_so.SO_LUONG if hasattr(chi_so, 'SO_LUONG') else 0
             }, errors
         except Exception as e:
             errors.append(f'Lỗi khi tính chi tiết dịch vụ {dich_vu_ap_dung.MA_DICH_VU.TEN_DICH_VU}: {str(e)}')

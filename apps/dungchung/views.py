@@ -13,6 +13,10 @@ from apps.phongtro.models import PhongTro
 from apps.nhatro.models import KhuVuc
 from django.db.models import Q
 from datetime import datetime
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
+import json
+from .gemini_service import GeminiChatService
 
 def trang_chu(request):
     return render(request, 'index/trangchu/trangchu.html')
@@ -584,3 +588,50 @@ def user_hoa_don_detail_view(request, ma_hoa_don):
     except Exception as e:
         messages.error(request, f'Có lỗi xảy ra: {str(e)}')
         return redirect('dungchung:user_hoa_don_list')
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def chatbot_api(request):
+    """
+    API endpoint để xử lý tin nhắn từ chatbot
+    """
+    try:
+        data = json.loads(request.body)
+        user_message = data.get('message', '').strip()
+        conversation_history = data.get('history', [])
+        
+        if not user_message:
+            return JsonResponse({
+                'success': False,
+                'message': 'Vui lòng nhập tin nhắn.',
+                'error': 'Empty message'
+            })
+        
+        # Khởi tạo dịch vụ Gemini
+        gemini_service = GeminiChatService()
+        
+        if not gemini_service.is_available():
+            return JsonResponse({
+                'success': False,
+                'message': 'Dịch vụ chatbot hiện không khả dụng. Vui lòng thử lại sau.',
+                'error': 'Gemini service unavailable'
+            })
+        
+        # Lấy phản hồi từ Gemini
+        response = gemini_service.get_response(user_message, conversation_history)
+        
+        return JsonResponse(response)
+        
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'message': 'Dữ liệu không hợp lệ.',
+            'error': 'Invalid JSON data'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': 'Có lỗi xảy ra khi xử lý yêu cầu.',
+            'error': str(e)
+        })

@@ -4,7 +4,7 @@
         <tr>
             <th rowspan="2" class="border border-gray-300 px-3 py-2 text-center font-semibold">Tên phòng</th>
             {% for dich_vu in dich_vus %}
-                <th colspan="{% if dich_vu.DON_VI_TINH == 'Tháng' %}2{% else %}3{% endif %}" 
+                <th colspan="{% if dich_vu.DON_VI_TINH == 'Tháng' or dich_vu.LOAI_DICH_VU == 'Cố định' or dich_vu.LOAI_DICH_VU == 'Co dinh' or dich_vu.LOAI_DICH_VU == 'thang' %}2{% else %}3{% endif %}" 
                     class="border border-gray-300 px-3 py-2 text-center font-semibold">
                     {{ dich_vu.TEN_DICH_VU }}
                 </th>
@@ -12,7 +12,7 @@
         </tr>
         <tr>
             {% for dich_vu in dich_vus %}
-                {% if dich_vu.DON_VI_TINH == 'Tháng' %}
+                {% if dich_vu.DON_VI_TINH == 'Tháng' or dich_vu.LOAI_DICH_VU == 'Cố định' or dich_vu.LOAI_DICH_VU == 'Co dinh' or dich_vu.LOAI_DICH_VU == 'thang' %}
                     <th class="border border-gray-300 px-2 py-1 text-center font-medium">Sử dụng</th>
                     <th class="border border-gray-300 px-2 py-1 text-center font-medium">Thành tiền</th>
                 {% else %}
@@ -30,8 +30,8 @@
                     {{ phong_data.phong.TEN_PHONG|default:phong_data.phong.MA_PHONG|default:"Phòng không xác định" }}
                 </td>
                 {% for chi_so in phong_data.chi_so_data %}
-                    {% if chi_so.don_vi_tinh == 'Tháng' %}
-                        <td class="border border-gray-300 px-2 py-1 text-center">1</td>
+                    {% if chi_so.is_fixed_service %}
+                        <td class="border border-gray-300 px-2 py-1 text-center">{{ chi_so.so_luong_su_dung|default:0 }}</td>
                         <td class="border border-gray-300 px-2 py-1 text-right">{{ chi_so.service_total|floatformat:0 }}</td>
                     {% else %}
                         <td class="border border-gray-300 px-2 py-1 text-center">{{ chi_so.chi_so_cu }}</td>
@@ -45,14 +45,13 @@
         <tr class="bg-gray-200 font-semibold">
             <td class="border border-gray-300 px-3 py-2 text-center">Tổng cộng</td>
             {% for dich_vu in dich_vus %}
-                {% if dich_vu.DON_VI_TINH != 'Tháng' %}
-                    <td colspan="2" class="border border-gray-300 px-2 py-1 text-right">
-                        {{ total_chiso|lookup:dich_vu.TEN_DICH_VU|default:'-'|floatformat:0 }}
-                    </td>
-                {% endif %}
-                {% if dich_vu.DON_VI_TINH == 'Tháng' %}
+                {% if dich_vu.DON_VI_TINH == 'Tháng' or dich_vu.LOAI_DICH_VU == 'Cố định' or dich_vu.LOAI_DICH_VU == 'Co dinh' or dich_vu.LOAI_DICH_VU == 'thang' %}
                     <td class="border border-gray-300 px-2 py-1 text-center">
                         {{ total_so_lan_su_dung|lookup:dich_vu.TEN_DICH_VU|default:0 }}
+                    </td>
+                {% else %}
+                    <td colspan="2" class="border border-gray-300 px-2 py-1 text-right">
+                        {{ total_chiso|lookup:dich_vu.TEN_DICH_VU|default:'-'|floatformat:0 }}
                     </td>
                 {% endif %}
                 <td class="border border-gray-300 px-2 py-1 text-right">

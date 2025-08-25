@@ -314,13 +314,14 @@ class HopDongReportService:
     def danh_sach_hop_dong_sap_het_han(cls, so_ngay=30):
         """
         Lấy danh sách hợp đồng sắp hết hạn trong N ngày tới
+        Chỉ thống kê dựa trên MA_HOP_DONG, không dùng thông tin MA_PHONG
         """
         ngay_gioi_han = timezone.now().date() + timedelta(days=so_ngay)
         
         hop_dong_sap_het_han = HopDong.objects.filter(
             TRANG_THAI_HD__in=['Đang hoạt động', 'Sắp kết thúc'],
             NGAY_TRA_PHONG__lte=ngay_gioi_han
-        ).select_related('MA_PHONG', 'MA_PHONG__MA_KHU_VUC').order_by('NGAY_TRA_PHONG')
+        ).order_by('NGAY_TRA_PHONG')
         
         return hop_dong_sap_het_han
     
@@ -358,4 +359,31 @@ class HopDongReportService:
                 so_luong=Count('MA_HOA_DON'),
                 tong_tien=Sum('TONG_TIEN')
             )
+        }
+    
+    @classmethod
+    def thong_ke_chi_tiet_dashboard(cls):
+        """
+        Thống kê chi tiết cho dashboard - hoàn toàn dựa trên MA_HOP_DONG
+        Không sử dụng MA_PHONG để thống kê
+        """
+        from django.db.models import Count
+        
+        # Đếm hợp đồng theo trạng thái dựa trên MA_HOP_DONG
+        tong_hop_dong = HopDong.objects.count()
+        dang_hoat_dong = HopDong.objects.filter(TRANG_THAI_HD='Đang hoạt động').count()
+        cho_xac_nhan = HopDong.objects.filter(
+            TRANG_THAI_HD__in=['Chờ xác nhận', 'Đã xác nhận']
+        ).count()
+        da_ket_thuc = HopDong.objects.filter(TRANG_THAI_HD='Đã kết thúc').count()
+        huy_bo = HopDong.objects.filter(TRANG_THAI_HD='Đã hủy').count()
+        
+        return {
+            'tong_hop_dong': tong_hop_dong,
+            'dang_hoat_dong': dang_hoat_dong,
+            'cho_xac_nhan': cho_xac_nhan,
+            'da_ket_thuc': da_ket_thuc,
+            'huy_bo': huy_bo,
+            # Thống kê bổ sung theo MA_HOP_DONG
+            'ty_le_hoat_dong': round((dang_hoat_dong / tong_hop_dong * 100) if tong_hop_dong > 0 else 0, 2)
         }

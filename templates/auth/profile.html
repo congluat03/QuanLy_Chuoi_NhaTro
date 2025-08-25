@@ -1,337 +1,360 @@
 {% extends 'index/index_layout.html' %}
+{% load static %}
 
 {% block content %}
-<div class="pt-20 pb-16 min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="bg-white rounded-xl shadow-lg overflow-hidden">
-      <!-- Header -->
-      <div class="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-8">
-        <div class="flex items-center space-x-4">
-          <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center">
-            {% if khach_thue and khach_thue.ANH_KT %}
-              <img src="{{ khach_thue.ANH_KT.url }}" alt="Avatar" class="w-18 h-18 rounded-full object-cover">
+<div class="min-h-screen bg-gray-50 flex items-center justify-center p-4 sm:p-6">
+  <div class="max-w-6xl w-full mx-auto">
+    <!-- Profile Header -->
+    <div class="hero-modern mb-3">
+      <div class="hero-content flex items-center gap-4 p-6">
+        <div class="w-20 h-20 rounded-full bg-white/20 flex items-center justify-center">
+          {% if khach_thue and khach_thue.ANH_KT %}
+            <img src="{{ khach_thue.ANH_KT.url }}" alt="Avatar" class="w-16 h-16 rounded-full object-cover border border-white/30">
+          {% else %}
+            <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+            </svg>
+          {% endif %}
+        </div>
+        <div class="text-white">
+          <h1 class="text-2xl font-bold mb-1">
+            {% if khach_thue and khach_thue.HO_TEN_KT %}
+              {{ khach_thue.HO_TEN_KT }}
             {% else %}
-              <svg class="w-12 h-12 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+              {{ tai_khoan.TAI_KHOAN }}
+            {% endif %}
+          </h1>
+          <p class="text-white/80 mb-3">{{ tai_khoan.QUYEN_HAN }}</p>
+          <a href="{% url 'dungchung:cap_nhat_profile' %}" class="btn-modern btn-modern-secondary text-sm">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"></path>
+            </svg>
+            Cập nhật thông tin
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Messages -->
+    {% if messages %}
+      <div class="mb-3">
+        {% for message in messages %}
+          <div class="alert-modern {% if message.tags == 'success' %}alert-modern-success{% elif message.tags == 'error' %}alert-modern-error{% else %}alert-modern-warning{% endif %} mb-2">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              {% if message.tags == 'success' %}
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+              {% elif message.tags == 'error' %}
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+              {% else %}
+                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+              {% endif %}
+            </svg>
+            {{ message }}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <!-- Content Grid -->
+    <div class="grid gap-3 md:grid-cols-2">
+      <!-- Account Information -->
+      <div class="modern-card">
+        <div class="modern-card-header">
+          <h2 class="text-lg font-semibold text-gray-900">Thông Tin Tài Khoản</h2>
+        </div>
+        <div class="modern-card-body space-y-3">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 flex items-center justify-center" style="background-color: var(--primary-100);">
+              <svg class="w-4 h-4" style="color: var(--primary-600);" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
               </svg>
-            {% endif %}
+            </div>
+            <div>
+              <p class="text-xs font-medium text-gray-500">Tên đăng nhập</p>
+              <p class="text-sm font-semibold text-gray-900">{{ tai_khoan.TAI_KHOAN }}</p>
+            </div>
           </div>
-          <div class="text-white">
-            <h1 class="text-3xl font-bold">
-              {% if khach_thue and khach_thue.HO_TEN_KT %}
-                {{ khach_thue.HO_TEN_KT }}
-              {% else %}
-                {{ tai_khoan.TAI_KHOAN }}
-              {% endif %}
-            </h1>
-            <p class="text-blue-100">{{ tai_khoan.QUYEN_HAN }}</p>
+
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 flex items-center justify-center" style="background-color: var(--primary-100);">
+              <svg class="w-4 h-4" style="color: var(--primary-600);" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"></path>
+                <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"></path>
+              </svg>
+            </div>
+            <div>
+              <p class="text-xs font-medium text-gray-500">Email</p>
+              <p class="text-sm font-semibold text-gray-900">{{ khach_thue.EMAIL_KT|default:"Chưa cập nhật" }}</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 flex items-center justify-center" style="background-color: var(--success-100);">
+              <svg class="w-4 h-4" style="color: var(--success-600);" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+            </div>
+            <div>
+              <p class="text-xs font-medium text-gray-500">Trạng thái</p>
+              <p class="text-sm font-semibold" style="color: var(--success-600);">{{ tai_khoan.TRANG_THAI_TK }}</p>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Messages -->
-      {% if messages %}
-        <div class="px-6 pt-4">
-          {% for message in messages %}
-            <div class="mb-4 p-4 rounded-lg {% if message.tags == 'success' %}bg-green-50 text-green-700 border border-green-200{% elif message.tags == 'error' %}bg-red-50 text-red-700 border border-red-200{% else %}bg-blue-50 text-blue-700 border border-blue-200{% endif %}">
-              {{ message }}
-            </div>
-          {% endfor %}
+      <!-- Personal Information -->
+      <div class="modern-card">
+        <div class="modern-card-header">
+          <h2 class="text-lg font-semibold text-gray-900">Thông Tin Cá Nhân</h2>
         </div>
-      {% endif %}
-
-      <!-- Content -->
-      <div class="p-6">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <!-- Thông tin tài khoản -->
-          <div>
-            <h2 class="text-2xl font-bold text-gray-900 mb-6">Thông Tin Tài Khoản</h2>
-            <div class="space-y-4">
-              <div class="flex items-center p-4 bg-gray-50 rounded-lg">
-                <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
-                  <svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+        <div class="modern-card-body">
+          {% if khach_thue %}
+            <div class="space-y-3">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 flex items-center justify-center" style="background-color: var(--primary-100);">
+                  <svg class="w-4 h-4" style="color: var(--primary-600);" fill="currentColor" viewBox="0 0 20 20">
                     <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
                   </svg>
                 </div>
                 <div>
-                  <p class="text-sm font-medium text-gray-500">Tên đăng nhập</p>
-                  <p class="text-lg font-semibold text-gray-900">{{ tai_khoan.TAI_KHOAN }}</p>
+                  <p class="text-xs font-medium text-gray-500">Họ và tên</p>
+                  <p class="text-sm font-semibold text-gray-900">{{ khach_thue.HO_TEN_KT|default:"Chưa cập nhật" }}</p>
                 </div>
               </div>
 
-              <div class="flex items-center p-4 bg-gray-50 rounded-lg">
-                <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-4">
-                  <svg class="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"></path>
-                    <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"></path>
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 flex items-center justify-center" style="background-color: var(--primary-100);">
+                  <svg class="w-4 h-4" style="color: var(--primary-600);" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"></path>
                   </svg>
                 </div>
                 <div>
-                  <p class="text-sm font-medium text-gray-500">Email</p>
-                  <p class="text-lg font-semibold text-gray-900">{{ khach_thue.EMAIL_KT|default:"Chưa cập nhật" }}</p>
+                  <p class="text-xs font-medium text-gray-500">Số điện thoại</p>
+                  <p class="text-sm font-semibold text-gray-900">{{ khach_thue.SDT_KT|default:"Chưa cập nhật" }}</p>
                 </div>
               </div>
 
-              <div class="flex items-center p-4 bg-gray-50 rounded-lg">
-                <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mr-4">
-                  <svg class="w-5 h-5 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 flex items-center justify-center" style="background-color: var(--primary-100);">
+                  <svg class="w-4 h-4" style="color: var(--primary-600);" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path>
                   </svg>
                 </div>
                 <div>
-                  <p class="text-sm font-medium text-gray-500">Trạng thái</p>
-                  <p class="text-lg font-semibold text-green-600">{{ tai_khoan.TRANG_THAI_TK }}</p>
+                  <p class="text-xs font-medium text-gray-500">Ngày sinh</p>
+                  <p class="text-sm font-semibold text-gray-900">{{ khach_thue.NGAY_SINH_KT|date:"d/m/Y"|default:"Chưa cập nhật" }}</p>
                 </div>
               </div>
-            </div>
-          </div>
 
-          <!-- Thông tin cá nhân -->
-          <div>
-            <h2 class="text-2xl font-bold text-gray-900 mb-6">Thông Tin Cá Nhân</h2>
-            {% if khach_thue %}
-              <div class="space-y-4">
-                <div class="flex items-center p-4 bg-gray-50 rounded-lg">
-                  <div class="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center mr-4">
-                    <svg class="w-5 h-5 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
-                    </svg>
-                  </div>
-                  <div>
-                    <p class="text-sm font-medium text-gray-500">Họ và tên</p>
-                    <p class="text-lg font-semibold text-gray-900">
-                      {{ khach_thue.HO_TEN_KT|default:"Chưa cập nhật" }}
-                    </p>
-                  </div>
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 flex items-center justify-center" style="background-color: var(--primary-100);">
+                  <svg class="w-4 h-4" style="color: var(--primary-600);" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+                  </svg>
                 </div>
-
-                <div class="flex items-center p-4 bg-gray-50 rounded-lg">
-                  <div class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center mr-4">
-                    <svg class="w-5 h-5 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"></path>
-                    </svg>
-                  </div>
-                  <div>
-                    <p class="text-sm font-medium text-gray-500">Số điện thoại</p>
-                    <p class="text-lg font-semibold text-gray-900">
-                      {{ khach_thue.SDT_KT|default:"Chưa cập nhật" }}
-                    </p>
-                  </div>
+                <div>
+                  <p class="text-xs font-medium text-gray-500">Giới tính</p>
+                  <p class="text-sm font-semibold text-gray-900">{{ khach_thue.GIOI_TINH_KT|default:"Chưa cập nhật" }}</p>
                 </div>
+              </div>
 
-                <div class="flex items-center p-4 bg-gray-50 rounded-lg">
-                  <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center mr-4">
-                    <svg class="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path>
-                    </svg>
-                  </div>
-                  <div>
-                    <p class="text-sm font-medium text-gray-500">Ngày sinh</p>
-                    <p class="text-lg font-semibold text-gray-900">
-                      {{ khach_thue.NGAY_SINH_KT|date:"d/m/Y"|default:"Chưa cập nhật" }}
-                    </p>
-                  </div>
-                </div>
-
-                <div class="flex items-center p-4 bg-gray-50 rounded-lg">
-                  <div class="w-10 h-10 bg-pink-100 rounded-lg flex items-center justify-center mr-4">
-                    <svg class="w-5 h-5 text-pink-600" fill="currentColor" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
-                    </svg>
-                  </div>
-                  <div>
-                    <p class="text-sm font-medium text-gray-500">Giới tính</p>
-                    <p class="text-lg font-semibold text-gray-900">
-                      {{ khach_thue.GIOI_TINH_KT|default:"Chưa cập nhật" }}
-                    </p>
-                  </div>
-                </div>
-
-                <div class="flex items-center p-4 bg-gray-50 rounded-lg">
-                  <div class="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center mr-4">
-                    <svg class="w-5 h-5 text-teal-600" fill="currentColor" viewBox="0 0 20 20">
+              {% if khach_thue.NGHE_NGHIEP or khach_thue.NOI_SINH_KT %}
+              <div class="pt-2 border-t border-gray-200">
+                {% if khach_thue.NGHE_NGHIEP %}
+                <div class="flex items-center gap-3 mb-2">
+                  <div class="w-8 h-8 flex items-center justify-center" style="background-color: var(--primary-100);">
+                    <svg class="w-4 h-4" style="color: var(--primary-600);" fill="currentColor" viewBox="0 0 20 20">
                       <path fill-rule="evenodd" d="M6 6V5a3 3 0 013-3h2a3 3 0 013 3v1h2a2 2 0 012 2v3.57A22.952 22.952 0 0110 13a22.95 22.95 0 01-8-1.43V8a2 2 0 012-2h2zm2-1a1 1 0 011-1h2a1 1 0 011 1v1H8V5zm1 5a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clip-rule="evenodd"></path>
                     </svg>
                   </div>
                   <div>
-                    <p class="text-sm font-medium text-gray-500">Nghề nghiệp</p>
-                    <p class="text-lg font-semibold text-gray-900">
-                      {{ khach_thue.NGHE_NGHIEP|default:"Chưa cập nhật" }}
-                    </p>
+                    <p class="text-xs font-medium text-gray-500">Nghề nghiệp</p>
+                    <p class="text-sm font-semibold text-gray-900">{{ khach_thue.NGHE_NGHIEP }}</p>
                   </div>
                 </div>
+                {% endif %}
 
-                <div class="flex items-center p-4 bg-gray-50 rounded-lg">
-                  <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center mr-4">
-                    <svg class="w-5 h-5 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
+                {% if khach_thue.NOI_SINH_KT %}
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 flex items-center justify-center" style="background-color: var(--primary-100);">
+                    <svg class="w-4 h-4" style="color: var(--primary-600);" fill="currentColor" viewBox="0 0 20 20">
                       <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
                     </svg>
                   </div>
                   <div>
-                    <p class="text-sm font-medium text-gray-500">Nơi sinh</p>
-                    <p class="text-lg font-semibold text-gray-900">
-                      {{ khach_thue.NOI_SINH_KT|default:"Chưa cập nhật" }}
-                    </p>
+                    <p class="text-xs font-medium text-gray-500">Nơi sinh</p>
+                    <p class="text-sm font-semibold text-gray-900">{{ khach_thue.NOI_SINH_KT }}</p>
                   </div>
                 </div>
+                {% endif %}
               </div>
-            {% else %}
-              <div class="text-center py-8">
-                <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clip-rule="evenodd"></path>
-                </svg>
-                <p class="text-lg text-gray-500">Thông tin cá nhân chưa được thiết lập</p>
-                <p class="text-sm text-gray-400 mt-2">Vui lòng liên hệ quản lý để cập nhật thông tin</p>
-              </div>
-            {% endif %}
-          </div>
+              {% endif %}
+            </div>
+          {% else %}
+            <div class="text-center py-8">
+              <svg class="w-12 h-12 mx-auto mb-3 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clip-rule="evenodd"></path>
+              </svg>
+              <p class="text-sm font-medium mb-1 text-gray-500">Thông tin cá nhân chưa được thiết lập</p>
+              <p class="text-xs text-gray-400">Vui lòng liên hệ quản lý để cập nhật thông tin</p>
+            </div>
+          {% endif %}
         </div>
+      </div>
+    </div>
 
-        <!-- Thông tin CCCD/CMND -->
-        {% if khach_thue %}
-        <div class="mt-8">
-          <h2 class="text-2xl font-bold text-gray-900 mb-6">Thông Tin CCCD/CMND</h2>
+    <!-- CCCD/CMND Information -->
+    {% if khach_thue %}
+    <div class="mt-3">
+      <div class="modern-card">
+        <div class="modern-card-header">
+          <h2 class="text-lg font-semibold text-gray-900">Thông Tin CCCD/CMND</h2>
+        </div>
+        <div class="modern-card-body">
           {% if khach_thue.cccd_cmnd.all %}
             {% for cccd in khach_thue.cccd_cmnd.all %}
-              <div class="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-6 border border-green-200">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div class="space-y-4">
-                    <div class="flex items-center p-3 bg-white rounded-lg border">
-                      <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
-                        <svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 0v12h8V4H6z"/>
-                        </svg>
-                      </div>
-                      <div>
-                        <p class="text-sm font-medium text-gray-500">Số CCCD/CMND</p>
-                        <p class="text-lg font-semibold text-gray-900">{{ cccd.SO_CMND_CCCD }}</p>
-                      </div>
+              <div class="grid gap-4 md:grid-cols-2">
+                <div class="space-y-3">
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 flex items-center justify-center" style="background-color: var(--primary-100);">
+                      <svg class="w-4 h-4" style="color: var(--primary-600);" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 0v12h8V4H6z"/>
+                      </svg>
                     </div>
-
-                    <div class="flex items-center p-3 bg-white rounded-lg border">
-                      <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-4">
-                        <svg class="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                          <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path>
-                        </svg>
-                      </div>
-                      <div>
-                        <p class="text-sm font-medium text-gray-500">Ngày cấp</p>
-                        <p class="text-lg font-semibold text-gray-900">
-                          {{ cccd.NGAY_CAP|date:"d/m/Y"|default:"Chưa cập nhật" }}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div class="flex items-center p-3 bg-white rounded-lg border">
-                      <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mr-4">
-                        <svg class="w-5 h-5 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
-                          <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
-                        </svg>
-                      </div>
-                      <div>
-                        <p class="text-sm font-medium text-gray-500">Địa chỉ thường trú</p>
-                        <p class="text-lg font-semibold text-gray-900">
-                          {{ cccd.DIA_CHI_THUONG_TRU|default:"Chưa cập nhật" }}
-                        </p>
-                      </div>
+                    <div>
+                      <p class="text-xs font-medium text-gray-500">Số CCCD/CMND</p>
+                      <p class="text-sm font-semibold text-gray-900">{{ cccd.SO_CMND_CCCD }}</p>
                     </div>
                   </div>
 
-                  <div class="space-y-4">
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 flex items-center justify-center" style="background-color: var(--primary-100);">
+                      <svg class="w-4 h-4" style="color: var(--primary-600);" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path>
+                      </svg>
+                    </div>
                     <div>
-                      <p class="text-sm font-medium text-gray-500 mb-3">Ảnh mặt trước CCCD/CMND</p>
+                      <p class="text-xs font-medium text-gray-500">Ngày cấp</p>
+                      <p class="text-sm font-semibold text-gray-900">{{ cccd.NGAY_CAP|date:"d/m/Y"|default:"Chưa cập nhật" }}</p>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 flex items-center justify-center" style="background-color: var(--primary-100);">
+                      <svg class="w-4 h-4" style="color: var(--primary-600);" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
+                      </svg>
+                    </div>
+                    <div>
+                      <p class="text-xs font-medium text-gray-500">Địa chỉ thường trú</p>
+                      <p class="text-sm font-semibold text-gray-900">{{ cccd.DIA_CHI_THUONG_TRU|default:"Chưa cập nhật" }}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  {% if cccd.ANH_MAT_TRUOC or cccd.ANH_MAT_SAU %}
+                    <p class="text-xs font-medium text-gray-500 mb-3">Hình ảnh CCCD/CMND</p>
+                    <div class="grid gap-2 grid-cols-2">
                       {% if cccd.ANH_MAT_TRUOC %}
-                        <div class="bg-white rounded-lg p-2 border">
-                          <img src="{{ cccd.ANH_MAT_TRUOC.url }}" alt="CCCD mặt trước" 
-                               class="w-full h-32 object-cover rounded-md cursor-pointer hover:opacity-80" 
-                               onclick="showImageModal('{{ cccd.ANH_MAT_TRUOC.url }}', 'CCCD/CMND mặt trước')">
-                        </div>
-                      {% else %}
-                        <div class="bg-gray-100 rounded-lg p-4 border border-dashed border-gray-300 text-center">
-                          <svg class="w-8 h-8 text-gray-400 mx-auto mb-2" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"></path>
-                          </svg>
-                          <p class="text-sm text-gray-500">Chưa có ảnh</p>
+                        <div class="text-center">
+                          <img src="{{ cccd.ANH_MAT_TRUOC.url }}" 
+                               alt="CCCD mặt trước" 
+                               class="w-full h-20 object-cover border border-gray-200 hover:border-primary-300 transition-colors cursor-pointer"
+                               onclick="openModal('{{ cccd.ANH_MAT_TRUOC.url }}', 'CCCD/CMND - Mặt trước')"
+                          <p class="text-xs mt-1 text-gray-400">Mặt trước</p>
                         </div>
                       {% endif %}
-                    </div>
-
-                    <div>
-                      <p class="text-sm font-medium text-gray-500 mb-3">Ảnh mặt sau CCCD/CMND</p>
                       {% if cccd.ANH_MAT_SAU %}
-                        <div class="bg-white rounded-lg p-2 border">
-                          <img src="{{ cccd.ANH_MAT_SAU.url }}" alt="CCCD mặt sau" 
-                               class="w-full h-32 object-cover rounded-md cursor-pointer hover:opacity-80" 
-                               onclick="showImageModal('{{ cccd.ANH_MAT_SAU.url }}', 'CCCD/CMND mặt sau')">
-                        </div>
-                      {% else %}
-                        <div class="bg-gray-100 rounded-lg p-4 border border-dashed border-gray-300 text-center">
-                          <svg class="w-8 h-8 text-gray-400 mx-auto mb-2" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"></path>
-                          </svg>
-                          <p class="text-sm text-gray-500">Chưa có ảnh</p>
+                        <div class="text-center">
+                          <img src="{{ cccd.ANH_MAT_SAU.url }}" 
+                               alt="CCCD mặt sau" 
+                               class="w-full h-20 object-cover border border-gray-200 hover:border-primary-300 transition-colors cursor-pointer"
+                               onclick="openModal('{{ cccd.ANH_MAT_SAU.url }}', 'CCCD/CMND - Mặt sau')"
+                          <p class="text-xs mt-1 text-gray-400">Mặt sau</p>
                         </div>
                       {% endif %}
                     </div>
-                  </div>
+                  {% endif %}
                 </div>
               </div>
             {% endfor %}
           {% else %}
-            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-              <div class="text-center">
-                <svg class="w-16 h-16 text-yellow-400 mx-auto mb-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 0v12h8V4H6z"/>
-                </svg>
-                <p class="text-lg text-yellow-800 font-medium">Thông tin CCCD/CMND chưa được cập nhật</p>
-                <p class="text-sm text-yellow-600 mt-2">Vui lòng liên hệ quản lý để cập nhật thông tin giấy tờ tùy thân</p>
-              </div>
+            <div class="text-center py-8">
+              <svg class="w-12 h-12 mx-auto mb-3 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 0v12h8V4H6z"/>
+              </svg>
+              <p class="text-sm font-medium mb-1 text-gray-500">Thông tin CCCD/CMND chưa được cập nhật</p>
+              <p class="text-xs text-gray-400">Vui lòng liên hệ quản lý để cập nhật thông tin giấy tờ tùy thân</p>
             </div>
           {% endif %}
         </div>
-        {% endif %}      
       </div>
     </div>
+    {% endif %}
   </div>
 </div>
 
-<!-- Modal xem ảnh CCCD/CMND -->
-<div id="imageModal" class="hidden fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4">
-  <div class="relative max-w-4xl max-h-full">
-    <button onclick="closeImageModal()" class="absolute -top-10 right-0 text-white hover:text-gray-300 text-3xl">
-      <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
-        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-      </svg>
-    </button>
-    <div class="bg-white rounded-lg p-4">
-      <h3 id="modalTitle" class="text-lg font-semibold text-gray-900 mb-4"></h3>
-      <img id="modalImage" src="" alt="" class="max-w-full max-h-96 mx-auto rounded-lg">
+<!-- Modal xem ảnh CCCD -->
+<div id="imageModal" class="fixed inset-0 z-50 hidden">
+  <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4" style="backdrop-filter: blur(4px);">
+    <div class="modern-card max-w-4xl w-full max-h-[90vh] overflow-hidden">
+      <!-- Header -->
+      <div class="modern-card-header flex items-center justify-between">
+        <h3 id="modalTitle" class="text-lg font-semibold text-gray-900"></h3>
+        <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+          <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+          </svg>
+        </button>
+      </div>
+      
+      <!-- Image Container -->
+      <div class="flex items-center justify-center p-6 bg-gray-50">
+        <img id="modalImageSrc" class="max-w-full max-h-96 object-contain rounded" alt="">
+      </div>
+      
+      <!-- Footer -->
+      <div class="modern-card-footer text-center">
+        <button onclick="closeModal()" class="btn-modern btn-modern-secondary">
+          Đóng
+        </button>
+      </div>
     </div>
   </div>
 </div>
 
 <script>
-function showImageModal(imageSrc, title) {
-  document.getElementById('modalImage').src = imageSrc;
-  document.getElementById('modalTitle').textContent = title;
-  document.getElementById('imageModal').classList.remove('hidden');
+function openModal(imageSrc, title) {
+  const modal = document.getElementById('imageModal');
+  const modalTitle = document.getElementById('modalTitle');
+  const modalImage = document.getElementById('modalImageSrc');
+  
+  modalTitle.textContent = title;
+  modalImage.src = imageSrc;
+  modalImage.alt = title;
+  
+  modal.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
 }
 
-function closeImageModal() {
-  document.getElementById('imageModal').classList.add('hidden');
+function closeModal() {
+  const modal = document.getElementById('imageModal');
+  modal.classList.add('hidden');
+  document.body.style.overflow = 'auto';
 }
 
 // Đóng modal khi click ra ngoài
 document.getElementById('imageModal').addEventListener('click', function(e) {
   if (e.target === this) {
-    closeImageModal();
+    closeModal();
   }
 });
 
 // Đóng modal khi nhấn ESC
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') {
-    closeImageModal();
+    closeModal();
   }
 });
 </script>

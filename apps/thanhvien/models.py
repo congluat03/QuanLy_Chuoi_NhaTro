@@ -84,7 +84,7 @@ class NguoiQuanLy(models.Model):
     SDT_QUAN_LY = models.CharField(max_length=15, null=True, blank=True)
     EMAIL_QL = models.EmailField(max_length=200, null=True, blank=True)
     DIA_CHI_QL = models.CharField(max_length=500, null=True, blank=True)
-    ANH_QL = models.TextField(null=True, blank=True)
+    ANH_QL = models.ImageField(upload_to='avatars/quan_ly/', null=True, blank=True)
 
     def __str__(self):
         return self.TEN_QUAN_LY or f"Quản lý {self.MA_QUAN_LY}"

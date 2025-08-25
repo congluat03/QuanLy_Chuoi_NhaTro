@@ -172,7 +172,7 @@
                       action="{% if hoa_don %}{% url 'hoadon:sua_hoa_don' ma_hoa_don=hoa_don.MA_HOA_DON %}{% else %}{% url 'hoadon:them_hoa_don_post'%}{% endif %}">
                     {% csrf_token %}
                     <input type="hidden" id="ma_phong" name="MA_PHONG" value="{% if hoa_don %}{{ hoa_don.MA_PHONG.MA_PHONG }}{% else %}{{ phong.MA_PHONG|default:'' }}{% endif %}">
-                    <input type="hidden" name="MA_HOP_DONG" value="{{ hop_dong_hieu_luc.MA_HOP_DONG|default:'' }}">
+                    <input type="hidden" name="MA_HOP_DONG" id="MA_HOP_DONG" value="{{ hop_dong_hieu_luc.MA_HOP_DONG|default:'' }}">
                     
                     <div id="main_content" class="p-6">
                         <!-- Empty State -->
@@ -222,13 +222,13 @@
                                                value="{{ form_data.NGAY_LAP_HDON|default:'' }}">
                                     </div>
 
-                                    <input type="hidden" name="TRANG_THAI_HDON" value="Chưa thu tiền">
+                                    <input type="hidden" name="TRANG_THAI_HDON" value="Chưa thanh toán">
                                 </div>
                             </div>
 
                             <!-- Chi tiết dịch vụ -->
                             <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-                                <div class="flex items-center justify-between mb-4">
+                                <div class="flex items-center justify-between mb-6">
                                     <h4 class="text-lg font-semibold text-gray-900 flex items-center">
                                         <div class="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg flex items-center justify-center mr-3">
                                             <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -261,74 +261,8 @@
                                     </div>
                                 </div>
                                 
-                                <div class="overflow-x-auto">
-                                    <table class="w-full text-sm">
-                                        <thead class="bg-gray-50 border-b border-gray-200">
-                                            <tr>
-                                                <th class="px-3 py-3 text-left font-medium text-gray-700">Dịch vụ</th>
-                                                <th class="px-3 py-3 text-center font-medium text-gray-700">Chỉ số cũ</th>
-                                                <th class="px-3 py-3 text-center font-medium text-gray-700">Chỉ số mới</th>
-                                                <th class="px-3 py-3 text-center font-medium text-gray-700">Tiêu thụ</th>
-                                                <th class="px-3 py-3 text-right font-medium text-gray-700">Thành tiền</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="service_details" class="divide-y divide-gray-200">
-                                            <!-- Services sẽ được load động -->
-                                            {% if dich_vu_list %}
-                                                {% for dich_vu in dich_vu_list %}
-                                                    <tr class="hover:bg-gray-50">
-                                                        <td class="px-3 py-3">
-                                                            <div class="flex items-center">
-                                                                <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
-                                                                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                                                                    </svg>
-                                                                </div>
-                                                                <div>
-                                                                    <p class="font-medium text-gray-900">{{ dich_vu.TEN_DICH_VU }}</p>
-                                                                    <p class="text-sm text-gray-500">{{ dich_vu.GIA_DICH_VU|floatformat:0 }}đ/{{ dich_vu.DON_VI_TINH|default:'đơn vị' }}</p>
-                                                                </div>
-                                                            </div>
-                                                            <input type="hidden" name="chi_so_dich_vu[{{ forloop.counter0 }}][MA_DICH_VU]" value="{{ dich_vu.MA_DICH_VU }}">
-                                                            {% if dich_vu.MA_CHI_SO %}
-                                                                <input type="hidden" name="chi_so_dich_vu[{{ forloop.counter0 }}][MA_CHI_SO]" value="{{ dich_vu.MA_CHI_SO }}">
-                                                            {% endif %}
-                                                        </td>
-                                                        <td class="px-3 py-3 text-center">
-                                                            <input type="number" name="chi_so_dich_vu[{{ forloop.counter0 }}][CHI_SO_CU]" 
-                                                                   value="{{ dich_vu.CHI_SO_CU|default:0 }}" readonly
-                                                                   class="w-20 px-2 py-1 text-center border border-gray-300 bg-gray-50 rounded text-sm">
-                                                        </td>
-                                                        <td class="px-3 py-3 text-center">
-                                                            <input type="number" name="chi_so_dich_vu[{{ forloop.counter0 }}][CHI_SO_MOI]" 
-                                                                   value="{{ dich_vu.CHI_SO_MOI|default:'' }}" 
-                                                                   class="w-20 px-2 py-1 text-center border border-gray-300 rounded text-sm"
-                                                                   onchange="updateServiceCalculation({{ forloop.counter0 }})">
-                                                        </td>
-                                                        <td class="px-3 py-3 text-center">
-                                                            <input type="number" name="chi_so_dich_vu[{{ forloop.counter0 }}][SO_DICH_VU]" 
-                                                                   value="{{ dich_vu.SO_DICH_VU|default:0 }}" readonly
-                                                                   class="w-20 px-2 py-1 text-center border border-gray-300 bg-gray-50 rounded text-sm">
-                                                        </td>
-                                                        <td class="px-3 py-3 text-right">
-                                                            <input type="number" name="chi_so_dich_vu[{{ forloop.counter0 }}][THANH_TIEN]" 
-                                                                   value="{{ dich_vu.THANH_TIEN|default:0 }}" readonly
-                                                                   class="w-24 px-2 py-1 text-right border border-gray-300 bg-gray-50 rounded text-sm">
-                                                        </td>
-                                                    </tr>
-                                                {% endfor %}
-                                            {% else %}
-                                                <tr>
-                                                    <td colspan="5" class="px-3 py-8 text-center text-gray-500">
-                                                        <svg class="w-12 h-12 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                                        </svg>
-                                                        <p>Không có dịch vụ nào</p>
-                                                    </td>
-                                                </tr>
-                                            {% endif %}
-                                        </tbody>
-                                    </table>
+                                <div id="service_cards_container" class="space-y-2">
+                                    
                                 </div>
                             </div>
 
@@ -424,7 +358,7 @@
                                         <div class="relative">
                                             <input name="TIEN_PHONG" id="TIEN_PHONG" type="number" step="0.01"
                                                    class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition duration-200"
-                                                   value="{{ hop_dong_hieu_luc.GIA_THUE|default:'0.00' }}">
+                                                   value="{{ hop_dong_hieu_luc.GIA_THUE|default:'0.00'|floatformat:2 }}">
                                             <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                                                 <span class="text-gray-500 text-sm">VNĐ</span>
                                             </div>
@@ -436,21 +370,20 @@
                                         <div class="relative">
                                             <input name="TIEN_DICH_VU" id="TIEN_DICH_VU" type="number" step="0.01" readonly
                                                    class="w-full px-3 py-2.5 border border-gray-300 bg-gray-50 rounded-lg text-gray-600 cursor-not-allowed"
-                                                   value="{{ form_data.TIEN_DICH_VU|default:'0.00' }}">
+                                                   value="{{ form_data.TIEN_DICH_VU|default:'0.00'|floatformat:2 }}">
                                             <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                                                 <span class="text-gray-500 text-sm">VNĐ</span>
                                             </div>
                                         </div>
                                     </div>
                                     
-<input type="hidden" name="TIEN_COC" id="TIEN_COC" value="0">
                                     
                                     <div>
                                         <label for="TIEN_KHAU_TRU" class="block text-sm font-medium text-gray-700 mb-2">Tiền khấu trừ</label>
                                         <div class="relative">
                                             <input name="TIEN_KHAU_TRU" id="TIEN_KHAU_TRU" type="number" step="0.01" readonly
                                                    class="w-full px-3 py-2.5 border border-gray-300 bg-gray-50 rounded-lg text-gray-600 cursor-not-allowed"
-                                                   value="{{ form_data.TIEN_KHAU_TRU|default:'0.00' }}">
+                                                   value="{{ form_data.TIEN_KHAU_TRU|default:'0.00'|floatformat:2 }}">
                                             <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                                                 <span class="text-gray-500 text-sm">VNĐ</span>
                                             </div>
@@ -462,7 +395,7 @@
                                         <div class="relative">
                                             <input name="TONG_TIEN" id="TONG_TIEN" type="number" step="0.01" readonly
                                                    class="w-full px-3 py-3 border-2 border-purple-300 bg-purple-50 rounded-lg text-purple-800 font-semibold text-lg cursor-not-allowed"
-                                                   value="{{ form_data.TONG_TIEN|default:'0.00' }}">
+                                                   value="{{ form_data.TONG_TIEN|default:'0.00'|floatformat:2 }}">
                                             <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                                                 <span class="text-purple-600 font-medium">VNĐ</span>
                                             </div>
@@ -633,7 +566,7 @@ $(document).ready(function() {
         // Add selection to current room
         $(`.room-card[data-ma-phong="${maPhong}"]`).addClass('border-green-500 bg-green-50');
         
-        // Update hidden input
+        // Update hidden inputs
         $('#MA_PHONG').val(maPhong);
         currentSelectedRoom = { maPhong, tenPhong };
         
@@ -661,6 +594,12 @@ $(document).ready(function() {
                 if (data.success) {
                     populateInvoiceForm(data);
                 } else {
+                    // Nếu lỗi do không có dịch vụ, hiển thị empty state với thông báo
+                    if (data.error && data.error.includes('chưa có dịch vụ nào được áp dụng')) {
+                        $('#empty_services').removeClass('hidden');
+                        $('#empty_services h3').text('Chưa có dịch vụ nào');
+                        $('#empty_services p').text(data.error);
+                    }
                     showNotification(data.error || 'Có lỗi khi tải thông tin phòng', 'error');
                 }
             },
@@ -671,70 +610,171 @@ $(document).ready(function() {
     }
 
     function populateInvoiceForm(data) {
-        // Thông tin cơ bản
-        $('#TIEN_PHONG').val(data.hop_dong.GIA_THUE);
-        $('#TIEN_COC').val(data.hop_dong.GIA_COC_HD);
-        $('#MA_HOP_DONG').val(data.hop_dong.MA_HOP_DONG);
+        // Thông tin cơ bản - đảm bảo format đúng cho input number
+        $('#TIEN_PHONG').val(parseFloat(data.hop_dong.GIA_THUE || 0).toString().replace(',', '.'));
         
-        // Thông tin dịch vụ
-        populateServiceTable(data.dich_vu_list);
+        // Đảm bảo MA_HOP_DONG không bị undefined hoặc null
+        if (data.hop_dong.MA_HOP_DONG) {
+            $('#MA_HOP_DONG').val(data.hop_dong.MA_HOP_DONG);
+        } else {
+            showNotification('Không tìm thấy hợp đồng hiệu lực cho phòng này', 'error');
+            return;
+        }
+        
+        // Thông tin dịch vụ - force reload
+        populateServiceTable(data.dich_vu_list, true);
         
         // Tính toán tổng tiền
         calculateTotals();
     }
 
     function populateServiceTable(dichVuList) {
-        const tbody = $('#service-details');
-        tbody.empty();
+        
+        const container = $('#service_cards_container');
+        // Không clear container nếu đang có dữ liệu và không force reload hoặc đang editing deduction
+        if ((container.children().length > 0 && !arguments[1]) || isEditingDeduction) {
+            console.log('Skipping service table repopulation - editing deduction or data exists');
+            return;
+        }
+        container.empty();
         
         let hasIncompleteService = false;
         
         if (dichVuList && dichVuList.length > 0) {
-            $('#no-service-message').addClass('hidden');
+            $('#empty_services').addClass('hidden');
             
             dichVuList.forEach((dv, index) => {
-                // Kiểm tra xem dịch vụ có cần ghi chỉ số không
-                const needsReading = (dv.LOAI_DICH_VU !== 'Cố định' && dv.LOAI_DICH_VU !== 'Co dinh') && 
-                                   (dv.CHI_SO_MOI === null || dv.CHI_SO_MOI === undefined || dv.CHI_SO_MOI === '');
+                const isFixedService = dv.LOAI_DICH_VU === 'Cố định' || dv.LOAI_DICH_VU === 'Co dinh';
+                const needsReading = !isFixedService && (dv.CHI_SO_MOI === null || dv.CHI_SO_MOI === undefined || dv.CHI_SO_MOI === '');
                 
                 if (needsReading) {
                     hasIncompleteService = true;
                 }
                 
-                const rowHtml = `
-                    <tr class="hover:bg-gray-50 transition duration-200 border-b border-gray-100 ${needsReading ? 'bg-yellow-50 border-yellow-200' : ''}">
-                        <td class="p-2 text-center text-gray-700 text-sm">${index + 1}</td>
-                        <td class="p-2 text-center text-gray-800 text-sm font-medium">
-                            ${dv.TEN_DICH_VU}
-                            ${needsReading ? '<div class="inline-flex items-center ml-2"><span class="w-2 h-2 bg-yellow-400 rounded-full"></span></div>' : ''}
-                        </td>
-                        <td class="p-2 text-center">
-                            <input type="number" step="0.01" value="${dv.CHI_SO_CU || 0}" 
-                                   class="w-full text-center border border-gray-200 rounded-lg py-1 px-2 text-sm bg-gray-100" readonly>
-                            <input type="hidden" name="chi_so_dich_vu[${index}][CHI_SO_CU]" value="${dv.CHI_SO_CU || 0}">
-                        </td>
-                        <td class="p-2 text-center">
-                            <input type="number" step="0.01" value="${dv.CHI_SO_MOI || ''}" 
-                                   class="chi-so-moi w-full text-center border border-gray-200 rounded-lg py-1 px-2 text-sm focus:ring-2 focus:ring-green-500 ${needsReading ? 'border-yellow-300 bg-yellow-50' : ''}"
-                                   onchange="calculateServiceRow(${index})" ${needsReading ? 'placeholder="Cần ghi chỉ số"' : ''}>
-                            <input type="hidden" name="chi_so_dich_vu[${index}][CHI_SO_MOI]" value="${dv.CHI_SO_MOI || 0}">
-                        </td>
-                        <td class="p-2 text-center">
-                            <input type="number" step="0.01" value="${dv.SO_DICH_VU || 0}" 
-                                   class="so-dich-vu w-full text-center border border-gray-200 rounded-lg py-1 px-2 text-sm bg-gray-100" readonly>
-                            <input type="hidden" name="chi_so_dich_vu[${index}][SO_DICH_VU]" value="${dv.SO_DICH_VU || 0}">
-                        </td>
-                        <td class="p-2 text-center text-gray-700 text-sm">${parseFloat(dv.GIA_DICH_VU || 0).toLocaleString('vi-VN')} đ</td>
-                        <td class="p-2 text-center">
-                            <input type="number" step="0.01" value="${dv.THANH_TIEN || 0}" 
-                                   class="thanh-tien w-full text-center border border-gray-200 rounded-lg py-1 px-2 text-sm bg-gray-100" readonly>
-                            <input type="hidden" name="chi_so_dich_vu[${index}][THANH_TIEN]" value="${dv.THANH_TIEN || 0}">
-                        </td>
-                        <input type="hidden" name="chi_so_dich_vu[${index}][MA_DICH_VU]" value="${dv.MA_DICH_VU}">
-                        <input type="hidden" name="chi_so_dich_vu[${index}][MA_CHI_SO]" value="${dv.MA_CHI_SO || ''}">
-                    </tr>
-                `;
-                tbody.append(rowHtml);
+                let cardHtml = '';
+                
+                if (isFixedService) {
+                    // Card cho dịch vụ cố định
+                    cardHtml = `
+                        <div class="service-card bg-gradient-to-r from-green-50 to-emerald-50 border-l-4 border-green-500 rounded-lg p-3 shadow-sm hover:shadow-md transition-all duration-200"
+                             data-service-type="fixed" data-service-id="${dv.MA_DICH_VU}">
+                            <div class="flex items-center justify-between">
+                                <!-- Left: Service info -->
+                                <div class="flex items-center space-x-3 flex-1">
+                                    <div class="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="flex items-center space-x-2">
+                                            <h5 class="font-semibold text-gray-900 text-sm">${dv.TEN_DICH_VU}</h5>
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                                                Cố định
+                                            </span>
+                                        </div>
+                                        <p class="text-xs text-gray-600">${parseFloat(dv.GIA_DICH_VU || 0).toLocaleString('vi-VN')}đ/${dv.DON_VI_TINH || 'đơn vị'}</p>
+                                    </div>
+                                </div>
+                                
+                                <!-- Center: Input -->
+                                <div class="flex items-center space-x-3 px-4">
+                                    <div class="text-xs text-gray-600">SL:</div>
+                                    <input type="number" name="chi_so_dich_vu[${index}][SO_DICH_VU]" 
+                                           value="${parseFloat(dv.SO_LUONG || 1).toString().replace(',', '.')}" min="1" step="1"
+                                           class="w-16 px-2 py-1 text-center border border-green-300 rounded focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
+                                           oninput="updateFixedServiceCalculation(${index}, ${dv.GIA_DICH_VU})"
+                                           ${dv.SO_LUONG ? 'readonly' : ''}>
+                                </div>
+                                
+                                <!-- Right: Total amount -->
+                                <div class="text-right flex-shrink-0">
+                                    <div class="text-sm font-bold text-green-600" id="thanh_tien_${index}">
+                                        ${parseFloat(dv.THANH_TIEN || dv.GIA_DICH_VU || 0).toLocaleString('vi-VN')}đ
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Hidden inputs -->
+                            <input type="hidden" name="chi_so_dich_vu[${index}][MA_DICH_VU]" value="${dv.MA_DICH_VU}">
+                            <input type="hidden" name="chi_so_dich_vu[${index}][CHI_SO_CU]" value="0">
+                            <input type="hidden" name="chi_so_dich_vu[${index}][CHI_SO_MOI]" value="0">
+                            <input type="hidden" name="chi_so_dich_vu[${index}][THANH_TIEN]" value="${dv.THANH_TIEN || dv.GIA_DICH_VU || 0}" id="hidden_thanh_tien_${index}">
+                            ${dv.MA_CHI_SO ? `<input type="hidden" name="chi_so_dich_vu[${index}][MA_CHI_SO]" value="${dv.MA_CHI_SO}">` : ''}
+                        </div>
+                    `;
+                } else {
+                    // Card cho dịch vụ theo chỉ số
+                    cardHtml = `
+                        <div class="service-card bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 rounded-lg p-3 shadow-sm hover:shadow-md transition-all duration-200 ${needsReading ? 'border-yellow-400 bg-gradient-to-r from-yellow-50 to-amber-50' : ''}"
+                             data-service-type="meter" data-service-id="${dv.MA_DICH_VU}">
+                            <!-- Header row -->
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <div class="flex items-center space-x-2">
+                                            <h5 class="font-semibold text-gray-900 text-sm">${dv.TEN_DICH_VU}</h5>
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                                                Theo chỉ số
+                                            </span>
+                                            ${needsReading ? `
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">
+                                                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                                                    </svg>
+                                                    Cần nhập
+                                                </span>
+                                            ` : ''}
+                                        </div>
+                                        <p class="text-xs text-gray-600">${parseFloat(dv.GIA_DICH_VU || 0).toLocaleString('vi-VN')}đ/${dv.DON_VI_TINH || 'đơn vị'}</p>
+                                    </div>
+                                </div>
+                                <div class="text-sm font-bold text-blue-600" id="thanh_tien_${index}">
+                                    ${parseFloat(dv.THANH_TIEN || 0).toLocaleString('vi-VN')}đ
+                                </div>
+                            </div>
+                            
+                            <!-- Input row - Tất cả input trên 1 dòng -->
+                            <div class="flex items-center space-x-3">
+                                <div class="flex items-center space-x-2">
+                                    <label class="text-xs font-medium text-gray-700 whitespace-nowrap">Chỉ số cũ:</label>
+                                    <input type="number" name="chi_so_dich_vu[${index}][CHI_SO_CU]" 
+                                           value="${parseFloat(dv.CHI_SO_CU || 0).toString().replace(',', '.')}" readonly
+                                           class="w-20 px-2 py-1 text-center border border-gray-300 bg-gray-50 rounded text-xs text-gray-600">
+                                </div>
+                                
+                                <div class="flex items-center space-x-2">
+                                    <label class="text-xs font-medium text-gray-700 whitespace-nowrap">Chỉ số mới:</label>
+                                    <input type="number" name="chi_so_dich_vu[${index}][CHI_SO_MOI]" 
+                                           value="${dv.CHI_SO_MOI ? parseFloat(dv.CHI_SO_MOI).toString().replace(',', '.') : ''}" 
+                                           class="chi-so-moi w-20 px-2 py-1 text-center border text-xs rounded ${dv.CHI_SO_MOI ? 'border-gray-300 bg-gray-50 text-gray-600' : needsReading ? 'border-yellow-400 bg-yellow-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500' : 'border-blue-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500'}"
+                                           oninput="updateMeterServiceCalculation(${index}, ${dv.GIA_DICH_VU})"
+                                           placeholder="${needsReading ? 'Nhập' : ''}"
+                                           ${dv.CHI_SO_MOI ? 'readonly' : ''}>
+                                </div>
+                                
+                                <div class="flex items-center space-x-2">
+                                    <label class="text-xs font-medium text-gray-700 whitespace-nowrap">Tiêu thụ:</label>
+                                    <input type="number" name="chi_so_dich_vu[${index}][SO_DICH_VU]" 
+                                           value="${parseFloat(dv.SO_DICH_VU || 0).toString().replace(',', '.')}" readonly
+                                           class="w-20 px-2 py-1 text-center border border-gray-300 bg-gray-50 rounded text-xs text-gray-600">
+                                </div>
+                            </div>
+                            
+                            <!-- Hidden inputs -->
+                            <input type="hidden" name="chi_so_dich_vu[${index}][MA_DICH_VU]" value="${dv.MA_DICH_VU}">
+                            <input type="hidden" name="chi_so_dich_vu[${index}][THANH_TIEN]" value="${dv.THANH_TIEN || 0}" id="hidden_thanh_tien_${index}">
+                            ${dv.MA_CHI_SO ? `<input type="hidden" name="chi_so_dich_vu[${index}][MA_CHI_SO]" value="${dv.MA_CHI_SO}">` : ''}
+                        </div>
+                    `;
+                }
+                
+                container.append(cardHtml);
             });
             
             // Hiển thị/ẩn các indicator và nút
@@ -746,34 +786,74 @@ $(document).ready(function() {
                 $('#go_to_record_btn').addClass('hidden');
             }
         } else {
-            $('#no-service-message').removeClass('hidden');
+            // Hiển thị empty state đã có sẵn với thông báo phù hợp
+            $('#empty_services').removeClass('hidden');
+            $('#empty_services h3').text('Chưa có dịch vụ nào');
+            $('#empty_services p').text('Khu vực này chưa có dịch vụ nào được áp dụng. Vui lòng thiết lập dịch vụ cho khu vực trước khi lập hóa đơn.');
             $('#service_status_indicator').addClass('hidden');
             $('#go_to_record_btn').addClass('hidden');
         }
     }
 
-    // Tính toán cho từng dòng dịch vụ
-    window.calculateServiceRow = function(index) {
-        const row = document.querySelector(`#service-details tr:nth-child(${index + 1})`);
-        if (!row) return;
+    // Tính toán cho dịch vụ theo chỉ số
+    window.updateMeterServiceCalculation = function(index, GIA_DICH_VU) {
+        const card = document.querySelector(`[data-service-type="meter"]:nth-of-type(${index + 1})`);
+        if (!card) return;
         
-        const chiSoCu = parseFloat(row.querySelector('input[name*="[CHI_SO_CU]"]').value) || 0;
-        const chiSoMoi = parseFloat(row.querySelector('.chi-so-moi').value) || 0;
-        const giaDichVu = parseFloat(row.cells[5].textContent.replace(/[^\d.]/g, '')) || 0;
+        const chiSoCu = parseFloat(card.querySelector('input[name*="[CHI_SO_CU]"]').value) || 0;
+        const chiSoMoiInput = card.querySelector('input[name*="[CHI_SO_MOI]"]');
+        const chiSoMoi = parseFloat(chiSoMoiInput.value) || 0;
+        const soDichVuInput = card.querySelector('input[name*="[SO_DICH_VU]"]');
+        const thanhTienDisplay = card.querySelector(`#thanh_tien_${index}`);
+        const hiddenThanhTien = card.querySelector(`#hidden_thanh_tien_${index}`);
         
-        const soDichVu = chiSoMoi - chiSoCu;
+        // Lấy giá dịch vụ từ text content
+        const giaText = card.querySelector('p.text-xs.text-gray-600').textContent;
+        const giaDichVu = GIA_DICH_VU;
+        
+        // Tính toán tiêu thụ và thành tiền
+        const soDichVu = Math.max(0, chiSoMoi - chiSoCu);
         const thanhTien = soDichVu * giaDichVu;
         
-        // Cập nhật giá trị hiển thị
-        row.querySelector('.so-dich-vu').value = soDichVu;
-        row.querySelector('.thanh-tien').value = thanhTien;
+        // Cập nhật UI
+        soDichVuInput.value = soDichVu;
+        thanhTienDisplay.textContent = thanhTien.toLocaleString('vi-VN') + 'đ';
+        hiddenThanhTien.value = thanhTien;
         
-        // Cập nhật hidden inputs
-        row.querySelector('input[name*="[CHI_SO_MOI]"]').value = chiSoMoi;
-        row.querySelector('input[name*="[SO_DICH_VU]"]').value = soDichVu;
-        row.querySelector('input[name*="[THANH_TIEN]"]').value = thanhTien;
+       
         
-        // Tính lại tổng tiền
+        calculateTotals();
+    };
+    
+    // Tính toán cho dịch vụ cố định
+    window.updateFixedServiceCalculation = function(index, GIA_DICH_VU) {
+        const card = document.querySelector(`[data-service-type="fixed"]:nth-of-type(${index + 1})`);
+        if (!card) return;
+        
+        const soLuongInput = card.querySelector('input[name*="[SO_DICH_VU]"]');
+        const soLuong = parseFloat(soLuongInput.value) || 1;
+        const thanhTienDisplay = card.querySelector(`#thanh_tien_${index}`);
+        const hiddenThanhTien = card.querySelector(`#hidden_thanh_tien_${index}`);
+        
+        // Lấy giá dịch vụ từ text content
+        const giaText = card.querySelector('p.text-xs.text-gray-600').textContent;
+        const giaDichVu = GIA_DICH_VU;
+        
+        // Tính toán thành tiền
+        const thanhTien = soLuong * giaDichVu;
+        
+        // Cập nhật UI
+        thanhTienDisplay.textContent = thanhTien.toLocaleString('vi-VN') + 'đ';
+        hiddenThanhTien.value = thanhTien;
+        
+        // Đảm bảo số lượng không nhỏ hơn 1
+        if (soLuong < 1) {
+            soLuongInput.value = 1;
+            const newThanhTien = 1 * giaDichVu;
+            thanhTienDisplay.textContent = newThanhTien.toLocaleString('vi-VN') + 'đ';
+            hiddenThanhTien.value = newThanhTien;
+        }
+        
         calculateTotals();
     };
 
@@ -785,9 +865,9 @@ $(document).ready(function() {
     function calculateTotals() {
         let tienPhong = parseFloat($('#TIEN_PHONG').val()) || 0;
         
-        // Tính tiền dịch vụ
+        // Tính tiền dịch vụ từ hidden inputs
         let tienDichVu = 0;
-        $('.thanh-tien').each(function() {
+        $('input[id^="hidden_thanh_tien_"]').each(function() {
             tienDichVu += parseFloat($(this).val()) || 0;
         });
         
@@ -796,8 +876,11 @@ $(document).ready(function() {
         
         let tongTien = tienPhong + tienDichVu + tienKhauTru;
         
-        $('#TIEN_DICH_VU').val(tienDichVu.toFixed(2));
-        $('#TONG_TIEN').val(tongTien.toFixed(2));
+        $('#TIEN_DICH_VU').val(tienDichVu.toFixed(2).replace(',', '.'));
+        $('#TONG_TIEN').val(tongTien.toFixed(2).replace(',', '.'));
+        
+        // Cập nhật display trong footer
+        $('#total_amount_display').text(`Tổng tiền: ${tongTien.toLocaleString('vi-VN')} VNĐ`);
     }
 
     function resetForm() {
@@ -881,13 +964,20 @@ $(document).ready(function() {
             return;
         }
         
+        // Kiểm tra MA_HOP_DONG
+        const maHopDong = $('#MA_HOP_DONG').val();
+        if (!maHopDong || maHopDong.trim() === '') {
+            e.preventDefault();
+            showNotification('Không tìm thấy hợp đồng hiệu lực cho phòng này. Vui lòng kiểm tra lại.', 'error');
+            return;
+        }
+        
         // Kiểm tra xem có dịch vụ nào cần ghi chỉ số không
         let hasIncompleteService = false;
         $('.chi-so-moi').each(function() {
             const $input = $(this);
-            const row = $input.closest('tr');
-            const isFixedService = row.find('input[name*="[LOAI_DICH_VU]"]').val() === 'Cố định' || 
-                                 row.find('input[name*="[LOAI_DICH_VU]"]').val() === 'Co dinh';
+            const card = $input.closest('.service-card');
+            const isFixedService = card.attr('data-service-type') === 'fixed';
             
             if (!isFixedService && (!$input.val() || $input.val() === '')) {
                 hasIncompleteService = true;
@@ -901,8 +991,11 @@ $(document).ready(function() {
             // Highlight the incomplete services
             $('.chi-so-moi').each(function() {
                 const $input = $(this);
+                const card = $input.closest('.service-card');
                 if (!$input.val() || $input.val() === '') {
-                    $input.addClass('border-red-300 bg-red-50').focus();
+                    $input.addClass('border-red-400 bg-red-50');
+                    card.addClass('border-red-400');
+                    $input.focus();
                 }
             });
             return;
@@ -923,6 +1016,7 @@ $(document).ready(function() {
     // ==========================================================================
     let deductionData = []; // Lưu trữ dữ liệu khấu trừ tạm thời
     let editingDeductionIndex = -1;
+    let isEditingDeduction = false;
     
     // Khởi tạo dữ liệu khấu trừ có sẵn
     function initializeDeductions() {
@@ -966,11 +1060,12 @@ $(document).ready(function() {
     });
     
     function showDeductionModal(data = null) {
+        isEditingDeduction = true;
         if (data) {
             // Edit mode
             $('#modal_title').text('Sửa khấu trừ');
             $('#modal_LOAI_KHAU_TRU').val(data.loai);
-            $('#modal_SO_TIEN_KT').val(data.soTien);
+            $('#modal_SO_TIEN_KT').val(parseFloat(data.soTien).toString().replace(',', '.'));
             $('#modal_NGAYKHAUTRU').val(data.ngay);
             $('#modal_LY_DO_KHAU_TRU').val(data.lyDo);
         } else {
@@ -987,6 +1082,7 @@ $(document).ready(function() {
     function hideDeductionModal() {
         $('#deduction_modal').addClass('hidden');
         editingDeductionIndex = -1;
+        isEditingDeduction = false;
     }
     
     function saveDeduction() {
@@ -996,7 +1092,7 @@ $(document).ready(function() {
         const lyDo = $('#modal_LY_DO_KHAU_TRU').val();
         
         // Validation
-        if (!loai || !soTien || !ngay || !lyDo) {
+        if (!loai || isNaN(soTien) || !ngay || !lyDo) {
             showNotification('Vui lòng điền đầy đủ thông tin', 'error');
             return;
         }
@@ -1016,7 +1112,7 @@ $(document).ready(function() {
         
         if (editingDeductionIndex >= 0) {
             // Update existing
-            if (deductionData[editingDeductionIndex].maKhauTru) {
+            if (editingDeductionIndex < deductionData.length && deductionData[editingDeductionIndex].maKhauTru) {
                 deductionItem.maKhauTru = deductionData[editingDeductionIndex].maKhauTru;
             }
             deductionData[editingDeductionIndex] = deductionItem;
@@ -1025,10 +1121,10 @@ $(document).ready(function() {
             deductionData.push(deductionItem);
         }
         
-        updateDeductionTable();
+        updateDeductionTable(); 
         calculateTotals();
         hideDeductionModal();
-        showNotification(editingDeductionIndex >= 0 ? 'Cập nhật khấu trừ thành công' : 'Thêm khấu trừ thành công');
+        {% comment %} showNotification(editingDeductionIndex >= 0 ? 'Cập nhật khấu trừ thành công' : 'Thêm khấu trừ thành công'); {% endcomment %}
     }
     
     function updateDeductionTable() {
@@ -1086,7 +1182,7 @@ $(document).ready(function() {
             tbody.append(rowHtml);
         });
         
-        $('#TIEN_KHAU_TRU').val(totalDeduction);
+        $('#TIEN_KHAU_TRU').val(totalDeduction.toFixed(2).replace(',', '.'));
     }
     
     function formatDate(dateString) {
@@ -1096,11 +1192,20 @@ $(document).ready(function() {
     
     // Global functions for edit/delete buttons
     window.editDeduction = function(index) {
+        if (index < 0 || index >= deductionData.length) {
+            showNotification('Khấu trừ không tồn tại', 'error');
+            return;
+        }
         editingDeductionIndex = index;
         showDeductionModal(deductionData[index]);
     };
     
     window.deleteDeduction = function(index) {
+        if (index < 0 || index >= deductionData.length) {
+            showNotification('Khấu trừ không tồn tại', 'error');
+            return;
+        }
+        
         if (confirm('Bạn có chắc chắn muốn xóa khấu trừ này?')) {
             deductionData.splice(index, 1);
             updateDeductionTable();

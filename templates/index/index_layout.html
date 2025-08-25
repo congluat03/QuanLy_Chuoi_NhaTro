@@ -7,7 +7,10 @@
     <title>Trang Chủ | Quản Lý Nhà Trọ</title>
     <link rel="stylesheet" href="{% static 'css/modern-design.css' %}">
     <link rel="stylesheet" href="{% static 'css/tailwind-output.css' %}">
+    <link rel="stylesheet" href="{% static 'css/chatbot.css' %}">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
   </head>
   <body class="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 text-slate-900 font-sans antialiased">
     <!-- Navbar -->
@@ -297,7 +300,9 @@
     </footer>
     
     <!-- Modern Interactions JavaScript -->
-    <script src="{% static 'js/modern-interactions.js' %}"></script>
+    {% comment %} <script src="{% static 'js/modern-interactions.js' %}"></script> {% endcomment %}
+    <!-- Chatbot JavaScript -->
+    <script src="{% static 'js/chatbot.js' %}"></script>
 
     <!-- Enhanced Mobile Menu & Navigation Interactions -->
     <script>

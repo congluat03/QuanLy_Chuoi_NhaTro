@@ -51,8 +51,7 @@ class HoaDon(models.Model):
         db_table = 'hoadon'
     @staticmethod
     def validate_required_fields(data):
-        required_fields = ['MA_PHONG', 'LOAI_HOA_DON', 'NGAY_LAP_HDON', 
-                         'TIEN_PHONG', 'TIEN_DICH_VU', 'TIEN_COC', 'TIEN_KHAU_TRU', 'TONG_TIEN']
+        required_fields = ['LOAI_HOA_DON', 'NGAY_LAP_HDON']
         errors = []
         for field in required_fields:
             if not data.get(field):
@@ -88,17 +87,24 @@ class HoaDon(models.Model):
         return ngay_lap_hdon, errors
 
     @staticmethod
-    def create_hoa_don(data, phong, ngay_lap_hdon):
+    def create_hoa_don(data, phong, ngay_lap_hdon, hop_dong=None):
+        # Tự động lấy hợp đồng đang hoạt động nếu không có
+        if not hop_dong and data.get('MA_HOP_DONG'):
+            from apps.hopdong.models import HopDong
+            hop_dong = HopDong.objects.get(MA_HOP_DONG=data['MA_HOP_DONG'])
+        elif not hop_dong:
+            from apps.hopdong.models import HopDong
+            hop_dong = HopDong.objects.filter(
+                MA_PHONG=phong,
+                TRANG_THAI_HD='Đang hoạt động'
+            ).first()
+            
         return HoaDon(
-            MA_PHONG=phong,
+            MA_HOP_DONG=hop_dong,
             LOAI_HOA_DON=data['LOAI_HOA_DON'],
             NGAY_LAP_HDON=ngay_lap_hdon,
             TRANG_THAI_HDON=data['TRANG_THAI_HDON'],
-            TIEN_PHONG=data['TIEN_PHONG'],
-            TIEN_DICH_VU=data['TIEN_DICH_VU'],
-            TIEN_COC=data['TIEN_COC'],
-            TIEN_KHAU_TRU=data['TIEN_KHAU_TRU'],
-            TONG_TIEN=data['TONG_TIEN']
+            TONG_TIEN=data.get('TONG_TIEN', 0)
         )
 
     @staticmethod
@@ -106,22 +112,93 @@ class HoaDon(models.Model):
         hoa_don.LOAI_HOA_DON = data['LOAI_HOA_DON']
         hoa_don.NGAY_LAP_HDON = data['NGAY_LAP_HDON']
         hoa_don.TRANG_THAI_HDON = data['TRANG_THAI_HDON']
-        hoa_don.TIEN_PHONG = data['TIEN_PHONG']
-        hoa_don.TIEN_DICH_VU = data['TIEN_DICH_VU']
-        hoa_don.TIEN_COC = data['TIEN_COC']
-        hoa_don.TIEN_KHAU_TRU = data['TIEN_KHAU_TRU']
-        hoa_don.TONG_TIEN = data['TONG_TIEN']
+        hoa_don.TONG_TIEN = data.get('TONG_TIEN', 0)
         return hoa_don
 
     @staticmethod
-    def save_related_data(hoa_don, phong, hop_dong, ngay_lap_hdon, chi_so_dich_vu_list=None, khau_tru_list=None):
+    def save_related_data(hoa_don, phong, hop_dong, ngay_lap_hdon, chi_so_dich_vu_list=None, khau_tru_list=None, tien_phong=None):
         errors = []
+        
+        # 1. Lưu chi tiết tiền phòng vào CHITIETHOADON
+        if tien_phong and float(tien_phong) > 0:
+            chi_tiet_phong = CHITIETHOADON(
+                MA_HOA_DON=hoa_don,
+                LOAI_KHOAN='PHONG',
+                NOI_DUNG='Tiền thuê phòng',
+                SO_LUONG=1,
+                DON_GIA=float(tien_phong),
+                THANH_TIEN=float(tien_phong)
+            )
+            chi_tiet_phong.save()
+        
+        # 2. Kiểm tra dịch vụ đã có ghi chỉ số trong kỳ hiện tại chưa
+        from apps.dichvu.models import ChiSoDichVu, LichSuApDungDichVu
+        
+        # Lấy kỳ thanh toán hiện tại
+        start_period, end_period = ChiSoDichVu.get_current_billing_period(hop_dong, ngay_lap_hdon)
+        
+        # Kiểm tra các dịch vụ đã có ghi chỉ số trong kỳ chưa
+        existing_readings = ChiSoDichVu.check_existing_readings_in_period(hop_dong, start_period, end_period)
+        existing_service_ids = set([reading.MA_DICH_VU.MA_DICH_VU for reading in existing_readings])
+        
+        # 3. Lưu chi tiết dịch vụ vào CHITIETHOADON (luôn lưu)
+        # Chỉ lưu vào ChiSoDichVu nếu chưa có trong kỳ hiện tại
         if chi_so_dich_vu_list:
-            chi_so_errors = ChiSoDichVu.save_chi_so_dich_vu(phong, chi_so_dich_vu_list, ngay_lap_hdon, hop_dong)
-            errors.extend(chi_so_errors)
+            for dich_vu in chi_so_dich_vu_list:
+                if dich_vu.get('MA_DICH_VU') and float(dich_vu.get('THANH_TIEN', 0)) > 0:
+                    try:
+                        # Lấy thông tin dịch vụ
+                        from apps.dichvu.models import DichVu
+                        dv_obj = DichVu.objects.get(MA_DICH_VU=dich_vu['MA_DICH_VU'])
+                        
+                        # LUÔN lưu chi tiết dịch vụ vào CHITIETHOADON
+                        chi_tiet_dv = CHITIETHOADON(
+                            MA_HOA_DON=hoa_don,
+                            LOAI_KHOAN='DICH_VU',
+                            NOI_DUNG=f'Dịch vụ {dv_obj.TEN_DICH_VU}',
+                            SO_LUONG=float(dich_vu.get('SO_DICH_VU', 1)),
+                            DON_GIA=float(dich_vu.get('THANH_TIEN', 0)) / float(dich_vu.get('SO_DICH_VU', 1)) if float(dich_vu.get('SO_DICH_VU', 1)) > 0 else 0,
+                            THANH_TIEN=float(dich_vu.get('THANH_TIEN', 0))
+                        )
+                        chi_tiet_dv.save()
+                        
+                        # CHỈ lưu chỉ số dịch vụ nếu CHƯA CÓ trong kỳ hiện tại
+                        service_id = int(dich_vu['MA_DICH_VU'])
+                        if service_id not in existing_service_ids:
+                            if dv_obj.LOAI_DICH_VU not in ['Cố định', 'Co dinh']:
+                                # Dịch vụ tính theo chỉ số - ghi chỉ số mới
+                                chi_so_dv = ChiSoDichVu(
+                                    MA_HOP_DONG=hop_dong,
+                                    MA_DICH_VU=dv_obj,
+                                    CHI_SO_CU=int(float(dich_vu.get('CHI_SO_CU', 0))),
+                                    CHI_SO_MOI=int(float(dich_vu.get('CHI_SO_MOI', 0))) if dich_vu.get('CHI_SO_MOI') else None,
+                                    SO_LUONG=int(float(dich_vu.get('SO_DICH_VU', 1))),
+                                    NGAY_GHI_CS=ngay_lap_hdon
+                                )
+                                chi_so_dv.save()
+                            else:
+                                # Dịch vụ cố định - ghi số lượng sử dụng
+                                chi_so_dv = ChiSoDichVu(
+                                    MA_HOP_DONG=hop_dong,
+                                    MA_DICH_VU=dv_obj,                           
+                                    CHI_SO_CU=None,
+                                    CHI_SO_MOI=None,
+                                    SO_LUONG=int(float(dich_vu.get('SO_DICH_VU', 1))),
+                                    NGAY_GHI_CS=ngay_lap_hdon
+                                )
+                                chi_so_dv.save()
+                            
+                            # Cập nhật danh sách đã ghi
+                            existing_service_ids.add(service_id)
+                        
+                    except Exception as e:
+                        errors.append(f'Lỗi lưu dịch vụ {dich_vu.get("MA_DICH_VU", "")}: {str(e)}')
+        
+        # 4. Lưu khấu trừ
         if khau_tru_list:
             khau_tru_errors = KhauTru.save_khau_tru(hoa_don, khau_tru_list)
             errors.extend(khau_tru_errors)
+            
         return errors
 
     @staticmethod
@@ -130,17 +207,40 @@ class HoaDon(models.Model):
         errors.extend(HoaDon.validate_required_fields(data))
         if errors:
             return None, errors
-        phong = PhongTro.objects.get(MA_PHONG=data['MA_PHONG'])
-        hop_dong = HopDong.objects.get(MA_HOP_DONG=data['MA_HOP_DONG'])
-        if not phong:
+        
+        try:
+            phong = PhongTro.objects.get(MA_PHONG=data['MA_PHONG'])
+        except PhongTro.DoesNotExist:
+            errors.append('Phòng không tồn tại')
             return None, errors
-        ngay_lap_hdon = datetime.strptime(data['NGAY_LAP_HDON'], '%Y-%m-%d')
+            
+        # Tìm hợp đồng đang hoạt động
+        hop_dong = None
+        if data.get('MA_HOP_DONG'):
+            try:
+                hop_dong = HopDong.objects.get(MA_HOP_DONG=data['MA_HOP_DONG'])
+            except HopDong.DoesNotExist:
+                pass
+        
+        if not hop_dong:
+            hop_dong = HopDong.objects.filter(
+                MA_PHONG=phong,
+                TRANG_THAI_HD='Đang hoạt động'
+            ).first()
+            
+        if not hop_dong:
+            errors.append('Không tìm thấy hợp đồng hiệu lực cho phòng này')
+            return None, errors
+            
+        try:
+            ngay_lap_hdon = datetime.strptime(data['NGAY_LAP_HDON'], '%Y-%m-%d').date()
+        except ValueError:
+            errors.append('Định dạng ngày lập hóa đơn không hợp lệ')
+            return None, errors
    
-        if not ngay_lap_hdon:
-            return None, errors
-        hoa_don = HoaDon.create_hoa_don(data, phong, ngay_lap_hdon)
+        hoa_don = HoaDon.create_hoa_don(data, phong, ngay_lap_hdon, hop_dong)
         hoa_don.save()
-        related_errors = HoaDon.save_related_data(hoa_don, phong, hop_dong, ngay_lap_hdon, chi_so_dich_vu_list, khau_tru_list)
+        related_errors = HoaDon.save_related_data(hoa_don, phong, hop_dong, ngay_lap_hdon, chi_so_dich_vu_list, khau_tru_list, data.get('TIEN_PHONG'))
         errors.extend(related_errors)
         return hoa_don, errors
 
@@ -223,7 +323,6 @@ class HoaDon(models.Model):
                 
                 # 6. Tạo hóa đơn
                 hoa_don = cls.objects.create(
-                    MA_PHONG=hop_dong.MA_PHONG,
                     MA_HOP_DONG=hop_dong,
                     LOAI_HOA_DON='Bắt đầu hợp đồng',
                     NGAY_LAP_HDON=hop_dong.NGAY_NHAN_PHONG or timezone.now().date(),
@@ -355,7 +454,6 @@ class HoaDon(models.Model):
                 
                 # 6. Tạo hóa đơn
                 hoa_don = cls.objects.create(
-                    MA_PHONG=hop_dong.MA_PHONG,
                     MA_HOP_DONG=hop_dong,
                     LOAI_HOA_DON='Kết thúc hợp đồng',
                     NGAY_LAP_HDON=ngay_ket_thuc,
@@ -517,7 +615,6 @@ class HoaDon(models.Model):
                 
                 # 6. Tạo hóa đơn
                 hoa_don = cls.objects.create(
-                    MA_PHONG=hop_dong.MA_PHONG,
                     MA_HOP_DONG=hop_dong,
                     LOAI_HOA_DON='Hàng tháng',
                     NGAY_LAP_HDON=ngay_lap,
