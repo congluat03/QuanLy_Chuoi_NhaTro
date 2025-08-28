@@ -119,6 +119,7 @@ class LichSuQuanLy(models.Model):
     )
     NGAY_BAT_DAU_QL = models.DateField(null=True, blank=True)
     NGAY_KET_THUC_QL = models.DateField(null=True, blank=True)
+    VI_TRI_CONG_VIEC = models.CharField(max_length=200, null=True, blank=True, verbose_name="Vị trí công việc")
     LY_DO_KET_THUC = models.TextField(null=True, blank=True)
 
     def __str__(self):

@@ -310,7 +310,17 @@ def them_hoa_don(request, ma_phong=None):
 
 def sua_hoa_don(request, ma_hoa_don):
     hoa_don = get_object_or_404(HoaDon, MA_HOA_DON=ma_hoa_don)
-    phong = PhongTro.objects.get(MA_PHONG=hoa_don.MA_PHONG.MA_PHONG)
+    
+    # Lấy thông tin phòng từ hợp đồng hoặc cọc phòng
+    phong = None
+    if hoa_don.MA_HOP_DONG and hoa_don.MA_HOP_DONG.MA_PHONG:
+        phong = hoa_don.MA_HOP_DONG.MA_PHONG
+    elif hoa_don.MA_COC_PHONG and hoa_don.MA_COC_PHONG.MA_PHONG:
+        phong = hoa_don.MA_COC_PHONG.MA_PHONG
+    
+    if not phong:
+        messages.error(request, 'Không tìm thấy thông tin phòng cho hóa đơn này.')
+        return redirect('hoadon:hoa_don_list')
     
     if request.method == 'POST':
         try:
@@ -405,7 +415,7 @@ def sua_hoa_don(request, ma_hoa_don):
         current_month = datetime.combine(hoa_don.NGAY_LAP_HDON, datetime.min.time()).replace(
             day=1, hour=0, minute=0, second=0, microsecond=0
         )
-    chi_so_dich_vu_list, dich_vu_errors = get_dich_vu_ap_dung(phong.MA_KHU_VUC, hoa_don.MA_PHONG.MA_PHONG, current_month)
+    chi_so_dich_vu_list, dich_vu_errors = get_dich_vu_ap_dung(phong.MA_KHU_VUC, phong.MA_PHONG, current_month)
     khau_tru_list = KhauTru.objects.filter(MA_HOA_DON=hoa_don)
     
     # Tính toán các giá trị từ chi tiết hóa đơn
@@ -415,7 +425,7 @@ def sua_hoa_don(request, ma_hoa_don):
     tien_khau_tru = sum(kt.SO_TIEN_KT * (1 if kt.LOAI_KHAU_TRU == 'Cộng' else -1) for kt in khau_tru_list)
     
     form_data = {
-        'MA_PHONG': hoa_don.MA_PHONG.MA_PHONG,
+        'MA_PHONG': hoa_don.MA_PHONG.MA_PHONG if hoa_don.MA_PHONG else None,
         'LOAI_HOA_DON': hoa_don.LOAI_HOA_DON,
         'NGAY_LAP_HDON': hoa_don.NGAY_LAP_HDON.strftime('%Y-%m-%d') if hoa_don.NGAY_LAP_HDON else '',
         'TRANG_THAI_HDON': hoa_don.TRANG_THAI_HDON,

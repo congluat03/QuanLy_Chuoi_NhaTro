@@ -1,0 +1,261 @@
+{% extends 'index/index_layout.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block content %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+
+<style>
+:root {
+    --primary-500: #3b82f6;
+    --primary-600: #2563eb;
+    --success-500: #10b981;
+    --error-500: #ef4444;
+}
+
+.btn-primary {
+    @apply bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.btn-secondary {
+    @apply bg-white hover:bg-gray-50 text-gray-700 font-semibold py-3 px-6 rounded-lg border border-gray-300 transition-all duration-200;
+}
+
+.card {
+    @apply bg-white rounded-xl shadow-sm border border-gray-100;
+}
+
+.payment-method {
+    @apply border-2 border-gray-200 rounded-lg p-4 cursor-pointer transition-all duration-200 hover:border-blue-300;
+}
+
+.payment-method.selected {
+    @apply border-blue-500 bg-blue-50;
+}
+
+.payment-method input[type="radio"] {
+    @apply sr-only;
+}
+</style>
+
+<div class="min-h-screen bg-gray-50">
+    <!-- Header -->
+    <div class="bg-white border-b">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <!-- Breadcrumb -->
+            <nav class="flex items-center space-x-2 text-sm mb-4">
+                <a href="{% url 'user_phongtro:tim_phong' %}" class="text-gray-500 hover:text-blue-600">Tìm phòng</a>
+                <i class="fas fa-chevron-right text-gray-300"></i>
+                <a href="{% url 'user_phongtro:chi_tiet_phong' dat_phong.MA_PHONG.MA_PHONG %}" class="text-gray-500 hover:text-blue-600">{{ dat_phong.MA_PHONG.TEN_PHONG }}</a>
+                <i class="fas fa-chevron-right text-gray-300"></i>
+                <span class="text-gray-900 font-semibold">Thanh toán</span>
+            </nav>
+            
+            <div class="text-center">
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">Thanh Toán Đặt Phòng</h1>
+                <p class="text-gray-600">Hoàn tất thanh toán để xác nhận đặt phòng</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Main Content -->
+            <div class="lg:col-span-2">
+                <!-- Payment Form -->
+                <div class="card p-6">
+                    <form method="POST">
+                        {% csrf_token %}
+                        
+                        <h2 class="text-xl font-bold text-gray-900 mb-6">
+                            <i class="fas fa-credit-card mr-2 text-blue-500"></i>
+                            Phương thức thanh toán
+                        </h2>
+                        
+                        <div class="space-y-4 mb-8">
+                            <!-- Tiền mặt -->
+                            <label class="payment-method block">
+                                <input type="radio" name="phuong_thuc_thanh_toan" value="TIEN_MAT" required>
+                                <div class="flex items-center">
+                                    <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mr-4">
+                                        <i class="fas fa-money-bills text-green-600 text-xl"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="font-semibold text-gray-900">Tiền mặt</div>
+                                        <div class="text-sm text-gray-600">Thanh toán trực tiếp bằng tiền mặt khi gặp mặt</div>
+                                    </div>
+                                    <div class="text-right">
+                                        <i class="fas fa-check-circle text-green-500 text-xl opacity-0 transition-opacity duration-200"></i>
+                                    </div>
+                                </div>
+                            </label>
+                            
+                            <!-- Chuyển khoản -->
+                            <label class="payment-method block">
+                                <input type="radio" name="phuong_thuc_thanh_toan" value="CHUYEN_KHOAN" required>
+                                <div class="flex items-center">
+                                    <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
+                                        <i class="fas fa-university text-blue-600 text-xl"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="font-semibold text-gray-900">Chuyển khoản ngân hàng</div>
+                                        <div class="text-sm text-gray-600">Chuyển khoản qua ngân hàng hoặc ví điện tử</div>
+                                    </div>
+                                    <div class="text-right">
+                                        <i class="fas fa-check-circle text-green-500 text-xl opacity-0 transition-opacity duration-200"></i>
+                                    </div>
+                                </div>
+                            </label>
+                            
+                            <!-- Thẻ ATM -->
+                            <label class="payment-method block">
+                                <input type="radio" name="phuong_thuc_thanh_toan" value="THE_ATM" required>
+                                <div class="flex items-center">
+                                    <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mr-4">
+                                        <i class="fas fa-credit-card text-purple-600 text-xl"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="font-semibold text-gray-900">Thẻ ATM/Visa</div>
+                                        <div class="text-sm text-gray-600">Thanh toán qua thẻ ATM hoặc thẻ tín dụng</div>
+                                    </div>
+                                    <div class="text-right">
+                                        <i class="fas fa-check-circle text-green-500 text-xl opacity-0 transition-opacity duration-200"></i>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                        
+                        <!-- Important Note -->
+                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                            <div class="flex items-start">
+                                <i class="fas fa-exclamation-triangle text-yellow-600 mr-3 mt-1"></i>
+                                <div class="text-sm text-yellow-800">
+                                    <p class="font-semibold mb-2">Lưu ý quan trọng:</p>
+                                    <ul class="space-y-1 text-sm">
+                                        <li>• Việc thanh toán này chỉ là cam kết đặt phòng</li>
+                                        <li>• Chủ trọ sẽ liên hệ xác nhận trong vòng 24h</li>
+                                        <li>• Vui lòng gặp mặt trực tiếp để ký hợp đồng chính thức</li>
+                                        <li>• Có thể được hoàn tiền nếu không phù hợp</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Submit Button -->
+                        <div class="flex justify-between">
+                            <a href="{% url 'user_phongtro:dat_phong' dat_phong.MA_PHONG.MA_PHONG %}" 
+                               class="btn-secondary">
+                                <i class="fas fa-arrow-left mr-2"></i>
+                                Quay lại
+                            </a>
+                            
+                            <button type="submit" class="btn-primary">
+                                <i class="fas fa-money-check-alt mr-2"></i>
+                                Xác nhận thanh toán
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="lg:col-span-1">
+                <div class="sticky top-4 space-y-6">
+                    <!-- Order Summary -->
+                    <div class="card p-6">
+                        <h3 class="text-lg font-bold text-gray-900 mb-4">Chi tiết thanh toán</h3>
+                        
+                        <div class="space-y-4">
+                            <!-- Room Info -->
+                            <div class="border-b border-gray-200 pb-4">
+                                <h4 class="font-semibold text-gray-900 mb-2">{{ dat_phong.MA_PHONG.TEN_PHONG }}</h4>
+                                <p class="text-sm text-gray-600">
+                                    {{ dat_phong.MA_PHONG.MA_KHU_VUC.TEN_KHU_VUC }}, {{ dat_phong.MA_PHONG.MA_KHU_VUC.MA_NHA_TRO.TEN_NHA_TRO }}
+                                </p>
+                            </div>
+                            
+                            <!-- Customer Info -->
+                            <div class="border-b border-gray-200 pb-4">
+                                <h4 class="font-semibold text-gray-900 mb-2">Thông tin khách thuê</h4>
+                                <div class="text-sm space-y-1">
+                                    <p><span class="text-gray-600">Họ tên:</span> {{ dat_phong.MA_KHACH_THUE.HO_TEN_KT }}</p>
+                                    <p><span class="text-gray-600">SĐT:</span> {{ dat_phong.MA_KHACH_THUE.SDT_KT }}</p>
+                                    <p><span class="text-gray-600">Ngày vào:</span> {{ dat_phong.NGAY_DU_KIEN_VAO|date:"d/m/Y" }}</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Payment Details -->
+                            <div>
+                                <h4 class="font-semibold text-gray-900 mb-3">Chi phí</h4>
+                                <div class="space-y-2 text-sm">
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Tiền cọc phòng:</span>
+                                        <span class="font-medium">{{ hoa_don.TONG_TIEN|currency_vn }}</span>
+                                    </div>
+                                    <div class="border-t border-gray-200 pt-2 mt-3">
+                                        <div class="flex justify-between items-center">
+                                            <span class="font-semibold text-gray-900">Tổng thanh toán:</span>
+                                            <span class="font-bold text-xl text-blue-600">{{ hoa_don.TONG_TIEN|currency_vn }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Contact Support -->
+                    <div class="card p-6 bg-blue-50 border-blue-200">
+                        <h3 class="text-lg font-bold text-blue-900 mb-4">
+                            <i class="fas fa-headset mr-2"></i>
+                            Hỗ trợ
+                        </h3>
+                        
+                        <div class="space-y-3 text-sm text-blue-700">
+                            <p class="flex items-center">
+                                <i class="fas fa-phone mr-2"></i>
+                                <span>Hotline: 1900-xxxx</span>
+                            </p>
+                            <p class="flex items-center">
+                                <i class="fas fa-envelope mr-2"></i>
+                                <span>support@nhatro.com</span>
+                            </p>
+                            <p class="flex items-center">
+                                <i class="fas fa-clock mr-2"></i>
+                                <span>24/7 - Luôn sẵn sàng hỗ trợ</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle payment method selection
+    const paymentMethods = document.querySelectorAll('.payment-method');
+    
+    paymentMethods.forEach(method => {
+        method.addEventListener('click', function() {
+            // Remove selected class from all methods
+            paymentMethods.forEach(m => {
+                m.classList.remove('selected');
+                const checkIcon = m.querySelector('.fa-check-circle');
+                if (checkIcon) checkIcon.style.opacity = '0';
+            });
+            
+            // Add selected class to clicked method
+            this.classList.add('selected');
+            const checkIcon = this.querySelector('.fa-check-circle');
+            if (checkIcon) checkIcon.style.opacity = '1';
+            
+            // Check the radio button
+            const radio = this.querySelector('input[type="radio"]');
+            if (radio) radio.checked = true;
+        });
+    });
+});
+</script>
+
+{% endblock %}

@@ -163,14 +163,25 @@
                                         {{ contract.SO_THANH_VIEN|default:0 }} người
                                     </span>
                                 </td>
-                                <td class="p-3 text-center">{{ contract.GIA_THUE|floatformat:0|default:0 }} đ</td>
+                                <td class="p-3 text-center">
+                                    {{ contract.GIA_THUE|floatformat:0|default:0 }} đ <br>
+                                    <small class="font-medium text-green-600">
+                                        (Thu {{ contract.NGAY_THU_TIEN}})
+                                    </small>
+                                </td>
                                 <td class="p-3 text-center">
                                     {{ contract.GIA_COC_HD|floatformat:0|default:0 }} đ <br>
                                     <small class="font-medium {% if contract.MA_PHONG.SO_TIEN_CAN_COC|default:0 == 0 %}text-red-600{% else %}text-green-600{% endif %}">
-                                        ({{ contract.MA_PHONG.SO_TIEN_CAN_COC|default:0|yesno:"Chưa thanh toán,Đã thu xong" }})
+                                        ({{ contract.THOI_DIEM_THANH_TOAN|default:0|yesno:"Chưa thanh toán,Đã thu xong" }})
                                     </small>
                                 </td>
-                                <td class="p-3 text-center">{{ contract.NGAY_THU_TIEN|date_dd_mm_yy }}</td>
+                                <td class="p-3 text-center">
+                                    {{ contract.CHU_KY_THANH_TOAN }}
+                                    <br>
+                                     <small class="font-medium text-green-600">
+                                        ({{ contract.THOI_DIEM_THANH_TOAN}})
+                                    </small>
+                                </td>
                                 <td class="p-3 text-center">{{ contract.NGAY_LAP_HD|date_dd_mm_yy }}</td>
                                 <td class="p-3 text-center">{{ contract.NGAY_NHAN_PHONG|date_dd_mm_yy }}</td>
                                 <td class="p-3 text-center">{{ contract.NGAY_TRA_PHONG|date_dd_mm_yy }}</td>

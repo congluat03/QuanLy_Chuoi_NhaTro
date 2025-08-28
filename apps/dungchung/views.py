@@ -11,8 +11,9 @@ from apps.hopdong.models import HopDong, LichSuHopDong
 from apps.hoadon.models import HoaDon, KhauTru
 from apps.phongtro.models import PhongTro
 from apps.nhatro.models import KhuVuc
-from django.db.models import Q
+from django.db.models import Q, Sum
 from datetime import datetime
+from decimal import Decimal
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 import json
@@ -484,24 +485,19 @@ def user_hoa_don_list_view(request):
             NGAY_ROI_DI__isnull=True
         ).select_related('MA_HOP_DONG__MA_PHONG').first()
         
-        if not lich_su_hop_dong:
-            messages.info(request, 'Bạn hiện không có hợp đồng nào để xem hóa đơn.')
-            return render(request, 'auth/hoa_don_list.html', {
-                'tai_khoan': tai_khoan,
-                'khach_thue': khach_thue,
-                'hoa_don_list': [],
-                'phong_tro': None
-            })
-        
-        phong_tro = lich_su_hop_dong.MA_HOP_DONG.MA_PHONG
-        
         # Lọc theo năm và tháng nếu có
         year = request.GET.get('year')
         month = request.GET.get('month')
         
-        # Lấy danh sách hóa đơn của phòng
+        # Lấy danh sách hóa đơn của khách thuê (bao gồm hóa đơn cọc phòng và hóa đơn hợp đồng)
+        from django.db.models import Q
+        
         hoa_don_query = HoaDon.objects.filter(
-            MA_PHONG=phong_tro
+            Q(MA_HOP_DONG__lichsuhopdong__MA_KHACH_THUE=khach_thue) |  # Hóa đơn từ hợp đồng
+            Q(MA_COC_PHONG__MA_KHACH_THUE=khach_thue)  # Hóa đơn từ cọc phòng
+        ).select_related(
+            'MA_HOP_DONG__MA_PHONG',
+            'MA_COC_PHONG__MA_PHONG'
         ).order_by('-NGAY_LAP_HDON')
         
         if year:
@@ -511,9 +507,79 @@ def user_hoa_don_list_view(request):
             
         hoa_don_list = hoa_don_query[:12]  # Giới hạn 12 hóa đơn gần nhất
         
-        # Lấy danh sách năm có hóa đơn
+        # Xác định phòng trọ hiện tại (nếu có hợp đồng)
+        phong_tro = None
+        if lich_su_hop_dong:
+            phong_tro = lich_su_hop_dong.MA_HOP_DONG.MA_PHONG
+        
+        # Thêm thông tin thanh toán cho mỗi hóa đơn
+        from apps.hoadon.models import PHIEUTHU, CHITIETHOADON, KhauTru
+        hoa_don_with_payment = []
+        for hoa_don in hoa_don_list:
+            # Tính tổng đã thanh toán
+            tong_da_thanh_toan = PHIEUTHU.objects.filter(
+                MA_HOA_DON=hoa_don
+            ).aggregate(tong=Sum('SO_TIEN'))['tong'] or Decimal('0')
+            
+            con_phi_tra = hoa_don.TONG_TIEN - tong_da_thanh_toan
+            
+            # Tính phần trăm
+            if hoa_don.TONG_TIEN > 0:
+                phan_tram_da_thanh_toan = round((tong_da_thanh_toan / hoa_don.TONG_TIEN) * 100, 1)
+            else:
+                phan_tram_da_thanh_toan = 0
+            
+            # Thêm thông tin phòng trọ cho hóa đơn
+            hoa_don_phong = None
+            if hoa_don.MA_HOP_DONG and hoa_don.MA_HOP_DONG.MA_PHONG:
+                hoa_don_phong = hoa_don.MA_HOP_DONG.MA_PHONG
+            elif hoa_don.MA_COC_PHONG and hoa_don.MA_COC_PHONG.MA_PHONG:
+                hoa_don_phong = hoa_don.MA_COC_PHONG.MA_PHONG
+            
+            # Lấy chi tiết hóa đơn
+            chi_tiet_list = CHITIETHOADON.objects.filter(
+                MA_HOA_DON=hoa_don
+            ).order_by('LOAI_KHOAN')
+            
+            # Lấy danh sách khấu trừ
+            khau_tru_list = KhauTru.objects.filter(
+                MA_HOA_DON=hoa_don
+            ).order_by('NGAYKHAUTRU')
+            
+            hoa_don_with_payment.append({
+                'hoa_don': hoa_don,
+                'phong_tro': hoa_don_phong,
+                'tong_da_thanh_toan': tong_da_thanh_toan,
+                'con_phi_tra': con_phi_tra,
+                'phan_tram_da_thanh_toan': phan_tram_da_thanh_toan,
+                'chi_tiet_list': chi_tiet_list,
+                'khau_tru_list': khau_tru_list,
+            })
+        
+        hoa_don_list = hoa_don_with_payment
+        
+        # Tính tổng tất cả hóa đơn của khách thuê (không bị giới hạn bởi bộ lọc)
+        tat_ca_hoa_don = HoaDon.objects.filter(
+            Q(MA_HOP_DONG__lichsuhopdong__MA_KHACH_THUE=khach_thue) |
+            Q(MA_COC_PHONG__MA_KHACH_THUE=khach_thue)
+        )
+        
+        tong_tat_ca_tien = Decimal('0')
+        tong_tat_ca_da_thanh_toan = Decimal('0')
+        tong_tat_ca_con_thieu = Decimal('0')
+        
+        for hd in tat_ca_hoa_don:
+            tong_tat_ca_tien += hd.TONG_TIEN
+            da_thanh_toan = PHIEUTHU.objects.filter(
+                MA_HOA_DON=hd
+            ).aggregate(tong=Sum('SO_TIEN'))['tong'] or Decimal('0')
+            tong_tat_ca_da_thanh_toan += da_thanh_toan
+            tong_tat_ca_con_thieu += (hd.TONG_TIEN - da_thanh_toan)
+        
+        # Lấy danh sách năm có hóa đơn của khách thuê
         years = HoaDon.objects.filter(
-            MA_PHONG=phong_tro
+            Q(MA_HOP_DONG__lichsuhopdong__MA_KHACH_THUE=khach_thue) |
+            Q(MA_COC_PHONG__MA_KHACH_THUE=khach_thue)
         ).dates('NGAY_LAP_HDON', 'year', order='DESC')
         
         context = {
@@ -524,6 +590,10 @@ def user_hoa_don_list_view(request):
             'years': years,
             'selected_year': year,
             'selected_month': month,
+            # Tổng tất cả
+            'tong_tat_ca_tien': tong_tat_ca_tien,
+            'tong_tat_ca_da_thanh_toan': tong_tat_ca_da_thanh_toan,
+            'tong_tat_ca_con_thieu': tong_tat_ca_con_thieu,
         }
         
         return render(request, 'auth/hoa_don_list.html', context)
@@ -551,29 +621,57 @@ def user_hoa_don_detail_view(request, ma_hoa_don):
     khach_thue = user_info['khach_thue']
     
     try:
-        # Lấy hợp đồng hiện tại của người thuê
-        lich_su_hop_dong = LichSuHopDong.objects.filter(
-            MA_KHACH_THUE=khach_thue,
-            NGAY_ROI_DI__isnull=True
-        ).select_related('MA_HOP_DONG__MA_PHONG').first()
+        # Lấy hóa đơn và kiểm tra quyền truy cập của khách thuê
+        from django.db.models import Q
         
-        if not lich_su_hop_dong:
-            messages.error(request, 'Bạn không có quyền xem hóa đơn này.')
-            return redirect('dungchung:user_hoa_don_list')
-        
-        phong_tro = lich_su_hop_dong.MA_HOP_DONG.MA_PHONG
-        
-        # Lấy hóa đơn và kiểm tra quyền truy cập
         hoa_don = get_object_or_404(
-            HoaDon.objects.select_related('MA_PHONG'),
-            MA_HOA_DON=ma_hoa_don,
-            MA_PHONG=phong_tro  # Chỉ cho phép xem hóa đơn của phòng mình
+            HoaDon.objects.select_related(
+                'MA_HOP_DONG__MA_PHONG',
+                'MA_COC_PHONG__MA_PHONG'
+            ),
+            Q(MA_HOA_DON=ma_hoa_don) & (
+                Q(MA_HOP_DONG__lichsuhopdong__MA_KHACH_THUE=khach_thue) |  # Hóa đơn từ hợp đồng
+                Q(MA_COC_PHONG__MA_KHACH_THUE=khach_thue)  # Hóa đơn từ cọc phòng
+            )
         )
+        
+        # Xác định phòng trọ từ hóa đơn
+        phong_tro = None
+        if hoa_don.MA_HOP_DONG and hoa_don.MA_HOP_DONG.MA_PHONG:
+            phong_tro = hoa_don.MA_HOP_DONG.MA_PHONG
+        elif hoa_don.MA_COC_PHONG and hoa_don.MA_COC_PHONG.MA_PHONG:
+            phong_tro = hoa_don.MA_COC_PHONG.MA_PHONG
         
         # Lấy danh sách khấu trừ
         khau_tru_list = KhauTru.objects.filter(
             MA_HOA_DON=hoa_don
         ).order_by('NGAYKHAUTRU')
+        
+        # Lấy chi tiết hóa đơn
+        from apps.hoadon.models import PHIEUTHU, CHITIETHOADON
+        chi_tiet_list = CHITIETHOADON.objects.filter(
+            MA_HOA_DON=hoa_don
+        ).order_by('LOAI_KHOAN')
+        
+        # Lấy danh sách phiếu thu (lịch sử thanh toán)
+        phieu_thu_list = PHIEUTHU.objects.filter(
+            MA_HOA_DON=hoa_don
+        ).order_by('-NGAY_THU')  # Sắp xếp mới nhất trước
+        
+        # Tính tổng đã thanh toán
+        tong_da_thanh_toan = phieu_thu_list.aggregate(
+            tong=Sum('SO_TIEN')
+        )['tong'] or Decimal('0')
+        
+        con_phi_tra = hoa_don.TONG_TIEN - tong_da_thanh_toan
+        
+        # Tính phần trăm thanh toán
+        if hoa_don.TONG_TIEN > 0:
+            phan_tram_da_thanh_toan = round((tong_da_thanh_toan / hoa_don.TONG_TIEN) * 100, 1)
+            phan_tram_con_lai = round((con_phi_tra / hoa_don.TONG_TIEN) * 100, 1)
+        else:
+            phan_tram_da_thanh_toan = 0
+            phan_tram_con_lai = 0
         
         context = {
             'tai_khoan': tai_khoan,
@@ -581,6 +679,12 @@ def user_hoa_don_detail_view(request, ma_hoa_don):
             'hoa_don': hoa_don,
             'phong_tro': phong_tro,
             'khau_tru_list': khau_tru_list,
+            'chi_tiet_list': chi_tiet_list,
+            'phieu_thu_list': phieu_thu_list,
+            'tong_da_thanh_toan': tong_da_thanh_toan,
+            'con_phi_tra': con_phi_tra,
+            'phan_tram_da_thanh_toan': phan_tram_da_thanh_toan,
+            'phan_tram_con_lai': phan_tram_con_lai,
         }
         
         return render(request, 'auth/hoa_don_detail.html', context)
@@ -635,3 +739,144 @@ def chatbot_api(request):
             'message': 'Có lỗi xảy ra khi xử lý yêu cầu.',
             'error': str(e)
         })
+
+
+@tai_khoan_login_required
+def thanh_toan_hoa_don_view(request, ma_hoa_don):
+    """View thanh toán hóa đơn của người thuê"""
+    user_info = get_user_khachthue_info(request)
+    
+    if not user_info:
+        messages.error(request, 'Không tìm thấy thông tin tài khoản.')
+        return redirect('dungchung:logout')
+    
+    # Kiểm tra quyền khách thuê
+    if user_info['tai_khoan'].QUYEN_HAN != 'Khách thuê':
+        messages.error(request, 'Bạn không có quyền truy cập trang này.')
+        return redirect('dungchung:trang_chu')
+    
+    tai_khoan = user_info['tai_khoan']
+    khach_thue = user_info['khach_thue']
+    
+    try:
+        # Lấy hợp đồng hiện tại của người thuê
+        lich_su_hop_dong = LichSuHopDong.objects.filter(
+            MA_KHACH_THUE=khach_thue,
+            NGAY_ROI_DI__isnull=True
+        ).select_related('MA_HOP_DONG__MA_PHONG').first()
+        
+        if not lich_su_hop_dong:
+            messages.error(request, 'Bạn không có quyền thanh toán hóa đơn này.')
+            return redirect('dungchung:user_hoa_don_list')
+        
+        # Lấy hóa đơn và kiểm tra quyền truy cập
+        from django.db.models import Q
+        
+        hoa_don = get_object_or_404(
+            HoaDon.objects.select_related(
+                'MA_HOP_DONG__MA_PHONG',
+                'MA_COC_PHONG__MA_PHONG'
+            ),
+            Q(MA_HOA_DON=ma_hoa_don) & (
+                Q(MA_HOP_DONG__lichsuhopdong__MA_KHACH_THUE=khach_thue) |  # Hóa đơn từ hợp đồng
+                Q(MA_COC_PHONG__MA_KHACH_THUE=khach_thue)  # Hóa đơn từ cọc phòng
+            )
+        )
+        
+        # Xác định phòng trọ từ hóa đơn
+        phong_tro = None
+        if hoa_don.MA_HOP_DONG and hoa_don.MA_HOP_DONG.MA_PHONG:
+            phong_tro = hoa_don.MA_HOP_DONG.MA_PHONG
+        elif hoa_don.MA_COC_PHONG and hoa_don.MA_COC_PHONG.MA_PHONG:
+            phong_tro = hoa_don.MA_COC_PHONG.MA_PHONG
+        
+        # Kiểm tra hóa đơn đã thanh toán chưa
+        if hoa_don.TRANG_THAI_HDON == 'Đã thanh toán':
+            messages.info(request, 'Hóa đơn này đã được thanh toán.')
+            return redirect('dungchung:user_hoa_don_detail', ma_hoa_don=ma_hoa_don)
+        
+        if request.method == 'POST':
+            phuong_thuc_thanh_toan = request.POST.get('phuong_thuc_thanh_toan', '')
+            so_tien_thanh_toan = request.POST.get('so_tien_thanh_toan', '')
+            
+            if phuong_thuc_thanh_toan in ['TIEN_MAT', 'CHUYEN_KHOAN', 'THE_ATM']:
+                from django.db import transaction
+                from django.utils import timezone
+                from apps.hoadon.models import PHIEUTHU
+                from decimal import Decimal, InvalidOperation
+                
+                try:
+                    # Validate số tiền thanh toán
+                    try:
+                        so_tien = Decimal(str(so_tien_thanh_toan))
+                        if so_tien <= 0:
+                            raise ValueError("Số tiền thanh toán phải lớn hơn 0")
+                        if so_tien > hoa_don.TONG_TIEN:
+                            raise ValueError("Số tiền thanh toán không được vượt quá tổng tiền hóa đơn")
+                    except (InvalidOperation, ValueError) as e:
+                        messages.error(request, f'Số tiền thanh toán không hợp lệ: {str(e)}')
+                        raise
+                    
+                    with transaction.atomic():
+                        # Tính tổng số tiền đã thanh toán trước đó
+                        tong_da_thanh_toan = PHIEUTHU.objects.filter(
+                            MA_HOA_DON=hoa_don
+                        ).aggregate(
+                            tong=Sum('SO_TIEN')
+                        )['tong'] or Decimal('0')
+                        
+                        # Kiểm tra không thanh toán quá số tiền còn lại
+                        con_lai = hoa_don.TONG_TIEN - tong_da_thanh_toan
+                        if so_tien > con_lai:
+                            messages.error(request, f'Số tiền thanh toán ({so_tien:,} VNĐ) vượt quá số tiền còn phải trả ({con_lai:,} VNĐ)')
+                            raise ValueError("Thanh toán vượt quá số tiền còn lại")
+                        
+                        # Tạo phiếu thu
+                        phieu_thu = PHIEUTHU.objects.create(
+                            MA_HOA_DON=hoa_don,
+                            MA_KHACH=khach_thue,
+                            SO_TIEN=so_tien,
+                            HINH_THUC=phuong_thuc_thanh_toan,
+                            GHI_CHU=f'Thanh toán hóa đơn #{hoa_don.MA_HOA_DON} - {hoa_don.LOAI_HOA_DON}'
+                        )
+                        
+                        # Cập nhật trạng thái hóa đơn nếu đã thanh toán đủ
+                        tong_sau_thanh_toan = tong_da_thanh_toan + so_tien
+                        if tong_sau_thanh_toan >= hoa_don.TONG_TIEN:
+                            hoa_don.TRANG_THAI_HDON = 'Đã thanh toán'
+                            hoa_don.save()
+                            messages.success(request, f'Thanh toán đầy đủ thành công! Mã phiếu thu: #{phieu_thu.MA_PHIEU_THU}')
+                        else:
+                            con_lai_sau = hoa_don.TONG_TIEN - tong_sau_thanh_toan
+                            messages.success(request, f'Thanh toán một phần thành công! Mã phiếu thu: #{phieu_thu.MA_PHIEU_THU}. Còn lại: {con_lai_sau:,} VNĐ')
+                        
+                    return redirect('dungchung:user_hoa_don_detail', ma_hoa_don=ma_hoa_don)
+                    
+                except Exception as e:
+                    messages.error(request, f'Có lỗi xảy ra khi thanh toán: {str(e)}')
+            else:
+                messages.error(request, 'Vui lòng chọn phương thức thanh toán.')
+        
+        # Tính tổng đã thanh toán
+        from apps.hoadon.models import PHIEUTHU
+        from decimal import Decimal
+        tong_da_thanh_toan = PHIEUTHU.objects.filter(
+            MA_HOA_DON=hoa_don
+        ).aggregate(
+            tong=Sum('SO_TIEN')
+        )['tong'] or Decimal('0')
+        
+        context = {
+            'tai_khoan': tai_khoan,
+            'khach_thue': khach_thue,
+            'hoa_don': hoa_don,
+            'phong_tro': phong_tro,
+            'tong_da_thanh_toan': tong_da_thanh_toan,
+            'con_phi_tra': hoa_don.TONG_TIEN - tong_da_thanh_toan,
+        }
+        
+        return render(request, 'auth/thanh_toan_hoa_don.html', context)
+        
+    except Exception as e:
+        messages.error(request, f'Có lỗi xảy ra: {str(e)}')
+        return redirect('dungchung:user_hoa_don_list')

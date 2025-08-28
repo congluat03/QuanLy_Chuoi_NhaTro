@@ -120,3 +120,20 @@ def div(value, divisor):
         return value / divisor
     except (ValueError, TypeError, ZeroDivisionError):
         return 0
+@register.filter
+def mul(value, arg):
+    try:
+        return float(value) * float(arg)
+    except (ValueError, TypeError):
+        return ''
+
+@register.filter
+def count_employees_in_area(quan_ly_by_khu_vuc, khu_vuc_id):
+    """Count employees in a specific area"""
+    try:
+        area_data = quan_ly_by_khu_vuc.get(khu_vuc_id)
+        if area_data and 'quan_lys' in area_data:
+            return len(area_data['quan_lys'])
+        return 0
+    except (AttributeError, TypeError, KeyError):
+        return 0

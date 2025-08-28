@@ -99,22 +99,6 @@ class CocPhong(models.Model):
         null=True, blank=True
     )
     
-    # Thông tin tạm thời cho guest booking (khi MA_KHACH_THUE = null)
-    HO_TEN_TEMP = models.CharField(
-        max_length=200, 
-        null=True, blank=True,
-        verbose_name="Họ tên (tạm thời)"
-    )
-    SO_DIEN_THOAI_TEMP = models.CharField(
-        max_length=15, 
-        null=True, blank=True,
-        verbose_name="Số điện thoại (tạm thời)"
-    )
-    EMAIL_TEMP = models.EmailField(
-        max_length=100, 
-        null=True, blank=True,
-        verbose_name="Email (tạm thời)"
-    )
     
     # Thông tin cọc phòng
     NGAY_COC_PHONG = models.DateField(null=True, blank=True)
@@ -138,28 +122,17 @@ class CocPhong(models.Model):
         null=True, blank=True
     )
     
-    NGUON_TAO = models.CharField(
-        max_length=20,
-        choices=[
-            ('ADMIN', 'Admin tạo'),
-            ('ONLINE', 'Đặt phòng online')
-        ],
-        default='ADMIN',
-        verbose_name="Nguồn tạo"
-    )
     
     GHI_CHU_CP = models.TextField(null=True, blank=True)
-    LY_DO_TU_CHOI = models.TextField(null=True, blank=True, verbose_name="Lý do từ chối")
-    NGAY_TAO = models.DateField(auto_now_add=True, null=True, blank=True, verbose_name="Ngày tạo")
 
     def __str__(self):
         if self.MA_KHACH_THUE:
             return f"Cọc phòng {self.MA_COC_PHONG} - {self.MA_KHACH_THUE.HO_TEN_KT} - Phòng {self.MA_PHONG.TEN_PHONG}"
-        return f"Đặt phòng {self.MA_COC_PHONG} - {self.HO_TEN_TEMP} - Phòng {self.MA_PHONG.TEN_PHONG}"
+        return f"Cọc phòng {self.MA_COC_PHONG} - Phòng {self.MA_PHONG.TEN_PHONG}"
 
     class Meta:
         db_table = 'cocphong'
-        ordering = ['-NGAY_TAO']
+        ordering = ['-MA_COC_PHONG']
         verbose_name = "Cọc phòng / Đặt phòng"
         verbose_name_plural = "Cọc phòng / Đặt phòng"
     def clean(self):
@@ -210,115 +183,12 @@ class CocPhong(models.Model):
             NGAY_COC_PHONG=ngay_coc_phong,
             NGAY_DU_KIEN_VAO=ngay_coc_phong,
             TIEN_COC_PHONG=tien_coc_phong,
-            TRANG_THAI_CP='DA_COC',
-            NGUON_TAO='ADMIN'
+            TRANG_THAI_CP='DA_COC'
         )
         coc_phong.full_clean()
         coc_phong.save()
         return coc_phong
 
-    @classmethod
-    def tao_dat_phong_online(cls, phong, ho_ten, so_dien_thoai, email, ngay_du_kien_vao, tien_coc, ghi_chu=None):
-        """Tạo đặt phòng online (chưa có khách thuê)"""
-        # Validate input trước khi tạo
-        if not ngay_du_kien_vao:
-            raise ValueError('Ngày dự kiến vào không được để trống.')
-        if not tien_coc or tien_coc <= 0:
-            raise ValueError('Tiền cọc phải lớn hơn 0.')
-        
-        cls.check_duplicate(phong)
-        dat_phong = cls(
-            MA_PHONG=phong,
-            MA_KHACH_THUE=None,  # Chưa có khách thuê
-            HO_TEN_TEMP=ho_ten,
-            SO_DIEN_THOAI_TEMP=so_dien_thoai,
-            EMAIL_TEMP=email,
-            NGAY_DU_KIEN_VAO=ngay_du_kien_vao,
-            TIEN_COC_PHONG=tien_coc,
-            TRANG_THAI_CP='CHO_XAC_NHAN',
-            NGUON_TAO='ONLINE',
-            GHI_CHU_CP=ghi_chu
-            # NGAY_TAO sẽ tự động được set bởi auto_now_add=True
-        )
-        dat_phong.full_clean()
-        dat_phong.save()
-        return dat_phong
-
-    def xac_nhan_dat_phong_online(self):
-        """Admin xác nhận đặt phòng online"""
-        if self.NGUON_TAO != 'ONLINE':
-            raise ValueError('Chỉ có thể xác nhận đặt phòng online.')
-        if self.TRANG_THAI_CP != 'CHO_XAC_NHAN':
-            raise ValueError('Chỉ có thể xác nhận đặt phòng ở trạng thái Chờ xác nhận.')
-        
-        self.TRANG_THAI_CP = 'DA_XAC_NHAN'
-        self.save()
-        return self
-
-    def tu_choi_dat_phong_online(self, ly_do):
-        """Admin từ chối đặt phòng online"""
-        if self.NGUON_TAO != 'ONLINE':
-            raise ValueError('Chỉ có thể từ chối đặt phòng online.')
-        if self.TRANG_THAI_CP != 'CHO_XAC_NHAN':
-            raise ValueError('Chỉ có thể từ chối đặt phòng ở trạng thái Chờ xác nhận.')
-        
-        self.TRANG_THAI_CP = 'DA_TU_CHOI'
-        self.LY_DO_TU_CHOI = ly_do
-        self.save()
-        return self
-
-    def chuyen_thanh_coc_phong(self, khach_thue):
-        """Chuyển đặt phòng online thành cọc phòng (sau khi tạo khách thuê)"""
-        if self.NGUON_TAO != 'ONLINE':
-            raise ValueError('Chỉ có thể chuyển đặt phòng online.')
-        if self.TRANG_THAI_CP != 'DA_XAC_NHAN':
-            raise ValueError('Chỉ có thể chuyển đặt phòng đã được xác nhận.')
-        
-        self.MA_KHACH_THUE = khach_thue
-        # Kiểm tra null trước khi gán
-        if self.NGAY_DU_KIEN_VAO:
-            self.NGAY_COC_PHONG = self.NGAY_DU_KIEN_VAO
-        else:
-            from datetime import date
-            self.NGAY_COC_PHONG = date.today()
-        self.TRANG_THAI_CP = 'DA_COC'
-        # Xóa thông tin tạm thời
-        self.HO_TEN_TEMP = None
-        self.SO_DIEN_THOAI_TEMP = None
-        self.EMAIL_TEMP = None
-        self.save()
-        return self
-
-    @property
-    def ten_khach_thue(self):
-        """Trả về tên khách thuê"""
-        if self.MA_KHACH_THUE:
-            return self.MA_KHACH_THUE.HO_TEN_KT
-        return self.HO_TEN_TEMP
-
-    @property
-    def sdt_khach_thue(self):
-        """Trả về SĐT khách thuê"""
-        if self.MA_KHACH_THUE:
-            return self.MA_KHACH_THUE.SDT_KT
-        return self.SO_DIEN_THOAI_TEMP
-
-    @property
-    def email_khach_thue(self):
-        """Trả về email khách thuê"""
-        if self.MA_KHACH_THUE:
-            return self.MA_KHACH_THUE.EMAIL_KT
-        return self.EMAIL_TEMP
-    
-    @property 
-    def ngay_tao_display(self):
-        """Hiển thị ngày tạo an toàn"""
-        if self.NGAY_TAO:
-            return self.NGAY_TAO
-        else:
-            # Fallback cho dữ liệu cũ - trả về date
-            from datetime import date
-            return date.today()
 
 class TAISAN(models.Model):
     MA_TAI_SAN = models.IntegerField(primary_key=True)

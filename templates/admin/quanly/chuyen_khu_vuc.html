@@ -1,0 +1,273 @@
+{% extends 'admin/admin_layout.html' %}
+{% load static %}
+
+{% block title %}Chuyển khu vực quản lý{% endblock %}
+
+{% block content_body %}
+<div class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen py-6">
+    <div class="container mx-auto px-4">
+        <!-- Header -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="w-10 h-10 bg-gradient-to-r from-orange-500 to-red-500 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-exchange-alt text-white"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-800 mb-2">
+                            <i class="fas fa-exchange-alt text-orange-600 mr-3"></i>
+                            Chuyển khu vực quản lý
+                        </h1>
+                        <p class="text-gray-600">Điều chuyển nhân viên {{ manager.TEN_QUAN_LY }} sang khu vực khác</p>
+                    </div>
+                </div>
+                <a href="{% url 'thanhvien:nhanvien_list' %}" 
+                   class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors">
+                    <i class="fas fa-arrow-left mr-2"></i>Quay lại
+                </a>
+            </div>
+        </div>
+
+        <!-- Messages -->
+        {% if messages %}
+            <div class="px-6 py-4">
+                {% for message in messages %}
+                    <div class="p-4 mb-3 rounded-lg border-l-4 {% if message.tags == 'error' %}bg-red-50 border-red-400 text-red-800{% else %}bg-green-50 border-green-400 text-green-800{% endif %}">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                {% if message.tags == 'error' %}
+                                    <svg class="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {% else %}
+                                    <svg class="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {% endif %}
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm font-medium">{{ message }}</p>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- General Error -->
+        {% if form_errors.general %}
+            <div class="px-6 py-4">
+                <div class="p-4 mb-3 rounded-lg border-l-4 bg-red-50 border-red-400 text-red-800">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm font-medium">{{ form_errors.general }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Main Container -->
+        <div class="bg-white rounded-xl shadow-xl overflow-hidden">
+            <div class="p-6">
+                <!-- Current Area Info -->
+                <div class="bg-blue-50 rounded-lg p-6 mb-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                        <i class="fas fa-info-circle mr-2 text-blue-600"></i>
+                        Thông tin khu vực hiện tại
+                    </h3>
+                    
+                    {% if current_lich_su %}
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-white rounded-lg p-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Khu vực hiện tại</label>
+                            <p class="text-gray-900 font-medium">{{ current_lich_su.MA_KHU_VUC.TEN_KHU_VUC }}</p>
+                            <p class="text-sm text-gray-500">Mã: {{ current_lich_su.MA_KHU_VUC.MA_KHU_VUC }}</p>
+                        </div>
+                        <div class="bg-white rounded-lg p-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Vị trí công việc</label>
+                            <p class="text-gray-900">{{ current_lich_su.VI_TRI_CONG_VIEC|default:"Chưa cập nhật" }}</p>
+                        </div>
+                        <div class="bg-white rounded-lg p-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Ngày bắt đầu</label>
+                            <p class="text-gray-900">{{ current_lich_su.NGAY_BAT_DAU_QL|date:"d/m/Y"|default:"Chưa cập nhật" }}</p>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="bg-white rounded-lg p-6">
+                        <div class="text-center py-8 text-gray-500">
+                            <i class="fas fa-exclamation-triangle text-3xl text-orange-400 mb-3"></i>
+                            <p class="text-lg font-medium text-gray-900 mb-2">Chưa có khu vực quản lý</p>
+                            <p class="text-sm">Nhân viên này chưa được phân công khu vực quản lý nào.</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Transfer Form -->
+                <div class="bg-orange-50 rounded-lg p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                        <i class="fas fa-arrow-right mr-2 text-orange-600"></i>
+                        Thông tin khu vực mới
+                    </h3>
+
+                    <form method="POST" id="transferForm">
+                        {% csrf_token %}
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Khu vực mới -->
+                            <div>
+                                <label for="MA_KHU_VUC_MOI" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Khu vực mới <span class="text-red-500">*</span>
+                                </label>
+                                <select name="MA_KHU_VUC_MOI" id="MA_KHU_VUC_MOI" required
+                                        class="block w-full rounded-lg border border-gray-300 shadow-sm focus:ring-orange-500 focus:border-orange-500 p-3 text-gray-900">
+                                    <option value="">Chọn khu vực mới</option>
+                                    {% for kv in khu_vucs %}
+                                        {% if not current_lich_su or kv.MA_KHU_VUC != current_lich_su.MA_KHU_VUC.MA_KHU_VUC %}
+                                            <option value="{{ kv.MA_KHU_VUC }}" 
+                                                    {% if form_data.MA_KHU_VUC_MOI == kv.MA_KHU_VUC|stringformat:"s" %}selected{% endif %}>
+                                                {{ kv.TEN_KHU_VUC }} (Mã: {{ kv.MA_KHU_VUC }})
+                                            </option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                                {% if form_errors.MA_KHU_VUC_MOI %}
+                                    <p class="text-sm text-red-600 mt-1">{{ form_errors.MA_KHU_VUC_MOI }}</p>
+                                {% endif %}
+                            </div>
+
+                            <!-- Vị trí công việc mới -->
+                            <div>
+                                <label for="VI_TRI_CONG_VIEC_MOI" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Vị trí công việc mới <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text" name="VI_TRI_CONG_VIEC_MOI" id="VI_TRI_CONG_VIEC_MOI"
+                                       value="{{ form_data.VI_TRI_CONG_VIEC_MOI }}"
+                                       required
+                                       class="block w-full rounded-lg border border-gray-300 shadow-sm focus:ring-orange-500 focus:border-orange-500 p-3 text-gray-900 placeholder-gray-400"
+                                       placeholder="Nhập vị trí công việc mới">
+                                {% if form_errors.VI_TRI_CONG_VIEC_MOI %}
+                                    <p class="text-sm text-red-600 mt-1">{{ form_errors.VI_TRI_CONG_VIEC_MOI }}</p>
+                                {% endif %}
+                            </div>
+
+                            <!-- Ngày bắt đầu mới -->
+                            <div>
+                                <label for="NGAY_BAT_DAU_MOI" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Ngày bắt đầu mới <span class="text-red-500">*</span>
+                                </label>
+                                <input type="date" name="NGAY_BAT_DAU_MOI" id="NGAY_BAT_DAU_MOI"
+                                       value="{{ form_data.NGAY_BAT_DAU_MOI }}"
+                                       required
+                                       class="block w-full rounded-lg border border-gray-300 shadow-sm focus:ring-orange-500 focus:border-orange-500 p-3 text-gray-900">
+                                {% if form_errors.NGAY_BAT_DAU_MOI %}
+                                    <p class="text-sm text-red-600 mt-1">{{ form_errors.NGAY_BAT_DAU_MOI }}</p>
+                                {% endif %}
+                            </div>
+
+                            <!-- Spacer for better layout -->
+                            <div></div>
+
+                            <!-- Lý do chuyển -->
+                            <div class="col-span-1 md:col-span-2">
+                                <label for="LY_DO_CHUYEN" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Lý do chuyển khu vực <span class="text-red-500">*</span>
+                                </label>
+                                <textarea name="LY_DO_CHUYEN" id="LY_DO_CHUYEN" required
+                                          class="block w-full rounded-lg border border-gray-300 shadow-sm focus:ring-orange-500 focus:border-orange-500 p-3 text-gray-900 placeholder-gray-400"
+                                          rows="3" 
+                                          placeholder="Nhập lý do chuyển khu vực (ví dụ: Tăng cường nhân lực cho khu vực mới, phù hợp với chuyên môn...)">{{ form_data.LY_DO_CHUYEN }}</textarea>
+                                {% if form_errors.LY_DO_CHUYEN %}
+                                    <p class="text-sm text-red-600 mt-1">{{ form_errors.LY_DO_CHUYEN }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="flex justify-end space-x-4 mt-8 pt-6 border-t border-gray-200">
+                            <a href="{% url 'thanhvien:nhanvien_list' %}" 
+                               class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+                                <i class="fas fa-times mr-2"></i>Hủy
+                            </a>
+                            <button type="submit" 
+                                    class="px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors">
+                                <i class="fas fa-exchange-alt mr-2"></i>Xác nhận chuyển
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Warning Notice -->
+                <div class="mt-6 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="text-sm font-medium text-yellow-800">Lưu ý quan trọng</h3>
+                            <div class="mt-2 text-sm text-yellow-700">
+                                <ul class="list-disc list-inside space-y-1">
+                                    <li>Khi chuyển khu vực, lịch sử quản lý cũ sẽ được kết thúc tự động</li>
+                                    <li>Ngày kết thúc của khu vực cũ sẽ là ngày trước ngày bắt đầu khu vực mới</li>
+                                    <li>Thao tác này không thể hoàn tác, vui lòng kiểm tra kỹ thông tin trước khi xác nhận</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // Form validation và loading state
+    $('#transferForm').submit(function(e) {
+        // Confirmation dialog
+        const khuVucMoi = $('#MA_KHU_VUC_MOI option:selected').text();
+        const lyDo = $('#LY_DO_CHUYEN').val().trim();
+        
+        if (!confirm(`Bạn có chắc chắn muốn chuyển nhân viên {{ manager.TEN_QUAN_LY }} sang ${khuVucMoi}?\n\nLý do: ${lyDo}`)) {
+            e.preventDefault();
+            return false;
+        }
+
+        // Show loading state
+        $('button[type="submit"]').prop('disabled', true).html(`
+            <svg class="animate-spin w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Đang xử lý...
+        `);
+    });
+
+    // Set minimum date for new start date
+    {% if current_lich_su %}
+        const currentStartDate = new Date('{{ current_lich_su.NGAY_BAT_DAU_QL|date:"Y-m-d" }}');
+        const tomorrow = new Date(currentStartDate);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        
+        const minDate = tomorrow.toISOString().split('T')[0];
+        $('#NGAY_BAT_DAU_MOI').attr('min', minDate);
+    {% endif %}
+
+    // Auto-fill position based on current position
+    {% if current_lich_su %}
+        $('#VI_TRI_CONG_VIEC_MOI').attr('placeholder', 'Hiện tại: {{ current_lich_su.VI_TRI_CONG_VIEC|default:"Chưa cập nhật" }}');
+        if (!$('#VI_TRI_CONG_VIEC_MOI').val()) {
+            $('#VI_TRI_CONG_VIEC_MOI').val('{{ current_lich_su.VI_TRI_CONG_VIEC|default:"" }}');
+        }
+    {% endif %}
+});
+</script>
+{% endblock %}

@@ -1,12 +1,28 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
+from django.urls import reverse
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q, Count
 from django.utils import timezone
 from datetime import datetime
+from functools import wraps
 from .models import PhongTro, CocPhong, LoaiPhong, DangTinPhong
 from apps.nhatro.models import KhuVuc, NhaTro
+from apps.khachthue.models import KhachThue
+from apps.hoadon.models import HoaDon
+from apps.thanhvien.models import TaiKhoan
+
+# Custom login required decorator
+def custom_login_required(view_func):
+    """Custom decorator để kiểm tra đăng nhập bằng session"""
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        if not request.session.get('is_authenticated'):
+            messages.info(request, 'Vui lòng đăng nhập để đặt phòng.')
+            return redirect(f'/login/?next={request.path}')
+        return view_func(request, *args, **kwargs)
+    return wrapper
 
 
 def tim_phong(request):
@@ -31,30 +47,88 @@ def tim_phong(request):
     vi_tri = request.GET.get('vi_tri', '').strip()
     sort_by = request.GET.get('sort', '').strip()
     
+    # Xử lý checkbox filters từ sidebar
+    gia_phong_ranges = request.GET.getlist('gia_phong')  # Có thể có nhiều giá trị
+    dien_tich_ranges = request.GET.getlist('dien_tich')
+    
     # Áp dụng filters cho tin đăng
-    if gia_min:
+    # Xử lý filter giá - ưu tiên slider, sau đó đến checkbox
+    if gia_min and gia_max:
+        # Nếu có slider filter thì dùng slider
         try:
-            tin_dang_list = tin_dang_list.filter(MA_PHONG__GIA_PHONG__gte=float(gia_min))
+            tin_dang_list = tin_dang_list.filter(
+                MA_PHONG__GIA_PHONG__gte=float(gia_min),
+                MA_PHONG__GIA_PHONG__lte=float(gia_max)
+            )
         except ValueError:
             pass
+    elif gia_phong_ranges:
+        # Nếu không có slider thì dùng checkbox
+        price_conditions = Q()
+        for price_range in gia_phong_ranges:
+            if '-' in price_range:
+                try:
+                    min_price, max_price = map(int, price_range.split('-'))
+                    price_conditions |= Q(
+                        MA_PHONG__GIA_PHONG__gte=min_price,
+                        MA_PHONG__GIA_PHONG__lte=max_price
+                    )
+                except ValueError:
+                    continue
+        if price_conditions:
+            tin_dang_list = tin_dang_list.filter(price_conditions)
+    else:
+        # Xử lý từng filter riêng lẻ nếu chỉ có một trong hai
+        if gia_min:
+            try:
+                tin_dang_list = tin_dang_list.filter(MA_PHONG__GIA_PHONG__gte=float(gia_min))
+            except ValueError:
+                pass
+        
+        if gia_max:
+            try:
+                tin_dang_list = tin_dang_list.filter(MA_PHONG__GIA_PHONG__lte=float(gia_max))
+            except ValueError:
+                pass
     
-    if gia_max:
+    # Xử lý filter diện tích - ưu tiên input, sau đó đến checkbox
+    if dien_tich_min and dien_tich_max:
+        # Nếu có input filter thì dùng input
         try:
-            tin_dang_list = tin_dang_list.filter(MA_PHONG__GIA_PHONG__lte=float(gia_max))
+            tin_dang_list = tin_dang_list.filter(
+                MA_PHONG__DIEN_TICH__gte=float(dien_tich_min),
+                MA_PHONG__DIEN_TICH__lte=float(dien_tich_max)
+            )
         except ValueError:
             pass
-    
-    if dien_tich_min:
-        try:
-            tin_dang_list = tin_dang_list.filter(MA_PHONG__DIEN_TICH__gte=float(dien_tich_min))
-        except ValueError:
-            pass
-    
-    if dien_tich_max:
-        try:
-            tin_dang_list = tin_dang_list.filter(MA_PHONG__DIEN_TICH__lte=float(dien_tich_max))
-        except ValueError:
-            pass
+    elif dien_tich_ranges:
+        # Nếu không có input thì dùng checkbox
+        area_conditions = Q()
+        for area_range in dien_tich_ranges:
+            if '-' in area_range:
+                try:
+                    min_area, max_area = map(int, area_range.split('-'))
+                    area_conditions |= Q(
+                        MA_PHONG__DIEN_TICH__gte=min_area,
+                        MA_PHONG__DIEN_TICH__lte=max_area
+                    )
+                except ValueError:
+                    continue
+        if area_conditions:
+            tin_dang_list = tin_dang_list.filter(area_conditions)
+    else:
+        # Xử lý từng filter riêng lẻ
+        if dien_tich_min:
+            try:
+                tin_dang_list = tin_dang_list.filter(MA_PHONG__DIEN_TICH__gte=float(dien_tich_min))
+            except ValueError:
+                pass
+        
+        if dien_tich_max:
+            try:
+                tin_dang_list = tin_dang_list.filter(MA_PHONG__DIEN_TICH__lte=float(dien_tich_max))
+            except ValueError:
+                pass
     
     if khu_vuc:
         try:
@@ -113,6 +187,8 @@ def tim_phong(request):
             'loai_phong': loai_phong,
             'vi_tri': vi_tri,
             'sort': sort_by,
+            'gia_phong_ranges': gia_phong_ranges,
+            'dien_tich_ranges': dien_tich_ranges,
         },
         'total_phongs': paginator.count,
         'request': request,  # Để template có thể truy cập request.GET
@@ -146,8 +222,9 @@ def chi_tiet_phong(request, ma_phong):
     return render(request, 'user/phongtro/chi_tiet_phong.html', context)
 
 
+@custom_login_required
 def dat_phong(request, ma_phong):
-    """View form đặt phòng - Chỉ cần thông tin cơ bản"""
+    """View form đặt phòng - Yêu cầu đăng nhập và lấy thông tin từ tài khoản"""
     phong = get_object_or_404(
         PhongTro.objects.select_related(
             'MA_LOAI_PHONG', 'MA_KHU_VUC', 'MA_KHU_VUC__MA_NHA_TRO'
@@ -156,88 +233,152 @@ def dat_phong(request, ma_phong):
         TRANG_THAI_P='Trống'
     )
     
+    # Lấy thông tin tài khoản từ session
+    user_id = request.session.get('user_id')
+    if not user_id:
+        messages.error(request, 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.')
+        return redirect('/login/')
+    
+    try:
+        tai_khoan = TaiKhoan.objects.get(MA_TAI_KHOAN=user_id)
+    except TaiKhoan.DoesNotExist:
+        messages.error(request, 'Tài khoản không tồn tại.')
+        return redirect('/login/')
+    
+    # Lấy thông tin khách thuê từ tài khoản đăng nhập
+    try:
+        khach_thue = KhachThue.objects.get(MA_TAI_KHOAN=tai_khoan)
+    except KhachThue.DoesNotExist:
+        messages.error(request, 'Tài khoản chưa có thông tin khách thuê. Vui lòng cập nhật thông tin cá nhân.')
+        return redirect('dungchung:profile')
+    
     if request.method == 'POST':
-        print(f"🔍 DEBUG: POST data = {dict(request.POST)}")
         try:
-            # Lấy dữ liệu từ form (chỉ cần thông tin cơ bản)
-            data = {
-                'ma_phong': ma_phong,
-                'ho_ten': request.POST.get('ho_ten', '').strip(),
-                'so_dien_thoai': request.POST.get('so_dien_thoai', '').strip(),
-                'email': request.POST.get('email', '').strip() or None,
-                'ngay_bat_dau_thue': None,
-                'so_tien_coc': None,
-                'ghi_chu': request.POST.get('ghi_chu', '').strip() or None,
-            }
+            # Lấy dữ liệu từ form - bao gồm ngày vào, ghi chú và phương thức thanh toán
+            ngay_du_kien_vao_str = request.POST.get('ngay_du_kien_vao', '').strip()
+            ghi_chu = request.POST.get('ghi_chu', '').strip() or None
+            phuong_thuc_thanh_toan = request.POST.get('phuong_thuc_thanh_toan', '').strip()
             
-            # Validate thông tin cơ bản
-            if not data['ho_ten']:
-                raise ValueError('Họ tên không được để trống.')
-            
-            if not data['so_dien_thoai']:
-                raise ValueError('Số điện thoại không được để trống.')
-            
-            # Parse ngày bắt đầu thuê
-            ngay_bat_dau_str = request.POST.get('ngay_bat_dau_thue', '').strip()
-            if not ngay_bat_dau_str:
-                raise ValueError('Ngày bắt đầu thuê không được để trống.')
+            # Validate ngày dự kiến vào
+            if not ngay_du_kien_vao_str:
+                raise ValueError('Ngày dự kiến vào không được để trống.')
+                
+            # Validate phương thức thanh toán
+            if not phuong_thuc_thanh_toan:
+                raise ValueError('Vui lòng chọn phương thức thanh toán.')
+                
+            # Validate phương thức thanh toán hợp lệ
+            valid_payment_methods = ['tien_mat', 'chuyen_khoan', 'online']
+            if phuong_thuc_thanh_toan not in valid_payment_methods:
+                raise ValueError('Phương thức thanh toán không hợp lệ.')
             
             try:
-                data['ngay_bat_dau_thue'] = datetime.strptime(ngay_bat_dau_str, '%Y-%m-%d').date()
+                ngay_du_kien_vao = datetime.strptime(ngay_du_kien_vao_str, '%Y-%m-%d').date()
             except (ValueError, TypeError):
-                raise ValueError('Định dạng ngày bắt đầu thuê không hợp lệ.')
+                raise ValueError('Định dạng ngày dự kiến vào không hợp lệ.')
             
-            # Validate ngày bắt đầu thuê (cho phép từ ngày mai)
-            if data['ngay_bat_dau_thue'] is None:
-                raise ValueError('Ngày bắt đầu thuê không hợp lệ.')
-            
+            # Validate ngày dự kiến vào (cho phép từ ngày mai)
             today = timezone.now().date()
-            if data['ngay_bat_dau_thue'] <= today:
-                raise ValueError('Ngày bắt đầu thuê phải từ ngày mai trở đi.')
+            if ngay_du_kien_vao <= today:
+                raise ValueError('Ngày dự kiến vào phải từ ngày mai trở đi.')
             
-            # Parse số tiền cọc
-            so_tien_coc_str = request.POST.get('so_tien_coc', '').strip()
-            if not so_tien_coc_str:
-                raise ValueError('Số tiền cọc không được để trống.')
-            
-            try:
-                data['so_tien_coc'] = float(so_tien_coc_str)
-                if data['so_tien_coc'] is None or data['so_tien_coc'] <= 0:
-                    raise ValueError('Số tiền cọc phải lớn hơn 0.')
-            except (ValueError, TypeError):
-                raise ValueError('Số tiền cọc không hợp lệ.')
+            # Lấy số tiền cọc từ bảng phòng
+            so_tien_coc = float(phong.SO_TIEN_CAN_COC or 0)
+            if so_tien_coc <= 0:
+                raise ValueError('Phòng này chưa thiết lập số tiền cọc. Vui lòng liên hệ quản lý.')
             
             # Kiểm tra phòng còn trống
-            phong_check = PhongTro.objects.get(MA_PHONG=ma_phong)
-            if phong_check.TRANG_THAI_P != 'Trống':
+            if phong.TRANG_THAI_P != 'Trống':
                 raise ValueError('Phòng đã được thuê hoặc không còn trống.')
             
-            # Tạo đặt phòng online
-            dat_phong = CocPhong.tao_dat_phong_online(
-                phong=phong_check,
-                ho_ten=data['ho_ten'],
-                so_dien_thoai=data['so_dien_thoai'],
-                email=data.get('email'),
-                ngay_du_kien_vao=data['ngay_bat_dau_thue'],
-                tien_coc=data['so_tien_coc'],
-                ghi_chu=data.get('ghi_chu')
+            # Tạo ghi chú chi tiết bao gồm phương thức thanh toán
+            payment_method_names = {
+                'tien_mat': 'Tiền mặt (Thanh toán trực tiếp)',
+                'chuyen_khoan': 'Chuyển khoản ngân hàng',
+                'online': 'Thẻ ATM/Visa (Thanh toán online)'
+            }
+            
+            ghi_chu_full = f"Phương thức thanh toán: {payment_method_names.get(phuong_thuc_thanh_toan, phuong_thuc_thanh_toan)}"
+            if ghi_chu:
+                ghi_chu_full += f"\nGhi chú khách hàng: {ghi_chu}"
+            
+            # Tạo đặt phòng với thông tin từ tài khoản đăng nhập
+            dat_phong = CocPhong.objects.create(
+                MA_PHONG=phong,
+                MA_KHACH_THUE=khach_thue,
+                NGAY_DU_KIEN_VAO=ngay_du_kien_vao,
+                TIEN_COC_PHONG=so_tien_coc,
+                GHI_CHU_CP=ghi_chu_full,
+                TRANG_THAI_CP='CHO_XAC_NHAN'
             )
             
-            messages.success(
-                request, 
+            # Luôn tạo hóa đơn cọc phòng sau khi đặt phòng thành công
+            hoa_don = HoaDon.objects.create(
+                MA_HOP_DONG=None,  # Chưa có hợp đồng
+                MA_COC_PHONG=dat_phong,  # Liên kết với đặt phòng
+                LOAI_HOA_DON='Hóa đơn cọc phòng',
+                NGAY_LAP_HDON=timezone.now().date(),
+                TONG_TIEN=so_tien_coc,
+                TRANG_THAI_HDON='Chưa thanh toán'
+            )
+            
+            # Tạo chi tiết hóa đơn cho tiền cọc
+            from apps.hoadon.models import CHITIETHOADON
+            CHITIETHOADON.objects.create(
+                MA_HOA_DON=hoa_don,
+                LOAI_KHOAN='COC',
+                NOI_DUNG=f'Tiền cọc phòng {phong.TEN_PHONG}',
+                SO_LUONG=1,
+                DON_GIA=so_tien_coc,
+                THANH_TIEN=so_tien_coc,
+                GHI_CHU_CTHD=f'Tiền cọc đặt phòng {phong.TEN_PHONG} - {phong.MA_KHU_VUC.TEN_KHU_VUC}'
+            )
+                
+            success_message = (
                 f'Đặt phòng thành công! Mã đặt phòng: {dat_phong.MA_COC_PHONG}. '
-                'Chúng tôi sẽ liên hệ với bạn trong thời gian sớm nhất để xác nhận thông tin.'
+                f'Vui lòng thanh toán hóa đơn #{hoa_don.MA_HOA_DON} để hoàn tất đặt phòng.'
             )
+            redirect_url = reverse('user_phongtro:thanh_toan_dat_phong', kwargs={'ma_dat_phong': dat_phong.MA_COC_PHONG})
+            redirect_view = 'user_phongtro:thanh_toan_dat_phong'
             
-            return redirect('user_phongtro:xac_nhan_dat_phong', ma_dat_phong=dat_phong.MA_COC_PHONG)
+            # Kiểm tra xem đây có phải AJAX request không
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.content_type == 'application/json':
+                response_data = {
+                    'success': True,
+                    'message': success_message,
+                    'redirect_url': redirect_url,
+                    'ma_dat_phong': dat_phong.MA_COC_PHONG,
+                    'ma_hoa_don': hoa_don.MA_HOA_DON
+                }
+                return JsonResponse(response_data)
+            else:
+                messages.success(request, success_message)
+                return redirect(redirect_view, ma_dat_phong=dat_phong.MA_COC_PHONG)
             
         except ValueError as e:
-            messages.error(request, str(e))
+            error_message = str(e)
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.content_type == 'application/json':
+                return JsonResponse({
+                    'success': False,
+                    'message': error_message,
+                    'errors': {'general': error_message}
+                })
+            else:
+                messages.error(request, error_message)
         except Exception as e:
-            messages.error(request, f'Có lỗi xảy ra: {str(e)}')
+            error_message = f'Có lỗi xảy ra: {str(e)}'
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.content_type == 'application/json':
+                return JsonResponse({
+                    'success': False,
+                    'message': error_message,
+                    'errors': {'general': error_message}
+                })
+            else:
+                messages.error(request, error_message)
     
     context = {
         'phong': phong,
+        'khach_thue': khach_thue,
         'today': timezone.now().date(),
     }
     
@@ -250,7 +391,7 @@ def xac_nhan_dat_phong(request, ma_dat_phong):
         CocPhong.objects.select_related(
             'MA_PHONG', 'MA_PHONG__MA_LOAI_PHONG', 
             'MA_PHONG__MA_KHU_VUC', 'MA_PHONG__MA_KHU_VUC__MA_NHA_TRO'
-        ).filter(NGUON_TAO='ONLINE'),
+        ),
         MA_COC_PHONG=ma_dat_phong
     )
     
@@ -261,36 +402,120 @@ def xac_nhan_dat_phong(request, ma_dat_phong):
     return render(request, 'user/datphong/xac_nhan_dat_phong.html', context)
 
 
-def tra_cuu_dat_phong(request):
-    """View tra cứu đơn đặt phòng"""
-    dat_phong = None
+@custom_login_required  
+def thanh_toan_dat_phong(request, ma_dat_phong):
+    """View thanh toán đặt phòng"""
+    # Lấy thông tin tài khoản từ session
+    user_id = request.session.get('user_id')
+    if not user_id:
+        messages.error(request, 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.')
+        return redirect('/login/')
+        
+    try:
+        tai_khoan = TaiKhoan.objects.get(MA_TAI_KHOAN=user_id)
+    except TaiKhoan.DoesNotExist:
+        messages.error(request, 'Tài khoản không tồn tại.')
+        return redirect('/login/')
+    
+    dat_phong = get_object_or_404(
+        CocPhong.objects.select_related(
+            'MA_PHONG', 'MA_PHONG__MA_LOAI_PHONG', 
+            'MA_PHONG__MA_KHU_VUC', 'MA_PHONG__MA_KHU_VUC__MA_NHA_TRO',
+            'MA_KHACH_THUE'
+        ),
+        MA_COC_PHONG=ma_dat_phong,
+        MA_KHACH_THUE__MA_TAI_KHOAN=tai_khoan
+    )
+    
+    # Tìm hóa đơn cọc phòng
+    hoa_don = None
+    try:
+        hoa_don = HoaDon.objects.filter(
+            MA_COC_PHONG=dat_phong,
+            LOAI_HOA_DON='Hóa đơn cọc phòng',
+            TRANG_THAI_HDON='Chưa thanh toán'
+        ).first()
+    except:
+        pass
+    
+    # Nếu không có hóa đơn, redirect về trang xác nhận
+    if not hoa_don:
+        messages.info(request, 'Chưa có hóa đơn cho đơn đặt phòng này. Vui lòng chờ admin xác nhận.')
+        return redirect('user_phongtro:xac_nhan_dat_phong', ma_dat_phong=dat_phong.MA_COC_PHONG)
     
     if request.method == 'POST':
-        ma_dat_phong = request.POST.get('ma_dat_phong', '').strip()
-        so_dien_thoai = request.POST.get('so_dien_thoai', '').strip()
+        phuong_thuc_thanh_toan = request.POST.get('phuong_thuc_thanh_toan', '')
         
-        if ma_dat_phong and so_dien_thoai:
-            try:
-                dat_phong = CocPhong.objects.select_related(
-                    'MA_PHONG', 'MA_PHONG__MA_LOAI_PHONG',
-                    'MA_PHONG__MA_KHU_VUC', 'MA_PHONG__MA_KHU_VUC__MA_NHA_TRO'
-                ).get(
-                    MA_COC_PHONG=ma_dat_phong,
-                    SO_DIEN_THOAI_TEMP=so_dien_thoai,
-                    NGUON_TAO='ONLINE'
-                )
-            except CocPhong.DoesNotExist:
-                messages.error(request, 'Không tìm thấy đơn đặt phòng với thông tin đã nhập.')
-            except Exception as e:
-                messages.error(request, f'Có lỗi xảy ra: {str(e)}')
+        if phuong_thuc_thanh_toan in ['TIEN_MAT', 'CHUYEN_KHOAN', 'THE_ATM']:
+            # Cập nhật trạng thái thanh toán
+            hoa_don.TRANG_THAI_HDON = 'Đã thanh toán'
+            hoa_don.save()
+            
+            # Tự động xác nhận đặt phòng ngay sau khi thanh toán
+            dat_phong.TRANG_THAI_CP = 'DA_XAC_NHAN'
+            dat_phong.save()
+            
+            messages.success(request, 'Thanh toán thành công! Đặt phòng của bạn đã được tự động xác nhận.')
+            return redirect('user_phongtro:xac_nhan_dat_phong', ma_dat_phong=dat_phong.MA_COC_PHONG)
         else:
-            messages.error(request, 'Vui lòng nhập đầy đủ mã đặt phòng và số điện thoại.')
+            messages.error(request, 'Vui lòng chọn phương thức thanh toán.')
     
     context = {
         'dat_phong': dat_phong,
+        'hoa_don': hoa_don,
     }
     
-    return render(request, 'user/datphong/tra_cuu_dat_phong.html', context)
+    return render(request, 'user/datphong/thanh_toan_dat_phong.html', context)
+
+
+@custom_login_required
+def phong_da_dat(request):
+    """View hiển thị danh sách phòng đã đặt của người dùng"""
+    # Lấy thông tin tài khoản từ session
+    user_id = request.session.get('user_id')
+    if not user_id:
+        messages.error(request, 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.')
+        return redirect('/login/')
+        
+    try:
+        tai_khoan = TaiKhoan.objects.get(MA_TAI_KHOAN=user_id)
+        khach_thue = KhachThue.objects.get(MA_TAI_KHOAN=tai_khoan)
+    except (TaiKhoan.DoesNotExist, KhachThue.DoesNotExist):
+        messages.error(request, 'Tài khoản không tồn tại hoặc chưa có thông tin khách thuê.')
+        return redirect('dungchung:profile')
+    
+    # Lấy danh sách đặt phòng của user đăng nhập
+    danh_sach_dat_phong = CocPhong.objects.filter(
+        MA_KHACH_THUE=khach_thue
+    ).select_related(
+        'MA_PHONG', 'MA_PHONG__MA_LOAI_PHONG',
+        'MA_PHONG__MA_KHU_VUC', 'MA_PHONG__MA_KHU_VUC__MA_NHA_TRO'
+    ).order_by('-NGAY_COC_PHONG', '-MA_COC_PHONG')
+    
+    # Phân loại đặt phòng theo trạng thái
+    phong_cho_xac_nhan = danh_sach_dat_phong.filter(TRANG_THAI_CP='CHO_XAC_NHAN')
+    phong_da_xac_nhan = danh_sach_dat_phong.filter(TRANG_THAI_CP='DA_XAC_NHAN')
+    phong_da_tu_choi = danh_sach_dat_phong.filter(TRANG_THAI_CP='DA_TU_CHOI')
+    
+    # Lấy thông tin hóa đơn cho từng đặt phòng
+    for dat_phong in danh_sach_dat_phong:
+        try:
+            dat_phong.hoa_don = HoaDon.objects.filter(
+                MA_COC_PHONG=dat_phong
+            ).first()
+        except:
+            dat_phong.hoa_don = None
+    
+    context = {
+        'danh_sach_dat_phong': danh_sach_dat_phong,
+        'phong_cho_xac_nhan': phong_cho_xac_nhan,
+        'phong_da_xac_nhan': phong_da_xac_nhan,
+        'phong_da_tu_choi': phong_da_tu_choi,
+        'khach_thue': khach_thue,
+        'tong_so_dat_phong': danh_sach_dat_phong.count(),
+    }
+    
+    return render(request, 'user/datphong/phong_da_dat.html', context)
 
 
 # API views for AJAX requests

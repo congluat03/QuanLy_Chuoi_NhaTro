@@ -12,16 +12,18 @@ from decimal import Decimal
 # Model for hoadon
 class HoaDon(models.Model):
     MA_HOA_DON = models.AutoField(primary_key=True)
-    MA_PHONG = models.ForeignKey(
-        'phongtro.PhongTro',
-        on_delete=models.CASCADE,
-        db_column='MA_PHONG',
-        related_name='hoadon'
-    )
+
     MA_HOP_DONG = models.ForeignKey(
         'hopdong.HopDong',
         on_delete=models.CASCADE,
         db_column='MA_HOP_DONG',
+        related_name='hoadon',
+        null=True, blank=True
+    )
+    MA_COC_PHONG = models.ForeignKey(
+        'phongtro.CocPhong',
+        on_delete=models.CASCADE,
+        db_column='MA_COC_PHONG',
         related_name='hoadon',
         null=True, blank=True
     )
@@ -33,19 +35,30 @@ class HoaDon(models.Model):
             ('Hóa đơn bắt đầu', 'Hóa đơn bắt đầu hợp đồng'),
             ('Hóa đơn hàng tháng', 'Hóa đơn hàng tháng'),
             ('Hóa đơn kết thúc', 'Hóa đơn kết thúc hợp đồng'),
+            ('Hóa đơn cọc phòng', 'Hóa đơn cọc phòng'),
             ('Hóa đơn khác', 'Hóa đơn khác'),
         ]
     )
     NGAY_LAP_HDON = models.DateField(null=True, blank=True)
-    TIEN_PHONG = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    TIEN_DICH_VU = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    TIEN_COC = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    TIEN_KHAU_TRU = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     TONG_TIEN = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     TRANG_THAI_HDON = models.CharField(max_length=50, null=True, blank=True)
 
     def __str__(self):
-        return f"Hóa đơn {self.MA_HOA_DON} - Phòng {self.MA_PHONG_id}"
+        if self.MA_HOP_DONG:
+            return f"Hóa đơn {self.MA_HOA_DON} - Hợp đồng {self.MA_HOP_DONG.MA_HOP_DONG}"
+        elif self.MA_COC_PHONG:
+            return f"Hóa đơn {self.MA_HOA_DON} - Cọc phòng {self.MA_COC_PHONG.MA_PHONG.TEN_PHONG}"
+        else:
+            return f"Hóa đơn {self.MA_HOA_DON}"
+    
+    @property
+    def MA_PHONG(self):
+        """Property để truy cập thông tin phòng qua hợp đồng hoặc cọc phòng"""
+        if self.MA_HOP_DONG and self.MA_HOP_DONG.MA_PHONG:
+            return self.MA_HOP_DONG.MA_PHONG
+        elif self.MA_COC_PHONG and self.MA_COC_PHONG.MA_PHONG:
+            return self.MA_COC_PHONG.MA_PHONG
+        return None
 
     class Meta:
         db_table = 'hoadon'
@@ -394,7 +407,7 @@ class HoaDon(models.Model):
             CHITIETHOADON.objects.create(
                 MA_HOA_DON=hoa_don,
                 LOAI_KHOAN='PHONG',
-                NOI_DUNG=f'Tiền phòng tháng đầu - {hoa_don.MA_PHONG.TEN_PHONG}',
+                NOI_DUNG=f'Tiền phòng tháng đầu - {hoa_don.MA_HOP_DONG.MA_PHONG.TEN_PHONG}' if hoa_don.MA_HOP_DONG else 'Tiền phòng tháng đầu',
                 SO_LUONG=1,
                 DON_GIA=hoa_don.TIEN_PHONG,
                 THANH_TIEN=hoa_don.TIEN_PHONG,
@@ -551,7 +564,7 @@ class HoaDon(models.Model):
             CHITIETHOADON.objects.create(
                 MA_HOA_DON=hoa_don,
                 LOAI_KHOAN='PHONG',
-                NOI_DUNG=f'Tiền phòng cuối kỳ - {hoa_don.MA_PHONG.TEN_PHONG}',
+                NOI_DUNG=f'Tiền phòng cuối kỳ - {hoa_don.MA_HOP_DONG.MA_PHONG.TEN_PHONG}' if hoa_don.MA_HOP_DONG else 'Tiền phòng cuối kỳ',
                 SO_LUONG=1,
                 DON_GIA=hoa_don.TIEN_PHONG,
                 THANH_TIEN=hoa_don.TIEN_PHONG,
@@ -683,7 +696,7 @@ class HoaDon(models.Model):
             CHITIETHOADON.objects.create(
                 MA_HOA_DON=hoa_don,
                 LOAI_KHOAN='PHONG',
-                NOI_DUNG=f'Tiền phòng tháng {thang}/{nam} - {hoa_don.MA_PHONG.TEN_PHONG}',
+                NOI_DUNG=f'Tiền phòng tháng {thang}/{nam} - {hoa_don.MA_HOP_DONG.MA_PHONG.TEN_PHONG}' if hoa_don.MA_HOP_DONG else f'Tiền phòng tháng {thang}/{nam}',
                 SO_LUONG=1,
                 DON_GIA=hoa_don.TIEN_PHONG,
                 THANH_TIEN=hoa_don.TIEN_PHONG,
@@ -821,7 +834,7 @@ class KhauTru(models.Model):
         
         return errors
 class PHIEUTHU(models.Model):
-    MA_PHIEU_THU = models.IntegerField(primary_key=True)
+    MA_PHIEU_THU = models.AutoField(primary_key=True)
     MA_HOA_DON = models.ForeignKey(
         'HoaDon',
         on_delete=models.CASCADE,
@@ -834,16 +847,32 @@ class PHIEUTHU(models.Model):
         db_column='MA_KHACH_THUE',
         related_name='phieuthu'
     )
-    NGAY_THU = models.DateField()
+    NGAY_THU = models.DateField(auto_now_add=True)
     SO_TIEN = models.DecimalField(max_digits=12, decimal_places=2)
     HINH_THUC = models.CharField(max_length=50, null=True, blank=True)
     GHI_CHU = models.TextField(null=True, blank=True)
 
     class Meta:
-        db_table = 'phieu_thu'
+        db_table = 'phieuthu'
+        ordering = ['-NGAY_THU']
+        verbose_name = "Phiếu thu"
+        verbose_name_plural = "Phiếu thu"
+    
+    def __str__(self):
+        return f"Phiếu thu #{self.MA_PHIEU_THU} - {self.SO_TIEN:,} VNĐ"
+    
+    @property
+    def hinh_thuc_display(self):
+        """Hiển thị tên phương thức thanh toán"""
+        display_map = {
+            'TIEN_MAT': 'Tiền mặt',
+            'CHUYEN_KHOAN': 'Chuyển khoản',
+            'THE_ATM': 'Thẻ ATM/Visa',
+        }
+        return display_map.get(self.HINH_THUC, self.HINH_THUC or 'Không xác định')
 
 class CHITIETHOADON(models.Model):
-    MA_CHI_TIET = models.IntegerField(primary_key=True)
+    MA_CHI_TIET = models.AutoField(primary_key=True)
     MA_HOA_DON = models.ForeignKey(
         'HoaDon',
         on_delete=models.CASCADE,

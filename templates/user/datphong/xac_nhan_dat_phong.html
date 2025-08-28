@@ -31,16 +31,16 @@
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <span class="text-sm text-gray-500">Họ và tên:</span>
-              <p class="font-medium text-gray-800">{{ dat_phong.ten_khach_thue }}</p>
+              <p class="font-medium text-gray-800">{{ dat_phong.MA_KHACH_THUE.HO_TEN_KT }}</p>
             </div>
             <div>
               <span class="text-sm text-gray-500">Số điện thoại:</span>
-              <p class="font-medium text-gray-800">{{ dat_phong.sdt_khach_thue }}</p>
+              <p class="font-medium text-gray-800">{{ dat_phong.MA_KHACH_THUE.SDT_KT }}</p>
             </div>
-            {% if dat_phong.email_khach_thue %}
+            {% if dat_phong.MA_KHACH_THUE.EMAIL_KT %}
             <div class="md:col-span-2">
               <span class="text-sm text-gray-500">Email:</span>
-              <p class="font-medium text-gray-800">{{ dat_phong.email_khach_thue }}</p>
+              <p class="font-medium text-gray-800">{{ dat_phong.MA_KHACH_THUE.EMAIL_KT }}</p>
             </div>
             {% endif %}
           </div>
@@ -90,8 +90,8 @@
             <div>
               <span class="text-sm text-gray-500">Ngày đặt phòng:</span>
               <p class="font-medium text-gray-800">
-                {% if dat_phong.ngay_tao_display %}
-                  {{ dat_phong.ngay_tao_display|date:"d/m/Y" }}
+                {% if dat_phong.NGAY_COC_PHONG %}
+                  {{ dat_phong.NGAY_COC_PHONG|date:"d/m/Y" }}
                 {% else %}
                   Không xác định
                 {% endif %}
@@ -144,8 +144,8 @@
           <div class="ml-4">
             <p class="font-medium text-gray-800">Đặt phòng thành công</p>
             <p class="text-sm text-gray-500">
-              {% if dat_phong.ngay_tao_display %}
-                {{ dat_phong.ngay_tao_display|date:"d/m/Y" }}
+              {% if dat_phong.NGAY_COC_PHONG %}
+                {{ dat_phong.NGAY_COC_PHONG|date:"d/m/Y" }}
               {% else %}
                 Không xác định
               {% endif %}
@@ -194,10 +194,10 @@
         <i class="fas fa-search mr-2"></i>
         Tìm phòng khác
       </a>
-      <a href="{% url 'user_phongtro:tra_cuu_dat_phong' %}" 
+      <a href="{% url 'user_phongtro:phong_da_dat' %}" 
          class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-center py-3 px-6 rounded-lg transition duration-300 font-medium">
-        <i class="fas fa-search mr-2"></i>
-        Tra cứu đặt phòng
+        <i class="fas fa-list mr-2"></i>
+        Phòng đã đặt
       </a>
     </div>
 

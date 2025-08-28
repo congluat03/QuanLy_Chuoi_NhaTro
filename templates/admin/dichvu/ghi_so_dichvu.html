@@ -4,177 +4,181 @@
 {% block title %}Ghi số dịch vụ sử dụng{% endblock %}
 
 {% block content_body %}
-<div class="max-w-6xl mx-auto px-6 sm:px-8 lg:px-10 py-8">
-    <!-- Header -->
-    <div class="mb-8">
-    <div class="bg-white border-b border-gray-200 px-6 py-4">
-        <div class="flex items-center justify-between">
-            <div class="flex items-center space-x-4">
-                <div class="w-10 h-10 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
-                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                    </svg>
-                </div>
-                <div>
-                    <h1 class="text-2xl font-bold text-gray-900">Ghi số dịch vụ sử dụng</h1>
-                    <p class="text-sm text-gray-600">Quản lý chỉ số tiêu thụ dịch vụ theo hợp đồng</p>
-                </div>
-            </div>
-            <a href="{% url 'dichvu:dichvu_list' %}" 
-               class="inline-flex items-center px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition duration-200">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                </svg>
-                Quay lại
-            </a>
-        </div>
-    </div>
-    </div>
-
-    <!-- Messages -->
-    {% if messages %}
-        <div class="px-6 py-4">
-            {% for message in messages %}
-                <div class="p-4 mb-3 rounded-lg border-l-4 {% if message.tags == 'error' %}bg-red-50 border-red-400 text-red-800{% else %}bg-green-50 border-green-400 text-green-800{% endif %}">
-                    <div class="flex">
-                        <div class="flex-shrink-0">
-                            {% if message.tags == 'error' %}
-                                <svg class="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
-                                </svg>
-                            {% else %}
-                                <svg class="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                                </svg>
-                            {% endif %}
-                        </div>
-                        <div class="ml-3">
-                            <p class="text-sm font-medium">{{ message }}</p>
-                        </div>
+<div class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <div class="container mx-auto px-4 py-6">
+        <!-- Header -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="w-10 h-10 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
                     </div>
-                </div>
-            {% endfor %}
-        </div>
-    {% endif %}
-    
-    <!-- Main Layout -->
-    <div class="max-w-screen-xl mx-auto flex h-screen">
-        <!-- Left Sidebar - 30% -->
-        <div class="w-[30%] bg-white border-r border-gray-200 flex flex-col">
-            <!-- Filter Section -->
-            <div class="p-6 border-b border-gray-200">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                    <svg class="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.414A1 1 0 013 6.707V4z"></path>
-                    </svg>
-                    Bộ lọc hợp đồng
-                </h3>
-                
-                <div class="space-y-4">
                     <div>
-                        <label for="khu_vuc" class="block text-sm font-medium text-gray-700 mb-2">
-                            Khu vực <span class="text-red-500">*</span>
-                        </label>
-                        <select id="khu_vuc" name="khu_vuc" required
-                                class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-sm">
-                            <option value="">Chọn khu vực</option>
-                            {% for kv in khu_vucs %}
-                                <option value="{{ kv.MA_KHU_VUC }}">{{ kv.TEN_KHU_VUC }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    
-                    <div>
-                        <label for="ngay_ghi_cs" class="block text-sm font-medium text-gray-700 mb-2">
-                            Ngày ghi chỉ số
-                        </label>
-                        <input type="date" id="ngay_ghi_cs" name="ngay_ghi_cs" required
-                               value="{% now 'Y-m-d' %}"
-                               class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-sm">
+                        <h1 class="text-3xl font-bold text-gray-800 mb-2">
+                            <i class="fas fa-plus-circle text-green-600 mr-3"></i>
+                            Ghi số dịch vụ sử dụng
+                        </h1>
+                        <p class="text-gray-600">Quản lý chỉ số tiêu thụ dịch vụ theo hợp đồng</p>
                     </div>
                 </div>
-            </div>
-
-            <!-- Room List -->
-            <div class="flex-1 overflow-hidden">
-                <div class="p-4 border-b border-gray-100">
-                    <h4 class="text-sm font-medium text-gray-700 uppercase tracking-wide">Hợp đồng đang hoạt động</h4>
-                    <p class="text-xs text-gray-500 mt-1">Danh sách hợp đồng đang hoạt động trong khu vực</p>
-                </div>
-                
-                <div id="room_list_container" class="flex-1 overflow-y-auto">
-                    <div id="room_list" class="p-4">
-                        <div class="text-center py-12 text-gray-500">
-                            <svg class="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                            </svg>
-                            <p class="text-sm">Vui lòng chọn khu vực để xem danh sách hợp đồng</p>
-                        </div>
-                    </div>
-                </div>
+                <a href="{% url 'dichvu:dichvu_list' %}" 
+                   class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors">
+                    <i class="fas fa-arrow-left mr-2"></i>Quay lại
+                </a>
             </div>
         </div>
 
-        <!-- Right Content - 70% -->
-        <div class="w-[70%] bg-gray-50 flex flex-col overflow-auto">
-            <!-- Content Header -->
-            <div class="bg-white border-b border-gray-200 px-6 py-4">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h3 class="text-lg font-semibold text-gray-900">Form ghi chỉ số dịch vụ</h3>
-                        <p class="text-sm text-gray-600" id="selected_room_info">Chưa chọn phòng</p>
-                    </div>
-                    <div class="flex items-center space-x-3">
-                        <span id="service_count_badge" class="hidden px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full">
-                            0 dịch vụ
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Form Content -->
-            <div class="flex-1 overflow-y-auto">
-                <form method="post" id="ghiSoDichVuForm" class="h-full">
-                    {% csrf_token %}
-                    <input type="hidden" id="ma_phong" name="ma_phong" value="">
-                    <input type="hidden" id="hidden_ngay_ghi_cs" name="ngay_ghi_cs" value="">
-                    
-                    <div id="main_content" class="p-6">
-                        <!-- Empty State -->
-                        <div id="empty_state" class="flex flex-col items-center justify-center h-96 text-gray-500">
-                            <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                            </svg>
-                            <h3 class="text-lg font-medium text-gray-900 mb-2">Chưa chọn phòng</h3>
-                            <p class="text-sm text-gray-600 text-center max-w-md">
-                                Vui lòng chọn một phòng từ danh sách bên trái để bắt đầu ghi chỉ số dịch vụ
-                            </p>
-                        </div>
-
-                        <!-- Service Form -->
-                        <div id="service_form" class="hidden">
-                            <div id="dich_vu_list" class="space-y-6">
-                                <!-- Các dịch vụ sẽ được load động -->
+        <!-- Messages -->
+        {% if messages %}
+            <div class="px-6 py-4">
+                {% for message in messages %}
+                    <div class="p-4 mb-3 rounded-lg border-l-4 {% if message.tags == 'error' %}bg-red-50 border-red-400 text-red-800{% else %}bg-green-50 border-green-400 text-green-800{% endif %}">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                {% if message.tags == 'error' %}
+                                    <svg class="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {% else %}
+                                    <svg class="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {% endif %}
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm font-medium">{{ message }}</p>
                             </div>
                         </div>
                     </div>
+                {% endfor %}
+            </div>
+        {% endif %}
 
-                    <!-- Sticky Footer -->
-                    <div id="form_footer" class="hidden bg-white border-t border-gray-200 px-6 py-4">
-                        <div class="flex items-center justify-between">
-                            <div class="text-sm text-gray-600">
-                                <span id="total_services">0</span> dịch vụ được ghi nhận
-                            </div>
-                            <button type="submit" id="btn_luu" disabled
-                                    class="inline-flex items-center px-6 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600">
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path>
-                                </svg>
-                                Lưu chỉ số dịch vụ
-                            </button>
+        <!-- Main Layout -->
+        <div class="max-w-screen-xl mx-auto flex h-screen">
+            <!-- Left Sidebar - 30% -->
+            <div class="w-[30%] bg-white border-r border-gray-200 flex flex-col rounded-l-xl shadow-lg">
+                <!-- Filter Section -->
+                <div class="p-6 border-b border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                        <svg class="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.414A1 1 0 013 6.707V4z"></path>
+                        </svg>
+                        Bộ lọc hợp đồng
+                    </h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="khu_vuc" class="block text-sm font-medium text-gray-700 mb-2">
+                                Khu vực <span class="text-red-500">*</span>
+                            </label>
+                            <select id="khu_vuc" name="khu_vuc" required
+                                    class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-sm">
+                                <option value="">Chọn khu vực</option>
+                                {% for kv in khu_vucs %}
+                                    <option value="{{ kv.MA_KHU_VUC }}">{{ kv.TEN_KHU_VUC }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label for="ngay_ghi_cs" class="block text-sm font-medium text-gray-700 mb-2">
+                                Ngày ghi chỉ số
+                            </label>
+                            <input type="date" id="ngay_ghi_cs" name="ngay_ghi_cs" required
+                                   value="{% now 'Y-m-d' %}"
+                                   class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-sm">
                         </div>
                     </div>
-                </form>
+                </div>
+
+                <!-- Room List -->
+                <div class="flex-1 overflow-hidden">
+                    <div class="p-4 border-b border-gray-100">
+                        <h4 class="text-sm font-medium text-gray-700 uppercase tracking-wide">Hợp đồng đang hoạt động</h4>
+                        <p class="text-xs text-gray-500 mt-1">Danh sách hợp đồng đang hoạt động trong khu vực</p>
+                    </div>
+                    <div id="room_list_container" class="flex-1 overflow-y-auto">
+                        <div id="room_list" class="p-4">
+                            <div class="text-center py-12 text-gray-500">
+                                <svg class="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                </svg>
+                                <p class="text-sm">Vui lòng chọn khu vực để xem danh sách hợp đồng</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Content - 70% -->
+            <div class="w-[70%] bg-gray-50 flex flex-col overflow-auto rounded-r-xl shadow-lg">
+                <!-- Content Header -->
+                <div class="bg-white border-b border-gray-200 px-6 py-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900">Form ghi chỉ số dịch vụ</h3>
+                            <p class="text-sm text-gray-600" id="selected_room_info">Chưa chọn phòng</p>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <span id="service_count_badge" class="hidden px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full">
+                                0 dịch vụ
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Content -->
+                <div class="flex-1 overflow-y-auto">
+                    <form method="post" id="ghiSoDichVuForm" class="h-full">
+                        {% csrf_token %}
+                        <input type="hidden" id="ma_phong" name="ma_phong" value="">
+                        <input type="hidden" id="hidden_ngay_ghi_cs" name="ngay_ghi_cs" value="">
+                        <div id="main_content" class="p-6">
+                            <!-- Empty State -->
+                            <div id="empty_state" class="flex flex-col items-center justify-center h-96 text-gray-500">
+                                <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                                </svg>
+                                <h3 class="text-lg font-medium text-gray-900 mb-2">Chưa chọn phòng</h3>
+                                <p class="text-sm text-gray-600 text-center max-w-md">
+                                    Vui lòng chọn một phòng từ danh sách bên trái để bắt đầu ghi chỉ số dịch vụ
+                                </p>
+                            </div>
+
+                            <!-- Service Form -->
+                            <div id="service_form" class="hidden space-y-6">
+                                <div id="dich_vu_list" class="bg-white border border-gray-200 rounded-lg p-6">
+                                    <h4 class="text-lg font-semibold text-gray-800 mb-4">
+                                        <i class="fas fa-list text-blue-500 mr-2"></i>
+                                        Danh sách dịch vụ
+                                    </h4>
+                                    <!-- Các dịch vụ sẽ được load động -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sticky Footer -->
+                        <div id="form_footer" class="hidden bg-white border-t border-gray-200 px-6 py-4">
+                            <div class="flex items-center justify-between">
+                                <div class="text-sm text-gray-600">
+                                    <span id="total_services">0</span> dịch vụ được ghi nhận
+                                </div>
+                                <div class="flex gap-4">
+                                    <button type="button" onclick="history.back()" 
+                                            class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+                                        Hủy
+                                    </button>
+                                    <button type="submit" id="btn_luu" disabled
+                                            class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed">
+                                        <i class="fas fa-save mr-2"></i>
+                                        Lưu chỉ số dịch vụ
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>

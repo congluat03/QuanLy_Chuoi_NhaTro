@@ -32,8 +32,8 @@
             <a href="{% url 'user_phongtro:tim_phong' %}" class="px-4 py-2.5 rounded-xl hover:bg-white/10 hover:text-blue-200 transition-all duration-300 font-semibold">
               Tìm Phòng
             </a>
-            <a href="{% url 'user_phongtro:tra_cuu_dat_phong' %}" class="px-4 py-2.5 rounded-xl hover:bg-white/10 hover:text-blue-200 transition-all duration-300 font-semibold">
-              Tra Cứu Đặt Phòng
+            <a href="{% url 'user_phongtro:phong_da_dat' %}" class="px-4 py-2.5 rounded-xl hover:bg-white/10 hover:text-blue-200 transition-all duration-300 font-semibold">
+              Phòng Đã Đặt
             </a>
             
             {% if request.session.is_authenticated %}
@@ -166,7 +166,7 @@
         <nav class="py-4">
           <a href="/" class="block px-6 py-3 text-slate-700 hover:bg-blue-50 hover:text-blue-700 transition-all duration-300 font-semibold">Trang Chủ</a>
           <a href="{% url 'user_phongtro:tim_phong' %}" class="block px-6 py-3 text-slate-700 hover:bg-blue-50 hover:text-blue-700 transition-all duration-300 font-semibold">Tìm Phòng</a>
-          <a href="{% url 'user_phongtro:tra_cuu_dat_phong' %}" class="block px-6 py-3 text-slate-700 hover:bg-blue-50 hover:text-blue-700 transition-all duration-300 font-semibold">Tra Cứu Đặt Phòng</a>
+          <a href="{% url 'user_phongtro:phong_da_dat' %}" class="block px-6 py-3 text-slate-700 hover:bg-blue-50 hover:text-blue-700 transition-all duration-300 font-semibold">Phòng Đã Đặt</a>
           {% if not request.session.is_authenticated %}
             <div class="border-t border-white/20 mt-4 pt-4 px-6 space-y-2">
               <a href="{% url 'dungchung:register' %}" class="block w-full text-center px-4 py-3 border border-blue-500 text-blue-600 rounded-xl hover:bg-blue-50 transition-all duration-300 font-semibold">Đăng ký</a>
@@ -247,11 +247,11 @@
                 </svg>
                 <span>Tìm phòng</span>
               </a></li>
-              <li><a href="{% url 'user_phongtro:tra_cuu_dat_phong' %}" class="text-white/70 hover:text-white transition-colors duration-300 flex items-center space-x-2">
+              <li><a href="{% url 'user_phongtro:phong_da_dat' %}" class="text-white/70 hover:text-white transition-colors duration-300 flex items-center space-x-2">
                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/>
+                  <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"/>
                 </svg>
-                <span>Tra cứu đặt phòng</span>
+                <span>Phòng đã đặt</span>
               </a></li>
             </ul>
           </div>

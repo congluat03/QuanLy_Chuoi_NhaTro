@@ -1,0 +1,299 @@
+{% extends 'admin/admin_layout.html' %}
+{% load static %}
+
+{% block content_body %}
+<div class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <div class="container mx-auto px-4 py-6">
+        <!-- Header -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="w-10 h-10 bg-gradient-to-r from-orange-600 to-red-600 rounded-lg flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-800 mb-2">
+                            <i class="fas fa-user-edit text-orange-600 mr-3"></i>
+                            Chỉnh sửa thông tin khách thuê
+                        </h1>
+                        <p class="text-gray-600">Cập nhật thông tin cá nhân cho khách thuê: <span class="font-semibold">{{ khachthue.HO_TEN_KT }}</span></p>
+                    </div>
+                </div>
+                <a href="{% url 'khachthue:khachthue_list' %}" 
+                   class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors flex items-center">
+                    <i class="fas fa-arrow-left mr-2"></i>Quay lại
+                </a>
+            </div>
+        </div>
+
+        <!-- Messages -->
+        {% if messages %}
+            <div class="px-6 py-4">
+                {% for message in messages %}
+                    <div class="p-4 mb-3 rounded-lg border-l-4 {% if message.tags == 'error' %}bg-red-50 border-red-400 text-red-800{% else %}bg-green-50 border-green-400 text-green-800{% endif %}">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                {% if message.tags == 'error' %}
+                                    <svg class="w-5 h-5 text-red-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {% else %}
+                                    <svg class="w-5 h-5 text-green-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {% endif %}
+                                <p class="text-sm font-medium">{{ message }}</p>
+                            </div>
+                            <button onclick="this.parentElement.remove()" class="text-gray-500 hover:text-gray-700">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Main Content -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <form method="POST" id="khachThueForm" enctype="multipart/form-data" action="{% url 'khachthue:sua_thong_tin_khach_thue' khachthue.MA_KHACH_THUE %}">
+                {% csrf_token %}
+                
+                <div class="space-y-8">                                    
+                    <!-- Personal Information Section -->
+                    <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                        <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                            <i class="fas fa-user text-orange-500 mr-2"></i>
+                            Thông tin cá nhân
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="HOTENKHACHTHUE" class="block text-sm font-medium text-gray-700 mb-1">
+                                        Họ và tên <span class="text-red-500">*</span>
+                                    </label>
+                                    <input name="HOTENKHACHTHUE" type="text" required
+                                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition duration-200 text-gray-900 hover:bg-white focus:outline-none shadow-sm"
+                                           value="{{ khachthue.HO_TEN_KT|default_if_none:'' }}"
+                                           placeholder="Nhập họ và tên">
+                                    <p class="mt-1 text-xs text-gray-500">Ví dụ: Nguyễn Văn A</p>
+                                </div>
+                                <div>
+                                    <label for="SODIENTHOAIKHACHTHUE" class="block text-sm font-medium text-gray-700 mb-1">
+                                        Số điện thoại <span class="text-red-500">*</span>
+                                    </label>
+                                    <input name="SODIENTHOAIKHACHTHUE" type="text" required
+                                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition duration-200 text-gray-900 hover:bg-white focus:outline-none shadow-sm"
+                                           value="{{ khachthue.SDT_KT|default_if_none:'' }}"
+                                           placeholder="Nhập số điện thoại">
+                                    <p class="mt-1 text-xs text-gray-500">Định dạng: 0901234567</p>
+                                </div>
+                                <div>
+                                    <label for="GIOITINHKHACHTHUE" class="block text-sm font-medium text-gray-700 mb-1">
+                                        Giới tính
+                                    </label>
+                                    <select name="GIOITINHKHACHTHUE"
+                                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition duration-200 text-gray-900 hover:bg-white focus:outline-none shadow-sm">
+                                        <option value="">Chọn giới tính</option>
+                                        <option value="Nam" {% if khachthue.GIOI_TINH_KT == 'Nam' %}selected{% endif %}>Nam</option>
+                                        <option value="Nữ" {% if khachthue.GIOI_TINH_KT == 'Nữ' %}selected{% endif %}>Nữ</option>
+                                        <option value="Khác" {% if khachthue.GIOI_TINH_KT == 'Khác' %}selected{% endif %}>Khác</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="EMAILKHACHTHUE" class="block text-sm font-medium text-gray-700 mb-1">
+                                        Email
+                                    </label>
+                                    <input name="EMAILKHACHTHUE" type="email"
+                                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition duration-200 text-gray-900 hover:bg-white focus:outline-none shadow-sm"
+                                           value="{{ khachthue.EMAIL_KT|default_if_none:'' }}"
+                                           placeholder="Nhập email">
+                                    <p class="mt-1 text-xs text-gray-500">Ví dụ: example@gmail.com</p>
+                                </div>
+                                <div>
+                                    <label for="NGAYSINHKHACHTHUE" class="block text-sm font-medium text-gray-700 mb-1">
+                                        Ngày sinh
+                                    </label>
+                                    <input name="NGAYSINHKHACHTHUE" type="date"
+                                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition duration-200 text-gray-900 hover:bg-white focus:outline-none shadow-sm"
+                                           value="{{ khachthue.NGAY_SINH_KT|date:'Y-m-d'|default_if_none:'' }}">
+                                </div>
+                                <div>
+                                    <label for="NGHENGHIEP" class="block text-sm font-medium text-gray-700 mb-1">
+                                        Nghề nghiệp
+                                    </label>
+                                    <input name="NGHENGHIEP" type="text"
+                                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition duration-200 text-gray-900 hover:bg-white focus:outline-none shadow-sm"
+                                           value="{{ khachthue.NGHE_NGHIEP|default_if_none:'' }}"
+                                           placeholder="Nhập nghề nghiệp">
+                                    <p class="mt-1 text-xs text-gray-500">Ví dụ: Nhân viên văn phòng</p>
+                                </div>
+                                <div>
+                                    <label for="NOISINHKHACHTHUE" class="block text-sm font-medium text-gray-700 mb-1">
+                                        Nơi sinh
+                                    </label>
+                                    <input name="NOISINHKHACHTHUE" type="text"
+                                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition duration-200 text-gray-900 hover:bg-white focus:outline-none shadow-sm"
+                                           value="{{ khachthue.NOI_SINH_KT|default_if_none:'' }}"
+                                           placeholder="Nhập nơi sinh">
+                                    <p class="mt-1 text-xs text-gray-500">Ví dụ: TP. Hồ Chí Minh</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Avatar Upload -->
+                        <div class="mt-6">
+                            <label for="AVATAR" class="block text-sm font-medium text-gray-700 mb-1">
+                                Cập nhật hình ảnh
+                            </label>
+                            <div class="flex items-center space-x-4">
+                                <div class="relative w-32 h-32">
+                                    <img id="avatar-preview" 
+                                         src="{% if khachthue.ANH_KT %}{{ khachthue.ANH_KT.url }}{% else %}{% static 'images/default-avatar.png' %}{% endif %}" 
+                                         alt="Avatar" 
+                                         class="w-full h-full object-cover rounded-lg border-2 border-gray-200 shadow-sm">
+                                    <label for="AVATAR" 
+                                           class="absolute bottom-2 right-2 bg-orange-600 text-white p-2 rounded-full cursor-pointer hover:bg-orange-700 transition-colors shadow-sm">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                        </svg>
+                                        <input type="file" id="AVATAR" name="AVATAR" accept="image/*" class="hidden">
+                                    </label>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-sm text-gray-600 mb-2">Chọn hình ảnh mới để thay đổi (tùy chọn)</p>
+                                    <p class="text-xs text-gray-500">Định dạng: JPG, PNG. Kích thước tối đa: 5MB</p>
+                                    <p class="text-xs text-orange-600 mt-1">Để trống nếu không muốn thay đổi ảnh hiện tại</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>                  
+                </div>
+
+                <!-- Sticky Footer -->
+                <div class="bg-white border-t border-gray-200 px-6 py-4 mt-8 rounded-xl shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <div class="text-sm text-gray-600">
+                            Cập nhật thông tin cá nhân cho khách thuê
+                        </div>
+                        <div class="flex gap-4">
+                            <button type="button" onclick="history.back()" 
+                                    class="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors focus:outline-none shadow-sm">
+                                Hủy
+                            </button>
+                            <button type="submit" id="btn_luu"
+                                    class="px-6 py-2.5 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed focus:outline-none shadow-sm">
+                                <i class="fas fa-save mr-2"></i>
+                                Lưu thay đổi
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Avatar preview
+    $('#AVATAR').on('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            // Validate file type
+            if (!file.type.match('image.*')) {
+                showNotification('Vui lòng chọn file hình ảnh hợp lệ.', 'error');
+                this.value = '';
+                return;
+            }
+            
+            // Validate file size (5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                showNotification('Kích thước file không được vượt quá 5MB.', 'error');
+                this.value = '';
+                return;
+            }
+            
+            $('#avatar-preview').attr('src', URL.createObjectURL(file));
+        }
+    });
+
+    // Form validation and submission
+    $('#khachThueForm').submit(function(e) {
+        const hoTen = $('input[name="HOTENKHACHTHUE"]').val().trim();
+        const sdt = $('input[name="SODIENTHOAIKHACHTHUE"]').val().trim();
+        const email = $('input[name="EMAILKHACHTHUE"]').val().trim();
+
+        // Required fields validation
+        if (!hoTen || !sdt) {
+            e.preventDefault();
+            showNotification('Vui lòng điền đầy đủ các trường bắt buộc.', 'error');
+            return;
+        }
+
+        // Phone validation
+        if (sdt && !/^\d{10,11}$/.test(sdt)) {
+            e.preventDefault();
+            showNotification('Số điện thoại phải là 10-11 chữ số.', 'error');
+            return;
+        }
+
+        // Email validation
+        if (email && !/^[\w\.-]+@[\w\.-]+\.\w+$/.test(email)) {
+            e.preventDefault();
+            showNotification('Địa chỉ email không hợp lệ.', 'error');
+            return;
+        }
+
+        // Show loading state
+        $('#btn_luu').prop('disabled', true).html(`
+            <svg class="animate-spin w-4 h-4 mr-2 inline" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Đang lưu...
+        `);
+    });
+
+    function showNotification(message, type = 'success') {
+        const alertClass = type === 'error' ? 'bg-red-50 border-red-400 text-red-800' : 'bg-green-50 border-green-400 text-green-800';
+        const iconClass = type === 'error' ? 'text-red-400' : 'text-green-400';
+        const iconPath = type === 'error' ? 
+            'M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z' :
+            'M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z';
+        
+        const notification = $(`
+            <div class="p-4 mb-3 rounded-lg border-l-4 ${alertClass}">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 ${iconClass} mr-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="${iconPath}" clip-rule="evenodd"></path>
+                        </svg>
+                        <p class="text-sm font-medium">${message}</p>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="text-gray-500 hover:text-gray-700">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        `);
+        
+        $('.border-l-4').remove();
+        $('.container').first().prepend(`<div class="px-6 py-4">${notification.prop('outerHTML')}</div>`);
+        
+        setTimeout(() => {
+            $('.border-l-4').parent().fadeOut();
+        }, 5000);
+    }
+});
+</script>
+{% endblock %}

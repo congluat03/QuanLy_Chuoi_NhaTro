@@ -42,7 +42,13 @@
                     
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Phòng</label>
-                        <p class="text-gray-900 font-medium">{{ hoa_don.MA_PHONG.TEN_PHONG }}</p>
+                        <p class="text-gray-900 font-medium">
+                            {% if hoa_don.MA_PHONG %}
+                                {{ hoa_don.MA_PHONG.TEN_PHONG }}
+                            {% else %}
+                                Không xác định
+                            {% endif %}
+                        </p>
                     </div>
                     
                     {% if hop_dong %}

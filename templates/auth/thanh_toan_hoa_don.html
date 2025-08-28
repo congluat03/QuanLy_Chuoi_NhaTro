@@ -1,0 +1,333 @@
+{% extends 'index/index_layout.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block content %}
+<div class="pt-20 pb-16 bg-gray-50 min-h-screen">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Header -->
+    <div class="text-center mb-8">
+      <div class="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
+        <i class="fas fa-credit-card text-green-600 text-2xl"></i>
+      </div>
+      <h1 class="text-3xl font-bold text-gray-800 mb-2">Thanh Toán Hóa Đơn</h1>
+      <p class="text-gray-600">Vui lòng chọn phương thức thanh toán cho hóa đơn #{{ hoa_don.MA_HOA_DON }}</p>
+    </div>
+
+    <!-- Messages -->
+    {% if messages %}
+      <div class="mb-6 space-y-4">
+        {% for message in messages %}
+          <div class="p-4 rounded-md text-sm
+            {% if message.tags == 'success' %}bg-green-50 text-green-700 border border-green-200{% endif %}
+            {% if message.tags == 'error' %}bg-red-50 text-red-700 border border-red-200{% endif %}
+            {% if message.tags == 'info' %}bg-blue-50 text-blue-700 border border-blue-200{% endif %}
+            {% if message.tags != 'success' and message.tags != 'error' and message.tags != 'info' %}bg-yellow-50 text-yellow-700 border border-yellow-200{% endif %}">
+            {{ message }}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <!-- Payment Form -->
+      <div class="lg:col-span-2">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+          <div class="p-6">
+            <h2 class="text-xl font-bold text-gray-900 mb-6">
+              <i class="fas fa-credit-card mr-2 text-green-500"></i>
+              Phương thức thanh toán
+            </h2>
+            
+            <form method="POST">
+              {% csrf_token %}
+              
+              <div class="space-y-4 mb-8">
+                <!-- Tiền mặt -->
+                <label class="block cursor-pointer">
+                  <input type="radio" name="phuong_thuc_thanh_toan" value="TIEN_MAT" required class="sr-only peer">
+                  <div class="border-2 border-gray-200 rounded-lg p-4 peer-checked:border-green-500 peer-checked:bg-green-50 hover:border-green-300 transition-all duration-200">
+                    <div class="flex items-center">
+                      <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mr-4">
+                        <i class="fas fa-money-bills text-green-600 text-xl"></i>
+                      </div>
+                      <div class="flex-1">
+                        <div class="font-semibold text-gray-900">Tiền mặt</div>
+                        <div class="text-sm text-gray-600">Thanh toán trực tiếp bằng tiền mặt</div>
+                      </div>
+                      <div class="text-right">
+                        <i class="fas fa-check-circle text-green-500 text-xl opacity-0 peer-checked:opacity-100 transition-opacity duration-200"></i>
+                      </div>
+                    </div>
+                  </div>
+                </label>
+                
+                <!-- Chuyển khoản -->
+                <label class="block cursor-pointer">
+                  <input type="radio" name="phuong_thuc_thanh_toan" value="CHUYEN_KHOAN" required class="sr-only peer">
+                  <div class="border-2 border-gray-200 rounded-lg p-4 peer-checked:border-green-500 peer-checked:bg-green-50 hover:border-green-300 transition-all duration-200">
+                    <div class="flex items-center">
+                      <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
+                        <i class="fas fa-university text-blue-600 text-xl"></i>
+                      </div>
+                      <div class="flex-1">
+                        <div class="font-semibold text-gray-900">Chuyển khoản ngân hàng</div>
+                        <div class="text-sm text-gray-600">Chuyển khoản qua ngân hàng hoặc ví điện tử</div>
+                      </div>
+                      <div class="text-right">
+                        <i class="fas fa-check-circle text-green-500 text-xl opacity-0 peer-checked:opacity-100 transition-opacity duration-200"></i>
+                      </div>
+                    </div>
+                  </div>
+                </label>
+                
+                <!-- Thẻ ATM -->
+                <label class="block cursor-pointer">
+                  <input type="radio" name="phuong_thuc_thanh_toan" value="THE_ATM" required class="sr-only peer">
+                  <div class="border-2 border-gray-200 rounded-lg p-4 peer-checked:border-green-500 peer-checked:bg-green-50 hover:border-green-300 transition-all duration-200">
+                    <div class="flex items-center">
+                      <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mr-4">
+                        <i class="fas fa-credit-card text-purple-600 text-xl"></i>
+                      </div>
+                      <div class="flex-1">
+                        <div class="font-semibold text-gray-900">Thẻ ATM/Visa</div>
+                        <div class="text-sm text-gray-600">Thanh toán qua thẻ ATM hoặc thẻ tín dụng</div>
+                      </div>
+                      <div class="text-right">
+                        <i class="fas fa-check-circle text-green-500 text-xl opacity-0 peer-checked:opacity-100 transition-opacity duration-200"></i>
+                      </div>
+                    </div>
+                  </div>
+                </label>
+              </div>
+              
+              <!-- Số tiền thanh toán -->
+              <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  <i class="fas fa-money-bill-wave mr-2"></i>
+                  Số tiền thanh toán
+                </label>
+                <div class="relative">
+                  <input 
+                    type="number" 
+                    name="so_tien_thanh_toan" 
+                    id="so_tien_thanh_toan"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-right text-lg font-medium"
+                    placeholder="Nhập số tiền thanh toán"
+                    min="0"
+                    max="{{ con_phi_tra|floatformat:'0' }}"
+                    value="{{ con_phi_tra|floatformat:'0' }}"
+                    required
+                  >
+                  <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                    <span class="text-gray-500 text-sm font-medium">VNĐ</span>
+                  </div>
+                </div>
+                <div class="mt-2 flex items-center justify-between text-sm">
+                  <span class="text-gray-600">
+                    {% if tong_da_thanh_toan > 0 %}
+                    Đã thanh toán: <span class="font-medium text-green-600">{{ tong_da_thanh_toan|currency_vn }}</span><br>
+                    {% endif %}
+                    Số tiền còn phải trả: <span class="font-medium text-red-600 con-lai-amount">{{ con_phi_tra|currency_vn }}</span>
+                  </span>
+                  <button 
+                    type="button" 
+                    onclick="document.getElementById('so_tien_thanh_toan').value = {{ con_phi_tra|floatformat:'0' }}"
+                    class="text-green-600 hover:text-green-700 font-medium"
+                  >
+                    Thanh toán toàn bộ
+                  </button>
+                </div>
+              </div>
+              
+              <!-- Important Note -->
+              <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                <div class="flex items-start">
+                  <i class="fas fa-exclamation-triangle text-yellow-600 mr-3 mt-1"></i>
+                  <div class="text-sm text-yellow-800">
+                    <p class="font-semibold mb-2">Lưu ý quan trọng:</p>
+                    <ul class="space-y-1 text-sm">
+                      <li>• Bạn có thể thanh toán toàn bộ hoặc một phần số tiền hóa đơn</li>
+                      <li>• Hóa đơn chỉ chuyển sang "Đã thanh toán" khi thanh toán đủ số tiền</li>
+                      <li>• Vui lòng kiểm tra kỹ thông tin trước khi xác nhận thanh toán</li>
+                      <li>• Liên hệ quản lý nếu có thắc mắc về hóa đơn</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Submit Buttons -->
+              <div class="flex flex-col sm:flex-row gap-4">
+                <a href="{% url 'dungchung:user_hoa_don_detail' hoa_don.MA_HOA_DON %}" 
+                   class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-center py-3 px-6 rounded-lg transition duration-300 font-medium">
+                  <i class="fas fa-arrow-left mr-2"></i>
+                  Quay lại
+                </a>
+                
+                <button type="submit" 
+                        class="flex-1 bg-green-600 hover:bg-green-700 text-white text-center py-3 px-6 rounded-lg transition duration-300 font-medium">
+                  <i class="fas fa-check mr-2"></i>
+                  Xác nhận thanh toán
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Invoice Summary -->
+      <div class="lg:col-span-1">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 sticky top-6">
+          <div class="bg-green-600 text-white p-6 rounded-t-xl">
+            <h3 class="text-lg font-bold">Chi tiết hóa đơn</h3>
+            <p class="text-green-100 mt-1">Hóa đơn #{{ hoa_don.MA_HOA_DON }}</p>
+          </div>
+          
+          <div class="p-6 space-y-4">
+            <!-- Room Info -->
+            <div class="border-b border-gray-200 pb-4">
+              <h4 class="font-semibold text-gray-900 mb-2">Thông tin phòng</h4>
+              <div class="text-sm space-y-1">
+                <p><span class="text-gray-600">Phòng:</span> {{ phong_tro.TEN_PHONG }}</p>
+                <p><span class="text-gray-600">Khu vực:</span> {{ phong_tro.MA_KHU_VUC.TEN_KHU_VUC }}</p>
+                <p><span class="text-gray-600">Ngày lập:</span> {{ hoa_don.NGAY_LAP_HDON|date:"d/m/Y" }}</p>
+              </div>
+            </div>
+            
+            <!-- Payment Details -->
+            <div>
+              <h4 class="font-semibold text-gray-900 mb-3">Chi phí</h4>
+              <div class="space-y-3 text-sm">
+                {% if hoa_don.TIEN_PHONG %}
+                <div class="flex justify-between">
+                  <span class="text-gray-600">Tiền phòng:</span>
+                  <span class="font-medium">{{ hoa_don.TIEN_PHONG|currency_vn }}</span>
+                </div>
+                {% endif %}
+                
+                {% if hoa_don.TIEN_DICH_VU %}
+                <div class="flex justify-between">
+                  <span class="text-gray-600">Tiền dịch vụ:</span>
+                  <span class="font-medium">{{ hoa_don.TIEN_DICH_VU|currency_vn }}</span>
+                </div>
+                {% endif %}
+                
+                {% if hoa_don.TIEN_COC %}
+                <div class="flex justify-between">
+                  <span class="text-gray-600">Tiền cọc:</span>
+                  <span class="font-medium">{{ hoa_don.TIEN_COC|currency_vn }}</span>
+                </div>
+                {% endif %}
+                
+                {% if hoa_don.TIEN_KHAU_TRU %}
+                <div class="flex justify-between">
+                  <span class="text-gray-600">Khấu trừ:</span>
+                  <span class="font-medium text-red-600">-{{ hoa_don.TIEN_KHAU_TRU|currency_vn }}</span>
+                </div>
+                {% endif %}
+                
+                <div class="border-t border-gray-200 pt-3 mt-3">
+                  <div class="flex justify-between items-center">
+                    <span class="font-semibold text-gray-900">Tổng thanh toán:</span>
+                    <span class="font-bold text-xl text-green-600">{{ hoa_don.TONG_TIEN|currency_vn }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contact Support -->
+        <div class="mt-6 bg-blue-50 rounded-xl border border-blue-200 p-6">
+          <h3 class="text-lg font-bold text-blue-900 mb-4">
+            <i class="fas fa-headset mr-2"></i>
+            Hỗ trợ
+          </h3>
+          
+          <div class="space-y-3 text-sm text-blue-700">
+            <p class="flex items-center">
+              <i class="fas fa-phone mr-2"></i>
+              <span>Hotline: 1900-xxxx</span>
+            </p>
+            <p class="flex items-center">
+              <i class="fas fa-envelope mr-2"></i>
+              <span>support@nhatro.com</span>
+            </p>
+            <p class="flex items-center">
+              <i class="fas fa-clock mr-2"></i>
+              <span>24/7 - Luôn sẵn sàng hỗ trợ</span>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.peer:checked ~ div {
+  border-color: #10b981;
+  background-color: #f0fdf4;
+}
+
+.peer:checked ~ div .fa-check-circle {
+  opacity: 1 !important;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const soTienInput = document.getElementById('so_tien_thanh_toan');
+    const tongTien = {{ hoa_don.TONG_TIEN|floatformat:"0" }};
+    const daThanhToan = {{ tong_da_thanh_toan|floatformat:"0" }};
+    const conPhaiTra = {{ con_phi_tra|floatformat:"0" }};
+    
+    // Cập nhật max value và placeholder
+    soTienInput.max = conPhaiTra;
+    soTienInput.value = conPhaiTra;
+    
+    // Format số tiền khi người dùng nhập
+    soTienInput.addEventListener('input', function() {
+        let value = parseInt(this.value) || 0;
+        
+        if (value > conPhaiTra) {
+            this.value = conPhaiTra;
+            showMessage('Số tiền thanh toán không được vượt quá số tiền còn phải trả!', 'warning');
+        }
+        
+        updatePaymentInfo(value);
+    });
+    
+    function updatePaymentInfo(soTienThanhToan) {
+        const conLaiElement = document.querySelector('.con-lai-amount');
+        if (conLaiElement) {
+            const conLai = conPhaiTra - soTienThanhToan;
+            conLaiElement.textContent = new Intl.NumberFormat('vi-VN').format(conLai) + ' VNĐ';
+            
+            if (conLai <= 0) {
+                conLaiElement.classList.add('text-green-600');
+                conLaiElement.classList.remove('text-red-600');
+            } else {
+                conLaiElement.classList.add('text-red-600');  
+                conLaiElement.classList.remove('text-green-600');
+            }
+        }
+    }
+    
+    function showMessage(message, type) {
+        // Tạo thông báo tạm thời
+        const alert = document.createElement('div');
+        alert.className = `fixed top-4 right-4 p-4 rounded-md text-sm z-50 ${
+            type === 'warning' ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' : 
+            'bg-blue-100 text-blue-800 border border-blue-200'
+        }`;
+        alert.textContent = message;
+        document.body.appendChild(alert);
+        
+        setTimeout(() => {
+            alert.remove();
+        }, 3000);
+    }
+});
+</script>
+{% endblock %}

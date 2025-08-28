@@ -1,83 +1,75 @@
-function toggleMenuQuanLy(khachThueId) {
-    var menu = document.getElementById("menuQuanLy-" + khachThueId);
+function toggleMenuQuanLy(managerId) {
+    const menu = document.getElementById("menuQuanLy-" + managerId);
 
-    // Lấy tất cả menu đang mở (không có class hidden)
-    var allMenus = document.querySelectorAll("[id^='menuQuanLy-']");
-    allMenus.forEach(function (m) {
-        if (m !== menu) {
+    // Ẩn tất cả các menu khác
+    const allMenus = document.querySelectorAll("[id^='menuQuanLy-']");
+    allMenus.forEach((m) => {
+        if (!m.classList.contains("hidden")) {
             m.classList.add("hidden");
-            // Reset vị trí menu khi ẩn
-            m.style.top = '';
-            m.style.bottom = '';
+            // Đồng thời bỏ luôn sự kiện mouseleave cũ để tránh bị dính nhiều lần
+            m.onmouseleave = null;
         }
     });
 
-    // Kiểm tra trạng thái hiện tại của menu
-    var isHidden = menu.classList.contains("hidden");
-
-    if (isHidden) {
-        // Menu đang ẩn, mở menu
-
-        // Reset vị trí menu ban đầu
-        menu.style.top = '';
-        menu.style.bottom = '';
-
-        // Tính vị trí menu có bị che khuất dưới cùng không
-        var rect = menu.getBoundingClientRect();
-        var windowHeight = window.innerHeight;
-
-        if (rect.bottom > windowHeight) {
-            // Nếu bị che, đổi vị trí lên trên
-            menu.style.top = 'auto';
-            menu.style.bottom = '35px';
-        } else {
-            // Vị trí mặc định dưới icon
-            menu.style.top = '35px';
-            menu.style.bottom = 'auto';
-        }
-
-        // Hiển thị menu
-        menu.classList.remove("hidden");
-
-        // Thêm sự kiện mouseleave để tự động ẩn menu khi chuột rời menu
-        menu.onmouseleave = function() {
-            menu.classList.add("hidden");
-            // Reset vị trí menu khi ẩn
-            menu.style.top = '';
-            menu.style.bottom = '';
-            // Hủy sự kiện sau khi ẩn menu để tránh bị gọi lại nhiều lần
-            menu.onmouseleave = null;
-        };
-    } else {
-        // Menu đang hiện, ẩn menu
+    // Nếu menu đang hiển thị => ẩn
+    if (!menu.classList.contains("hidden")) {
         menu.classList.add("hidden");
-        menu.style.top = '';
-        menu.style.bottom = '';
         menu.onmouseleave = null;
+        return;
     }
+
+    // Xử lý vị trí nếu bị tràn màn hình
+    menu.classList.remove("top-8");
+    menu.classList.remove("bottom-full");
+
+    // Reset lại vị trí để đo đúng
+    menu.style.top = "";
+    menu.style.bottom = "";
+
+    // Tạm thời hiển thị để đo vị trí
+    menu.classList.remove("hidden");
+
+    const rect = menu.getBoundingClientRect();
+    const windowHeight = window.innerHeight;
+
+    // Nếu bị tràn dưới thì hiển thị menu lên trên
+    if (rect.bottom > windowHeight) {
+        menu.classList.add("bottom-full");
+        menu.classList.remove("top-8");
+    } else {
+        menu.classList.add("top-8");
+        menu.classList.remove("bottom-full");
+    }
+
+    // Hiển thị menu
+    menu.classList.remove("hidden");
+
+    // Thêm sự kiện khi chuột rời khỏi menu thì ẩn menu
+    menu.onmouseleave = () => {
+        menu.classList.add("hidden");
+        menu.onmouseleave = null; // gỡ sự kiện sau khi ẩn menu
+    };
 }
 
-
 // Hàm ẩn menu khi chuột rời menu dropdown
-function hideMenuQuanLy(khachThueId) {
-    var menu = document.getElementById("menuQuanLy-" + khachThueId);
+function hideMenuQuanLy(managerId) {
+    const menu = document.getElementById("menuQuanLy-" + managerId);
     if (menu) {
-        menu.style.display = "none";
-        // Reset vị trí menu
-        menu.style.top = '35px';
-        menu.style.bottom = 'auto';
+        menu.classList.add("hidden");
+        menu.onmouseleave = null;
     }
 }
 
 document.addEventListener("click", function (event) {
     var isClickInsideMenu = event.target.closest(".tooltipQuanLy"); // Biểu tượng 3 chấm
-    var isClickInsideBox = event.target.closest(".khuvuc-card");
+    var isClickInsideDropdown = event.target.closest("[id^='menuQuanLy-']"); // Menu dropdown
 
-    // Nếu click không phải vào .khuvuc-card hoặc .menu-icon thì ẩn tất cả các menu
-    if (!isClickInsideMenu && !isClickInsideBox) {
-        var menus = document.querySelectorAll(".menu-items");
-        menus.forEach(function (menu) {
-            menu.style.display = "none";
+    // Nếu click không phải vào button hoặc menu thì ẩn tất cả các menu
+    if (!isClickInsideMenu && !isClickInsideDropdown) {
+        const allMenus = document.querySelectorAll("[id^='menuQuanLy-']");
+        allMenus.forEach((menu) => {
+            menu.classList.add("hidden");
+            menu.onmouseleave = null;
         });
     }
 });

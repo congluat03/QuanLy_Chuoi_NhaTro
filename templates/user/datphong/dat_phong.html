@@ -13,36 +13,59 @@
 window.bookingForm = function() {
     return {
         step: 1,
-        totalSteps: 3,
+        totalSteps: 2,
         formData: {
-            ho_ten: '',
-            so_dien_thoai: '',
-            email: '',
+            ho_ten: '{{ khach_thue.HO_TEN_KT|default:"" }}',
+            so_dien_thoai: '{{ khach_thue.SDT_KT|default:"" }}',
+            email: '{{ khach_thue.EMAIL_KT|default:"" }}',
             ngay_du_kien_vao: '',
-            tien_coc: {{ phong.SO_TIEN_CAN_COC|default:"0" }},
-            ghi_chu: ''
+            tien_coc: {{ phong.SO_TIEN_CAN_COC|default:"0"|floatformat:"0" }},
+            ghi_chu: '',
+            phuong_thuc_thanh_toan: 'tien_mat'
         },
         errors: {},
         isSubmitting: false,
         
         init() {
             // Initialize date picker
-            flatpickr('#ngayVaoInput', {
-                dateFormat: 'Y-m-d',
-                minDate: 'today',
-                locale: 'vn',
-                onChange: (selectedDates, dateStr) => {
-                    this.formData.ngay_du_kien_vao = dateStr;
-                    this.validateField('ngay_du_kien_vao');
-                }
-            });
+            const dateInput = document.getElementById('ngayVaoInput');
+            if (dateInput) {
+                flatpickr('#ngayVaoInput', {
+                    dateFormat: 'Y-m-d',
+                    minDate: 'today',
+                    locale: 'vi',
+                    onChange: (selectedDates, dateStr) => {
+                        this.formData.ngay_du_kien_vao = dateStr;
+                        this.validateField('ngay_du_kien_vao');
+                    }
+                });
+            }
+            
+            // Debug log to check initialization
+            console.log('Form initialized with data:', this.formData);
         },
         
         nextStep() {
+            console.log('Current step:', this.step);
+            console.log('Form data:', this.formData);
+            console.log('Errors:', this.errors);
+            
+            // Clear any existing browser validation messages
+            const currentStepElement = document.querySelector(`[x-show="step === ${this.step}"]`);
+            if (currentStepElement) {
+                const inputs = currentStepElement.querySelectorAll('input');
+                inputs.forEach(input => {
+                    input.setCustomValidity(''); // Clear custom validity
+                });
+            }
+            
             if (this.validateCurrentStep()) {
                 if (this.step < this.totalSteps) {
                     this.step++;
+                    console.log('Moving to step:', this.step);
                 }
+            } else {
+                console.log('Validation failed for step:', this.step);
             }
         },
         
@@ -57,35 +80,49 @@ window.bookingForm = function() {
             let isValid = true;
             
             if (this.step === 1) {
-                // Validate personal info
-                if (!this.formData.ho_ten.trim()) {
-                    this.errors.ho_ten = 'Vui lòng nhập họ tên';
+                // Step 1: Validate thông tin cá nhân và thông tin đặt phòng
+                
+                // Validate thông tin cá nhân (đã có sẵn từ đăng nhập)
+                if (!this.formData.ho_ten || !this.formData.ho_ten.trim()) {
+                    this.errors.ho_ten = 'Thông tin khách thuê không đầy đủ';
                     isValid = false;
                 }
                 
-                if (!this.formData.so_dien_thoai.trim()) {
-                    this.errors.so_dien_thoai = 'Vui lòng nhập số điện thoại';
-                    isValid = false;
-                } else if (!/^[0-9]{10,11}$/.test(this.formData.so_dien_thoai.replace(/\s/g, ''))) {
-                    this.errors.so_dien_thoai = 'Số điện thoại không hợp lệ';
+                if (!this.formData.so_dien_thoai || !this.formData.so_dien_thoai.trim()) {
+                    this.errors.so_dien_thoai = 'Thông tin khách thuê không đầy đủ';
                     isValid = false;
                 }
                 
-                if (this.formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.formData.email)) {
-                    this.errors.email = 'Email không hợp lệ';
-                    isValid = false;
-                }
-            }
-            
-            if (this.step === 2) {
-                // Validate booking details
+                // Validate thông tin đặt phòng
                 if (!this.formData.ngay_du_kien_vao) {
                     this.errors.ngay_du_kien_vao = 'Vui lòng chọn ngày dự kiến vào';
                     isValid = false;
                 }
                 
-                if (!this.formData.tien_coc || this.formData.tien_coc <= 0) {
-                    this.errors.tien_coc = 'Vui lòng nhập số tiền cọc hợp lệ';
+                // Validate tiền cọc
+                if (this.formData.tien_coc <= 0) {
+                    this.errors.tien_coc = 'Phòng này chưa thiết lập tiền cọc. Vui lòng liên hệ quản lý.';
+                    isValid = false;
+                }
+            }
+            
+            if (this.step === 2) {
+                // Step 2: Chỉ validate phương thức thanh toán
+                console.log('Validating step 2 - payment method:', this.formData.phuong_thuc_thanh_toan);
+                
+                if (!this.formData.phuong_thuc_thanh_toan) {
+                    this.errors.phuong_thuc_thanh_toan = 'Vui lòng chọn phương thức thanh toán';
+                    isValid = false;
+                }
+                
+                // Đảm bảo thông tin từ bước 1 vẫn hợp lệ (fail-safe)
+                if (!this.formData.ngay_du_kien_vao) {
+                    this.errors.general = 'Vui lòng quay lại bước 1 để nhập ngày dự kiến vào';
+                    isValid = false;
+                }
+                
+                if (this.formData.tien_coc <= 0) {
+                    this.errors.general = 'Có lỗi với tiền cọc phòng. Vui lòng quay lại bước 1';
                     isValid = false;
                 }
             }
@@ -94,6 +131,12 @@ window.bookingForm = function() {
         },
         
         validateField(fieldName) {
+            // Clear browser validation for this field
+            const field = document.querySelector(`[name="${fieldName}"]`);
+            if (field) {
+                field.setCustomValidity('');
+            }
+            
             if (this.errors[fieldName]) {
                 delete this.errors[fieldName];
                 this.validateCurrentStep();
@@ -124,24 +167,23 @@ window.bookingForm = function() {
                     method: 'POST',
                     body: formData,
                     headers: {
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'X-Requested-With': 'XMLHttpRequest'
                     }
                 });
                 
-                if (response.ok) {
-                    // Success - redirect to confirmation page
-                    const result = await response.json();
-                    if (result.success) {
-                        this.showSuccess();
-                        setTimeout(() => {
-                            window.location.href = result.redirect_url || "{% url 'user_phongtro:tra_cuu_dat_phong' %}";
-                        }, 2000);
-                    } else {
-                        this.errors = result.errors || {};
+                // Server sẽ luôn trả về JSON với AJAX request
+                const result = await response.json();
+                
+                if (result.success) {
+                    this.showSuccess(result.message || 'Đặt phòng thành công!');              
+                } else {
+                    // Handle validation errors
+                    if (result.errors) {
+                        this.errors = result.errors;
                         this.step = 1; // Go back to first step to show errors
                     }
-                } else {
-                    throw new Error('Có lỗi xảy ra khi gửi yêu cầu');
+                    this.showError(result.message || 'Có lỗi xảy ra khi đặt phòng.');
                 }
             } catch (error) {
                 this.showError('Có lỗi xảy ra. Vui lòng thử lại sau.');
@@ -151,8 +193,8 @@ window.bookingForm = function() {
             }
         },
         
-        showSuccess() {
-            this.showNotification('Đặt phòng thành công! Chúng tôi sẽ liên hệ với bạn sớm nhất.', 'success');
+        showSuccess(message = 'Đặt phòng thành công! Chúng tôi sẽ liên hệ với bạn sớm nhất.') {
+            this.showNotification(message, 'success');
         },
         
         showError(message) {
@@ -261,6 +303,19 @@ window.bookingForm = function() {
         transform: translateX(0);
     }
 }
+
+/* Payment method styles */
+.payment-method {
+    @apply border-2 border-gray-200 rounded-lg p-4 cursor-pointer transition-all duration-200 hover:border-blue-300;
+}
+
+.payment-method.selected {
+    @apply border-blue-500 bg-blue-50;
+}
+
+.payment-method input[type="radio"] {
+    @apply sr-only;
+}
 </style>
 
 <div class="min-h-screen bg-gray-50" x-data="bookingForm()">
@@ -294,11 +349,11 @@ window.bookingForm = function() {
                         <div class="flex items-center">
                             <div class="step-indicator" 
                                  :class="step >= 1 ? (step > 1 ? 'completed' : 'active') : 'inactive'">
-                                <i class="fas" :class="step > 1 ? 'fa-check' : 'fa-user'"></i>
+                                <i class="fas" :class="step > 1 ? 'fa-check' : 'fa-user-edit'"></i>
                             </div>
                             <div class="ml-3 hidden sm:block">
-                                <div class="text-sm font-semibold text-gray-900">Thông tin cá nhân</div>
-                                <div class="text-xs text-gray-500">Họ tên, SĐT, Email</div>
+                                <div class="text-sm font-semibold text-gray-900">Xác nhận thông tin & Đặt phòng</div>
+                                <div class="text-xs text-gray-500">Thông tin cá nhân, ngày vào, ghi chú</div>
                             </div>
                         </div>
                         
@@ -307,26 +362,12 @@ window.bookingForm = function() {
                         <!-- Step 2 -->
                         <div class="flex items-center">
                             <div class="step-indicator" 
-                                 :class="step >= 2 ? (step > 2 ? 'completed' : 'active') : 'inactive'">
-                                <i class="fas" :class="step > 2 ? 'fa-check' : 'fa-calendar'"></i>
+                                 :class="step >= 2 ? 'active' : 'inactive'">
+                                <i class="fas fa-credit-card"></i>
                             </div>
                             <div class="ml-3 hidden sm:block">
-                                <div class="text-sm font-semibold text-gray-900">Chi tiết đặt phòng</div>
-                                <div class="text-xs text-gray-500">Ngày vào, tiền cọc</div>
-                            </div>
-                        </div>
-                        
-                        <div class="step-line" :class="step > 2 ? 'completed' : 'inactive'"></div>
-                        
-                        <!-- Step 3 -->
-                        <div class="flex items-center">
-                            <div class="step-indicator" 
-                                 :class="step >= 3 ? 'active' : 'inactive'">
-                                <i class="fas fa-check-double"></i>
-                            </div>
-                            <div class="ml-3 hidden sm:block">
-                                <div class="text-sm font-semibold text-gray-900">Xác nhận</div>
-                                <div class="text-xs text-gray-500">Kiểm tra & gửi</div>
+                                <div class="text-sm font-semibold text-gray-900">Thanh toán</div>
+                                <div class="text-xs text-gray-500">Chọn phương thức thanh toán</div>
                             </div>
                         </div>
                     </div>
@@ -334,199 +375,271 @@ window.bookingForm = function() {
 
                 <!-- Form Steps -->
                 <div class="card p-6">
-                    <form @submit.prevent="submitForm()">
+                    <form @submit.prevent="submitForm()" novalidate>
                         {% csrf_token %}
                         
-                        <!-- Step 1: Personal Information -->
+                        <!-- Step 1: Personal Information & Booking Details -->
                         <div x-show="step === 1" class="step-content">
                             <h2 class="text-xl font-bold text-gray-900 mb-6">
-                                <i class="fas fa-user mr-2 text-blue-500"></i>
-                                Thông tin cá nhân
+                                <i class="fas fa-user-edit mr-2 text-blue-500"></i>
+                                Xác nhận thông tin & Đặt phòng
                             </h2>
                             
-                            <div class="space-y-6">
-                                <!-- Full Name -->
-                                <div>
-                                    <label class="form-label">
-                                        Họ và tên <span class="text-red-500">*</span>
-                                    </label>
-                                    <input type="text" 
-                                           x-model="formData.ho_ten"
-                                           @input="validateField('ho_ten')"
-                                           class="form-input"
-                                           :class="errors.ho_ten ? 'error' : ''"
-                                           placeholder="Nguyễn Văn A">
-                                    <div x-show="errors.ho_ten" class="text-red-500 text-sm mt-1" x-text="errors.ho_ten"></div>
+                            <!-- Personal Information Section -->
+                            <div class="bg-green-50 border border-green-200 rounded-lg p-6 mb-6">
+                                <div class="flex items-center mb-4">
+                                    <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                                    <h3 class="font-semibold text-green-800 text-lg">Thông tin khách thuê</h3>
                                 </div>
                                 
-                                <!-- Phone -->
-                                <div>
-                                    <label class="form-label">
-                                        Số điện thoại <span class="text-red-500">*</span>
-                                    </label>
-                                    <input type="tel" 
-                                           x-model="formData.so_dien_thoai"
-                                           @input="validateField('so_dien_thoai')"
-                                           class="form-input"
-                                           :class="errors.so_dien_thoai ? 'error' : ''"
-                                           placeholder="0912345678">
-                                    <div x-show="errors.so_dien_thoai" class="text-red-500 text-sm mt-1" x-text="errors.so_dien_thoai"></div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                    <div>
+                                        <span class="text-gray-600">Họ tên:</span>
+                                        <span class="font-medium ml-2">{{ khach_thue.HO_TEN_KT }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-600">Số điện thoại:</span>
+                                        <span class="font-medium ml-2">{{ khach_thue.SDT_KT }}</span>
+                                    </div>
+                                    {% if khach_thue.EMAIL_KT %}
+                                    <div class="md:col-span-2">
+                                        <span class="text-gray-600">Email:</span>
+                                        <span class="font-medium ml-2">{{ khach_thue.EMAIL_KT }}</span>
+                                    </div>
+                                    {% endif %}
                                 </div>
                                 
-                                <!-- Email -->
-                                <div>
-                                    <label class="form-label">
-                                        Email (tùy chọn)
-                                    </label>
-                                    <input type="email" 
-                                           x-model="formData.email"
-                                           @input="validateField('email')"
-                                           class="form-input"
-                                           :class="errors.email ? 'error' : ''"
-                                           placeholder="email@example.com">
-                                    <div x-show="errors.email" class="text-red-500 text-sm mt-1" x-text="errors.email"></div>
-                                    <div class="text-gray-500 text-sm mt-1">
-                                        Email để nhận thông báo và xác nhận đặt phòng
+                                <div class="mt-3 pt-3 border-t border-green-200 flex items-center justify-between">
+                                    <p class="text-sm text-green-700">
+                                        <i class="fas fa-info-circle mr-1"></i>
+                                        Thông tin được lấy từ tài khoản đã đăng nhập
+                                    </p>
+                                    <a href="{% url 'dungchung:profile' %}" class="text-blue-600 hover:text-blue-700 text-sm">
+                                        <i class="fas fa-edit mr-1"></i>Cập nhật thông tin
+                                    </a>
+                                </div>
+                            </div>
+
+                            <!-- Booking Details Section -->
+                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+                                <h3 class="text-lg font-semibold text-blue-900 mb-4">
+                                    <i class="fas fa-calendar-alt mr-2"></i>
+                                    Thông tin đặt phòng
+                                </h3>
+                                
+                                <div class="space-y-4">
+                                    <!-- Move-in Date -->
+                                    <div>
+                                        <label class="form-label">
+                                            Ngày dự kiến vào ở <span class="text-red-500">*</span>
+                                        </label>
+                                        <input type="date" 
+                                               id="ngayVaoInput"
+                                               name="ngay_du_kien_vao"
+                                               x-model="formData.ngay_du_kien_vao"
+                                               @input="validateField('ngay_du_kien_vao')"
+                                               class="form-input"
+                                               :class="errors.ngay_du_kien_vao ? 'error' : ''"
+                                               :required="step === 1"
+                                               placeholder="Chọn ngày">
+                                        <div x-show="errors.ngay_du_kien_vao" class="text-red-500 text-sm mt-1" x-text="errors.ngay_du_kien_vao"></div>
+                                        <div class="text-gray-500 text-sm mt-1">
+                                            Chọn ngày bạn dự định chuyển đến ở
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Deposit Amount -->
+                                    <div>
+                                        <label class="form-label">
+                                            Tiền cọc phòng
+                                        </label>
+                                        <div class="bg-white border border-blue-300 rounded-lg px-4 py-3">
+                                            <div class="flex items-center justify-between">
+                                                <span class="text-gray-700">Số tiền cần cọc:</span>
+                                                <span class="text-xl font-bold text-blue-600">{{ phong.SO_TIEN_CAN_COC|currency_vn|default:"Chưa thiết lập" }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="text-gray-500 text-sm mt-1">
+                                            <i class="fas fa-info-circle mr-1"></i>
+                                            Số tiền cọc được thiết lập bởi chủ nhà trọ
+                                        </div>
+                                        <!-- Hidden input để gửi giá trị -->
+                                        <input type="hidden" name="tien_coc" :value="formData.tien_coc">
+                                    </div>
+                                    
+                                    <!-- Notes -->
+                                    <div>
+                                        <label class="form-label">
+                                            Ghi chú thêm
+                                        </label>
+                                        <textarea x-model="formData.ghi_chu"
+                                                  name="ghi_chu"
+                                                  class="form-input h-24 resize-none"
+                                                  placeholder="Ghi chú về yêu cầu đặc biệt, thời gian thuận tiện liên hệ..."></textarea>
+                                        <div class="text-gray-500 text-sm mt-1">
+                                            Mọi yêu cầu đặc biệt hoặc câu hỏi bạn muốn gửi đến chủ trọ
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Step 2: Booking Details -->
+                        <!-- Step 2: Payment -->
                         <div x-show="step === 2" class="step-content">
                             <h2 class="text-xl font-bold text-gray-900 mb-6">
-                                <i class="fas fa-calendar-alt mr-2 text-blue-500"></i>
-                                Chi tiết đặt phòng
+                                <i class="fas fa-credit-card mr-2 text-green-500"></i>
+                                Thanh toán đặt phòng
                             </h2>
                             
-                            <div class="space-y-6">
-                                <!-- Move-in Date -->
-                                <div>
-                                    <label class="form-label">
-                                        Ngày dự kiến vào ở <span class="text-red-500">*</span>
-                                    </label>
-                                    <input type="date" 
-                                           id="ngayVaoInput"
-                                           class="form-input"
-                                           :class="errors.ngay_du_kien_vao ? 'error' : ''"
-                                           placeholder="Chọn ngày">
-                                    <div x-show="errors.ngay_du_kien_vao" class="text-red-500 text-sm mt-1" x-text="errors.ngay_du_kien_vao"></div>
-                                    <div class="text-gray-500 text-sm mt-1">
-                                        Chọn ngày bạn dự định chuyển đến ở
-                                    </div>
-                                </div>
+                            <!-- Booking Summary -->
+                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+                                <h3 class="text-lg font-semibold text-blue-900 mb-4">
+                                    <i class="fas fa-clipboard-list mr-2"></i>
+                                    Tóm tắt đặt phòng
+                                </h3>
                                 
-                                <!-- Deposit Amount -->
-                                <div>
-                                    <label class="form-label">
-                                        Số tiền cọc <span class="text-red-500">*</span>
-                                    </label>
-                                    <div class="relative">
-                                        <input type="number" 
-                                               x-model="formData.tien_coc"
-                                               @input="validateField('tien_coc')"
-                                               class="form-input pr-12"
-                                               :class="errors.tien_coc ? 'error' : ''"
-                                               min="0" step="1000"
-                                               placeholder="{{ phong.SO_TIEN_CAN_COC|default:'1000000' }}">
-                                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500">
-                                            VNĐ
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                    <div class="space-y-2">
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Phòng:</span>
+                                            <span class="font-medium">{{ phong.TEN_PHONG }}</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Khách thuê:</span>
+                                            <span class="font-medium">{{ khach_thue.HO_TEN_KT }}</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Số điện thoại:</span>
+                                            <span class="font-medium">{{ khach_thue.SDT_KT }}</span>
                                         </div>
                                     </div>
-                                    <div x-show="errors.tien_coc" class="text-red-500 text-sm mt-1" x-text="errors.tien_coc"></div>
-                                    <div class="text-gray-500 text-sm mt-1">
-                                        Tiền cọc đề xuất: <span class="font-semibold">{{ phong.SO_TIEN_CAN_COC|currency_vn|default:"1,000,000 VNĐ" }}</span>
+                                    <div class="space-y-2">
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Ngày vào:</span>
+                                            <span class="font-medium" x-text="formData.ngay_du_kien_vao ? new Date(formData.ngay_du_kien_vao).toLocaleDateString('vi-VN') : 'Chưa chọn'"></span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Tiền cọc:</span>
+                                            <span class="font-medium text-blue-600">{{ phong.SO_TIEN_CAN_COC|currency_vn }}</span>
+                                        </div>
+                                        <div class="flex justify-between" x-show="formData.ghi_chu">
+                                            <span class="text-gray-600">Ghi chú:</span>
+                                            <span class="font-medium" x-text="formData.ghi_chu"></span>
+                                        </div>
                                     </div>
+                                </div>
+                            </div>
+
+                            <!-- Payment Method Section -->
+                            <div class="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+                                <h3 class="text-xl font-bold text-gray-900 mb-6">
+                                    <i class="fas fa-credit-card mr-2 text-blue-500"></i>
+                                    Chọn phương thức thanh toán
+                                </h3>
+                                
+                                <div class="space-y-4 mb-6">
+                                    <!-- Tiền mặt -->
+                                    <label class="payment-method block cursor-pointer" :class="formData.phuong_thuc_thanh_toan === 'tien_mat' ? 'selected' : ''">
+                                        <input type="radio" 
+                                               name="phuong_thuc_thanh_toan" 
+                                               value="tien_mat"
+                                               x-model="formData.phuong_thuc_thanh_toan"
+                                               @change="validateField('phuong_thuc_thanh_toan')"
+                                               class="sr-only">
+                                        <div class="flex items-center">
+                                            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mr-4">
+                                                <i class="fas fa-money-bills text-green-600 text-xl"></i>
+                                            </div>
+                                            <div class="flex-1">
+                                                <div class="font-semibold text-gray-900">Tiền mặt</div>
+                                                <div class="text-sm text-gray-600">Thanh toán trực tiếp bằng tiền mặt khi gặp mặt</div>
+                                            </div>
+                                            <div class="text-right flex items-center">
+                                                <span class="text-green-600 font-medium mr-3 text-sm">Khuyến nghị</span>
+                                                <i class="fas fa-check-circle text-green-500 text-xl transition-opacity duration-200" 
+                                                   :class="formData.phuong_thuc_thanh_toan === 'tien_mat' ? 'opacity-100' : 'opacity-0'"></i>
+                                            </div>
+                                        </div>
+                                    </label>
+                                    
+                                    <!-- Chuyển khoản -->
+                                    <label class="payment-method block cursor-pointer" :class="formData.phuong_thuc_thanh_toan === 'chuyen_khoan' ? 'selected' : ''">
+                                        <input type="radio" 
+                                               name="phuong_thuc_thanh_toan" 
+                                               value="chuyen_khoan"
+                                               x-model="formData.phuong_thuc_thanh_toan"
+                                               @change="validateField('phuong_thuc_thanh_toan')"
+                                               class="sr-only">
+                                        <div class="flex items-center">
+                                            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
+                                                <i class="fas fa-university text-blue-600 text-xl"></i>
+                                            </div>
+                                            <div class="flex-1">
+                                                <div class="font-semibold text-gray-900">Chuyển khoản ngân hàng</div>
+                                                <div class="text-sm text-gray-600">Chuyển khoản qua ngân hàng hoặc ví điện tử</div>
+                                            </div>
+                                            <div class="text-right">
+                                                <i class="fas fa-check-circle text-green-500 text-xl transition-opacity duration-200" 
+                                                   :class="formData.phuong_thuc_thanh_toan === 'chuyen_khoan' ? 'opacity-100' : 'opacity-0'"></i>
+                                            </div>
+                                        </div>
+                                    </label>
+                                    
+                                    <!-- Thẻ ATM -->
+                                    <label class="payment-method block cursor-pointer" :class="formData.phuong_thuc_thanh_toan === 'online' ? 'selected' : ''">
+                                        <input type="radio" 
+                                               name="phuong_thuc_thanh_toan" 
+                                               value="online"
+                                               x-model="formData.phuong_thuc_thanh_toan"
+                                               @change="validateField('phuong_thuc_thanh_toan')"
+                                               class="sr-only">
+                                        <div class="flex items-center">
+                                            <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mr-4">
+                                                <i class="fas fa-credit-card text-purple-600 text-xl"></i>
+                                            </div>
+                                            <div class="flex-1">
+                                                <div class="font-semibold text-gray-900">Thẻ ATM/Visa</div>
+                                                <div class="text-sm text-gray-600">Thanh toán qua thẻ ATM hoặc thẻ tín dụng</div>
+                                            </div>
+                                            <div class="text-right">
+                                                <i class="fas fa-check-circle text-green-500 text-xl transition-opacity duration-200" 
+                                                   :class="formData.phuong_thuc_thanh_toan === 'online' ? 'opacity-100' : 'opacity-0'"></i>
+                                            </div>
+                                        </div>
+                                    </label>
                                 </div>
                                 
-                                <!-- Notes -->
-                                <div>
-                                    <label class="form-label">
-                                        Ghi chú thêm
-                                    </label>
-                                    <textarea x-model="formData.ghi_chu"
-                                              class="form-input h-24 resize-none"
-                                              placeholder="Ghi chú về yêu cầu đặc biệt, thời gian thuận tiện liên hệ..."></textarea>
-                                    <div class="text-gray-500 text-sm mt-1">
-                                        Mọi yêu cầu đặc biệt hoặc câu hỏi bạn muốn gửi đến chủ trọ
-                                    </div>
-                                </div>
+                                <div x-show="errors.phuong_thuc_thanh_toan" class="text-red-500 text-sm mt-2" x-text="errors.phuong_thuc_thanh_toan"></div>
+                                <div x-show="errors.general" class="text-red-500 text-sm mt-2 p-3 bg-red-50 border border-red-200 rounded-lg" x-text="errors.general"></div>
+                            </div>
+
+                            <!-- Terms & Conditions -->
+                            <div class="border border-yellow-200 bg-yellow-50 rounded-lg p-4">
+                                <h3 class="font-semibold text-yellow-800 mb-3">
+                                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                                    Lưu ý quan trọng
+                                </h3>
+                                <ul class="text-sm text-yellow-700 space-y-1">
+                                    <li class="flex items-start">
+                                        <i class="fas fa-check mr-2 mt-0.5 flex-shrink-0"></i>
+                                        Việc thanh toán này chỉ là cam kết đặt phòng
+                                    </li>
+                                    <li class="flex items-start">
+                                        <i class="fas fa-check mr-2 mt-0.5 flex-shrink-0"></i>
+                                        Chủ trọ sẽ liên hệ xác nhận trong vòng 24h
+                                    </li>
+                                    <li class="flex items-start">
+                                        <i class="fas fa-check mr-2 mt-0.5 flex-shrink-0"></i>
+                                        Vui lòng gặp mặt trực tiếp để ký hợp đồng chính thức
+                                    </li>
+                                    <li class="flex items-start">
+                                        <i class="fas fa-check mr-2 mt-0.5 flex-shrink-0"></i>
+                                        Có thể được hoàn tiền nếu không phù hợp
+                                    </li>
+                                </ul>
                             </div>
                         </div>
 
-                        <!-- Step 3: Confirmation -->
-                        <div x-show="step === 3" class="step-content">
-                            <h2 class="text-xl font-bold text-gray-900 mb-6">
-                                <i class="fas fa-check-circle mr-2 text-green-500"></i>
-                                Xác nhận thông tin
-                            </h2>
-                            
-                            <div class="space-y-6">
-                                <!-- Personal Info Summary -->
-                                <div class="bg-gray-50 rounded-lg p-4">
-                                    <h3 class="font-semibold text-gray-900 mb-3">Thông tin cá nhân</h3>
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                                        <div>
-                                            <span class="text-gray-600">Họ tên:</span>
-                                            <span class="font-medium ml-2" x-text="formData.ho_ten"></span>
-                                        </div>
-                                        <div>
-                                            <span class="text-gray-600">Số điện thoại:</span>
-                                            <span class="font-medium ml-2" x-text="formData.so_dien_thoai"></span>
-                                        </div>
-                                        <div x-show="formData.email" class="sm:col-span-2">
-                                            <span class="text-gray-600">Email:</span>
-                                            <span class="font-medium ml-2" x-text="formData.email"></span>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Booking Details Summary -->
-                                <div class="bg-blue-50 rounded-lg p-4">
-                                    <h3 class="font-semibold text-gray-900 mb-3">Chi tiết đặt phòng</h3>
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                                        <div>
-                                            <span class="text-gray-600">Ngày dự kiến vào:</span>
-                                            <span class="font-medium ml-2" x-text="new Date(formData.ngay_du_kien_vao).toLocaleDateString('vi-VN')"></span>
-                                        </div>
-                                        <div>
-                                            <span class="text-gray-600">Tiền cọc:</span>
-                                            <span class="font-medium ml-2 text-blue-600" x-text="formatCurrency(formData.tien_coc)"></span>
-                                        </div>
-                                        <div x-show="formData.ghi_chu" class="sm:col-span-2">
-                                            <span class="text-gray-600">Ghi chú:</span>
-                                            <div class="font-medium mt-1 text-gray-800" x-text="formData.ghi_chu"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Terms & Conditions -->
-                                <div class="border border-yellow-200 bg-yellow-50 rounded-lg p-4">
-                                    <h3 class="font-semibold text-yellow-800 mb-3">
-                                        <i class="fas fa-exclamation-triangle mr-2"></i>
-                                        Lưu ý quan trọng
-                                    </h3>
-                                    <ul class="text-sm text-yellow-700 space-y-1">
-                                        <li class="flex items-start">
-                                            <i class="fas fa-check mr-2 mt-0.5 flex-shrink-0"></i>
-                                            Đây chỉ là đơn đặt phòng trực tuyến, chưa phải hợp đồng chính thức
-                                        </li>
-                                        <li class="flex items-start">
-                                            <i class="fas fa-check mr-2 mt-0.5 flex-shrink-0"></i>
-                                            Chủ trọ sẽ liên hệ với bạn trong vòng 24h để xác nhận
-                                        </li>
-                                        <li class="flex items-start">
-                                            <i class="fas fa-check mr-2 mt-0.5 flex-shrink-0"></i>
-                                            Vui lòng xem phòng trực tiếp trước khi ký hợp đồng và đóng cọc
-                                        </li>
-                                        <li class="flex items-start">
-                                            <i class="fas fa-check mr-2 mt-0.5 flex-shrink-0"></i>
-                                            Không chuyển tiền trước khi gặp mặt và xem phòng thật
-                                        </li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
 
                         <!-- Navigation Buttons -->
                         <div class="flex justify-between mt-8 pt-6 border-t">
@@ -552,12 +665,12 @@ window.bookingForm = function() {
                                         :disabled="isSubmitting"
                                         class="btn-primary">
                                     <span x-show="!isSubmitting">
-                                        <i class="fas fa-paper-plane mr-2"></i>
-                                        Gửi đơn đặt phòng
+                                        <i class="fas fa-credit-card mr-2"></i>
+                                        Xác nhận đặt phòng & Thanh toán
                                     </span>
                                     <span x-show="isSubmitting">
                                         <i class="fas fa-spinner fa-spin mr-2"></i>
-                                        Đang gửi...
+                                        Đang xử lý...
                                     </span>
                                 </button>
                             </div>
@@ -633,26 +746,86 @@ window.bookingForm = function() {
                         </div>
                     </div>
 
-                    <!-- Contact Info -->
-                    <div class="card p-6">
-                        <h3 class="text-lg font-bold text-gray-900 mb-4">Liên hệ hỗ trợ</h3>
+                    <!-- Booking Progress (step 1) -->
+                    <div x-show="step === 1" class="card p-6 mb-6">
+                        <h3 class="text-lg font-bold text-gray-900 mb-4">
+                            <i class="fas fa-clipboard-check mr-2 text-blue-500"></i>
+                            Tiến trình đặt phòng
+                        </h3>
                         
                         <div class="space-y-3 text-sm">
                             <div class="flex items-center">
-                                <i class="fas fa-phone mr-3 text-green-500"></i>
-                                <div>
-                                    <div class="font-medium">Hotline hỗ trợ</div>
-                                    <div class="text-gray-600">{{ phong.tin_dang.SDT_LIEN_HE|default:"0123456789" }}</div>
+                                <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                                <span>Chọn phòng</span>
+                            </div>
+                            <div class="flex items-center">
+                                <i class="fas fa-circle text-blue-500 mr-2"></i>
+                                <span class="font-medium">Nhập thông tin đặt phòng</span>
+                            </div>
+                            <div class="flex items-center">
+                                <i class="fas fa-circle text-gray-300 mr-2"></i>
+                                <span class="text-gray-500">Thanh toán</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payment Summary (step 2) -->
+                    <div x-show="step === 2" class="card p-6 mb-6">
+                        <h3 class="text-lg font-bold text-gray-900 mb-4">
+                            <i class="fas fa-receipt mr-2 text-green-500"></i>
+                            Hóa đơn thanh toán
+                        </h3>
+                        
+                        <div class="space-y-4">
+                            <!-- Customer Info -->
+                            <div class="border-b border-gray-200 pb-4">
+                                <h4 class="font-semibold text-gray-900 mb-2">Thông tin khách thuê</h4>
+                                <div class="text-sm space-y-1">
+                                    <p><span class="text-gray-600">Họ tên:</span> {{ khach_thue.HO_TEN_KT }}</p>
+                                    <p><span class="text-gray-600">SĐT:</span> {{ khach_thue.SDT_KT }}</p>
+                                    <p x-show="formData.ngay_du_kien_vao"><span class="text-gray-600">Ngày vào:</span> <span x-text="formData.ngay_du_kien_vao ? new Date(formData.ngay_du_kien_vao).toLocaleDateString('vi-VN') : ''"></span></p>
                                 </div>
                             </div>
                             
-                            <div class="flex items-center">
-                                <i class="fas fa-clock mr-3 text-blue-500"></i>
-                                <div>
-                                    <div class="font-medium">Giờ làm việc</div>
-                                    <div class="text-gray-600">8:00 - 22:00 hàng ngày</div>
+                            <!-- Payment Details -->
+                            <div>
+                                <h4 class="font-semibold text-gray-900 mb-3">Chi phí</h4>
+                                <div class="space-y-2 text-sm">
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Tiền cọc phòng:</span>
+                                        <span class="font-medium">{{ phong.SO_TIEN_CAN_COC|currency_vn }}</span>
+                                    </div>
+                                    <div class="border-t border-gray-200 pt-2 mt-3">
+                                        <div class="flex justify-between items-center">
+                                            <span class="font-semibold text-gray-900">Tổng thanh toán:</span>
+                                            <span class="font-bold text-xl text-green-600">{{ phong.SO_TIEN_CAN_COC|currency_vn }}</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Contact Info -->
+                    <div class="card p-6 bg-blue-50 border-blue-200">
+                        <h3 class="text-lg font-bold text-blue-900 mb-4">
+                            <i class="fas fa-headset mr-2"></i>
+                            Hỗ trợ khách hàng
+                        </h3>
+                        
+                        <div class="space-y-3 text-sm text-blue-700">
+                            <p class="flex items-center">
+                                <i class="fas fa-phone mr-2"></i>
+                                <span>{{ phong.tin_dang.SDT_LIEN_HE|default:"0123456789" }}</span>
+                            </p>
+                            <p class="flex items-center">
+                                <i class="fas fa-envelope mr-2"></i>
+                                <span>{{ phong.tin_dang.EMAIL_LIEN_HE|default:"support@nhatro.com" }}</span>
+                            </p>
+                            <p class="flex items-center">
+                                <i class="fas fa-clock mr-2"></i>
+                                <span>24/7 - Luôn sẵn sàng hỗ trợ</span>
+                            </p>
                         </div>
                     </div>
                 </div>

@@ -1,0 +1,475 @@
+{% extends 'admin/admin_layout.html' %}
+{% load static %}
+
+{% block content_body %}
+<div class="bg-gradient-to-br from-red-50 to-pink-100 min-h-screen">
+    <div class="container mx-auto px-4 py-6">
+        <!-- Header -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="w-10 h-10 bg-gradient-to-r from-red-600 to-pink-600 rounded-lg flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-800 mb-2">
+                            <i class="fas fa-exchange-alt text-red-600 mr-3"></i>
+                            Rời đi / Chuyển phòng
+                        </h1>
+                        <p class="text-gray-600">Quản lý việc rời đi hoặc chuyển phòng cho khách thuê: <span class="font-semibold">{{ khachthue.HO_TEN_KT }}</span></p>
+                    </div>
+                </div>
+                <a href="{% url 'khachthue:khachthue_list' %}" 
+                   class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors flex items-center">
+                    <i class="fas fa-arrow-left mr-2"></i>Quay lại
+                </a>
+            </div>
+        </div>
+
+        <!-- Messages -->
+        {% if messages %}
+            <div class="px-6 py-4">
+                {% for message in messages %}
+                    <div class="p-4 mb-3 rounded-lg border-l-4 {% if message.tags == 'error' %}bg-red-50 border-red-400 text-red-800{% else %}bg-green-50 border-green-400 text-green-800{% endif %}">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                {% if message.tags == 'error' %}
+                                    <svg class="w-5 h-5 text-red-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {% else %}
+                                    <svg class="w-5 h-5 text-green-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {% endif %}
+                                <p class="text-sm font-medium">{{ message }}</p>
+                            </div>
+                            <button onclick="this.parentElement.remove()" class="text-gray-500 hover:text-gray-700">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Main Content -->
+        <div class="max-w-4xl mx-auto">
+            <!-- Current Contract Info -->
+            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6 shadow-sm mb-8">
+                <div class="flex items-start space-x-4">
+                    <div class="flex-shrink-0">
+                        {% if khachthue.ANH_KT %}
+                            <img src="{{ khachthue.ANH_KT.url }}" alt="Avatar khách thuê" 
+                                 class="w-16 h-16 rounded-lg object-cover border-2 border-white shadow-md">
+                        {% else %}
+                            <div class="w-16 h-16 bg-gradient-to-br from-blue-400 to-indigo-600 rounded-lg flex items-center justify-center shadow-md">
+                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                </svg>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-lg font-semibold text-blue-900 mb-2">Thông tin hợp đồng hiện tại</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="text-sm">
+                                <span class="text-blue-700 font-medium">Khách thuê:</span>
+                                <span class="text-blue-900">{{ khachthue.HO_TEN_KT }}</span>
+                            </div>
+                            <div class="text-sm">
+                                <span class="text-blue-700 font-medium">Phòng hiện tại:</span>
+                                <span class="text-blue-900">{{ lich_su_hop_dong.MA_HOP_DONG.MA_PHONG.TEN_PHONG|default:lich_su_hop_dong.MA_HOP_DONG.MA_PHONG.MA_PHONG }}</span>
+                            </div>
+                            <div class="text-sm">
+                                <span class="text-blue-700 font-medium">Mối quan hệ:</span>
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-{% if lich_su_hop_dong.MOI_QUAN_HE == 'Chủ hợp đồng' %}green{% else %}blue{% endif %}-100 text-{% if lich_su_hop_dong.MOI_QUAN_HE == 'Chủ hợp đồng' %}green{% else %}blue{% endif %}-800 ml-2">
+                                    {{ lich_su_hop_dong.MOI_QUAN_HE }}
+                                </span>
+                            </div>
+                            <div class="text-sm">
+                                <span class="text-blue-700 font-medium">Ngày tham gia:</span>
+                                <span class="text-blue-900">{{ lich_su_hop_dong.NGAY_THAM_GIA|date:'d/m/Y' }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Selection -->
+            <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mb-8">
+                <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <i class="fas fa-tasks text-red-500 mr-2"></i>
+                    Chọn hành động
+                </h4>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Rời đi hoàn toàn -->
+                    <div class="border-2 border-gray-200 rounded-xl p-6 hover:border-red-300 transition-colors cursor-pointer" id="action-leave" onclick="selectAction('leave')">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                                <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <h5 class="font-semibold text-gray-900">Rời đi hoàn toàn</h5>
+                                <p class="text-sm text-gray-600">Khách thuê rời khỏi nhà trọ</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chuyển phòng -->
+                    <div class="border-2 border-gray-200 rounded-xl p-6 hover:border-blue-300 transition-colors cursor-pointer" id="action-transfer" onclick="selectAction('transfer')">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <h5 class="font-semibold text-gray-900">Chuyển phòng khác</h5>
+                                <p class="text-sm text-gray-600">Chuyển sang phòng mới trong cùng nhà trọ</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Section -->
+            <div id="form-section" class="hidden">
+                <!-- Leave Form -->
+                <form method="POST" id="leaveForm" class="hidden" action="{% url 'khachthue:roi_di' khachthue.MA_KHACH_THUE lich_su_hop_dong.MA_LICH_SU_HD %}">
+                    {% csrf_token %}
+                    
+                    <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mb-8">
+                        <h4 class="text-lg font-semibold text-red-700 mb-4 flex items-center">
+                            <i class="fas fa-sign-out-alt text-red-500 mr-2"></i>
+                            Thông tin rời đi
+                        </h4>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="NGAY_ROI_DI" class="block text-sm font-medium text-gray-700 mb-1">
+                                    Ngày rời đi <span class="text-red-500">*</span>
+                                </label>
+                                <input name="NGAY_ROI_DI" type="date" required
+                                       class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-red-500 focus:border-red-500 transition duration-200 text-gray-900 hover:bg-white focus:outline-none shadow-sm"
+                                       min="{{ lich_su_hop_dong.NGAY_THAM_GIA|date:'Y-m-d' }}"
+                                       max="{% now 'Y-m-d' %}">
+                                <p class="mt-1 text-xs text-gray-500">Ngày rời đi không được trước ngày tham gia</p>
+                            </div>
+                            <div>
+                                <label for="LY_DO_ROI_DI" class="block text-sm font-medium text-gray-700 mb-1">
+                                    Lý do rời đi
+                                </label>
+                                <select name="LY_DO_ROI_DI"
+                                        class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-red-500 focus:border-red-500 transition duration-200 text-gray-900 hover:bg-white focus:outline-none shadow-sm">
+                                    <option value="">Chọn lý do</option>
+                                    <option value="Kết thúc học tập">Kết thúc học tập</option>
+                                    <option value="Chuyển công việc">Chuyển công việc</option>
+                                    <option value="Về quê">Về quê</option>
+                                    <option value="Tìm nơi khác">Tìm nơi ở khác</option>
+                                    <option value="Vấn đề cá nhân">Vấn đề cá nhân</option>
+                                    <option value="Khác">Khác</option>
+                                </select>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label for="GHI_CHU_ROI_DI" class="block text-sm font-medium text-gray-700 mb-1">
+                                    Ghi chú
+                                </label>
+                                <textarea name="GHI_CHU_ROI_DI" rows="3"
+                                          class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-red-500 focus:border-red-500 transition duration-200 text-gray-900 hover:bg-white focus:outline-none shadow-sm"
+                                          placeholder="Ghi chú thêm về việc rời đi..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Leave Footer -->
+                    <div class="bg-white border-t border-gray-200 px-6 py-4 rounded-xl shadow-sm">
+                        <div class="flex items-center justify-between">
+                            <div class="text-sm text-gray-600">
+                                Xác nhận khách thuê rời đi khỏi nhà trọ
+                            </div>
+                            <div class="flex gap-4">
+                                <button type="button" onclick="resetForm()" 
+                                        class="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors focus:outline-none shadow-sm">
+                                    Hủy
+                                </button>
+                                <button type="submit" id="btn_roi_di"
+                                        class="px-6 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed focus:outline-none shadow-sm">
+                                    <i class="fas fa-sign-out-alt mr-2"></i>
+                                    Xác nhận rời đi
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Transfer Form -->
+                <form method="POST" id="transferForm" class="hidden" action="{% url 'khachthue:chuyen_phong' khachthue.MA_KHACH_THUE lich_su_hop_dong.MA_LICH_SU_HD %}">
+                    {% csrf_token %}
+                    
+                    <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mb-8">
+                        <h4 class="text-lg font-semibold text-blue-700 mb-4 flex items-center">
+                            <i class="fas fa-exchange-alt text-blue-500 mr-2"></i>
+                            Thông tin chuyển phòng
+                        </h4>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="KHU_VUC_MOI" class="block text-sm font-medium text-gray-700 mb-1">
+                                    Khu vực mới <span class="text-red-500">*</span>
+                                </label>
+                                <select id="KHU_VUC_MOI" name="KHU_VUC_MOI" required
+                                        class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-gray-900 hover:bg-white focus:outline-none shadow-sm"
+                                        onchange="loadAvailableRooms(this.value)">
+                                    <option value="">Chọn khu vực</option>
+                                    {% for kv in khu_vucs %}
+                                        <option value="{{ kv.MA_KHU_VUC }}">{{ kv.TEN_KHU_VUC }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div>
+                                <label for="PHONG_MOI" class="block text-sm font-medium text-gray-700 mb-1">
+                                    Phòng mới <span class="text-red-500">*</span>
+                                </label>
+                                <select id="PHONG_MOI" name="PHONG_MOI" required disabled
+                                        class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-gray-900 hover:bg-white focus:outline-none shadow-sm">
+                                    <option value="">Chọn phòng</option>
+                                </select>
+                                <p class="mt-1 text-xs text-gray-500">Chỉ hiển thị phòng có hợp đồng đang hoạt động</p>
+                            </div>
+                            <div>
+                                <label for="NGAY_CHUYEN" class="block text-sm font-medium text-gray-700 mb-1">
+                                    Ngày chuyển <span class="text-red-500">*</span>
+                                </label>
+                                <input name="NGAY_CHUYEN" type="date" required
+                                       class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-gray-900 hover:bg-white focus:outline-none shadow-sm"
+                                       min="{% now 'Y-m-d' %}">
+                                <p class="mt-1 text-xs text-gray-500">Ngày chuyển không được trước ngày hiện tại</p>
+                            </div>
+                            <div>
+                                <label for="MOI_QUAN_HE_MOI" class="block text-sm font-medium text-gray-700 mb-1">
+                                    Mối quan hệ trong phòng mới
+                                </label>
+                                <select name="MOI_QUAN_HE_MOI"
+                                        class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-gray-900 hover:bg-white focus:outline-none shadow-sm">
+                                    <option value="Người ở cùng">Người ở cùng</option>
+                                    <option value="Người thân">Người thân</option>
+                                    <option value="Khác">Khác</option>
+                                </select>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label for="GHI_CHU_CHUYEN" class="block text-sm font-medium text-gray-700 mb-1">
+                                    Lý do chuyển phòng
+                                </label>
+                                <textarea name="GHI_CHU_CHUYEN" rows="3"
+                                          class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-gray-900 hover:bg-white focus:outline-none shadow-sm"
+                                          placeholder="Lý do chuyển phòng..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Transfer Footer -->
+                    <div class="bg-white border-t border-gray-200 px-6 py-4 rounded-xl shadow-sm">
+                        <div class="flex items-center justify-between">
+                            <div class="text-sm text-gray-600">
+                                Xác nhận chuyển khách thuê sang phòng mới
+                            </div>
+                            <div class="flex gap-4">
+                                <button type="button" onclick="resetForm()" 
+                                        class="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors focus:outline-none shadow-sm">
+                                    Hủy
+                                </button>
+                                <button type="submit" id="btn_chuyen_phong"
+                                        class="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed focus:outline-none shadow-sm">
+                                    <i class="fas fa-exchange-alt mr-2"></i>
+                                    Xác nhận chuyển phòng
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Warning Note -->
+            <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-6">
+                <div class="flex items-start space-x-3">
+                    <div class="flex-shrink-0">
+                        <svg class="w-5 h-5 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <h5 class="text-sm font-medium text-yellow-800 mb-1">Lưu ý quan trọng</h5>
+                        <ul class="text-sm text-yellow-700 list-disc list-inside space-y-1">
+                            <li><strong>Chỉ khách thuê không phải Chủ hợp đồng</strong> mới có thể sử dụng chức năng này</li>
+                            <li>Khi rời đi: Khách thuê sẽ được đánh dấu đã rời khỏi hợp đồng hiện tại</li>
+                            <li>Khi chuyển phòng: Khách thuê sẽ tham gia vào hợp đồng của phòng mới</li>
+                            <li>Hành động này không thể hoàn tác, vui lòng cân nhắc kỹ</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    let selectedAction = null;
+
+    // Action selection
+    window.selectAction = function(action) {
+        selectedAction = action;
+        
+        // Reset previous selection
+        $('.border-red-300, .border-blue-300').removeClass('border-red-300 border-blue-300').addClass('border-gray-200');
+        
+        // Highlight selected action
+        if (action === 'leave') {
+            $('#action-leave').removeClass('border-gray-200').addClass('border-red-300');
+            $('#leaveForm').removeClass('hidden');
+            $('#transferForm').addClass('hidden');
+        } else if (action === 'transfer') {
+            $('#action-transfer').removeClass('border-gray-200').addClass('border-blue-300');
+            $('#transferForm').removeClass('hidden');
+            $('#leaveForm').addClass('hidden');
+        }
+        
+        $('#form-section').removeClass('hidden');
+    };
+
+    // Reset form
+    window.resetForm = function() {
+        selectedAction = null;
+        $('.border-red-300, .border-blue-300').removeClass('border-red-300 border-blue-300').addClass('border-gray-200');
+        $('#form-section').addClass('hidden');
+        $('#leaveForm, #transferForm').addClass('hidden');
+    };
+
+    // Load available rooms for transfer
+    window.loadAvailableRooms = function(khuVucId) {
+        const phongSelect = $('#PHONG_MOI');
+        
+        if (!khuVucId) {
+            phongSelect.html('<option value="">Chọn phòng</option>').prop('disabled', true);
+            return;
+        }
+
+        // Show loading
+        phongSelect.html('<option value="">Đang tải...</option>').prop('disabled', true);
+
+        $.ajax({
+            url: '{% url "dichvu:lay_phong_theo_khu_vuc" %}',
+            data: { 'khu_vuc_id': khuVucId },
+            success: function(data) {
+                phongSelect.empty().append('<option value="">Chọn phòng</option>');
+                
+                if (data.phong_tros && data.phong_tros.length > 0) {
+                    // Lọc bỏ phòng hiện tại
+                    const currentRoomId = {{ lich_su_hop_dong.MA_HOP_DONG.MA_PHONG.MA_PHONG }};
+                    const availableRooms = data.phong_tros.filter(phong => phong.MA_PHONG != currentRoomId);
+                    
+                    if (availableRooms.length > 0) {
+                        $.each(availableRooms, function(index, phong) {
+                            phongSelect.append(`<option value="${phong.MA_PHONG}">${phong.TEN_PHONG || 'Phòng ' + phong.MA_PHONG}</option>`);
+                        });
+                        phongSelect.prop('disabled', false);
+                    } else {
+                        phongSelect.append('<option value="">Không có phòng khả dụng</option>');
+                    }
+                } else {
+                    phongSelect.append('<option value="">Không có phòng nào</option>');
+                }
+            },
+            error: function() {
+                phongSelect.html('<option value="">Lỗi tải dữ liệu</option>');
+                showNotification('Có lỗi khi tải danh sách phòng trọ', 'error');
+            }
+        });
+    };
+
+    // Form validation and submission
+    $('#leaveForm').submit(function(e) {
+        const ngayRoiDi = $('input[name="NGAY_ROI_DI"]').val();
+        
+        if (!ngayRoiDi) {
+            e.preventDefault();
+            showNotification('Vui lòng chọn ngày rời đi.', 'error');
+            return;
+        }
+
+        // Show loading state
+        $('#btn_roi_di').prop('disabled', true).html(`
+            <svg class="animate-spin w-4 h-4 mr-2 inline" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Đang xử lý...
+        `);
+    });
+
+    $('#transferForm').submit(function(e) {
+        const khuVuc = $('#KHU_VUC_MOI').val();
+        const phongMoi = $('#PHONG_MOI').val();
+        const ngayChuyen = $('input[name="NGAY_CHUYEN"]').val();
+        
+        if (!khuVuc || !phongMoi || !ngayChuyen) {
+            e.preventDefault();
+            showNotification('Vui lòng điền đầy đủ thông tin chuyển phòng.', 'error');
+            return;
+        }
+
+        // Show loading state
+        $('#btn_chuyen_phong').prop('disabled', true).html(`
+            <svg class="animate-spin w-4 h-4 mr-2 inline" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Đang xử lý...
+        `);
+    });
+
+    function showNotification(message, type = 'success') {
+        const alertClass = type === 'error' ? 'bg-red-50 border-red-400 text-red-800' : 'bg-green-50 border-green-400 text-green-800';
+        const iconClass = type === 'error' ? 'text-red-400' : 'text-green-400';
+        const iconPath = type === 'error' ? 
+            'M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z' :
+            'M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z';
+        
+        const notification = $(`
+            <div class="p-4 mb-3 rounded-lg border-l-4 ${alertClass}">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 ${iconClass} mr-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="${iconPath}" clip-rule="evenodd"></path>
+                        </svg>
+                        <p class="text-sm font-medium">${message}</p>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="text-gray-500 hover:text-gray-700">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        `);
+        
+        $('.border-l-4').remove();
+        $('.container').first().prepend(`<div class="px-6 py-4">${notification.prop('outerHTML')}</div>`);
+        
+        setTimeout(() => {
+            $('.border-l-4').parent().fadeOut();
+        }, 5000);
+    }
+});
+</script>
+{% endblock %}

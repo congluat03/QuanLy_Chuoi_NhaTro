@@ -63,7 +63,11 @@
           
           <div>
             <label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Ngày tạo</label>
+            {% if tai_khoan.NGAY_TAO %}
             <p class="text-gray-600 text-sm">{{ tai_khoan.NGAY_TAO|date:"d/m/Y H:i" }}</p>
+            {% else %}
+            <p class="text-gray-500 text-sm">Chưa có thông tin</p>
+            {% endif %}
           </div>
         </div>
       </div>

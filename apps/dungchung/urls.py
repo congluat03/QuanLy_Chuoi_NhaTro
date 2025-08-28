@@ -23,6 +23,7 @@ urlpatterns = [
     path('hop-dong/', views.user_hop_dong_view, name='user_hop_dong'),
     path('hoa-don/', views.user_hoa_don_list_view, name='user_hoa_don_list'),
     path('hoa-don/<int:ma_hoa_don>/', views.user_hoa_don_detail_view, name='user_hoa_don_detail'),
+    path('thanh-toan-hoa-don/<int:ma_hoa_don>/', views.thanh_toan_hoa_don_view, name='thanh_toan_hoa_don'),
     
     # Chatbot API
     path('api/chatbot/', views.chatbot_api, name='chatbot_api'),
