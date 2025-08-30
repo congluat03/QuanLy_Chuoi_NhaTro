@@ -31,33 +31,37 @@ function loadPhongTro(maKhuVuc, page = 1) {
         .catch((error) => console.error("Error:", error));
 }
 
-function toggleMenuPhongTro(phongTroId) {
+function toggleMenuPhongTro(buttonEl) {
+    const phongTroId = buttonEl.dataset.phongId;
     const menu = document.getElementById(`menuPhongTro-${phongTroId}`);
     const allMenus = document.querySelectorAll("[id^='menuPhongTro-']");
-    const button = document.querySelector(`button[onclick='toggleMenuPhongTro(${phongTroId})']`);
-    const card = button.closest("div.relative");
+    const card = buttonEl.closest("td.relative"); // vì td bạn đã set class="relative"
 
-    // Toggle menu visibility
-    if (menu.classList.contains("hidden")) {
-        // Hide all other menus
-        allMenus.forEach((m) => {
-            m.classList.add("hidden");
-            m.classList.remove("animate-fadeIn");
-        });
+    if (!menu) {
+        console.warn("Không tìm thấy menuPhongTro với id:", phongTroId);
+        return;
+    }
 
-        // Show current menu
-        menu.classList.remove("hidden");
+    // Hide all other menus
+    allMenus.forEach((m) => {
+        m.classList.add("hidden");
+        m.classList.remove("animate-fadeIn");
+    });
+
+    // Toggle menu
+    menu.classList.toggle("hidden");
+    if (!menu.classList.contains("hidden")) {
         menu.classList.add("animate-fadeIn");
 
-        // Prevent overflow by adjusting menu position
+        // Vị trí tránh tràn
         const menuRect = menu.getBoundingClientRect();
-        const cardRect = card.getBoundingClientRect();
+        const cardRect = card?.getBoundingClientRect();
         const viewportWidth = window.innerWidth;
 
         if (menuRect.right > viewportWidth - 10) {
             menu.classList.remove("right-0");
             menu.classList.add("left-0");
-            menu.style.transform = `translateX(-${menuRect.width - button.offsetWidth}px)`;
+            menu.style.transform = `translateX(-${menuRect.width - buttonEl.offsetWidth}px)`;
         } else {
             menu.classList.add("right-0");
             menu.classList.remove("left-0");
@@ -65,24 +69,21 @@ function toggleMenuPhongTro(phongTroId) {
         }
 
         if (menuRect.bottom > window.innerHeight - 10) {
-            menu.classList.remove("top-12");
+            menu.classList.remove("top-10");
             menu.classList.add("bottom-12");
         } else {
-            menu.classList.add("top-12");
+            menu.classList.add("top-10");
             menu.classList.remove("bottom-12");
         }
 
-        // 👇 Add event to auto close when mouse leaves the menu
+        // Tự ẩn khi mouseleave
         menu.onmouseleave = function () {
             menu.classList.add("hidden");
             menu.classList.remove("animate-fadeIn");
         };
-    } else {
-        // Hide current menu
-        menu.classList.add("hidden");
-        menu.classList.remove("animate-fadeIn");
     }
 }
+
 function togglePhongTroModal(show) {
     const modal = document.getElementById("phongTroModal");
     if (show) {
@@ -115,7 +116,7 @@ function showModalPhongTro(type, maPhongTro = null, khuVucId = null, tenPhong = 
         console.error("Invalid modal type:", type);
         return;
     }
-    // alert(url);
+    
     modalLabel.innerText = getModalTitle(type, maPhongTro, tenPhong);
     hidePhongTroMenu(khuVucId, maPhongTro);
     
@@ -124,6 +125,7 @@ function showModalPhongTro(type, maPhongTro = null, khuVucId = null, tenPhong = 
     openModal("phongTroModal", type);
     
     loadModalContent(url, modalContentId, type);
+    // alert(url);
 }
 // Hàm lấy URL tương ứng theo loại modal
 function getModalUrl(type, khuVucId, maPhongTro) {

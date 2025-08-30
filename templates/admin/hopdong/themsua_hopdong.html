@@ -1,345 +1,1517 @@
-
+{% extends 'admin/admin_layout.html' %}
 {% load static %}
-<form action="{% if hop_dong %}{% url 'hopdong:chinh_sua_hop_dong' hop_dong.MA_HOP_DONG %}{% else %}{% url 'hopdong:them_hop_dong' %}{% endif %}" 
-    method="POST" enctype="multipart/form-data" class="space-y-6" id="hopDongForm">
-    {% csrf_token %}
-    {% if hop_dong %}
-        <input type="hidden" name="_method" value="PUT">
-    {% endif %}
-    {% if messages %}
-  <div class="p-4">
-    {% for message in messages %}
-      <div 
-        class="mb-4 p-3 rounded 
-               {% if message.tags == 'error' %}bg-red-100 text-red-700 border border-red-400
-               {% elif message.tags == 'success' %}bg-green-100 text-green-700 border border-green-400
-               {% elif message.tags == 'warning' %}bg-yellow-100 text-yellow-700 border border-yellow-400
-               {% else %}bg-blue-100 text-blue-700 border border-blue-400{% endif %}">
-        {{ message }}
-      </div>
-    {% endfor %}
-  </div>
-{% endif %}
-    <div class="flex flex-col lg:flex-row gap-8">
-        <!-- Left Section: Contract Information -->
-        <div class="w-full lg:w-2/3">
-            <div class="">
-                <h3 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-                    <i class="fas fa-home mr-2 text-blue-600"></i>Thông tin hợp đồng
-                </h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="space-y-4">
-                    <!-- Trường hợp tạo mới hợp đồng -->
-                        {% if not hop_dong %}
-                            <div>
-                                <label for="MA_PHONG" class="block text-sm font-medium text-gray-700 mb-1">
-                                    Chọn phòng
-                                </label>
-                                <select name="MA_PHONG" id="MA_PHONG" required
-                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition">
-                                    <option value="" disabled selected>-- Chọn phòng --</option>
-                                    {% for phong in phong_tros %}
-                                        <option value="{{ phong.MA_PHONG }}">{{ phong.TEN_PHONG }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                        {% else %}                                
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">
-                                    Phòng trọ
-                                </label>
-                                <p class="px-4 py-2 border border-gray-200 bg-gray-100 rounded-lg text-sm text-gray-800">
-                                    {{ hop_dong.MA_PHONG.TEN_PHONG }}
-                                </p>
-                                <input type="hidden" name="MA_PHONG" value="{{ hop_dong.MA_PHONG.MA_PHONG }}">
-                            </div>
-                        {% endif %}
 
-                        <div>
-                            <label for="NGAY_LAP_HD" class="block mb-1 text-sm font-medium text-gray-700">Ngày lập hợp đồng</label>
-                            <input name="NGAY_LAP_HD" id="NGAY_LAP_HD" type="date" required
-                                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all duration-200"
-                                value="{{ hop_dong.NGAY_LAP_HD|date:'Y-m-d'|default_if_none:'' }}">
-                        </div>
-                        <div>
-                            <label for="NGAY_NHAN_PHONG" class="block mb-1 text-sm font-medium text-gray-700">Ngày nhận phòng</label>
-                            <input name="NGAY_NHAN_PHONG" id="NGAY_NHAN_PHONG" type="date" required
-                                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all duration-200"
-                                value="{{ hop_dong.NGAY_NHAN_PHONG|date:'Y-m-d'|default_if_none:'' }}">
-                        </div>
-                        <div>
-                            <label for="GIA_THUE" class="block mb-1 text-sm font-medium text-gray-700">Giá thuê (VNĐ)</label>
-                            <input name="GIA_THUE" id="GIA_THUE" type="number" placeholder="Nhập giá thuê" required
-                                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all duration-200"
-                                value="{{ hop_dong.GIA_THUE|floatformat:2|default_if_none:'' }}">
-                        </div>
-                        <div>
-                            <label for="SO_THANH_VIEN_TOI_DA" class="block mb-1 text-sm font-medium text-gray-700">Số thành viên tối đa</label>
-                            <input name="SO_THANH_VIEN_TOI_DA" type="number" placeholder="Nhập số thành viên tối đa" required
-                                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all duration-200"
-                                value="{{ hop_dong.SO_THANH_VIEN|default_if_none:'' }}">
-                        </div>
+{% block content_body %}
+<div class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <div class="container mx-auto px-4 py-6">
+        <!-- Header -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="w-10 h-10 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                        </svg>
                     </div>
-                    <div class="space-y-4">
-                        <div>
-                            <label for="thoi-han-hd" class="block mb-1 text-sm font-medium text-gray-700">Thời hạn hợp đồng</label>
-                            <div class="relative">
-                                <input id="thoi-han-hd" type="text" autocomplete="off" required
-                                    placeholder="Nhập thời hạn (ví dụ: 6 tháng, 1 năm)"
-                                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all duration-200"
-                                    value="{% if hop_dong.THOI_HAN_HD %}{{ hop_dong.THOI_HAN_HD }} tháng{% endif %}"
-                                    oninput="filterDurations(this.value)" onclick="toggleDurationDropdown()">
-                                <input type="hidden" id="thoi-han-hd-value" name="THOI_HAN_HD" value="{{ hop_dong.THOI_HAN_HD|default_if_none:'' }}">
-                                <div id="duration-dropdown" class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto hidden">
-                                    <ul id="duration-list" class="divide-y divide-gray-200"></ul>
-                                </div>
-                            </div>
-                        </div>
-                        <div>
-                            <label for="NGAY_TRA_PHONG" class="block mb-1 text-sm font-medium text-gray-700">Ngày trả phòng</label>
-                            <input name="NGAY_TRA_PHONG" id="NGAY_TRA_PHONG" type="date" required
-                                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all duration-200"
-                                value="{{ hop_dong.NGAY_TRA_PHONG|date:'Y-m-d'|default_if_none:'' }}">
-                        </div>
-                        <div>
-                            <label for="ngay-thu-tien" class="block mb-1 text-sm font-medium text-gray-700">Ngày thu tiền hàng tháng</label>
-                            <div class="relative">
-                                <input id="ngay-thu-tien" type="text" autocomplete="off" required
-                                    placeholder="Nhập ngày (1-31)"
-                                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all duration-200"
-                                    value="{{ hop_dong.NGAY_THU_TIEN|default_if_none:'' }}"
-                                    oninput="filterDays(this.value)" onclick="toggleDayDropdown()">
-                                <input type="hidden" id="ngay-thu-tien-value" name="NGAY_THU_TIEN" value="{{ hop_dong.NGAY_THU_TIEN|default_if_none:'' }}">
-                                <div id="day-dropdown" class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto hidden">
-                                    <ul id="day-list" class="divide-y divide-gray-200"></ul>
-                                </div>
-                            </div>
-                        </div>
-                        <div>
-                            <label for="THOI_DIEM_THANH_TOAN" class="block mb-1 text-sm font-medium text-gray-700">Thời điểm thanh toán</label>
-                            <select name="THOI_DIEM_THANH_TOAN" id="THOI_DIEM_THANH_TOAN" required
-                                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all duration-200">
-                                <option value="" disabled {% if not hop_dong %}selected{% endif %}>-- Chọn thời điểm --</option>
-                                <option value="Đầu kỳ" {% if hop_dong.THOI_DIEM_THANH_TOAN == "Đầu kỳ" %}selected{% endif %}>Đầu kỳ thanh toán</option>
-                                <option value="Cuối kỳ" {% if hop_dong.THOI_DIEM_THANH_TOAN == "Cuối kỳ" %}selected{% endif %}>Cuối kỳ thanh toán</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label for="ky-thanh-toan" class="block mb-1 text-sm font-medium text-gray-700">Kỳ thanh toán</label>
-                            <div class="relative">
-                                <input id="ky-thanh-toan" type="text" autocomplete="off" required
-                                    placeholder="Nhập kỳ (ví dụ: 3 tháng, 1 năm)"
-                                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all duration-200"
-                                    value="{{ hop_dong.CHU_KY_THANH_TOAN|default_if_none:'' }}"
-                                    oninput="filterPaymentTerms(this.value)" onclick="togglePaymentTermDropdown()">
-                                <input type="hidden" id="ky-thanh-toan-value" name="KY_THANH_TOAN" value="{{ hop_dong.CHU_KY_THANH_TOAN|default_if_none:'' }}">
-                                <div id="payment-term-dropdown" class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto hidden">
-                                    <ul id="payment-term-list" class="divide-y divide-gray-200"></ul>
-                                </div>
-                            </div>
-                        </div>
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-800 mb-2">
+                            <i class="fas fa-file-contract text-blue-600 mr-3"></i>
+                            {% if hop_dong %}Chỉnh sửa hợp đồng{% else %}Lập hợp đồng mới{% endif %}
+                        </h1>
+                        <p class="text-gray-600">Hoàn thành các bước để tạo hợp đồng thuê phòng</p>
                     </div>
                 </div>
+                <a href="{% url 'phongtro:phongtro_list' %}" 
+                   class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors">
+                    <i class="fas fa-arrow-left mr-2"></i>Quay lại
+                </a>
             </div>
         </div>
 
-        <!-- Right Section: Tenant Information -->
-        <div class="w-full lg:w-1/3">
-            <div class="border-gray-200 pt-6">
-                <h3 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-                    <i class="fas fa-user mr-2 text-blue-600"></i>Thông tin khách thuê
-                </h3>
-                <input type="hidden" name="MA_KHACH_THUE" id="MA_KHACH_THUE" value="{{ coc_phong.MA_KHACH_THUE.MA_KHACH_THUE|default_if_none:'' }}">
-                <div class="space-y-4">
-                    <div>
-                        <label for="HO_TEN_KT" class="block mb-1 text-sm font-medium text-gray-700">Họ và tên</label>
-                        <input name="HO_TEN_KT" id="HO_TEN_KT" type="text" placeholder="Nhập họ và tên"
-                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all duration-200"
-                            value="{{ coc_phong.MA_KHACH_THUE.HO_TEN_KT|default_if_none:'' }}" required>
-                    </div>
-                    <div>
-                        <label for="GIOI_TINH_KT" class="block mb-1 text-sm font-medium text-gray-700">Giới tính</label>
-                        <select name="GIOI_TINH_KT" id="GIOI_TINH_KT"
-                                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all duration-200"
-                                required>
-                            <option value="Nam" {% if coc_phong.MA_KHACH_THUE.GIOI_TINH_KT == "Nam" %}selected{% endif %}>Nam</option>
-                            <option value="Nữ" {% if coc_phong.MA_KHACH_THUE.GIOI_TINH_KT == "Nữ" %}selected{% endif %}>Nữ</option>
-                            <option value="Khác" {% if coc_phong.MA_KHACH_THUE.GIOI_TINH_KT == "Khác" %}selected{% endif %}>Khác</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="NGAY_SINH_KT" class="block mb-1 text-sm font-medium text-gray-700">Ngày sinh</label>
-                        <input name="NGAY_SINH_KT" id="NGAY_SINH_KT" type="date"
-                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all duration-200"
-                            value="{{ coc_phong.MA_KHACH_THUE.NGAY_SINH_KT|date:'Y-m-d'|default_if_none:'' }}" required>
-                    </div>                          
-                    <div>
-                        <label for="SDT_KT" class="block mb-1 text-sm font-medium text-gray-700">Số điện thoại</label>
-                        <input name="SDT_KT" id="SDT_KT" type="text" placeholder="Nhập số điện thoại"
-                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all duration-200"
-                            value="{{ coc_phong.MA_KHACH_THUE.SDT_KT|default_if_none:'' }}" required>
-                    </div>
-            
-                    <div>
-                        <label for="SO_CMND_CCCD" class="block mb-1 text-sm font-medium text-gray-700">Số CCCD/CMND</label>
-                        <input name="SO_CMND_CCCD" id="SO_CMND_CCCD" type="text" placeholder="Nhập số CCCD/CMND"
-                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all duration-200"
-                            value="{{ coc_phong.MA_KHACH_THUE.cccd_cmnd.SO_CMND_CCCD|default_if_none:'' }}" required>
-                    </div>                      
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Additional Information -->
-    <div class="border-t-2 border-gray-200 pt-8">
-        <h5 class="text-2xl font-bold text-gray-900 mb-6 flex items-center">
-            <i class="fas fa-info-circle mr-3 text-blue-700"></i>Thông tin bổ sung
-        </h5>
-        <div class="space-y-6">
-            <div>
-                <label for="TIEN_COC_PHONG" class="block mb-2 text-sm font-semibold text-gray-700">Tiền cọc (VNĐ)</label>
-                <input name="GIA_COC_HD" id="TIEN_COC_PHONG" type="number" placeholder="Nhập tiền cọc" required
-                    class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 shadow-sm transition-all duration-200"
-                    value="{{ hop_dong.GIA_COC_HD|floatformat:2|default_if_none:'' }}">
-                <input type="hidden" id="MA_COC_PHONG" name="MA_COC_PHONG" value="{{ coc_phong.MA_COC_PHONG|default_if_none:'' }}">
-            </div>
-            <div>
-                <label for="GHI_CHU_HD" class="block mb-2 text-sm font-semibold text-gray-700">Ghi chú hợp đồng</label>
-                <textarea name="GHI_CHU_HD" id="GHI_CHU_HD" placeholder="Nhập ghi chú"
-                        class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 shadow-sm transition-all duration-200"
-                        rows="6">{{ hop_dong.GHI_CHU_HD|default_if_none:'' }}</textarea>
-            </div>
-        </div>
-    </div>
-    <div class="mt-8 border-t border-gray-200 pt-6">
-        <h3 class="text-xl font-semibold text-gray-800 flex items-center mb-6">
-            <i class="fas fa-tools mr-2 text-blue-600"></i>Quản lý dịch vụ và tài sản
-        </h3>
-
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            
-            <!-- DỊCH VỤ -->
-            <div>
-                <h4 class="text-lg font-medium text-gray-700 flex items-center mb-4">
-                    <i class="fas fa-concierge-bell mr-2 text-blue-500"></i>Dịch vụ đang sử dụng
-                </h4>
-
-                <div class="space-y-4">
-                    {% for item in lichsu_dichvu_with_chiso %}
-                    {% with lichsu=item.lichsu dich_vu=item.lichsu.MA_DICH_VU latest_chiso=item.latest_chiso %}
-                    {% with forloop.counter as index %}
-                    <div class="bg-white border border-gray-300 rounded-2xl p-4 shadow-sm hover:shadow-md transition">
-                        <div class="flex flex-col sm:flex-row justify-between gap-4">
-                        
-                        <!-- Tên & checkbox -->
-                        <div class="flex gap-3">
-                            <input type="checkbox" name="dichvu[{{ index }}][MA_DICH_VU]" value="{{ dich_vu.MA_DICH_VU }}"
-                            checked
-                            class="mt-1 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 transition">
-
-                            <div>
-                            <p class="text-base font-semibold text-gray-800">{{ dich_vu.TEN_DICH_VU }}</p>
-                            <p class="text-sm text-gray-600 mt-1">
-                                Giá: <span class="text-blue-600 font-medium">{{ lichsu.GIA_DICH_VU_AD|floatformat:2 }} VNĐ</span> / {{ dich_vu.DON_VI_TINH }}
-                            </p>
+        <!-- Messages -->
+        {% if messages %}
+            <div class="px-6 py-4">
+                {% for message in messages %}
+                    <div class="p-4 mb-3 rounded-lg border-l-4 {% if message.tags == 'error' %}bg-red-50 border-red-400 text-red-800{% else %}bg-green-50 border-green-400 text-green-800{% endif %}">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                {% if message.tags == 'error' %}
+                                    <svg class="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {% else %}
+                                    <svg class="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {% endif %}
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm font-medium">{{ message }}</p>
                             </div>
                         </div>
-
-                        <!-- Input theo loại -->
-                        <div class="w-full sm:w-48 relative">
-                            {% if dich_vu.LOAI_DICH_VU == 'Tính theo chỉ số' %}
-                            <input type="text" name="dichvu[{{ index }}][CHI_SO_MOI]" placeholder="Nhập chỉ số mới"
-                                value="{{ latest_chiso.CHI_SO_MOI|default_if_none:'0' }}"
-                                class="w-full px-3 py-2 border rounded-lg text-sm shadow-sm focus:ring-2 focus:ring-blue-500">
-                            <span class="absolute top-1/2 right-2 -translate-y-1/2 text-xs text-gray-500">Chỉ số</span>
-                            {% else %}
-                            <input type="text" name="dichvu[{{ index }}][SO_LUONG]" placeholder="Nhập số lượng"
-                                value="{{ latest_chiso.SO_LUONG|default_if_none:'1' }}"
-                                class="w-full px-3 py-2 border rounded-lg text-sm shadow-sm focus:ring-2 focus:ring-blue-500">
-                            <span class="absolute top-1/2 right-2 -translate-y-1/2 text-xs text-gray-500">Số lượng</span>
-                            {% endif %}
-                        </div>
-                        </div>
                     </div>
-                    {% endwith %}
-                    {% endwith %}
-                    {% empty %}
-                    <div class="p-4 bg-gray-50 text-center text-sm text-gray-500 italic rounded-xl">
-                    Không có dịch vụ nào được áp dụng cho phòng này.
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-
-            <!-- TÀI SẢN -->
-            <div>
-            <h4 class="text-lg font-medium text-gray-700 flex items-center mb-4">
-                <i class="fas fa-cube mr-2 text-blue-500"></i>Tài sản trong phòng
-            </h4>
-
-            <div class="space-y-4">
-                {% for item in taisanphong_list %}
-                {% with taisanphong=item %}
-                {% with forloop.counter as index %}
-                <div class="bg-white border border-gray-300 rounded-2xl p-4 shadow-sm hover:shadow-md transition">
-                    <div class="flex flex-col sm:flex-row justify-between gap-4">
-                    
-                    <!-- Tên & checkbox -->
-                    <div class="flex gap-3">
-                        <input type="checkbox" name="taisan[{{ index }}][MA_TAI_SAN]" value="{{ taisanphong.MA_TAI_SAN.MA_TAI_SAN }}"
-                        checked
-                        class="mt-1 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 transition">
-                        <div>
-                        <p class="text-base font-semibold text-gray-800">{{ taisanphong.MA_TAI_SAN.TEN_TAI_SAN }}</p>
-                        <p class="text-sm text-gray-600 mt-1">
-                            Giá: <span class="text-blue-600 font-medium">{{ taisanphong.MA_TAI_SAN.GIA_TS|floatformat:2 }} VNĐ</span> / {{ taisanphong.MA_TAI_SAN.DON_VI_TS }}
-                        </p>
-                        {% if taisanphong.TINH_TRANG %}
-                        <p class="text-sm text-gray-600 mt-1">
-                            Tình trạng: <span class="text-blue-600 font-medium">{{ taisanphong.TINH_TRANG }}</span>
-                        </p>
-                        {% endif %}
-                        </div>
-                    </div>
-                    <!-- Số lượng -->
-                    <div class="w-full sm:w-48 relative">
-                        <input type="text" name="taisan[{{ index }}][so_luong]" placeholder="Nhập số lượng"
-                        value="{{ taisanphong.SO_LUONG|default_if_none:'1' }}"
-                        class="w-full px-3 py-2 border rounded-lg text-sm shadow-sm focus:ring-2 focus:ring-blue-500">
-                        <span class="absolute top-1/2 right-2 -translate-y-1/2 text-xs text-gray-500">Số lượng</span>
-                    </div>
-                    </div>
-                </div>
-                {% endwith %}
-                {% endwith %}
-                {% empty %}
-                <div class="p-4 bg-gray-50 text-center text-sm text-gray-500 italic rounded-xl">
-                Không có tài sản nào được ghi nhận cho phòng này.
-                </div>
                 {% endfor %}
             </div>
-            
+        {% endif %}
+
+        <!-- Main Layout -->
+        <div class="max-w-screen-xl mx-auto flex h-screen">
+            <!-- Left Sidebar - 30% (Room Selection) -->
+            <div class="w-[30%] bg-white border-r border-gray-200 flex flex-col rounded-l-xl shadow-lg">
+                <!-- Filter Section -->
+                <div class="p-6 border-b border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                        <svg class="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.414A1 1 0 013 6.707V4z"></path>
+                        </svg>
+                        Bộ lọc phòng trọ
+                    </h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="khu_vuc" class="block text-sm font-medium text-gray-700 mb-2">
+                                Khu vực <span class="text-red-500">*</span>
+                            </label>
+                            <select id="khu_vuc" name="khu_vuc" required
+                                    class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-sm">
+                                <option value="">Chọn khu vực</option>
+                                {% for kv in khu_vucs %}
+                                    <option value="{{ kv.MA_KHU_VUC }}">{{ kv.TEN_KHU_VUC }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Room List -->
+                <div class="flex-1 overflow-hidden">
+                    <div class="p-4 border-b border-gray-100">
+                        <h4 class="text-sm font-medium text-gray-700 uppercase tracking-wide">Phòng trọ khả dụng</h4>
+                        <p class="text-xs text-gray-500 mt-1">Danh sách phòng chưa có hợp đồng hoạt động</p>
+                    </div>
+                    <div id="room_list_container" class="flex-1 overflow-y-auto">
+                        <div id="room_list" class="p-4">
+                            <div class="text-center py-12 text-gray-500">
+                                <svg class="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                </svg>
+                                <p class="text-sm">Vui lòng chọn khu vực để xem danh sách phòng</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
+            <!-- Right Content - 70% (Contract Form) -->
+            <div class="w-[70%] bg-gray-50 flex flex-col overflow-auto rounded-r-xl shadow-lg">
+                <!-- Content Header -->
+                <div class="bg-white border-b border-gray-200 px-6 py-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900">
+                                {% if hop_dong %}Chỉnh sửa hợp đồng{% else %}Lập hợp đồng mới{% endif %}
+                            </h3>
+                            <p class="text-sm text-gray-600" id="selected_room_info">Chưa chọn phòng</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Content -->
+                <div class="flex-1 overflow-y-auto">
+                    <form action="{% if hop_dong %}{% url 'hopdong:chinh_sua_hop_dong' hop_dong.MA_HOP_DONG %}{% else %}#{% endif %}" 
+                          method="POST" enctype="multipart/form-data" id="contractForm" class="h-full">
+                        {% csrf_token %}
+                        {% if hop_dong %}
+                            <input type="hidden" name="_method" value="PUT">
+                        {% endif %}
+                        <input type="hidden" id="ma_phong" name="MA_PHONG" value="{% if hop_dong %}{{ hop_dong.MA_PHONG.MA_PHONG }}{% endif %}">
+
+                        <!-- Form Container - Ẩn khi chưa chọn phòng -->
+                        <div id="form-container" class="{% if not hop_dong %}hidden{% endif %}">
+
+                        <!-- Progress Steps -->
+                        <div class="mb-6 px-6">
+                            <div class="flex items-center justify-center gap-6">
+                                {% for step in "123" %}
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 rounded-full border-2 bg-white flex items-center justify-center text-gray-500 font-medium transition-all duration-300
+                                        {% if forloop.first %}border-blue-600 bg-blue-600 text-white{% else %}border-gray-300{% endif %}"
+                                        id="step-{{ step }}-circle">
+                                        <span class="step-number">{{ step }}</span>
+                                        <i class="fas fa-check step-check hidden"></i>
+                                    </div>
+                                    <div class="ml-2 text-center">
+                                        <p class="text-xs font-medium 
+                                            {% if forloop.first %}text-blue-600{% else %}text-gray-500{% endif %}" 
+                                            id="step-{{ step }}-text">
+                                            {% if step == '1' %}Thông tin cơ bản
+                                            {% elif step == '2' %}Dịch vụ
+                                            {% elif step == '3' %}Xác nhận
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                    {% if not forloop.last %}
+                                    <div class="flex-1 h-1 bg-gray-200 mx-4">
+                                        <div class="h-full bg-blue-600 transition-all duration-300" id="progress-{{ step }}" style="width: 0%"></div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Step 1: Basic Information -->
+                        <div class="step-content hidden data-[active=true]:block animate-slide-in px-6" id="step-1">
+                            <div class="bg-white rounded-xl shadow-md border border-gray-200 p-6 md:p-8 max-w-4xl mx-auto">
+                                <div class="flex items-center mb-6">
+                                    <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
+                                        <i class="fas fa-file-contract text-blue-600 text-xl"></i>
+                                    </div>
+                                    <div>
+                                        <h2 class="text-xl font-semibold text-gray-900">Thông tin cơ bản</h2>
+                                        <p class="text-sm text-gray-500">Thông tin hợp đồng và khách thuê</p>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                    <!-- Contract Information -->
+                                    <div class="space-y-4">
+                                        <h3 class="text-base font-semibold text-gray-800 flex items-center">
+                                            <i class="fas fa-clipboard-list text-blue-500 mr-2 text-sm"></i>
+                                            Thông tin hợp đồng
+                                        </h3>
+
+                                        <!-- Contract & Move-in Date -->
+                                        <div class="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label for="NGAY_LAP_HD" class="flex items-center text-sm font-medium text-gray-700 mb-1">
+                                                    <i class="fas fa-calendar-plus text-green-500 mr-2 text-sm"></i>Ngày lập
+                                                </label>
+                                                <input name="NGAY_LAP_HD" id="NGAY_LAP_HD" type="date" required 
+                                                    class="w-full p-3 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                                                    value="{% if hop_dong %}{{ hop_dong.NGAY_LAP_HD|date:'Y-m-d' }}{% endif %}">
+                                            </div>
+                                            <div>
+                                                <label for="NGAY_NHAN_PHONG" class="flex items-center text-sm font-medium text-gray-700 mb-1">
+                                                    <i class="fas fa-key text-green-500 mr-2 text-sm"></i>Nhận phòng
+                                                </label>
+                                                <input name="NGAY_NHAN_PHONG" id="NGAY_NHAN_PHONG" type="date" required 
+                                                    class="w-full p-3 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                                                    value="{% if hop_dong %}{{ hop_dong.NGAY_NHAN_PHONG|date:'Y-m-d' }}{% endif %}">
+                                            </div>
+                                        </div>
+
+                                        <!-- Price & Deposit -->
+                                        <div class="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label for="GIA_THUE" class="flex items-center text-sm font-medium text-gray-700 mb-1">
+                                                    <i class="fas fa-money-bill-wave text-yellow-500 mr-2 text-sm"></i>Giá thuê
+                                                </label>
+                                                <div class="relative">
+                                                    <input name="GIA_THUE" id="GIA_THUE" type="number" placeholder="0" required 
+                                                        class="w-full p-3 pr-12 border border-gray-300 rounded-lg text-sm text-right bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                                                        value="{% if hop_dong %}{{ hop_dong.GIA_THUE|floatformat:0 }}{% endif %}">
+                                                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">VNĐ</span>
+                                                    <div class="absolute inset-0 bg-blue-50 rounded-lg opacity-0 transition-opacity duration-300" id="GIA_THUE_loading"></div>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label for="TIEN_COC_PHONG" class="flex items-center text-sm font-medium text-gray-700 mb-1">
+                                                    <i class="fas fa-shield-alt text-emerald-500 mr-2 text-sm"></i>Tiền cọc
+                                                </label>
+                                                <div class="relative">
+                                                    <input name="GIA_COC_HD" id="TIEN_COC_PHONG" type="number" placeholder="0" required 
+                                                        class="w-full p-3 pr-12 border border-gray-300 rounded-lg text-sm text-right bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                                                        value="{% if hop_dong.GIA_COC_HD %}{{ hop_dong.GIA_COC_HD|floatformat:0 }}{% endif %}">
+                                                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">VNĐ</span>
+                                                    <div class="absolute inset-0 bg-green-50 rounded-lg opacity-0 transition-opacity duration-300" id="TIEN_COC_PHONG_loading"></div>
+                                                </div>
+                                                <input type="hidden" id="MA_COC_PHONG" name="MA_COC_PHONG" value="{% if coc_phong %}{{ coc_phong.MA_COC_PHONG|default_if_none:'' }}{% endif %}">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Tenant Information -->
+                                    <div class="space-y-4">
+                                        <h3 class="text-base font-semibold text-gray-800 flex items-center">
+                                            <i class="fas fa-user text-green-500 mr-2 text-sm"></i>
+                                            Thông tin khách thuê
+                                        </h3>
+
+                                        <!-- Tenant Type Selection -->
+                                        <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                                            <div class="flex items-center gap-6 mb-3">
+                                                <label class="flex items-center cursor-pointer">
+                                                    <input type="radio" name="tenant_type" value="new" id="tenant_type_new" 
+                                                        class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500" checked>
+                                                    <span class="ml-2 text-sm font-medium text-gray-700">
+                                                        <i class="fas fa-user-plus text-blue-500 mr-1"></i>Khách thuê mới
+                                                    </span>
+                                                </label>
+                                                <label class="flex items-center cursor-pointer">
+                                                    <input type="radio" name="tenant_type" value="existing" id="tenant_type_existing" 
+                                                        class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500">
+                                                    <span class="ml-2 text-sm font-medium text-gray-700">
+                                                        <i class="fas fa-search text-green-500 mr-1"></i>Tìm khách thuê có sẵn
+                                                    </span>
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <!-- Search Existing Tenant Form -->
+                                        <div id="search_tenant_form" class="hidden space-y-3">
+                                            <div class="relative">
+                                                <input type="text" id="search_tenant_input" 
+                                                    placeholder="Nhập tên hoặc SĐT để tìm khách thuê..." 
+                                                    class="w-full p-3 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 pr-12">
+                                                <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                                                    <i class="fas fa-search text-gray-400"></i>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Search Results -->
+                                            <div id="search_results" class="hidden">
+                                                <div class="max-h-64 overflow-y-auto border border-gray-200 rounded-lg bg-gray-50">
+                                                    <div id="search_results_list"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Thông tin khách thuê - LUÔN HIỂN THỊ -->
+                                        <div class="space-y-4 mt-4">
+                                            <h3 class="text-base font-semibold text-gray-800 flex items-center">
+                                                <i class="fas fa-address-card text-blue-500 mr-2 text-sm"></i>
+                                                Thông tin chi tiết khách thuê
+                                            </h3>
+                                            
+                                            <input type="hidden" name="MA_KHACH_THUE" id="MA_KHACH_THUE" value="{% if coc_phong and coc_phong.MA_KHACH_THUE %}{{ coc_phong.MA_KHACH_THUE.MA_KHACH_THUE }}{% endif %}">
+
+                                            <!-- Full Name -->
+                                            <div>
+                                                <label for="HO_TEN_KT" class="flex items-center text-sm font-medium text-gray-700 mb-1">
+                                                    <i class="fas fa-user text-green-500 mr-2 text-sm"></i>Họ và tên
+                                                </label>
+                                                <input name="HO_TEN_KT" id="HO_TEN_KT" type="text" placeholder="Nhập họ và tên" required 
+                                                    class="w-full p-3 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                                                    value="{% if coc_phong %}{% if coc_phong.MA_KHACH_THUE %}{{ coc_phong.MA_KHACH_THUE.HO_TEN_KT|default_if_none:'' }}{% else %}{{ coc_phong.HO_TEN_TEMP|default_if_none:'' }}{% endif %}{% endif %}">
+                                            </div>
+
+                                            <!-- Gender & Birth Date -->
+                                            <div class="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <label for="GIOI_TINH_KT" class="flex items-center text-sm font-medium text-gray-700 mb-1">
+                                                        <i class="fas fa-venus-mars text-green-500 mr-2 text-sm"></i>Giới tính
+                                                    </label>
+                                                    <select name="GIOI_TINH_KT" id="GIOI_TINH_KT" required 
+                                                        class="w-full p-3 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200">
+                                                        <option value="Nam" {% if coc_phong and coc_phong.MA_KHACH_THUE and coc_phong.MA_KHACH_THUE.GIOI_TINH_KT == "Nam" %}selected{% endif %}>Nam</option>
+                                                        <option value="Nữ" {% if coc_phong and coc_phong.MA_KHACH_THUE and coc_phong.MA_KHACH_THUE.GIOI_TINH_KT == "Nữ" %}selected{% endif %}>Nữ</option>
+                                                        <option value="Khác" {% if coc_phong and coc_phong.MA_KHACH_THUE and coc_phong.MA_KHACH_THUE.GIOI_TINH_KT == "Khác" %}selected{% endif %}>Khác</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label for="NGAY_SINH_KT" class="flex items-center text-sm font-medium text-gray-700 mb-1">
+                                                        <i class="fas fa-birthday-cake text-green-500 mr-2 text-sm"></i>Ngày sinh
+                                                    </label>
+                                                    <input name="NGAY_SINH_KT" id="NGAY_SINH_KT" type="date" 
+                                                        class="w-full p-3 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                                                        value="{% if coc_phong and coc_phong.MA_KHACH_THUE and coc_phong.MA_KHACH_THUE.NGAY_SINH_KT %}{{ coc_phong.MA_KHACH_THUE.NGAY_SINH_KT|date:'Y-m-d' }}{% endif %}">
+                                                </div>
+                                            </div>
+
+                                            <!-- Phone & Email -->
+                                            <div class="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <label for="SDT_KT" class="flex items-center text-sm font-medium text-gray-700 mb-1">
+                                                        <i class="fas fa-phone text-green-500 mr-2 text-sm"></i>Điện thoại
+                                                    </label>
+                                                    <input name="SDT_KT" id="SDT_KT" type="tel" placeholder="0123456789" required 
+                                                        class="w-full p-3 border border-gray-300 rounded-lg text-sm bg-white font-mono focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                                                        value="{% if coc_phong %}{% if coc_phong.MA_KHACH_THUE %}{{ coc_phong.MA_KHACH_THUE.SDT_KT|default_if_none:'' }}{% else %}{{ coc_phong.SO_DIEN_THOAI_TEMP|default_if_none:'' }}{% endif %}{% endif %}">
+                                                </div>
+                                                <div>
+                                                    <label for="EMAIL_KT" class="flex items-center text-sm font-medium text-gray-700 mb-1">
+                                                        <i class="fas fa-envelope text-green-500 mr-2 text-sm"></i>Email
+                                                    </label>
+                                                    <input name="EMAIL_KT" id="EMAIL_KT" type="email" placeholder="email@example.com" 
+                                                        class="w-full p-3 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                                                        value="{% if coc_phong and coc_phong.MA_KHACH_THUE %}{{ coc_phong.MA_KHACH_THUE.EMAIL_KT|default_if_none:'' }}{% endif %}">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 2: Services -->
+                        <div class="step-content hidden data-[active=true]:block animate-slide-in px-6" id="step-2">
+                            <div class="bg-white rounded-lg shadow-sm border p-6">
+                                <div class="flex items-center mb-4">
+                                    <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                                        <i class="fas fa-concierge-bell text-blue-600 text-lg"></i>
+                                    </div>
+                                    <div>
+                                        <h2 class="text-lg font-bold text-gray-900">Dịch vụ</h2>
+                                        <p class="text-xs text-gray-600">Chọn dịch vụ cho hợp đồng</p>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center justify-between mb-3">
+                                    <h3 class="text-sm font-semibold text-gray-900 flex items-center">
+                                        <i class="fas fa-concierge-bell text-blue-500 mr-2 text-xs"></i>
+                                        Dịch vụ sử dụng
+                                    </h3>
+                                    <span id="service_count_badge" class="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
+                                        {{ lichsu_dichvu_with_chiso|length }} dịch vụ
+                                    </span>
+                                </div>
+
+                                <div id="dich_vu_list" class="bg-blue-50 rounded-md p-3 max-h-64 overflow-y-auto">
+                                    {% for item in lichsu_dichvu_with_chiso %}
+                                    {% with lichsu=item.lichsu dich_vu=item.lichsu.MA_DICH_VU latest_chiso=item.latest_chiso %}
+                                    <div class="bg-white rounded-md p-3 mb-2 border border-blue-200 shadow-sm hover:shadow-md transition-all duration-200">
+                                        <div class="flex items-start gap-2">
+                                            <input type="checkbox" name="dichvu_{{ dich_vu.MA_DICH_VU }}" value="{{ dich_vu.MA_DICH_VU }}"
+                                                checked id="service_{{ dich_vu.MA_DICH_VU }}"
+                                                class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                                            <div class="flex-1">
+                                                <div class="flex items-center justify-between mb-1">
+                                                    <label for="service_{{ dich_vu.MA_DICH_VU }}" class="font-semibold text-gray-900 text-sm cursor-pointer">
+                                                        {{ dich_vu.TEN_DICH_VU }}
+                                                    </label>
+                                                    <span class="px-2 py-1 text-xs font-medium rounded-full
+                                                        {% if dich_vu.LOAI_DICH_VU == 'Tính theo chỉ số' %}bg-orange-100 text-orange-700
+                                                        {% else %}bg-green-100 text-green-700{% endif %}">
+                                                        {{ dich_vu.LOAI_DICH_VU|truncatewords:2 }}
+                                                    </span>
+                                                </div>
+                                                <div class="flex items-center justify-between">
+                                                    <span class="text-sm text-gray-600">
+                                                        <span class="font-semibold text-indigo-600">{{ lichsu.GIA_DICH_VU_AD|floatformat:0|default:'0' }}</span> 
+                                                        VNĐ/{{ dich_vu.DON_VI_TINH }}
+                                                    </span>
+                                                    <div class="flex items-center gap-2">
+                                                        {% if dich_vu.LOAI_DICH_VU == 'Tính theo chỉ số' %}
+                                                        <div class="flex flex-col gap-1">
+                                                            <div class="flex items-center gap-2">
+                                                                <label class="text-xs text-gray-500">Cũ:</label>
+                                                                <span class="text-xs font-medium text-gray-700 bg-gray-100 px-2 py-1 rounded">{{ latest_chiso.CHI_SO_CU|default_if_none:'0' }}</span>
+                                                                <label class="text-xs text-gray-500">Mới:</label>
+                                                                <input type="number" name="chiso_moi_{{ dich_vu.MA_DICH_VU }}" 
+                                                                    placeholder="{{ latest_chiso.CHI_SO_CU|default_if_none:'0' }}" value="{{ latest_chiso.CHI_SO_MOI|default_if_none:'0' }}" min="{{ latest_chiso.CHI_SO_CU|default_if_none:'0' }}"
+                                                                    class="w-20 p-1 border border-gray-300 rounded-md text-sm text-center bg-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-200">
+                                                            </div>
+                                                            <input type="hidden" name="chiso_cu_{{ dich_vu.MA_DICH_VU }}" value="{{ latest_chiso.CHI_SO_CU|default_if_none:'0' }}">
+                                                        </div>
+                                                        {% else %}
+                                                        <label class="text-xs text-gray-500">SL:</label>
+                                                        <input type="number" name="soluong_{{ dich_vu.MA_DICH_VU }}" 
+                                                            placeholder="1" value="{{ latest_chiso.SO_LUONG|default_if_none:'1' }}" min="1"
+                                                            class="w-16 p-1 border border-gray-300 rounded-md text-sm text-center bg-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-200">
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endwith %}
+                                    {% empty %}
+                                    <div class="text-center py-8 text-gray-500">
+                                        <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                                            <i class="fas fa-info-circle text-xl text-gray-400"></i>
+                                        </div>
+                                        <p class="font-medium text-sm">Chưa có dịch vụ nào</p>
+                                        <p class="text-xs">Dịch vụ sẽ được áp dụng cho khu vực này</p>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 3: Contract Terms & Confirmation -->
+                        <div class="step-content hidden data-[active=true]:block animate-slide-in px-6" id="step-3">
+                            <div class="bg-white rounded-lg shadow-sm border p-6">
+                                <div class="flex items-center mb-4">
+                                    <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                                        <i class="fas fa-check-circle text-green-600 text-lg"></i>
+                                    </div>
+                                    <div>
+                                        <h2 class="text-lg font-bold text-gray-900">Điều khoản & Xác nhận</h2>
+                                        <p class="text-xs text-gray-600">Hoàn thiện thông tin và xác nhận hợp đồng</p>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <!-- Contract Terms -->
+                                    <div class="space-y-3">
+                                        <h3 class="text-sm font-semibold text-gray-800 flex items-center">
+                                            <i class="fas fa-calendar-alt text-blue-500 mr-2 text-xs"></i>
+                                            Điều khoản hợp đồng
+                                        </h3>
+
+                                        <!-- Max Occupants & Contract Duration -->
+                                        <div class="grid grid-cols-2 gap-3">
+                                            <div>
+                                                <label for="SO_THANH_VIEN_TOI_DA" class="flex items-center text-xs font-medium text-gray-700 mb-1">
+                                                    <i class="fas fa-users text-purple-500 mr-2 text-xs"></i>Số người tối đa
+                                                </label>
+                                                <input name="SO_THANH_VIEN_TOI_DA" type="number" placeholder="1" required class="w-full p-2 border border-gray-300 rounded-md text-sm text-center bg-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200"
+                                                    value="{% if hop_dong %}{{ hop_dong.SO_THANH_VIEN|default:'1' }}{% else %}1{% endif %}">
+                                            </div>
+                                            <div>
+                                                <label for="thoi-han-hd" class="flex items-center text-xs font-medium text-gray-700 mb-1">
+                                                    <i class="fas fa-clock text-indigo-500 mr-2 text-xs"></i>Thời hạn
+                                                </label>
+                                                <div class="relative">
+                                                    <input id="thoi-han-hd" name="THOI_HAN_HD" type="text" 
+                                                        placeholder="Nhập hoặc chọn thời hạn..." 
+                                                        list="duration-options" 
+                                                        required 
+                                                        class="w-full p-2 border border-gray-300 rounded-md text-sm bg-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200"
+                                                        value="{{ hop_dong.THOI_HAN_HD|default_if_none:'' }}"
+                                                        autocomplete="off">
+                                                    <datalist id="duration-options">
+                                                        <option value="1 tháng">1 tháng</option>
+                                                        <option value="2 tháng">2 tháng</option>
+                                                        <option value="3 tháng">3 tháng</option>
+                                                        <option value="6 tháng">6 tháng</option>
+                                                        <option value="12 tháng">12 tháng</option>
+                                                        <option value="24 tháng">24 tháng</option>
+                                                        <option value="36 tháng">36 tháng</option>
+                                                    </datalist>
+                                                    <i class="fas fa-chevron-down absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs pointer-events-none"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- End Date & Payment Day -->
+                                        <div class="grid grid-cols-2 gap-3">
+                                            <div>
+                                                <label for="NGAY_TRA_PHONG" class="flex items-center text-xs font-medium text-gray-700 mb-1">
+                                                    <i class="fas fa-calendar-times text-red-500 mr-2 text-xs"></i>Ngày kết thúc
+                                                </label>
+                                                <input name="NGAY_TRA_PHONG" id="NGAY_TRA_PHONG" type="date" required class="w-full p-2 border border-gray-300 rounded-md text-sm bg-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200"
+                                                    value="{{ hop_dong.NGAY_TRA_PHONG|date:'Y-m-d'|default_if_none:'' }}">
+                                            </div>
+                                            <div>
+                                                <label for="ngay-thu-tien" class="flex items-center text-xs font-medium text-gray-700 mb-1">
+                                                    <i class="fas fa-calendar-day text-orange-500 mr-2 text-xs"></i>Ngày thu tiền
+                                                </label>
+                                                <div class="relative">
+                                                    <input id="ngay-thu-tien" name="NGAY_THU_TIEN" type="text" 
+                                                        placeholder="Nhập hoặc chọn ngày..." 
+                                                        list="payment-day-options" 
+                                                        required 
+                                                        class="w-full p-2 border border-gray-300 rounded-md text-sm bg-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200"
+                                                        value="{{ hop_dong.NGAY_THU_TIEN|default_if_none:'' }}"
+                                                        autocomplete="off">
+                                                    <datalist id="payment-day-options">
+                                                        <option value="Ngày 1">Ngày 1</option>
+                                                        <option value="Ngày 5">Ngày 5</option>
+                                                        <option value="Ngày 10">Ngày 10</option>
+                                                        <option value="Ngày 15">Ngày 15</option>
+                                                        <option value="Ngày 20">Ngày 20</option>
+                                                        <option value="Ngày 25">Ngày 25</option>
+                                                        <option value="Ngày 30">Ngày 30</option>
+                                                        <option value="Cuối tháng">Cuối tháng</option>
+                                                    </datalist>
+                                                    <i class="fas fa-chevron-down absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs pointer-events-none"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Payment Timing & Cycle -->
+                                        <div class="grid grid-cols-2 gap-3">
+                                            <div>
+                                                <label for="THOI_DIEM_THANH_TOAN" class="flex items-center text-xs font-medium text-gray-700 mb-1">
+                                                    <i class="fas fa-clock text-teal-500 mr-2 text-xs"></i>Thời điểm TT
+                                                </label>
+                                                <select name="THOI_DIEM_THANH_TOAN" id="THOI_DIEM_THANH_TOAN" required class="w-full p-2 border border-gray-300 rounded-md text-sm bg-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200">
+                                                    <option value="">-- Chọn --</option>
+                                                    <option value="Đầu kỳ" {% if hop_dong.THOI_DIEM_THANH_TOAN == "Đầu kỳ" %}selected{% endif %}>Đầu kỳ</option>
+                                                    <option value="Cuối kỳ" {% if hop_dong.THOI_DIEM_THANH_TOAN == "Cuối kỳ" %}selected{% endif %}>Cuối kỳ</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label for="ky-thanh-toan" class="flex items-center text-xs font-medium text-gray-700 mb-1">
+                                                    <i class="fas fa-repeat text-pink-500 mr-2 text-xs"></i>Chu kỳ TT
+                                                </label>
+                                                <div class="relative">
+                                                    <input id="ky-thanh-toan" name="CHU_KY_THANH_TOAN" type="text" 
+                                                        placeholder="Nhập hoặc chọn chu kỳ..." 
+                                                        list="payment-term-options" 
+                                                        required 
+                                                        class="w-full p-2 border border-gray-300 rounded-md text-sm bg-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200"
+                                                        value="{{ hop_dong.CHU_KY_THANH_TOAN|default_if_none:'' }}"
+                                                        autocomplete="off">
+                                                    <datalist id="payment-term-options">
+                                                        <option value="1 tháng">1 tháng</option>
+                                                        <option value="2 tháng">2 tháng</option>
+                                                        <option value="3 tháng">3 tháng (1 quý)</option>
+                                                        <option value="6 tháng">6 tháng</option>
+                                                        <option value="12 tháng">12 tháng (1 năm)</option>
+                                                        <option value="1 tuần">1 tuần</option>
+                                                        <option value="2 tuần">2 tuần</option>
+                                                        <option value="4 tuần">4 tuần</option>
+                                                    </datalist>
+                                                    <i class="fas fa-chevron-down absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs pointer-events-none"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Contract Summary -->
+                                    <div class="space-y-3">
+                                        <h3 class="text-sm font-semibold text-gray-800 flex items-center">
+                                            <i class="fas fa-file-signature text-green-500 mr-2 text-xs"></i>
+                                            Tóm tắt hợp đồng
+                                        </h3>
+                                        <div class="bg-gray-50 rounded-md p-3">
+                                            <div class="space-y-2 text-sm">
+                                                <div class="flex justify-between">
+                                                    <span class="text-gray-600">Phòng:</span>
+                                                    <span class="font-medium" id="summary-room">{% if hop_dong %}{{ hop_dong.MA_PHONG.TEN_PHONG }}{% else %}Chưa chọn phòng{% endif %}</span>
+                                                </div>
+                                                <div class="flex justify-between">
+                                                    <span class="text-gray-600">Khách thuê:</span>
+                                                    <span class="font-medium" id="summary-tenant">-</span>
+                                                </div>
+                                                <div class="flex justify-between">
+                                                    <span class="text-gray-600">Giá thuê:</span>
+                                                    <span class="font-medium text-blue-600" id="summary-price">-</span>
+                                                </div>
+                                                <div class="flex justify-between">
+                                                    <span class="text-gray-600">Tiền cọc:</span>
+                                                    <span class="font-medium text-green-600" id="summary-deposit">-</span>
+                                                </div>
+                                                <div class="flex justify-between">
+                                                    <span class="text-gray-600">Thời hạn:</span>
+                                                    <span class="font-medium" id="summary-duration">-</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label for="GHI_CHU_HD" class="flex items-center text-xs font-medium text-gray-700 mb-1">
+                                                <i class="fas fa-sticky-note text-gray-500 mr-2 text-xs"></i>Ghi chú hợp đồng
+                                            </label>
+                                            <textarea name="GHI_CHU_HD" id="GHI_CHU_HD" placeholder="Nhập ghi chú bổ sung..."
+                                                    class="w-full p-2 h-20 border border-gray-300 rounded-md text-sm bg-white resize-none focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200">{{ hop_dong.GHI_CHU_HD|default_if_none:'' }}</textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        </div> <!-- End form-container -->
+
+                        <!-- Placeholder khi chưa chọn phòng -->
+                        <div id="no-room-placeholder" class="{% if hop_dong %}hidden{% endif %} flex-1 flex items-center justify-center">
+                            <div class="text-center py-20">
+                                <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                                    <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                    </svg>
+                                </div>
+                                <h3 class="text-xl font-semibold text-gray-700 mb-2">Chọn phòng để lập hợp đồng</h3>
+                                <p class="text-gray-500 mb-6">Vui lòng chọn khu vực và phòng trọ từ danh sách bên trái</p>
+                                <div class="flex flex-col space-y-2 text-sm text-gray-400">
+                                    <div class="flex items-center justify-center">
+                                        <span class="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-medium mr-2">1</span>
+                                        <span>Chọn khu vực từ dropdown</span>
+                                    </div>
+                                    <div class="flex items-center justify-center">
+                                        <span class="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-medium mr-2">2</span>
+                                        <span>Chọn phòng từ danh sách</span>
+                                    </div>
+                                    <div class="flex items-center justify-center">
+                                        <span class="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-medium mr-2">3</span>
+                                        <span>Điền thông tin hợp đồng</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sticky Footer -->
+                        <div class="bg-white border-t border-gray-200 px-6 py-4">
+                            <div class="flex items-center justify-between">
+                                <div class="text-sm text-gray-600">
+                                    <span id="current_step">Bước 1/3</span>
+                                </div>
+                                <div class="flex gap-4">
+                                    <button type="button" id="prevBtn" class="hidden px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+                                        Quay lại
+                                    </button>
+                                    <button type="button" id="nextBtn" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                                        Tiếp theo <i class="fas fa-arrow-right ml-2"></i>
+                                    </button>
+                                    <button type="submit" id="submitBtn" class="hidden px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                                        <i class="fas fa-save mr-2"></i>
+                                        {% if hop_dong %}Cập nhật hợp đồng{% else %}Tạo hợp đồng{% endif %}
+                                    </button>
+                                    <a href="{% url 'phongtro:phongtro_list' %}" class="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors no-underline">
+                                        Hủy
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
+</div>
 
+{% endblock %}
 
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    let currentStep = 1;
+    const totalSteps = 3;
+    let currentSelectedRoom = null;
     
 
-    <!-- Action Buttons -->
-    <div class="mt-8 flex justify-end gap-4">
-        <a href="{% url 'hopdong:hopdong_list' %}"
-        class="px-5 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 font-medium">
-            <i class="fas fa-times mr-2"></i>Hủy
-        </a>
-        <button type="submit"
-                class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium">
-            <i class="fas fa-save mr-2"></i>{% if hop_dong %}Cập nhật{% else %}Thêm mới{% endif %}
-        </button>
-    </div>
-</form>
+    // Khi chọn khu vực
+    $('#khu_vuc').change(function() {
+        const khuVucId = $(this).val();
+        if (khuVucId) {
+            loadPhongTro(khuVucId);
+        } else {
+            resetRoomList();
+        }
+    });
 
-<script src="{% static 'js/admin/hopdong/themsua_hopdong.js' %}"></script>
-<script src="{% static 'js/admin/hopdong/chucnang_chonphong.js' %}"></script>
+    // Load phòng trọ theo khu vực
+    function loadPhongTro(khuVucId) {
+        $.ajax({
+            url: '{% url "phongtro:lay_phong_kha_dung" %}',
+            data: { 'khu_vuc_id': khuVucId },
+            success: function(data) {
+                const roomList = $('#room_list');
+                roomList.empty();
+                
+                if (data.phong_tros.length > 0) {
+                    $.each(data.phong_tros, function(index, phong) {
+                        const roomCard = createRoomCard(phong);
+                        roomList.append(roomCard);
+                    });
+                } else {
+                    roomList.append(`
+                        <div class="text-center py-8 text-gray-500">
+                            <svg class="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                            </svg>
+                            <p class="text-sm">Không có phòng nào khả dụng</p>
+                            <p class="text-xs text-gray-400 mt-1">Chỉ hiển thị phòng chưa có hợp đồng hoạt động</p>
+                        </div>
+                    `);
+                }
+            },
+            error: function() {
+                showNotification('Có lỗi khi tải danh sách phòng trọ', 'error');
+            }
+        });
+    }
+
+    // Tạo thẻ phòng
+    function createRoomCard(phong) {
+        return `
+            <div class="room-card bg-white border border-gray-200 rounded-lg p-4 mb-3 hover:border-blue-300 hover:shadow-md transition-all duration-200 cursor-pointer"
+                 data-ma-phong="${phong.MA_PHONG}" 
+                 onclick="selectRoom(${phong.MA_PHONG}, '${phong.TEN_PHONG || 'Phòng ' + phong.MA_PHONG}')">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h4 class="font-medium text-gray-900">${phong.TEN_PHONG || 'Phòng ' + phong.MA_PHONG}</h4>
+                            <p class="text-sm text-gray-500">Mã phòng: ${phong.MA_PHONG}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            <span class="w-1.5 h-1.5 bg-green-400 rounded-full mr-1.5"></span>
+                            Khả dụng
+                        </span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Chọn phòng
+    window.selectRoom = function(maPhong, tenPhong) {
+        $('.room-card').removeClass('border-blue-500 bg-blue-50');
+        $(`.room-card[data-ma-phong="${maPhong}"]`).addClass('border-blue-500 bg-blue-50');
+        $('#ma_phong').val(maPhong);
+        currentSelectedRoom = { maPhong, tenPhong };
+        $('#selected_room_info').text(`Đã chọn: ${tenPhong}`);
+        $('#summary-room').text(tenPhong);
+        
+        // Cập nhật form action với mã phòng đã chọn
+        {% if not hop_dong %}
+        const formAction = "{% url 'phongtro:lap_hop_dong' 0 %}".replace('0', maPhong);
+        $('#contractForm').attr('action', formAction);
+        
+        // Load thông tin phòng để điền vào form
+        loadPhongInfo(maPhong);
+        
+        // Hiển thị form và ẩn placeholder
+        showFormContainer();
+        {% endif %}
+        
+        loadDichVu(maPhong);
+    };
+
+    // Load thông tin phòng
+    function loadPhongInfo(maPhong) {
+        
+        $.ajax({
+            url: '{% url "hopdong:lay_thong_tin_phong" 0 %}'.replace('0', maPhong),
+            type: 'GET',
+            success: function(data) {
+                console.log('Thông tin phòng:', data);
+                if (data.success && data.phong) {
+                    const phong = data.phong;
+                    
+                    // Luôn cập nhật giá phòng và tiền cọc từ DB
+                    if (phong.GIA_PHONG) {
+                        $('#GIA_THUE').val(parseFloat(phong.GIA_PHONG));
+                        console.log('Đã cập nhật giá phòng:', phong.GIA_PHONG);
+                    }
+                    
+                    if (phong.SO_TIEN_CAN_COC) {
+                        $('#TIEN_COC_PHONG').val(parseFloat(phong.SO_TIEN_CAN_COC));
+                        console.log('Đã cập nhật tiền cọc phòng:', phong.SO_TIEN_CAN_COC);
+                    }
+                    
+                    if (phong.SO_NGUOI_TOI_DA) {
+                        $('#SO_THANH_VIEN_TOI_DA').val(phong.SO_NGUOI_TOI_DA);
+                    }
+                                      
+                    // Cập nhật summary
+                    updateSummary();
+                    
+                    // Hiển thị thông báo thành công
+                    showNotification(`Đã load thông tin phòng ${phong.TEN_PHONG}`, 'success');
+                }
+                
+            },
+            error: function(xhr, status, error) {
+                console.error('Lỗi khi load thông tin phòng:', error);
+                showNotification('Lỗi khi tải thông tin phòng', 'error');
+                
+                // Ẩn loading effect
+                $('#GIA_THUE_loading, #TIEN_COC_PHONG_loading').removeClass('opacity-50').addClass('opacity-0');
+            }
+        });
+    }
+
+    // Hiển thị/ẩn form container
+    function showFormContainer() {
+        $('#form-container').removeClass('hidden');
+        $('#no-room-placeholder').addClass('hidden');
+        // Reset về step 1
+        currentStep = 1;
+        $('#step-1').attr('data-active', true);
+        $('.step-content').addClass('hidden');
+        $('#step-1').removeClass('hidden');
+        
+        // Set giá trị mặc định cho form mới
+        {% if not hop_dong %}
+        const today = new Date().toISOString().split('T')[0];
+        if (!$('#NGAY_LAP_HD').val()) $('#NGAY_LAP_HD').val(today);
+        if (!$('#NGAY_NHAN_PHONG').val()) $('#NGAY_NHAN_PHONG').val(today);
+        {% endif %}
+        
+        updateUI();
+    }
+
+    function hideFormContainer() {
+        $('#form-container').addClass('hidden');
+        $('#no-room-placeholder').removeClass('hidden');
+    }
+
+    // Load dịch vụ theo phòng
+    function loadDichVu(maPhong) {
+        console.log('Loading dịch vụ for phòng:', maPhong);
+        $.ajax({
+            url: '{% url "dichvu:lay_dich_vu_theo_phong" %}',
+            data: { 'ma_phong': maPhong },
+            success: function(data) {
+                const dichVuList = $('#dich_vu_list');
+                dichVuList.empty();
+                
+                console.log('Dịch vụ response:', data);
+                
+                // Kiểm tra an toàn dữ liệu response
+                if (data && data.success && data.dich_vus && Array.isArray(data.dich_vus) && data.dich_vus.length > 0) {
+                    let successCount = 0;
+                    $.each(data.dich_vus, function(index, dv) {
+                        try {
+                            const serviceHtml = createServiceInput(dv);
+                            if (serviceHtml) {
+                                dichVuList.append(serviceHtml);
+                                successCount++;
+                            }
+                        } catch (e) {
+                            console.error('Error creating service input:', e, dv);
+                        }
+                    });
+                    $('#service_count_badge').text(`${successCount} dịch vụ`);
+                } else {
+                    // Log để debug
+                    console.log('Dịch vụ response:', data);
+                    
+                    dichVuList.append(`
+                        <div class="text-center py-8 text-gray-500">
+                            <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                                <i class="fas fa-info-circle text-xl text-gray-400"></i>
+                            </div>
+                            <p class="font-medium text-sm">Chưa có dịch vụ nào</p>
+                            <p class="text-xs">${data.message || 'Dịch vụ sẽ được áp dụng cho khu vực này'}</p>
+                        </div>
+                    `);
+                    $('#service_count_badge').text('0 dịch vụ');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('AJAX Error:', {xhr, status, error});
+                showNotification('Có lỗi khi tải danh sách dịch vụ: ' + error, 'error');
+            }
+        });
+    }
+
+    // Tạo HTML cho dịch vụ
+    function createServiceInput(dv) {
+        // Kiểm tra an toàn dữ liệu
+        if (!dv || !dv.MA_DICH_VU || !dv.TEN_DICH_VU) {
+            console.error('Invalid service data:', dv);
+            return '';
+        }
+        
+        const isCodinh = ['Cố định', 'Co dinh'].includes(dv.LOAI_DICH_VU);
+        return `
+            <div class="bg-white rounded-md p-3 mb-2 border border-blue-200 shadow-sm hover:shadow-md transition-all duration-200">
+                <div class="flex items-start gap-2">
+                    <input type="checkbox" name="dichvu_${dv.MA_DICH_VU}" value="${dv.MA_DICH_VU}"
+                        id="service_${dv.MA_DICH_VU}"
+                        class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                    <div class="flex-1">
+                        <div class="flex items-center justify-between mb-1">
+                            <label for="service_${dv.MA_DICH_VU}" class="font-semibold text-gray-900 text-sm cursor-pointer">
+                                ${dv.TEN_DICH_VU}
+                            </label>
+                            <span class="px-2 py-1 text-xs font-medium rounded-full
+                                ${isCodinh ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}">
+                                ${dv.LOAI_DICH_VU}
+                            </span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-600">
+                                <span class="font-semibold text-indigo-600">${formatCurrency(dv.GIA_DICH_VU_AD)}</span> 
+                                VNĐ/${dv.DON_VI_TINH}
+                            </span>
+                            <div class="flex items-center gap-2">
+                                ${isCodinh ? `
+                                    <label class="text-xs text-gray-500">SL:</label>
+                                    <input type="number" name="soluong_${dv.MA_DICH_VU}" 
+                                        placeholder="1" value="${dv.SO_LUONG || 1}" min="1"
+                                        class="w-16 p-1 border border-gray-300 rounded-md text-sm text-center bg-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-200">
+                                ` : `
+                                    <div class="flex flex-col gap-1">
+                                        <div class="flex items-center gap-2">
+                                            <label class="text-xs text-gray-500">Cũ:</label>
+                                            <span class="text-xs font-medium text-gray-700 bg-gray-100 px-2 py-1 rounded">${dv.CHI_SO_CU || 0}</span>
+                                            <label class="text-xs text-gray-500">Mới:</label>
+                                            <input type="number" name="chiso_moi_${dv.MA_DICH_VU}" 
+                                                placeholder="${dv.CHI_SO_CU || 0}" value="${dv.CHI_SO_MOI || dv.CHI_SO_CU || 0}" min="${dv.CHI_SO_CU || 0}"
+                                                class="w-20 p-1 border border-gray-300 rounded-md text-sm text-center bg-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-200">
+                                        </div>
+                                        <input type="hidden" name="chiso_cu_${dv.MA_DICH_VU}" value="${dv.CHI_SO_CU || 0}">
+                                    </div>
+                                `}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Reset danh sách phòng
+    function resetRoomList() {
+        $('#room_list').html(`
+            <div class="text-center py-12 text-gray-500">
+                <svg class="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                </svg>
+                <p class="text-sm">Vui lòng chọn khu vực để xem danh sách phòng</p>
+            </div>
+        `);
+        $('#selected_room_info').text('Chưa chọn phòng');
+        $('#summary-room').text('-');
+        $('#dich_vu_list').empty();
+        $('#service_count_badge').text('0 dịch vụ');
+        currentSelectedRoom = null;
+        
+        // Ẩn form container khi reset
+        {% if not hop_dong %}
+        hideFormContainer();
+        {% endif %}
+    }
+
+    // Format tiền tệ
+    function formatCurrency(amount) {
+        try {
+            const value = parseFloat(amount) || 0;
+            return new Intl.NumberFormat('vi-VN').format(value);
+        } catch (e) {
+            console.error('Format currency error:', e, amount);
+            return '0';
+        }
+    }
+
+    // Hiển thị thông báo
+    function showNotification(message, type = 'success') {
+        const alertClass = type === 'error' ? 'bg-red-50 border-red-400 text-red-800' : 'bg-green-50 border-green-400 text-green-800';
+        const iconClass = type === 'error' ? 'text-red-400' : 'text-green-400';
+        const iconPath = type === 'error' ? 
+            'M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z' :
+            'M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z';
+        
+        const notification = $(`
+            <div class="p-4 mb-3 rounded-lg border-l-4 ${alertClass}">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="w-5 h-5 ${iconClass}" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="${iconPath}" clip-rule="evenodd"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm font-medium">${message}</p>
+                    </div>
+                </div>
+            </div>
+        `);
+        
+        $('.border-l-4').remove();
+        $('.min-h-screen > .px-6').first().after(`<div class="px-6 py-4">${notification.prop('outerHTML')}</div>`);
+        setTimeout(() => $('.border-l-4').parent().fadeOut(), 5000);
+    }
+
+    // Cập nhật giao diện
+    function updateUI() {
+        // Ẩn tất cả step và hiện step hiện tại
+        $('.step-content').addClass('hidden').attr('data-active', false);
+        $(`#step-${currentStep}`).removeClass('hidden').attr('data-active', true);
+
+        $('[id^=step-][id$=-circle]').each(function(i) {
+            const step = i + 1;
+            const circle = $(this);
+            const text = $(`#step-${step}-text`);
+            const progress = $(`#progress-${step}`);
+            
+            circle.removeClass('border-green-600 bg-green-600 text-white border-blue-600 bg-blue-600 border-gray-300 bg-white text-gray-500');
+            circle.addClass(step < currentStep ? 'border-green-600 bg-green-600 text-white' : 
+                          step === currentStep ? 'border-blue-600 bg-blue-600 text-white' : 
+                          'border-gray-300 bg-white text-gray-500');
+            
+            circle.find('.step-number').toggleClass('hidden', step < currentStep);
+            circle.find('.step-check').toggleClass('hidden', step >= currentStep);
+            
+            text.removeClass('text-green-600 text-blue-600 text-gray-500');
+            text.addClass(step < currentStep ? 'text-green-600' : 
+                         step === currentStep ? 'text-blue-600' : 'text-gray-500');
+            
+            if (progress.length) progress.css('width', step <= currentStep ? '100%' : '0%');
+        });
+
+        $('#prevBtn').toggleClass('hidden', currentStep === 1);
+        $('#nextBtn').toggleClass('hidden', currentStep === totalSteps);
+        $('#submitBtn').toggleClass('hidden', currentStep !== totalSteps);
+        $('#current_step').text(`Bước ${currentStep}/${totalSteps}`);
+        
+        updateSummary();
+    }
+
+    // Xác thực bước hiện tại
+    function validateCurrentStep() {
+        const step = $(`#step-${currentStep}`);
+        const inputs = step.find('input[required], select[required], textarea[required]');
+        
+        // Validate required fields
+        for (const input of inputs) {
+            if (input.type === 'hidden') continue;
+            const value = $(input).hasClass('cursor-pointer') ?
+                $(`#${input.id}-value`).val()?.trim() :
+                $(input).val()?.trim();
+                
+            if (!value) {
+                $(input).focus();
+                $(input).addClass('border-red-500 ring-2 ring-red-200');
+                setTimeout(() => $(input).removeClass('border-red-500 ring-red-200'), 2000);
+                return false;
+            }
+        }
+        
+        // Validate chỉ số dịch vụ ở bước 2
+        if (currentStep === 2) {
+            const chiSoInputs = step.find('input[name^="chiso_moi_"]');
+            for (const input of chiSoInputs) {
+                const chiSoMoi = parseInt($(input).val()) || 0;
+                const dichVuId = $(input).attr('name').replace('chiso_moi_', '');
+                const chiSoCu = parseInt($(`input[name="chiso_cu_${dichVuId}"]`).val()) || 0;
+                
+                if (chiSoMoi < chiSoCu) {
+                    $(input).focus();
+                    $(input).addClass('border-red-500 ring-2 ring-red-200');
+                    showNotification(`Chỉ số mới (${chiSoMoi}) phải >= chỉ số cũ (${chiSoCu})`, 'error');
+                    setTimeout(() => $(input).removeClass('border-red-500 ring-2 ring-red-200'), 3000);
+                    return false;
+                }
+            }
+        }
+        
+        return true;
+    }
+
+    // Cập nhật tóm tắt hợp đồng
+    function updateSummary() {
+        if (currentSelectedRoom) {
+            $('#summary-room').text(currentSelectedRoom.tenPhong);
+        }
+        
+        const fields = {
+            'summary-tenant': 'HO_TEN_KT',
+            'summary-price': 'GIA_THUE',
+            'summary-deposit': 'TIEN_COC_PHONG',
+            'summary-duration': 'thoi-han-hd'
+        };
+        
+        for (const [id, inputId] of Object.entries(fields)) {
+            const value = $(`#${inputId}`).val();
+            if (value) {
+                $(`#${id}`).text(inputId.includes('GIA') ? 
+                    new Intl.NumberFormat('vi-VN').format(value) + ' VNĐ' : 
+                    value || '-');
+            }
+        }
+    }
+
+    // Xử lý dropdown
+    function toggleDropdown(type, event) {
+        // Xử lý event nếu có
+        if (event && typeof event.preventDefault === 'function') {
+            event.preventDefault();
+        }
+        
+        const dropdown = $(`#${type}-dropdown`);
+        const list = $(`#${type}-list`);
+        const isHidden = dropdown.hasClass('hidden');
+        
+        $('[id$=-dropdown]').addClass('hidden');
+        
+        if (isHidden) {
+            dropdown.removeClass('hidden');
+            list.html(dropdowns[type].map(item => 
+                `<li class="border-b last:border-b-0 border-gray-100">
+                    <button type="button" class="w-full text-left px-3 py-1.5 text-sm hover:bg-blue-50">${item}</button>
+                </li>`
+            ).join(''));
+            list.find('button').each(function(i) {
+                $(this).click(function() {
+                    const input = $(`#${type === 'duration' ? 'thoi-han-hd' : type === 'payment-term' ? 'ky-thanh-toan' : 'ngay-thu-tien'}`);
+                    const hidden = $(`#${type === 'duration' ? 'thoi-han-hd' : type === 'payment-term' ? 'ky-thanh-toan' : 'ngay-thu-tien'}-value`);
+                    input.val(dropdowns[type][i]);
+                    hidden.val(dropdowns[type][i]);
+                    dropdown.addClass('hidden');
+                    if (type === 'duration') updateEndDate();
+                    updateSummary();
+                });
+            });
+        }
+    }
+
+    // Cập nhật ngày kết thúc
+    function updateEndDate() {
+        const startDate = $('#NGAY_NHAN_PHONG').val();
+        const duration = $('#thoi-han-hd').val();
+        
+        if (startDate && duration) {
+            const start = new Date(startDate);
+            const monthCount = parseInt(duration) || 0;
+            const end = new Date(start.setMonth(start.getMonth() + monthCount));
+            $('#NGAY_TRA_PHONG').val(end.toISOString().split('T')[0]);
+        }
+    }
+
+    // Event handlers cho autocomplete inputs
+    $('#thoi-han-hd').on('input change', function() {
+        updateEndDate();
+        updateSummary();
+    });
+
+    $('#ky-thanh-toan, #ngay-thu-tien').on('input change', function() {
+        updateSummary();
+    });
+
+    // ================== TENANT MANAGEMENT ==================
+    
+    // Xử lý chuyển đổi giữa khách thuê mới và tìm kiếm
+    $('input[name="tenant_type"]').change(function() {
+        const selectedType = $(this).val();
+        
+        if (selectedType === 'new') {
+            // Ẩn form tìm kiếm
+            $('#search_tenant_form').addClass('hidden').hide();
+            
+            // Reset search form và CLEAR TẤT CẢ inputs để nhập mới
+            $('#search_tenant_input').val('');
+            $('#search_results').addClass('hidden');
+            clearAllTenantInputs();
+            
+        } else if (selectedType === 'existing') {
+            // Hiển thị form tìm kiếm  
+            $('#search_tenant_form').removeClass('hidden').show();
+            
+            // Reset search nhưng giữ thông tin đã auto-fill
+            $('#search_tenant_input').val('');
+            $('#search_results').addClass('hidden');
+        }
+        
+        updateSummary();
+    });
+
+    // Function để toggle required attribute
+    function toggleRequiredFields(formSelector, isRequired) {
+        $(formSelector + ' input[required], ' + formSelector + ' select[required]').each(function() {
+            if (isRequired) {
+                $(this).attr('required', 'required');
+            } else {
+                $(this).removeAttr('required');
+            }
+        });
+    }
+
+    // Reset search form
+    function resetSearchForm() {
+        $('#search_tenant_input').val('');
+        $('#search_results').addClass('hidden');
+        $('#MA_KHACH_THUE').val('');
+        
+        // Xóa thông tin đã auto-fill trong form
+        clearAllTenantInputs();
+    }
+
+    // Clear tất cả thông tin khách thuê
+    function clearAllTenantInputs() {
+        $('#MA_KHACH_THUE').val('');
+        $('#HO_TEN_KT').val('');
+        $('#SDT_KT').val('');
+        $('#EMAIL_KT').val('');
+        $('#GIOI_TINH_KT').val('Nam'); // Reset về giá trị default
+        $('#NGAY_SINH_KT').val('');
+        
+        console.log('Đã clear tất cả thông tin khách thuê');
+    }
+
+    // Reset new tenant form
+    function resetNewTenantForm() {
+        $('#new_tenant_form input[type="text"], #new_tenant_form input[type="tel"], #new_tenant_form input[type="date"]').val('');
+        $('#new_tenant_form select').prop('selectedIndex', 0);
+        $('#MA_KHACH_THUE').val('');
+    }
+
+    // Xử lý tìm kiếm khách thuê
+    let searchTimeout;
+    $('#search_tenant_input').on('input', function() {
+        const query = $(this).val().trim();
+        
+        // Clear timeout cũ
+        clearTimeout(searchTimeout);
+        
+        if (query.length < 2) {
+            $('#search_results').addClass('hidden');
+            return;
+        }
+        
+        // Debounce search - đợi 500ms sau khi user ngừng gõ
+        searchTimeout = setTimeout(() => {
+            searchTenants(query);
+        }, 500);
+    });
+
+    // Function tìm kiếm khách thuê qua AJAX
+    function searchTenants(query) {
+        if (!query.trim()) {
+            $('#search_results').addClass('hidden');
+            return;
+        }
+
+        // Hiển thị loading
+        $('#search_results_list').html(`
+            <div class="p-4 text-center text-gray-500">
+                <i class="fas fa-spinner fa-spin mr-2"></i>Đang tìm kiếm...
+            </div>
+        `);
+        $('#search_results').removeClass('hidden');
+
+        $.ajax({
+            url: '{% url "hopdong:tim_khach_thue_co_san" %}',
+            method: 'GET',
+            data: { 'q': query },
+            success: function(response) {
+                if (response.success) {
+                    displaySearchResults(response.results || []);
+                    
+                    // Hiển thị thống kê
+                    if (response.count > 0) {
+                        console.log(`Tìm thấy ${response.count} khách thuê có sẵn`);
+                    }
+                } else {
+                    $('#search_results_list').html(`
+                        <div class="p-4 text-center text-orange-500">
+                            <i class="fas fa-info-circle mr-2"></i>${response.message || 'Không tìm thấy kết quả'}
+                        </div>
+                    `);
+                }
+            },
+            error: function() {
+                $('#search_results_list').html(`
+                    <div class="p-4 text-center text-red-500">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>Có lỗi xảy ra khi tìm kiếm
+                    </div>
+                `);
+            }
+        });
+    }
+
+    // Hiển thị kết quả tìm kiếm
+    function displaySearchResults(results) {
+        if (results.length === 0) {
+            $('#search_results_list').html(`
+                <div class="p-4 text-center text-gray-500">
+                    <i class="fas fa-user-slash mr-2"></i>Không tìm thấy khách thuê có sẵn
+                    <p class="text-xs mt-2 text-gray-400">Chỉ hiển thị khách thuê chưa có hợp đồng hoặc đã rời đi</p>
+                </div>
+            `);
+            return;
+        }
+
+        // Danh sách dạng list đơn giản - 1 dòng nhỏ
+        let html = '<div class="space-y-1">';
+        
+        results.forEach(tenant => {
+            // Status indicator nhỏ
+            let statusIcon = tenant.contract_info ? 
+                '<i class="fas fa-history text-blue-500 text-xs mr-1"></i>' : 
+                '<i class="fas fa-user-plus text-green-500 text-xs mr-1"></i>';
+
+            html += `
+                <div class="search-result-item bg-white border border-gray-200 rounded-md px-3 py-2 hover:bg-blue-50 hover:border-blue-300 cursor-pointer transition-all duration-150" 
+                     data-tenant-id="${tenant.MA_KHACH_THUE}"
+                     data-tenant-name="${tenant.HO_TEN_KT}"
+                     data-tenant-phone="${tenant.SDT_KT}"
+                     data-tenant-email="${tenant.EMAIL_KT || ''}"
+                     data-tenant-gender="${tenant.GIOI_TINH_KT || ''}"
+                     data-tenant-birth="${tenant.NGAY_SINH_KT || ''}">
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1 min-w-0">
+                            <span class="text-sm font-medium text-gray-900 truncate">${tenant.HO_TEN_KT}</span>
+                            <span class="text-sm text-gray-600 ml-2 font-mono">${tenant.SDT_KT}</span>
+                        </div>
+                        <div class="flex-shrink-0 ml-2">
+                            ${statusIcon}
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+
+        $('#search_results_list').html(html);
+    }
+
+    // Xử lý chọn khách thuê từ kết quả tìm kiếm
+    $(document).on('click', '.search-result-item', function() {
+        const tenantData = {
+            id: $(this).data('tenant-id'),
+            name: $(this).data('tenant-name'),
+            phone: $(this).data('tenant-phone'),
+            email: $(this).data('tenant-email'),
+            gender: $(this).data('tenant-gender'),
+            birth: $(this).data('tenant-birth')
+        };
+
+        selectTenant(tenantData);
+        
+        // Hiển thị thông báo
+        showNotification(`Đã chọn khách thuê: ${tenantData.name}`, 'success');
+    });
+
+    // Function chọn khách thuê - tự động điền vào form inputs
+    function selectTenant(tenantData) {
+        // Cập nhật hidden field
+        $('#MA_KHACH_THUE').val(tenantData.id);
+        
+        // Tự động điền thông tin khách thuê vào form inputs
+        $('#HO_TEN_KT').val(tenantData.name);
+        $('#SDT_KT').val(tenantData.phone);
+        $('#EMAIL_KT').val(tenantData.email || '');
+        $('#GIOI_TINH_KT').val(tenantData.gender || '');
+        $('#NGAY_SINH_KT').val(tenantData.birth || '');
+        
+        // Ẩn kết quả tìm kiếm
+        $('#search_results').addClass('hidden');
+        $('#search_tenant_input').val('');
+        
+        // Cập nhật summary
+        updateSummary();
+        
+        // Visual feedback cho các field đã được auto-fill
+        const autoFilledFields = ['#HO_TEN_KT', '#SDT_KT', '#EMAIL_KT', '#GIOI_TINH_KT', '#NGAY_SINH_KT'];
+        autoFilledFields.forEach(field => {
+            if ($(field).val()) {
+                $(field).addClass('bg-green-50 border-green-300').removeClass('border-gray-300');
+                setTimeout(() => {
+                    $(field).removeClass('bg-green-50 border-green-300').addClass('border-gray-300');
+                }, 2000);
+            }
+        });
+        
+        // Focus vào field đầu tiên để user biết đã chọn xong
+        $('#HO_TEN_KT').focus().blur();
+    }
+
+    // Clear selected tenant button removed - không cần thiết nữa
+    // User có thể trực tiếp edit trong form inputs
+
+    // Cập nhật updateSummary function để xử lý cả 2 trường hợp
+    const originalUpdateSummary = updateSummary;
+    updateSummary = function() {
+        // Xử lý tên khách thuê theo loại form được chọn
+        const tenantType = $('input[name="tenant_type"]:checked').val();
+        let tenantName = '-';
+        
+        if (tenantType === 'new') {
+            tenantName = $('#HO_TEN_KT').val() || '-';
+        } else if (tenantType === 'existing') {
+            tenantName = $('#selected_tenant_name').text() !== '-' ? $('#selected_tenant_name').text() : '-';
+        }
+        
+        // Cập nhật summary với tên khách thuê
+        $('#summary-tenant').text(tenantName);
+        
+        // Gọi function gốc để xử lý các field khác
+        if (originalUpdateSummary && typeof originalUpdateSummary === 'function') {
+            originalUpdateSummary();
+        }
+    };
+
+    // Xử lý chuyển bước
+    $('#nextBtn').click(function() {
+        if (currentStep === 1 && !currentSelectedRoom) {
+            showNotification('Vui lòng chọn phòng trước khi tiếp tục.', 'error');
+            return;
+        }
+        
+        if (currentStep < totalSteps && validateCurrentStep()) {
+            currentStep++;
+            updateUI();
+        }
+    });
+
+    $('#prevBtn').click(function() {
+        if (currentStep > 1) {
+            currentStep--;
+            updateUI();
+        }
+    });
+
+    // Xử lý submit form
+    $('#contractForm').submit(function(e) {
+        {% if not hop_dong %}
+        if (!currentSelectedRoom) {
+            e.preventDefault();
+            showNotification('Vui lòng chọn phòng trước khi lưu.', 'error');
+            return;
+        }
+        // Kiểm tra form action có hợp lệ không
+        const formAction = $(this).attr('action');
+        if (!formAction || formAction === '#') {
+            e.preventDefault();
+            showNotification('Vui lòng chọn phòng trước khi lưu.', 'error');
+            return;
+        }
+        {% endif %}
+        if (!validateCurrentStep()) {
+            e.preventDefault();
+            return;
+        }
+        $('#submitBtn').prop('disabled', true).html(`
+            <svg class="animate-spin w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Đang lưu...
+        `);
+    });
+
+    // Khởi tạo
+    {% if hop_dong %}
+        $('#step-1').attr('data-active', true);
+        updateUI();
+    {% else %}
+        // Nếu tạo mới, bắt đầu với form ẩn
+        hideFormContainer();
+    {% endif %}
+    
+    $('#HO_TEN_KT, #GIA_THUE, #TIEN_COC_PHONG').on('input', updateSummary);
+    $('#NGAY_NHAN_PHONG').on('change', updateEndDate);
+    
+    // Validation cho chỉ số dịch vụ
+    $(document).on('input', 'input[name^="chiso_moi_"]', function() {
+        const chiSoMoi = parseInt($(this).val()) || 0;
+        const dichVuId = $(this).attr('name').replace('chiso_moi_', '');
+        const chiSoCu = parseInt($(`input[name="chiso_cu_${dichVuId}"]`).val()) || 0;
+        
+        if (chiSoMoi < chiSoCu) {
+            $(this).addClass('border-red-500 ring-2 ring-red-200');
+            $(this).attr('title', `Chỉ số mới phải >= chỉ số cũ (${chiSoCu})`);
+        } else {
+            $(this).removeClass('border-red-500 ring-2 ring-red-200');
+            $(this).removeAttr('title');
+        }
+    });
+    
+    $(document).on('click', function(e) {
+        if (!$(e.target).closest('.cursor-pointer, [id$=-dropdown]').length) {
+            $('[id$=-dropdown]').addClass('hidden');
+        }
+    });
+
+    // Nếu đang chỉnh sửa hợp đồng, chọn phòng mặc định
+    {% if hop_dong %}
+        currentSelectedRoom = {
+            maPhong: '{{ hop_dong.MA_PHONG.MA_PHONG }}',
+            tenPhong: '{{ hop_dong.MA_PHONG.TEN_PHONG }}'
+        };
+        $('#selected_room_info').text(`Đã chọn: ${currentSelectedRoom.tenPhong}`);
+        $('#summary-room').text(currentSelectedRoom.tenPhong);
+        loadDichVu(currentSelectedRoom.maPhong);
+        const khuVucId = '{{ hop_dong.MA_PHONG.MA_KHU_VUC.MA_KHU_VUC }}';
+        if (khuVucId) {
+            $('#khu_vuc').val(khuVucId).trigger('change');
+            setTimeout(function() {
+                $(`.room-card[data-ma-phong="${currentSelectedRoom.maPhong}"]`).addClass('border-blue-500 bg-blue-50');
+            }, 500);
+        }
+    {% endif %}
+});
+</script>
+{% endblock %}

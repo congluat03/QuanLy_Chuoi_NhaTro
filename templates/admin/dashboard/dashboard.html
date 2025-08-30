@@ -1,525 +1,413 @@
 {% extends 'admin/admin_layout.html' %}
 {% load static %}
+{% load custom_filters %}
 
 {% block content_body %}
-<div class="container mx-auto px-6 py-8">
-  <!-- Welcome Header -->
-  <div class="mb-8">
-    <div class="flex items-center justify-between">
-      <div>
-        <h1 class="text-3xl font-bold text-gray-900">
-          Chào mừng trở lại, 
-          {% if nguoi_quan_ly %}
-            {{ nguoi_quan_ly.TEN_QUAN_LY }}
-          {% else %}
-            {{ username }}
-          {% endif %}!
-        </h1>
-        <p class="text-gray-600 mt-2">Tổng quan hệ thống quản lý nhà trọ</p>
-      </div>
-      <div class="text-right">
-        <p class="text-sm text-gray-500">{{ tai_khoan.NGAY_TAO|date:"l, d/m/Y" }}</p>
-        <p class="text-xs text-gray-400">Đăng nhập lần cuối: Hôm nay</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- Profile Section -->
-  <div class="grid lg:grid-cols-3 gap-8 mb-8">
-    <!-- Profile Card -->
-    <div class="lg:col-span-1">
-      <div class="bg-white rounded-xl shadow-lg overflow-hidden">
-        <!-- Header with Avatar -->
-        <div class="bg-gradient-to-r from-sky-600 to-blue-700 px-6 py-6">
-          <div class="flex flex-col items-center">
-            <!-- Avatar -->
-            <div class="w-20 h-20 mb-4">
-              {% if nguoi_quan_ly and nguoi_quan_ly.ANH_QL %}
-                <img src="data:image/jpeg;base64,{{ nguoi_quan_ly.ANH_QL }}" 
-                     alt="Avatar" 
-                     class="w-20 h-20 rounded-full object-cover border-4 border-white/30">
-              {% else %}
-                <div class="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center">
-                  <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
-                  </svg>
+<div class="mx-auto w-full md:w-[85%] py-6">
+    <div class="bg-white shadow-xl rounded-2xl p-6 sm:p-8">
+        <!-- Header Dashboard -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">Dashboard Quản Lý Chuỗi Nhà Trọ</h1>
+                <p class="text-gray-600 mt-1">Tổng quan hoạt động kinh doanh toàn hệ thống</p>
+            </div>
+            <div class="flex items-center space-x-4 mt-4 md:mt-0">
+                <div class="text-right">
+                    <div class="text-sm text-gray-500">Cập nhật lúc</div>
+                    <div class="text-lg font-semibold text-gray-900">{{ "now"|date:"H:i d/m/Y" }}</div>
                 </div>
-              {% endif %}
+                <button onclick="refreshDashboard()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+                    <i class="fas fa-sync-alt mr-2"></i>Làm mới
+                </button>
+            </div>
+        </div>
+
+       
+
+        <!-- Thống kê tổng quan -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+            <!-- Tổng số phòng -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wide">Tổng số phòng</h3>
+                        <p class="text-3xl font-bold text-gray-900 mt-2">{{ stats.tong_so_phong }}</p>
+                        <div class="flex items-center mt-2">
+                            <span class="text-sm text-green-600">
+                                <i class="fas fa-arrow-up mr-1"></i>{{ stats.tang_phong_thang_nay }} phòng tháng này
+                            </span>
+                        </div>
+                    </div>
+                    <div class="p-3 rounded-full bg-blue-100">
+                        <i class="fas fa-building text-blue-600 text-2xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tỷ lệ công suất -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wide">Công suất thuê</h3>
+                        <p class="text-3xl font-bold text-green-600 mt-2">{{ stats.ty_le_cong_suat }}%</p>
+                        <div class="flex items-center mt-2">
+                            <span class="text-sm text-gray-600">{{ stats.phong_dang_o }}/{{ stats.tong_so_phong }} phòng</span>
+                        </div>
+                    </div>
+                    <div class="p-3 rounded-full bg-green-100">
+                        <i class="fas fa-chart-pie text-green-600 text-2xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Doanh thu tháng -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wide">Doanh thu tháng</h3>
+                        <p class="text-3xl font-bold text-yellow-600 mt-2">{{ stats.doanh_thu_thang|currency_vn_short }}</p>
+                        <div class="flex items-center mt-2">
+                            <span class="text-sm {% if stats.tang_giam_doanh_thu >= 0 %}text-green-600{% else %}text-red-600{% endif %}">
+                                <i class="fas {% if stats.tang_giam_doanh_thu >= 0 %}fa-arrow-up{% else %}fa-arrow-down{% endif %} mr-1"></i>
+                                {{ stats.tang_giam_doanh_thu }}% so với tháng trước
+                            </span>
+                        </div>
+                    </div>
+                    <div class="p-3 rounded-full bg-yellow-100">
+                        <i class="fas fa-coins text-yellow-600 text-2xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Công nợ -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wide">Công nợ</h3>
+                        <p class="text-3xl font-bold text-red-600 mt-2">{{ stats.tong_cong_no|currency_vn_short }}</p>
+                        <div class="flex items-center mt-2">
+                            <span class="text-sm text-red-600">{{ stats.so_khach_no }} khách đang nợ</span>
+                        </div>
+                    </div>
+                    <div class="p-3 rounded-full bg-red-100">
+                        <i class="fas fa-exclamation-triangle text-red-600 text-2xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+         <!-- Quick Stats Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white p-4 rounded-lg border border-gray-200 text-center">
+                <i class="fas fa-users text-blue-500 text-lg mb-2"></i>
+                <div class="text-lg font-bold text-gray-900">{{ stats.tong_khach_thue }}</div>
+                <div class="text-xs text-gray-500">Khách thuê</div>
             </div>
             
-            <!-- User Info -->
-            <div class="text-center text-white">
-              <h3 class="text-xl font-bold mb-1">
-                {% if nguoi_quan_ly %}
-                  {{ nguoi_quan_ly.TEN_QUAN_LY }}
-                {% else %}
-                  {{ tai_khoan.TAI_KHOAN }}
-                {% endif %}
-              </h3>
-              <p class="text-white/80 text-sm">{{ vai_tro }}</p>
-              <div class="flex items-center justify-center mt-2">
-                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-400 text-green-900">
-                  <div class="w-2 h-2 bg-green-600 rounded-full mr-1"></div>
-                  Đang hoạt động
-                </span>
-              </div>
+            <div class="bg-white p-4 rounded-lg border border-gray-200 text-center">
+                <i class="fas fa-file-contract text-green-500 text-lg mb-2"></i>
+                <div class="text-lg font-bold text-gray-900">{{ stats.tong_hop_dong_hoat_dong }}</div>
+                <div class="text-xs text-gray-500">Hợp đồng</div>
             </div>
-          </div>
-        </div>
-
-        <!-- Profile Details -->
-        <div class="p-6 space-y-4">
-          <div>
-            <label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Tên đăng nhập</label>
-            <p class="text-gray-900 font-medium">{{ tai_khoan.TAI_KHOAN }}</p>
-          </div>
-          
-          {% if nguoi_quan_ly %}
-          <div>
-            <label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Email</label>
-            <p class="text-gray-900">{{ nguoi_quan_ly.EMAIL_QL|default:"Chưa cập nhật" }}</p>
-          </div>
-          
-          <div>
-            <label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Số điện thoại</label>
-            <p class="text-gray-900">{{ nguoi_quan_ly.SDT_QUAN_LY|default:"Chưa cập nhật" }}</p>
-          </div>
-          {% endif %}
-          
-          <div>
-            <label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Trạng thái tài khoản</label>
-            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
-              {{ tai_khoan.TRANG_THAI_TK }}
-            </span>
-          </div>
-          
-          <!-- Quick Actions -->
-          <div class="pt-4 border-t border-gray-200">
-            <div class="space-y-2">
-              <a href="{% url 'dungchung:admin_profile' %}" 
-                 class="block w-full text-center bg-sky-600 hover:bg-sky-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200">
-                Xem hồ sơ đầy đủ
-              </a>
-              <a href="{% url 'dungchung:doi_mat_khau' %}" 
-                 class="block w-full text-center bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors duration-200">
-                Đổi mật khẩu
-              </a>
+            
+            <div class="bg-white p-4 rounded-lg border border-gray-200 text-center">
+                <i class="fas fa-file-invoice text-yellow-500 text-lg mb-2"></i>
+                <div class="text-lg font-bold text-gray-900">{{ stats.tong_hoa_don_thang }}</div>
+                <div class="text-xs text-gray-500">Hóa đơn tháng</div>
             </div>
-          </div>
+            
+            <div class="bg-white p-4 rounded-lg border border-gray-200 text-center">
+                <i class="fas fa-handshake text-purple-500 text-lg mb-2"></i>
+                <div class="text-lg font-bold text-gray-900">{{ stats.tong_phieu_thu_thang }}</div>
+                <div class="text-xs text-gray-500">Phiếu thu</div>
+            </div>                
         </div>
-      </div>
+
+        <!-- Thống kê chi tiết theo khu vực -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 max-h-[500px] overflow-y-auto">
+            <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 sticky top-0 z-10">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-xl font-semibold text-gray-900">Thống Kê Chi Tiết Theo Khu Vực</h2>
+                    <div class="flex space-x-2">
+                        <button class="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full">Tháng này</button>                     
+                    </div>
+                </div>
+            </div>
+            
+            <div class="relative">
+                <table class="w-full table-fixed">
+                    <thead class="bg-blue-50 sticky top-0 z-10">
+                        <tr>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-blue-800 uppercase tracking-wider w-1/6">
+                                <i class="fas fa-map-marker-alt mr-2"></i>Khu vực
+                            </th>
+                            <th class="px-6 py-4 text-center text-xs font-semibold text-blue-800 uppercase tracking-wider w-1/8">
+                                <i class="fas fa-door-open mr-1"></i>Tổng phòng
+                            </th>
+                            <th class="px-6 py-4 text-center text-xs font-semibold text-blue-800 uppercase tracking-wider w-1/8">
+                                <i class="fas fa-home mr-1"></i>Đang ở
+                            </th>
+                            <th class="px-6 py-4 text-center text-xs font-semibold text-blue-800 uppercase tracking-wider w-1/8">
+                                <i class="fas fa-door-closed mr-1"></i>Trống
+                            </th>
+                            <th class="px-6 py-4 text-center text-xs font-semibold text-blue-800 uppercase tracking-wider w-1/8">
+                                <i class="fas fa-chart-line mr-1"></i>Công suất
+                            </th>
+                            <th class="px-6 py-4 text-center text-xs font-semibold text-blue-800 uppercase tracking-wider w-1/8">
+                                <i class="fas fa-money-bill-wave mr-1"></i>Doanh thu
+                            </th>
+                            <th class="px-6 py-4 text-center text-xs font-semibold text-blue-800 uppercase tracking-wider w-1/8">
+                                <i class="fas fa-exclamation-circle mr-1"></i>Công nợ
+                            </th>
+                            <th class="px-6 py-4 text-center text-xs font-semibold text-blue-800 uppercase tracking-wider w-1/8">
+                                <i class="fas fa-cog mr-1"></i>Thao tác
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        {% for kv_stat in stats.khu_vuc_stats %}
+                        <tr class="hover:bg-blue-25 transition-colors group">
+                            <td class="px-6 py-4">
+                                <div class="flex items-center">
+                                    <div class="w-3 h-3 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full mr-3"></div>
+                                    <div>
+                                        <div class="text-sm font-semibold text-gray-900">{{ kv_stat.ten_khu_vuc }}</div>
+                                        <div class="text-xs text-gray-500">{{ kv_stat.dia_chi }}</div>
+                                        <div class="text-xs text-gray-400">{{ kv_stat.so_quan_ly }} quản lý</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                <span class="text-lg font-bold text-gray-900">{{ kv_stat.tong_phong }}</span>
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                <div class="flex flex-col items-center">
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-800">
+                                        {{ kv_stat.phong_dang_o }}
+                                    </span>
+                                    {% if kv_stat.hop_dong_sap_het_han > 0 %}
+                                    <span class="text-xs text-orange-600 mt-1">{{ kv_stat.hop_dong_sap_het_han }} sắp hết hạn</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-red-100 text-red-800">
+                                    {{ kv_stat.phong_trong }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                <div class="flex items-center justify-center">
+                                    <i class="fas fa-chart-line mr-1 {% if kv_stat.ty_le_thue >= 80 %}text-green-600{% elif kv_stat.ty_le_thue >= 60 %}text-yellow-600{% else %}text-red-600{% endif %}"></i>
+                                    <span class="text-sm font-bold {% if kv_stat.ty_le_thue >= 80 %}text-green-600{% elif kv_stat.ty_le_thue >= 60 %}text-yellow-600{% else %}text-red-600{% endif %}">
+                                        {{ kv_stat.ty_le_thue }}%
+                                    </span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                <div class="flex flex-col items-center">
+                                    <span class="text-lg font-bold text-blue-600">{{ kv_stat.doanh_thu_thang|currency_vn_short }}</span>
+                                    <span class="text-xs {% if kv_stat.tang_giam_doanh_thu >= 0 %}text-green-600{% else %}text-red-600{% endif %} mt-1">
+                                        {% if kv_stat.tang_giam_doanh_thu >= 0 %}+{% endif %}{{ kv_stat.tang_giam_doanh_thu }}%
+                                    </span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                {% if kv_stat.cong_no > 0 %}
+                                    <div class="flex flex-col items-center">
+                                        <span class="text-sm font-bold text-red-600">{{ kv_stat.cong_no|currency_vn_short }}</span>
+                                        <span class="text-xs text-red-500">{{ kv_stat.so_khach_no }} khách</span>
+                                    </div>
+                                {% else %}
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                                        <i class="fas fa-check mr-1"></i>Đã thu hết
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                <div class="flex items-center justify-center space-x-2">
+                                    <a href="{% url 'phongtro:phongtro_list' %}?ma_khu_vuc={{ kv_stat.ma_khu_vuc }}" 
+                                    class="text-blue-600 hover:text-blue-800 transition" title="Xem phòng">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'hopdong:hopdong_list' %}?ma_khu_vuc={{ kv_stat.ma_khu_vuc }}" 
+                                    class="text-green-600 hover:text-green-800 transition" title="Xem hợp đồng">
+                                        <i class="fas fa-file-contract"></i>
+                                    </a>
+                                    <a href="{% url 'hoadon:hoadon_list' %}?ma_khu_vuc={{ kv_stat.ma_khu_vuc }}" 
+                                    class="text-yellow-600 hover:text-yellow-800 transition" title="Xem hóa đơn">
+                                        <i class="fas fa-file-invoice"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot class="bg-gradient-to-r from-blue-50 to-indigo-50 font-semibold border-t-2 border-blue-200 sticky bottom-0 z-10">
+                        <tr>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center">
+                                    <div class="w-3 h-3 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full mr-3"></div>
+                                    <div class="text-base font-bold text-blue-900">TỔNG TOÀN HỆ THỐNG</div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                <span class="text-xl font-bold text-blue-900">{{ stats.tong_tat_ca_phong }}</span>
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                <span class="text-xl font-bold text-green-700">{{ stats.tong_phong_dang_o }}</span>
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                <span class="text-xl font-bold text-red-700">{{ stats.tong_phong_trong }}</span>
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                <div class="flex items-center justify-center">
+                                    <i class="fas fa-chart-line mr-1 {% if stats.ty_le_cong_suat >= 80 %}text-green-600{% elif stats.ty_le_cong_suat >= 60 %}text-yellow-600{% else %}text-red-600{% endif %}"></i>
+                                    <span class="text-lg font-bold {% if stats.ty_le_cong_suat >= 80 %}text-green-600{% elif stats.ty_le_cong_suat >= 60 %}text-yellow-600{% else %}text-red-600{% endif %}">{{ stats.ty_le_cong_suat }}%</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                <span class="text-xl font-bold text-blue-900">{{ stats.tong_doanh_thu_thang|currency_vn_short }}</span>
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                <span class="text-xl font-bold text-red-700">{{ stats.tong_cong_no_he_thong|currency_vn_short }}</span>
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                <i class="fas fa-chart-bar text-blue-600 text-lg"></i>
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <!-- Biểu đồ và thống kê bổ sung -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Biểu đồ doanh thu 6 tháng -->
+            <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200">
+                <div class="p-6 border-b border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-900">Doanh Thu 6 Tháng Gần Đây</h3>
+                </div>
+                <div class="p-6">
+                    <div class="flex items-end justify-between h-64 space-x-2">
+                        {% for thang in stats.doanh_thu_6_thang %}
+                        <div class="flex-1 flex flex-col items-center">
+                            <div class="w-full bg-gray-200 rounded-t-lg relative overflow-hidden" style="height: 200px;">
+                                <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-blue-500 to-blue-400 rounded-t-lg transition-all duration-1000"
+                                    style="height: {{ thang.ty_le }}%"></div>
+                            </div>
+                            <div class="mt-3 text-center">
+                                <div class="text-xs text-gray-600 font-medium">T{{ thang.thang }}/{{ thang.nam }}</div>
+                                <div class="text-xs font-bold text-gray-900">{{ thang.doanh_thu|currency_vn_short }}</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top KPIs -->
+            <div class="space-y-6">
+                <!-- Hợp đồng sắp hết hạn -->
+                <div class="bg-white rounded-xl shadow-sm border border-orange-200">
+                    <div class="p-4 border-b border-orange-200 bg-orange-50">
+                        <h3 class="text-sm font-semibold text-orange-900 flex items-center">
+                            <i class="fas fa-clock text-orange-600 mr-2"></i>
+                            Hợp đồng sắp hết hạn
+                        </h3>
+                    </div>
+                    <div class="p-4">
+                        {% if stats.hop_dong_sap_het_han %}
+                            <div class="space-y-3 max-h-48 overflow-y-auto">
+                                {% for hd in stats.hop_dong_sap_het_han %}
+                                <div class="flex justify-between items-center p-2 bg-orange-50 rounded-lg">
+                                    <div>
+                                        <div class="text-sm font-medium text-gray-900">{{ hd.phong_ten }}</div>
+                                        <div class="text-xs text-gray-600">{{ hd.khach_thue_ten }}</div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-xs font-semibold text-orange-600">{{ hd.con_lai_ngay }} ngày</div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-gray-500 text-center py-4 text-sm">Không có hợp đồng nào sắp hết hạn</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Top khách nợ nhiều nhất -->
+                <div class="bg-white rounded-xl shadow-sm border border-red-200">
+                    <div class="p-4 border-b border-red-200 bg-red-50">
+                        <h3 class="text-sm font-semibold text-red-900 flex items-center">
+                            <i class="fas fa-user-times text-red-600 mr-2"></i>
+                            Khách nợ nhiều nhất
+                        </h3>
+                    </div>
+                    <div class="p-4">
+                        {% if stats.top_khach_no %}
+                            <div class="space-y-3">
+                                {% for khach in stats.top_khach_no %}
+                                <div class="flex justify-between items-center p-2 bg-red-50 rounded-lg">
+                                    <div>
+                                        <div class="text-sm font-medium text-gray-900">{{ khach.ho_ten }}</div>
+                                        <div class="text-xs text-gray-600">{{ khach.phong_ten }}</div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-sm font-bold text-red-600">{{ khach.so_tien_no|currency_vn_short }}</div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-gray-500 text-center py-4 text-sm">Tất cả khách đã thanh toán đủ</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-
-    <!-- Statistics Cards -->
-    <div class="lg:col-span-2 grid sm:grid-cols-2 gap-6">
-      <!-- Total Contracts -->
-      <div class="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm font-medium text-gray-600">Tổng hợp đồng</p>
-            <p class="text-3xl font-bold text-gray-900">{{ total_rooms|default:"--" }}</p>
-            <p class="text-xs text-green-600 mt-1">
-              <span class="inline-flex items-center">
-                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M3.293 9.707a1 1 0 010-1.414l6-6a1 1 0 011.414 0l6 6a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L4.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-                </svg>
-                Dựa trên hợp đồng
-              </span>
-            </p>
-          </div>
-          <div class="w-12 h-12 bg-sky-100 rounded-lg flex items-center justify-center">
-            <svg class="w-6 h-6 text-sky-600" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z" clip-rule="evenodd" />
-            </svg>
-          </div>
-        </div>
-      </div>
-
-      <!-- Active Contracts -->
-      <div class="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm font-medium text-gray-600">Hợp đồng hoạt động</p>
-            <p class="text-3xl font-bold text-gray-900">{{ total_tenants|default:"--" }}</p>
-            <p class="text-xs text-green-600 mt-1">
-              <span class="inline-flex items-center">
-                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M3.293 9.707a1 1 0 010-1.414l6-6a1 1 0 011.414 0l6 6a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L4.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-                </svg>
-                Đang hoạt động
-              </span>
-            </p>
-          </div>
-          <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-            <svg class="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" clip-rule="evenodd" />
-            </svg>
-          </div>
-        </div>
-      </div>
-
-      <!-- Monthly Revenue -->
-      <div class="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm font-medium text-gray-600">Doanh thu tháng</p>
-            <p class="text-3xl font-bold text-gray-900">{{ monthly_revenue|default:"--" }}</p>
-            <p class="text-xs text-green-600 mt-1">
-              <span class="inline-flex items-center">
-                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M3.293 9.707a1 1 0 010-1.414l6-6a1 1 0 011.414 0l6 6a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L4.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-                </svg>
-                Đang cập nhật
-              </span>
-            </p>
-          </div>
-          <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-            <svg class="w-6 h-6 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
-              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clip-rule="evenodd" />
-            </svg>
-          </div>
-        </div>
-      </div>
-
-      <!-- Pending Contracts -->
-      <div class="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm font-medium text-gray-600">Hợp đồng chờ</p>
-            <p class="text-3xl font-bold text-gray-900">{{ pending_contracts|default:"--" }}</p>
-            <p class="text-xs text-orange-600 mt-1">
-              <span class="inline-flex items-center">
-                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                </svg>
-                Cần xử lý
-              </span>
-            </p>
-          </div>
-          <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-            <svg class="w-6 h-6 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z" clip-rule="evenodd" />
-            </svg>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Quick Actions Section -->
-  <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-    <a href="#" class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200">
-      <div class="flex items-center">
-        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
-          <svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
-          </svg>
-        </div>
-        <div>
-          <h3 class="text-sm font-medium text-gray-900">Quản lý phòng</h3>
-          <p class="text-xs text-gray-500">Xem tất cả phòng trọ</p>
-        </div>
-      </div>
-    </a>
-
-    <a href="#" class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200">
-      <div class="flex items-center">
-        <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-4">
-          <svg class="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
-          </svg>
-        </div>
-        <div>
-          <h3 class="text-sm font-medium text-gray-900">Khách thuê</h3>
-          <p class="text-xs text-gray-500">Quản lý khách thuê</p>
-        </div>
-      </div>
-    </a>
-
-    <a href="#" class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200">
-      <div class="flex items-center">
-        <div class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center mr-4">
-          <svg class="w-5 h-5 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z" clip-rule="evenodd" />
-          </svg>
-        </div>
-        <div>
-          <h3 class="text-sm font-medium text-gray-900">Hóa đơn</h3>
-          <p class="text-xs text-gray-500">Quản lý hóa đơn</p>
-        </div>
-      </div>
-    </a>
-
-    <a href="#" class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200">
-      <div class="flex items-center">
-        <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mr-4">
-          <svg class="w-5 h-5 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd" />
-          </svg>
-        </div>
-        <div>
-          <h3 class="text-sm font-medium text-gray-900">Báo cáo</h3>
-          <p class="text-xs text-gray-500">Xem báo cáo tổng hợp</p>
-        </div>
-      </div>
-    </a>
-  </div>
-
-  <!-- Contract Workflow Statistics Dashboard -->
-  <div class="bg-white shadow-xl rounded-2xl p-6 mb-8">
-      <div class="flex items-center justify-between mb-6">
-          <h2 class="text-xl font-bold text-gray-800 flex items-center">
-              <i class="fas fa-chart-line mr-3 text-blue-600"></i>
-              Thống kê Quy trình Hợp đồng
-          </h2>
-          <button onclick="refreshWorkflowStats()" class="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-700 text-sm rounded-lg hover:bg-blue-200 transition">
-              <i class="fas fa-sync-alt mr-1"></i> Cập nhật
-          </button>
-      </div>
-      
-      <!-- Workflow Statistics Cards -->
-      <div id="workflowStatsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <div class="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200">
-              <div class="flex items-center justify-between">
-                  <div>
-                      <p class="text-blue-600 text-sm font-medium">Tổng Hợp đồng</p>
-                      <p id="totalContracts" class="text-2xl font-bold text-blue-800">...</p>
-                  </div>
-                  <i class="fas fa-file-contract text-blue-500 text-2xl"></i>
-              </div>
-          </div>
-          
-          <div class="bg-gradient-to-r from-green-50 to-green-100 p-4 rounded-lg border border-green-200">
-              <div class="flex items-center justify-between">
-                  <div>
-                      <p class="text-green-600 text-sm font-medium">Đang Hoạt động</p>
-                      <p id="activeContracts" class="text-2xl font-bold text-green-800">...</p>
-                  </div>
-                  <i class="fas fa-check-circle text-green-500 text-2xl"></i>
-              </div>
-          </div>
-          
-          <div class="bg-gradient-to-r from-yellow-50 to-yellow-100 p-4 rounded-lg border border-yellow-200">
-              <div class="flex items-center justify-between">
-                  <div>
-                      <p class="text-yellow-600 text-sm font-medium">Sắp Hết hạn</p>
-                      <p id="expiringContracts" class="text-2xl font-bold text-yellow-800">...</p>
-                  </div>
-                  <i class="fas fa-clock text-yellow-500 text-2xl"></i>
-              </div>
-          </div>
-          
-          <div class="bg-gradient-to-r from-red-50 to-red-100 p-4 rounded-lg border border-red-200">
-              <div class="flex items-center justify-between">
-                  <div>
-                      <p class="text-red-600 text-sm font-medium">Cần Xử lý</p>
-                      <p id="pendingContracts" class="text-2xl font-bold text-red-800">...</p>
-                  </div>
-                  <i class="fas fa-exclamation-triangle text-red-500 text-2xl"></i>
-              </div>
-          </div>
-      </div>
-      
-      <!-- Recent Workflow Activities -->
-      <div class="border-t border-gray-200 pt-6">
-          <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-              <i class="fas fa-history mr-2 text-gray-600"></i>
-              Hoạt động Gần đây
-          </h3>
-          <div id="recentActivities" class="space-y-3">
-              <div class="flex items-center justify-center py-8">
-                  <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-600"></div>
-                  <span class="ml-2 text-gray-600">Đang tải...</span>
-              </div>
-          </div>
-      </div>
-      
-      <!-- Quick Actions -->
-      <div class="border-t border-gray-200 pt-6 mt-6">
-          <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-              <i class="fas fa-bolt mr-2 text-gray-600"></i>
-              Thao tác Nhanh
-          </h3>
-          <div class="flex flex-wrap gap-3">
-              <button onclick="triggerMonthlyInvoiceGeneration()" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm">
-                  <i class="fas fa-file-invoice-dollar mr-2"></i>
-                  Sinh HĐ Hàng tháng
-              </button>
-              <button onclick="updateContractStatuses()" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm">
-                  <i class="fas fa-sync mr-2"></i>
-                  Cập nhật Trạng thái
-              </button>
-              <a href="/admin/hopdong/" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-sm">
-                  <i class="fas fa-list mr-2"></i>
-                  Quản lý Hợp đồng
-              </a>
-          </div>
-      </div>
-  </div>
-
-  <!-- Recent Activity Section -->
-  <div class="bg-white rounded-xl shadow-sm border border-gray-200">
-    <div class="px-6 py-4 border-b border-gray-200">
-      <h2 class="text-lg font-semibold text-gray-900">Hoạt động gần đây</h2>
-    </div>
-    <div class="p-6">
-      <div class="text-center py-8">
-        <svg class="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-        </svg>
-        <h3 class="text-lg font-medium text-gray-900 mb-2">Chưa có hoạt động nào</h3>
-        <p class="text-gray-500">Các hoạt động quản lý sẽ được hiển thị tại đây</p>
-      </div>
-    </div>
-  </div>
 </div>
 
 <script>
-// Workflow Dashboard Functions
-function refreshWorkflowStats() {
-    // Show loading state
-    document.getElementById('totalContracts').textContent = '...';
-    document.getElementById('activeContracts').textContent = '...';
-    document.getElementById('expiringContracts').textContent = '...';
-    document.getElementById('pendingContracts').textContent = '...';
-    
-    fetch('/admin/hopdong/dashboard-stats/', {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Update statistics using new response format
-            document.getElementById('totalContracts').textContent = data.stats.total_contracts || '0';
-            document.getElementById('activeContracts').textContent = data.stats.active_contracts || '0';
-            document.getElementById('expiringContracts').textContent = data.stats.expiring_contracts || '0';
-            document.getElementById('pendingContracts').textContent = data.stats.pending_contracts || '0';
-            
-            // Update recent activities with contract-based data
-            updateRecentActivities(data.recent_activities || []);
-        } else {
-            console.error('Failed to fetch stats:', data.message);
-            // Set error state
-            ['totalContracts', 'activeContracts', 'expiringContracts', 'pendingContracts'].forEach(id => {
-                document.getElementById(id).textContent = 'N/A';
-            });
-        }
-    })
-    .catch(error => {
-        console.error('Error fetching workflow stats:', error);
-        // Set error state
-        ['totalContracts', 'activeContracts', 'expiringContracts', 'pendingContracts'].forEach(id => {
-            document.getElementById(id).textContent = 'Lỗi';
-        });
-    });
-}
-
-function updateRecentActivities(activities) {
-    const container = document.getElementById('recentActivities');
-    
-    if (!activities || activities.length === 0) {
-        container.innerHTML = `
-            <div class="text-center py-4 text-gray-500">
-                <i class="fas fa-info-circle mr-2"></i>
-                Chưa có hoạt động nào gần đây
-            </div>
-        `;
-        return;
-    }
-    
-    const activitiesHTML = activities.map(activity => `
-        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-            <div class="flex items-center">
-                <div class="w-8 h-8 rounded-full flex items-center justify-center bg-${activity.color || 'blue'}-100 mr-3">
-                    <i class="${activity.icon || 'fas fa-file'} text-${activity.color || 'blue'}-600 text-sm"></i>
-                </div>
-                <div>
-                    <p class="text-sm font-medium text-gray-800">${activity.title || 'Hoạt động'}</p>
-                    <p class="text-xs text-gray-500">${activity.description || ''}</p>
-                </div>
-            </div>
-            <span class="text-xs text-gray-400">${activity.time || ''}</span>
-        </div>
-    `).join('');
-    
-    container.innerHTML = activitiesHTML;
-}
-
-function triggerMonthlyInvoiceGeneration() {
-    if (!confirm('Bạn có chắc chắn muốn sinh hóa đơn hàng tháng cho tất cả hợp đồng hoạt động?')) {
-        return;
-    }
-    
-    const currentDate = new Date();
-    const month = currentDate.getMonth() + 1;
-    const year = currentDate.getFullYear();
-    
-    fetch('/admin/hopdong/workflow-action/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
-                          document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-        },
-        body: JSON.stringify({
-            action: 'monthly_invoice_generation',
-            data: { month: month, year: year }
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert(`Đã sinh hóa đơn cho tháng ${month}/${year}. ${data.message || ''}`);
-            refreshWorkflowStats();
-        } else {
-            alert(`Lỗi: ${data.message || 'Không thể sinh hóa đơn'}`);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Lỗi kết nối khi sinh hóa đơn!');
-    });
-}
-
-function updateContractStatuses() {
-    if (!confirm('Bạn có chắc chắn muốn cập nhật trạng thái cho tất cả hợp đồng?')) {
-        return;
-    }
-    
-    fetch('/admin/hopdong/workflow-action/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
-                          document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-        },
-        body: JSON.stringify({
-            action: 'update_statuses'
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert(`Đã cập nhật trạng thái hợp đồng. ${data.message || ''}`);
-            refreshWorkflowStats();
-        } else {
-            alert(`Lỗi: ${data.message || 'Không thể cập nhật trạng thái'}`);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Lỗi kết nối khi cập nhật trạng thái!');
-    });
-}
-
-// Load initial stats when page loads
+// Dashboard interactions
 document.addEventListener('DOMContentLoaded', function() {
-    refreshWorkflowStats();
+    // Animate progress bars
+    setTimeout(() => {
+        const progressBars = document.querySelectorAll('[style*="width:"]');
+        progressBars.forEach(bar => {
+            if (bar.classList.contains('h-2') || bar.classList.contains('h-3')) {
+                const width = bar.style.width;
+                bar.style.width = '0%';
+                setTimeout(() => {
+                    bar.style.width = width;
+                }, 200);
+            }
+        });
+    }, 500);
+    
+    // Animate chart bars
+    setTimeout(() => {
+        const chartBars = document.querySelectorAll('[style*="height:"]');
+        chartBars.forEach(bar => {
+            if (bar.parentElement.style.height === '200px') {
+                const height = bar.style.height;
+                bar.style.height = '0%';
+                setTimeout(() => {
+                    bar.style.height = height;
+                }, Math.random() * 500 + 200);
+            }
+        });
+    }, 1000);
+});
+
+function refreshDashboard() {
+    location.reload();
+}
+
+// Tooltip cho các icon
+tippy('[title]', {
+    theme: 'light-border',
+    animation: 'fade',
 });
 </script>
-
 {% endblock %}

@@ -1,392 +1,320 @@
 {% extends 'admin/phongtro/danhsach_phongtro.html' %}
 {% load static %}
+{% load humanize %}
+{% load custom_filters %}
 
 {% block content_phongtro %}
-{% load static %}
-{% load humanize %}
-{% if not phong_tros %}
-    <div class="max-w-full w-full mx-auto p-4">
-        <div class="flex flex-col sm:flex-row justify-between items-center mb-6">
-            <h4 class="text-2xl font-bold text-gray-800 mb-4 sm:mb-0">Quản lý danh sách phòng</h4>
-            <div class="flex flex-wrap gap-3">
-                <button class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition"
-                    onclick="showModalPhongTro('themnhieu', null, {{ ma_khu_vuc }})">
-                    Thêm nhiều phòng trọ
-                </button>
-                <button class="bg-blue-600 text-white px-4 py-2 text-sm rounded-lg font-medium hover:bg-blue-700 transition"
-                    onclick="showModalPhongTro('them', null, {{ ma_khu_vuc }})">
-                    Thêm phòng trọ
-                </button>
-            </div>
+<div class="max-w-7xl w-full mx-auto p-4 sm:p-6">
+    <!-- Header Section -->
+    <div class="flex flex-col sm:flex-row justify-between items-center mb-6">
+        <div>
+            <h4 class="text-2xl font-bold text-gray-800">Quản lý danh sách phòng</h4>
+            {% if khu_vuc_hien_tai %}
+            <p class="text-sm text-gray-600 mt-1">
+                <i class="fas fa-map-marker-alt text-green-500"></i> 
+                Khu vực: <span class="font-medium">{{ khu_vuc_hien_tai.TEN_KHU_VUC }}</span>
+            </p>
+            {% endif %}
         </div>
-        <div class="bg-white shadow-md rounded-xl p-4 mb-6 border border-gray-200"> 
-            <p class="text-lg font-medium">Không có phòng trọ nào trong khu vực này.</p>
+        <div class="flex flex-wrap gap-3">
+            <button class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition"
+                onclick="showModalPhongTro('themnhieu', null, {{ ma_khu_vuc }})">
+                Thêm nhiều phòng trọ
+            </button>
+            <button class="bg-blue-600 text-white px-4 py-2 text-sm rounded-lg font-medium hover:bg-blue-700 transition"
+                onclick="showModalPhongTro('them', null, {{ ma_khu_vuc }})">
+                Thêm phòng trọ
+            </button>
         </div>
     </div>
-{% else %}
-    <div class="max-w-full w-full mx-auto p-4">
-        <div class="flex flex-col sm:flex-row justify-between items-center mb-6">
-            <h4 class="text-2xl font-bold text-gray-800 mb-4 sm:mb-0">Quản lý danh sách phòng</h4>
-            <div class="flex flex-wrap gap-3">
-                <button class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition"
-                    onclick="showModalPhongTro('themnhieu', null, {{ ma_khu_vuc }})">
-                    Thêm nhiều phòng trọ
-                </button>
-                <button class="bg-blue-600 text-white px-4 py-2 text-sm rounded-lg font-medium hover:bg-blue-700 transition"
-                    onclick="showModalPhongTro('them', null, {{ ma_khu_vuc }})">
-                    Thêm phòng trọ
-                </button>
-            </div>
+
+    <!-- Empty State -->
+    {% if not phong_tros %}
+     <div class="bg-white border border-gray-200 shadow-md rounded-xl p-6 mb-6">
+        {% if khu_vuc_hien_tai %}
+        <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <p class="text-sm text-blue-700">
+                <i class="fas fa-info-circle"></i> 
+                Đang lọc trong khu vực: <strong>{{ khu_vuc_hien_tai.TEN_KHU_VUC }}</strong>
+            </p>
         </div>
-        <div class="bg-white border border-gray-200 shadow-md rounded-2xl p-6 mb-6">
-          <form method="GET" class="flex flex-col md:flex-row md:flex-wrap gap-4 items-end">
+        {% endif %}
+        <form method="GET" class="flex flex-col md:flex-row md:flex-wrap gap-4 items-end">
+            <!-- Hidden field để giữ mã khu vực -->
+            <input type="hidden" name="ma_khu_vuc" value="{{ ma_khu_vuc }}">
             <!-- Trạng thái phòng -->
-            <div class="flex-1 min-w-[220px]">
-              <label for="trang_thai_phong" class="text-sm font-medium text-slate-800 mb-1 flex items-center gap-2">
-                <i class="fas fa-door-open text-blue-500"></i> Trạng thái phòng
-              </label>
-              <select name="trang_thai_phong" id="trang_thai_phong"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-sm text-slate-700 shadow-sm focus:ring-blue-500 focus:border-blue-500 transition">
-                <option value="">-- Tất cả --</option>
-                {% for state in trang_thai_phong_choices %}
-                  <option value="{{ state }}" {% if request.GET.trang_thai_phong == state %}selected{% endif %}>
-                    {{ state }}
-                  </option>
-                {% endfor %}
-              </select>
+            <div class="flex-1 min-w-[200px]">
+                <label for="trang_thai_phong" class="text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+                    <i class="fas fa-door-open text-blue-500"></i> Trạng thái phòng
+                </label>
+                <select name="trang_thai_phong" id="trang_thai_phong"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-sm text-gray-700 shadow-sm focus:ring-blue-500 focus:border-blue-500 transition">
+                    <option value="">-- Tất cả --</option>
+                    {% for state in trang_thai_phong_choices %}
+                    <option value="{{ state }}" {% if trang_thai_phong == state %}selected{% endif %}>
+                        {{ state }}
+                    </option>
+                    {% endfor %}
+                </select>
             </div>
-
-            <!-- Trạng thái hợp đồng -->
-            <div class="flex-1 min-w-[220px]">
-              <label for="trang_thai_hd" class="text-sm font-medium text-slate-800 mb-1 flex items-center gap-2">
-                <i class="fas fa-file-contract text-indigo-500"></i> Trạng thái hợp đồng
-              </label>
-              <select name="trang_thai_hd" id="trang_thai_hd"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-sm text-slate-700 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition">
-                <option value="">-- Tất cả --</option>
-                {% for status in trang_thai_hd_choices %}
-                  <option value="{{ status }}" {% if request.GET.trang_thai_hd == status %}selected{% endif %}>
-                    {{ status }}
-                  </option>
-                {% endfor %}
-              </select>
-            </div>
-
             <!-- Tìm kiếm theo tên phòng -->
-            <div class="flex-1 min-w-[240px] relative">
-              <label for="ten_phong" class="text-sm font-medium text-slate-800 mb-1 flex items-center gap-2">
-                <i class="fas fa-search text-slate-500"></i> Tên phòng
-              </label>
-              <input type="text" id="ten_phong" name="ten_phong"
-                value="{{ request.GET.ten_phong|default_if_none:'' }}"
-                placeholder="Nhập tên phòng..."
-                class="w-full px-4 pr-10 py-2 border border-gray-300 rounded-lg bg-white text-sm text-slate-700 shadow-sm focus:ring-blue-500 focus:border-blue-500" />
-              <div class="absolute right-3 bottom-2.5 text-gray-400 pointer-events-none">
-                <i class="fas fa-search"></i>
-              </div>
+            <div class="flex-1 min-w-[200px] relative">
+                <label for="ten_phong" class="text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+                    <i class="fas fa-search text-gray-500"></i> Tên phòng
+                </label>
+                <input type="text" id="ten_phong" name="keyword"
+                    value="{{ keyword|default_if_none:'' }}"
+                    placeholder="Nhập tên phòng..."
+                    class="w-full px-4 pr-10 py-2 border border-gray-300 rounded-lg bg-white text-sm text-gray-700 shadow-sm focus:ring-blue-500 focus:border-blue-500" />
+                <div class="absolute right-3 bottom-2.5 text-gray-400 pointer-events-none">
+                    <i class="fas fa-search"></i>
+                </div>
             </div>
-
             <!-- Nút lọc -->
             <div class="min-w-fit pt-5">
-              <button type="submit"
-                class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg shadow hover:bg-blue-700 transition">
-                <i class="fas fa-filter"></i> Lọc
-              </button>
-            </div>
-          </form>
-        </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
-          {% for phong_tro in phong_tros %}
-          <div class="relative bg-white rounded-2xl shadow-md hover:shadow-xl transition-shadow duration-300 p-6 flex flex-col border border-gray-100">
-            <!-- Header: Tên + Icon trạng thái -->
-            <div class="flex items-center justify-between mb-4">
-              <div class="flex items-center gap-4">
-                <div class="relative">
-                  <img src="{% static 'assets/img/nhatro/nhatro.png' %}" alt="Ảnh phòng"
-                      class="w-14 h-14 object-cover rounded-lg border border-gray-200">
-                  <!-- Icon trạng thái phòng -->
-                  <span class="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center
-                    {% if phong_tro.TRANG_THAI_P|lower == 'đang ở' %}
-                      bg-green-500
-                    {% elif phong_tro.TRANG_THAI_P|lower == 'đang trống' %}
-                      bg-red-500
-                    {% elif phong_tro.TRANG_THAI_P|lower == 'đang cọc dự trọ' %}
-                      bg-blue-500
-                    {% else %}
-                      bg-yellow-500
-                    {% endif %}">
-                    <i class="fas fa-circle text-white text-xs"></i>
-                  </span>
-                </div>
-                <div>
-                  <h2 class="text-lg font-semibold text-gray-900 truncate max-w-[160px]">
-                    {{ phong_tro.TEN_PHONG|default:"Phòng "}}
-                  </h2>
-                  {% with hop_dong=phong_tro.hopdong.first %}
-                    {% if hop_dong %}
-                      <p class="flex items-center gap-1.5 text-sm text-gray-500 font-medium">
-                        <i class="fas fa-users text-blue-500 text-xs"></i>
-                        Người ở: {{ hop_dong.SO_THANH_VIEN }}/{{ phong_tro.SO_NGUOI_TOI_DA }}
-                      </p>
-                    {% else %}
-                      <p class="flex items-center gap-1.5 text-sm text-gray-500 font-medium">
-                        <i class="fas fa-users text-gray-400 text-xs"></i>
-                        Người ở: 0/{{ phong_tro.SO_NGUOI_TOI_DA|default:"0"}}
-                      </p>
-                    {% endif %}
-                  {% endwith %}
-                </div>
-              </div>
-              <!-- Menu ba chấm -->
-              <button class="w-10 h-10 bg-gray-100 rounded-full hover:bg-gray-200 flex items-center justify-center transition-colors duration-200"
-                      onclick="toggleMenuPhongTro({{ phong_tro.MA_PHONG }})"
-                      aria-label="Mở menu thao tác phòng trọ">
-                <svg class="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M10 3a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm0 5a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm0 5a1.5 1.5 0 110 3 1.5 1.5 0 010-3z"/>
-                </svg>
-              </button>
-            </div>
-
-            <!-- Thông tin chính -->
-            <div class="flex-1 space-y-0">
-              <!-- Loại phòng và giá -->
-              <div class="grid grid-cols-2 gap-3 text-sm">
-                <div class="bg-gray-50 p-3 rounded-lg">
-                  <p class="text-xs text-gray-400 uppercase tracking-wide">Loại phòng</p>
-                  <p class="font-medium text-gray-800">{{ phong_tro.MA_LOAI_PHONG.TEN_LOAI_PHONG|default:"-" }}</p>
-                </div>
-                <div class="bg-gray-50 p-3 rounded-lg">
-                  <p class="text-xs text-gray-400 uppercase tracking-wide">Giá thuê</p>
-                  <p class="font-medium text-gray-800">{{ phong_tro.GIA_PHONG|floatformat:0|intcomma }}₫</p>
-                </div>
-              </div>
-
-              <!-- Thông tin cọc -->
-              <div class="bg-gray-50 p-3 rounded-lg text-sm">
-                <div class="flex items-center justify-between text-sm text-indigo-600 font-semibold mb-2">
-                  <div class="flex items-center gap-1.5">
-                    <i class="fas fa-wallet text-xs"></i>
-                    <span>Cọc phòng</span>
-                  </div>
-                  {% with coc_phong=phong_tro.cocphong.first %}
-                    {% if coc_phong %}
-                      <div class="flex items-center gap-1.5 text-blue-500 font-medium text-xs">
-                        <i class="fas fa-info-circle text-xs"></i>
-                        <span>{{ coc_phong.TRANG_THAI_CP|default:"Đang cọc" }}</span>
-                      </div>
-                    {% else %}
-                      <div class="flex items-center gap-1.5 text-gray-500 font-medium text-xs">
-                        <i class="fas fa-clock text-xs"></i>
-                        <span>Chưa cọc</span>
-                      </div>
-                    {% endif %}
-                  {% endwith %}
-                </div>
-                {% with coc_phong=phong_tro.cocphong.first %}
-                  {% if coc_phong %}
-                    <p class="text-gray-600 flex items-center gap-1.5 text-sm">
-                      <i class="fas fa-money-bill-wave text-green-500 text-xs"></i>
-                      Tiền cọc: {{ coc_phong.TIEN_COC_PHONG|floatformat:0|intcomma }}₫
-                    </p>
-                    <p class="text-gray-500 flex items-center gap-1.5 text-sm">
-                      <i class="fas fa-calendar-alt text-gray-400 text-xs"></i>
-                      Ngày cọc: {{ coc_phong.NGAY_COC_PHONG|date:"d/m/Y"|default:"-" }}
-                    </p>
-                  {% else %}
-                    <p class="text-gray-600 flex items-center gap-1.5 text-sm">
-                      <i class="fas fa-coins text-yellow-500 text-xs"></i>
-                      Cần cọc: {{ phong_tro.SO_TIEN_CAN_COC|floatformat:0|intcomma }}₫
-                    </p>
-                  {% endif %}
-                {% endwith %}
-              </div>
-
-              <!-- Thông tin hợp đồng -->
-              <div class="bg-gray-50 p-3 rounded-lg text-sm">
-                <div class="flex justify-between items-center mb-2">
-                  <div class="flex items-center gap-1.5 text-indigo-600 font-semibold text-sm">
-                    <i class="fas fa-file-contract text-xs"></i>
-                    <span>Hợp đồng</span>
-                  </div>
-                  {% with hop_dong=phong_tro.hopdong.first %}
-                    {% if hop_dong %}
-                      <p class="flex items-center gap-1.5 text-sm text-green-600 font-medium">
-                        <i class="fas fa-check-circle text-green-500 text-xs"></i>
-                        {{ hop_dong.TRANG_THAI|default:"Đang thuê" }}
-                      </p>
-                    {% else %}
-                      <p class="flex items-center gap-1.5 text-sm text-gray-500 font-medium">
-                        <i class="fas fa-ban text-gray-400 text-xs"></i>
-                        Chưa có HĐ
-                      </p>
-                    {% endif %}
-                  {% endwith %}
-                </div>
-                {% with hop_dong=phong_tro.hopdong.first %}
-                  {% if hop_dong %}
-                    <p class="flex items-center gap-1.5 text-sm text-gray-500 font-medium">
-                      <i class="fas fa-user-tie text-indigo-500 text-xs"></i>
-                      Đại diện: {{ hop_dong.NGUOI_DAI_DIEN|default:"-" }}
-                    </p>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                      <p class="flex items-center gap-1 text-[11px] text-slate-500 font-medium">
-                        <i class="fas fa-calendar-plus text-gray-400 text-xs"></i>
-                        Ngày lập: {{ hop_dong.NGAY_LAP_HD|date:"d/m/Y" }}
-                      </p>
-                      <p class="flex items-center gap-1 text-[11px] text-slate-500 font-medium">
-                        <i class="fas fa-hourglass text-yellow text-xs sm-sm"></i>
-                        Thời hạn: {{ hop_dong.NGAY_TRA_PHONG|date:"d/m/Y" }}
-                    </p>
-                    </div>
-                    <p class="flex items-center gap-1 text-[11px] text-slate-500">
-                      <span class="font-medium">Ngày lập hóa đơn:</span>
-                      <span class="font-semibold text-gray-700">{{ hop_dong.NGAY_THU_TIEN }}</span>
-                      <span class="text-gray-400">({{ hop_dong.CHU_KY_THANH_TOAN }})</span>
-                    </p>
-
-                  {% endif %}
-                {% endwith %}
-              </div>
-
-              <!-- Tình trạng thanh toán -->
-              <p class="text-sm text-gray-600">
-                Tình trạng: 
-                {% with hop_dong=phong_tro.hopdong.first %}
-                {% if hop_dong.TRANG_THAI_H|lower == 'đang nợ' %}
-                  <span class="text-red-500 font-semibold">Đang nợ</span>
-                {% else %}
-                  <span class="text-green-500 font-semibold">Đã thanh toán</span>
-                {% endif %}
-                {% endwith %}
-              </p>
-            </div>
-
-
-            <!-- Menu dropdown -->
-            <div id="menuPhongTro-{{ phong_tro.MA_PHONG }}"
-                class="hidden absolute top-10 right-2 bg-white border border-gray-100 rounded-lg shadow-xl w-56 z-50 animate-fadeIn">
-              
-              <!-- Workflow Actions -->
-              {% if phong_tro.current_contract %}
-                {% for action in phong_tro.workflow_actions %}
-                <a href="#" onclick="showRoomWorkflowModal('{{ action.action }}', {{ phong_tro.MA_PHONG }}, {{ phong_tro.current_contract.MA_HOP_DONG }})"
-                  class="flex items-center gap-2 px-3 py-2 text-sm text-{{ action.color }}-600 hover:bg-{{ action.color }}-50 hover:text-{{ action.color }}-700">
-                  <i class="{{ action.icon }} w-3"></i> {{ action.label }}
-                </a>
-                {% endfor %}
-                
-                {% if phong_tro.workflow_actions %}
-                <hr class="border-gray-100">
-                {% endif %}
-              {% else %}
-                <!-- Phòng trống - có thể tạo hợp đồng mới -->
-                {% if phong_tro.TRANG_THAI_P == 'Đang trống' %}
-                <a href="#" onclick="showRoomWorkflowModal('create_contract', {{ phong_tro.MA_PHONG }})"
-                  class="flex items-center gap-2 px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 hover:text-blue-700">
-                  <i class="fas fa-file-plus w-3"></i> Tạo hợp đồng mới
-                </a>
-                <hr class="border-gray-100">
-                {% endif %}
-              {% endif %}
-              
-              <!-- Standard Actions -->
-              <a href="#" onclick="showModalPhongTro('chinhsua', {{ phong_tro.MA_PHONG }}, {{ ma_khu_vuc }}, '{{ phong_tro.TEN_PHONG }}')"
-                class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:bg-indigo-50 hover:text-indigo-600">
-                <i class="fas fa-edit w-3"></i> Chỉnh sửa phòng
-              </a>
-              <a href="#" onclick="showModalPhongTro('CoPhong', {{ phong_tro.MA_PHONG }}, null, '{{ phong_tro.TEN_PHONG }}')"
-                class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:bg-indigo-50 hover:text-indigo-600">
-                <i class="fas fa-hand-holding-usd w-3"></i> Cọc giữ chỗ
-              </a>
-              <a href="#" onclick="showModalPhongTro('HopDong', {{ phong_tro.MA_PHONG }})"
-                class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:bg-indigo-50 hover:text-indigo-600">
-                <i class="fas fa-file-signature w-3"></i> Lập hợp đồng
-              </a>
-              <a href="#" onclick="showModalPhongTro('ChonHoaDon', {{ phong_tro.MA_PHONG }})"
-                class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:bg-indigo-50 hover:text-indigo-600">
-                <i class="fas fa-file-invoice w-3"></i> Lập hóa đơn
-              </a>
-              <a href="#" onclick="showModalPhongTro('info', {{ phong_tro.MA_PHONG }})"
-                class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:bg-indigo-50 hover:text-indigo-600">
-                <i class="fas fa-door-closed w-3"></i> Kết thúc hợp đồng
-              </a>
-              <a href="#"
-                onclick="showModalPhongTro('ghi_so_dich_vu', {{ phong_tro.MA_PHONG }})"
-                class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:bg-indigo-50 hover:text-indigo-600">
-                  <i class="fas fa-pen w-3"></i> Ghi số dịch vụ
-              </a>
-
-              <hr class="border-gray-100">
-              <form method="POST" action="{% url 'phongtro:xoa_phongtro' phong_tro.MA_PHONG %}" onsubmit="return confirm('Bạn có chắc muốn xóa phòng này không?');">
-                {% csrf_token %}
                 <button type="submit"
-                        class="w-full text-left flex items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-red-50 hover:text-red-600">
-                  <i class="fas fa-trash-alt w-3"></i> Xóa phòng
+                    class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg shadow hover:bg-blue-700 transition">
+                    <i class="fas fa-filter"></i> Lọc
                 </button>
-              </form>
             </div>
-          </div>
-          {% endfor %}
-        </div>
-        {% if phong_tros.has_other_pages %}
-          <div class="mt-12 flex justify-center">
-            <nav class="flex items-center space-x-2 bg-white px-4 py-2 rounded-full shadow-md border border-gray-200" aria-label="Phân trang phòng trọ">
-              
-              <!-- Nút "Trước" -->
-              {% if phong_tros.has_previous %}
-                <a href="?ma_khu_vuc={{ ma_khu_vuc }}&page_number={{ phong_tros.previous_page_number }}&keyword={{ keyword }}{% for opt in selected_filters %}&options%5B%5D={{ opt }}{% endfor %}"
-                  class="px-4 h-9 flex items-center justify-center rounded-full bg-white text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 transition text-sm font-medium shadow-sm border border-gray-300">
-                  Trước
-                </a>
-              {% else %}
-                <span class="px-4 h-9 flex items-center justify-center rounded-full text-gray-400 bg-gray-50 cursor-not-allowed text-sm font-medium border border-gray-200">
-                  Trước
-                </span>
-              {% endif %}
-
-              <!-- Số trang -->
-              {% for num in phong_tros.paginator.page_range %}
-                {% if num == phong_tros.number %}
-                  <span class="w-9 h-9 flex items-center justify-center rounded-full bg-indigo-600 text-white font-semibold shadow">
-                    {{ num }}
-                  </span>
-                {% elif num > phong_tros.number|add:'-2' and num < phong_tros.number|add:'2' %}
-                  <a href="?ma_khu_vuc={{ ma_khu_vuc }}&page_number={{ num }}&keyword={{ keyword }}{% for opt in selected_filters %}&options%5B%5D={{ opt }}{% endfor %}"
-                    class="w-9 h-9 flex items-center justify-center rounded-full text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition"
-                    title="Trang {{ num }}">
-                    {{ num }}
-                  </a>
-                {% elif num == 1 or num == phong_tros.paginator.num_pages %}
-                  <a href="?ma_khu_vuc={{ ma_khu_vuc }}&page_number={{ num }}&keyword={{ keyword }}{% for opt in selected_filters %}&options%5B%5D={{ opt }}{% endfor %}"
-                    class="w-9 h-9 flex items-center justify-center rounded-full text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition"
-                    title="Trang {{ num }}">
-                    {{ num }}
-                  </a>
-                {% elif num == phong_tros.number|add:'-2' or num == phong_tros.number|add:'2' %}
-                  <span class="w-9 h-9 flex items-center justify-center text-gray-400">…</span>
-                {% endif %}
-              {% endfor %}
-
-              <!-- Nút "Sau" -->
-              {% if phong_tros.has_next %}
-                <a href="?ma_khu_vuc={{ ma_khu_vuc }}&page_number={{ phong_tros.next_page_number }}&keyword={{ keyword }}{% for opt in selected_filters %}&options%5B%5D={{ opt }}{% endfor %}"
-                  class="px-4 h-9 flex items-center justify-center rounded-full bg-white text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 transition text-sm font-medium shadow-sm border border-gray-300">
-                  Sau
-                </a>
-              {% else %}
-                <span class="px-4 h-9 flex items-center justify-center rounded-full text-gray-400 bg-gray-50 cursor-not-allowed text-sm font-medium border border-gray-200">
-                  Sau
-                </span>
-              {% endif %}
-
-            </nav>
-          </div>
-        {% endif %}
-
-
-        </div>
+        </form>
     </div>
-{% endif %}
+    <div class="bg-white shadow-md rounded-xl p-6 border border-gray-200">
+        <p class="text-lg font-medium text-gray-600">Không có phòng trọ nào trong khu vực này.</p>
+    </div>
+    {% else %}
+    <!-- Filter Section -->
+    <div class="bg-white border border-gray-200 shadow-md rounded-xl p-6 mb-6">
+        {% if khu_vuc_hien_tai %}
+        <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <p class="text-sm text-blue-700">
+                <i class="fas fa-info-circle"></i> 
+                Đang lọc trong khu vực: <strong>{{ khu_vuc_hien_tai.TEN_KHU_VUC }}</strong>
+            </p>
+        </div>
+        {% endif %}
+        <form method="GET" class="flex flex-col md:flex-row md:flex-wrap gap-4 items-end">
+            <!-- Hidden field để giữ mã khu vực -->
+            <input type="hidden" name="ma_khu_vuc" value="{{ ma_khu_vuc }}">
+            <!-- Trạng thái phòng -->
+            <div class="flex-1 min-w-[200px]">
+                <label for="trang_thai_phong" class="text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+                    <i class="fas fa-door-open text-blue-500"></i> Trạng thái phòng
+                </label>
+                <select name="trang_thai_phong" id="trang_thai_phong"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-sm text-gray-700 shadow-sm focus:ring-blue-500 focus:border-blue-500 transition">
+                    <option value="">-- Tất cả --</option>
+                    {% for state in trang_thai_phong_choices %}
+                    <option value="{{ state }}" {% if trang_thai_phong == state %}selected{% endif %}>
+                        {{ state }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <!-- Tìm kiếm theo tên phòng -->
+            <div class="flex-1 min-w-[200px] relative">
+                <label for="ten_phong" class="text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+                    <i class="fas fa-search text-gray-500"></i> Tên phòng
+                </label>
+                <input type="text" id="ten_phong" name="keyword"
+                    value="{{ keyword|default_if_none:'' }}"
+                    placeholder="Nhập tên phòng..."
+                    class="w-full px-4 pr-10 py-2 border border-gray-300 rounded-lg bg-white text-sm text-gray-700 shadow-sm focus:ring-blue-500 focus:border-blue-500" />
+                <div class="absolute right-3 bottom-2.5 text-gray-400 pointer-events-none">
+                    <i class="fas fa-search"></i>
+                </div>
+            </div>
+            <!-- Nút lọc -->
+            <div class="min-w-fit pt-5">
+                <button type="submit"
+                    class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg shadow hover:bg-blue-700 transition">
+                    <i class="fas fa-filter"></i> Lọc
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Table Section -->
+    <div class="w-full">
+            <table class="w-full table-auto border-collapse text-sm">
+                <thead class="sticky top-0 bg-blue-50 text-blue-800">
+                    <tr>
+                        <th class="p-3 text-left font-semibold">Phòng</th>
+                        <th class="p-3 text-center font-semibold">Trạng thái</th>
+                        <th class="p-3 text-center font-semibold">Loại phòng</th>
+                        <th class="p-3 text-center font-semibold">Giá thuê</th>
+                        <th class="p-3 text-center font-semibold">Người ở</th>
+                        <th class="p-3 text-center font-semibold">Tiền cọc</th>
+                        <th class="p-3 text-center font-semibold">Hợp đồng</th>
+                        <th class="p-3 text-center font-semibold">Tình trạng thanh toán</th>
+                        <th class="p-3 text-center font-semibold"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for phong_tro in phong_tros %}
+                    <tr class="border-b border-gray-200 hover:bg-gray-50 transition">
+                        <td class="p-3">
+                            <div class="flex items-center gap-3">
+                                <img src="{% static 'assets/img/nhatro/nhatro.png' %}" alt="Ảnh phòng"
+                                     class="w-10 h-10 object-cover rounded-lg border border-gray-200">
+                                <div>
+                                    <span class="font-medium">{{ phong_tro.TEN_PHONG|default:"Phòng" }}</span>
+                                    <br>
+                                    <small class="text-gray-600">Mã: {{ phong_tro.MA_PHONG }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="p-3 text-center">
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
+                                {% if phong_tro.trang_thai_hien_thi == 'Đang ở' %}
+                                    bg-green-100 text-green-800
+                                {% elif phong_tro.trang_thai_hien_thi == 'Đang trống' %}
+                                    bg-red-100 text-red-800
+                                {% elif phong_tro.trang_thai_hien_thi == 'Đang cọc' %}
+                                    bg-yellow-100 text-yellow-800
+                                {% elif phong_tro.trang_thai_hien_thi == 'Bảo trì' %}
+                                    bg-orange-100 text-orange-800
+                                {% else %}
+                                    bg-gray-100 text-gray-800
+                                {% endif %}">
+                                {{ phong_tro.trang_thai_hien_thi }}                               
+                                
+                            </span>
+                        </td>
+                        <td class="p-3 text-center text-sm text-gray-600">{{ phong_tro.MA_LOAI_PHONG.TEN_LOAI_PHONG|default:"-" }}</td>
+                        <td class="p-3 text-center text-sm text-gray-600">{{ phong_tro.GIA_PHONG|currency_vn }}</td>
+                        <td class="p-3 text-center text-sm text-gray-600">
+                            <span class="{% if phong_tro.so_nguoi_dang_o > phong_tro.SO_NGUOI_TOI_DA %}text-red-600 font-semibold{% endif %}">
+                                {{ phong_tro.so_nguoi_dang_o|default:0 }}/{{ phong_tro.SO_NGUOI_TOI_DA|default:0 }} người
+                            </span>
+                            {% if phong_tro.so_nguoi_dang_o > phong_tro.SO_NGUOI_TOI_DA %}
+                                <i class="fas fa-exclamation-triangle text-red-500 ml-1" title="Vượt quá số người tối đa"></i>
+                            {% endif %}
+                        </td>
+                        <td class="p-3 text-center text-sm text-gray-600">
+                            {{ phong_tro.SO_TIEN_CAN_COC|currency_vn }}
+                        </td>
+                        <td class="p-3 text-center text-sm text-gray-600">
+                            {% if phong_tro.current_contract %}
+                                {% if phong_tro.nguoi_dai_dien %}
+                                    <div class="font-medium">{{ phong_tro.nguoi_dai_dien.HO_TEN_KT|default:"-" }}</div>
+                                    <small class="text-gray-500">SĐT: {{ phong_tro.nguoi_dai_dien.SDT_KT|default:"-" }}</small>
+                                    <br><small class="text-gray-500">Hết hạn: {{ phong_tro.current_contract.NGAY_TRA_PHONG|date:"d/m/Y" }}</small>
+                                {% else %}
+                                    <div class="text-orange-600">Chưa có chủ hợp đồng</div>
+                                    <br><small class="text-gray-500">Hết hạn: {{ phong_tro.current_contract.NGAY_TRA_PHONG|date:"d/m/Y" }}</small>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-gray-500">Chưa có hợp đồng</span>
+                            {% endif %}
+                        </td>
+                        <td class="p-3 text-center text-sm">
+                            {% if phong_tro.current_contract %}
+                                {% if phong_tro.so_tien_con_no > 0 %}
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                        Còn nợ
+                                    </span>
+                                    <div class="text-red-600 font-semibold mt-1">
+                                        {{ phong_tro.so_tien_con_no|currency_vn }}
+                                    </div>
+                                {% else %}
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        Đã thanh toán
+                                    </span>
+                                {% endif %}
+                            {% else %}
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                                    Chưa có hóa đơn
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap relative">
+                            <button 
+                                  class="p-2 rounded-full hover:bg-gray-100 transition"
+                                  data-phong-id="{{ phong_tro.MA_PHONG }}"
+                                  onclick="toggleMenuPhongTro(this)">
+                                <svg class="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M10 3a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm0 5a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm0 5a1.5 1.5 0 110 3 1.5 1.5 0 010-3z"/>
+                                </svg>
+                            </button>
+                            <!-- Dropdown Menu -->
+                            <div id="menuPhongTro-{{ phong_tro.MA_PHONG }}"
+                                class="hidden absolute right-0 top-10 bg-white border border-gray-100 rounded-lg shadow-xl w-56 z-50 animate-fadeIn">
+                               
+                                <a href="#" onclick="showModalPhongTro('chinhsua', {{ phong_tro.MA_PHONG }}, {{ ma_khu_vuc }}, '{{ phong_tro.TEN_PHONG }}')"
+                                    class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:bg-indigo-50 hover:text-indigo-600">
+                                    <i class="fas fa-edit w-3"></i> Chỉnh sửa phòng
+                                </a>                                                              
+                                <hr class="border-gray-100">
+                                <form method="POST" action="{% url 'phongtro:xoa_phongtro' phong_tro.MA_PHONG %}" onsubmit="return confirm('Bạn có chắc muốn xóa phòng này không?');">
+                                    {% csrf_token %}
+                                    <button type="submit"
+                                        class="w-full text-left flex items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-red-50 hover:text-red-600">
+                                        <i class="fas fa-trash-alt w-3"></i> Xóa phòng
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center p-4 text-gray-600">Không có phòng trọ nào.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    <!-- Pagination -->
+    {% if phong_tros.has_other_pages %}
+    <div class="mt-6 flex justify-center">
+        <nav class="flex items-center space-x-2 bg-white px-4 py-2 rounded-full shadow-md border border-gray-200" aria-label="Phân trang phòng trọ">
+            {% if phong_tros.has_previous %}
+            <a href="?ma_khu_vuc={{ ma_khu_vuc }}&page_number={{ phong_tros.previous_page_number }}&keyword={{ keyword }}&trang_thai_phong={{ trang_thai_phong }}"
+                class="px-4 h-9 flex items-center justify-center rounded-full bg-white text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 transition text-sm font-medium shadow-sm border border-gray-300">
+                Trước
+            </a>
+            {% else %}
+            <span class="px-4 h-9 flex items-center justify-center rounded-full text-gray-400 bg-gray-50 cursor-not-allowed text-sm font-medium border border-gray-200">
+                Trước
+            </span>
+            {% endif %}
+            {% for num in phong_tros.paginator.page_range %}
+            {% if num == phong_tros.number %}
+            <span class="w-9 h-9 flex items-center justify-center rounded-full bg-indigo-600 text-white font-semibold shadow">
+                {{ num }}
+            </span>
+            {% elif num > phong_tros.number|add:'-2' and num < phong_tros.number|add:'2' %}
+            <a href="?ma_khu_vuc={{ ma_khu_vuc }}&page_number={{ num }}&keyword={{ keyword }}&trang_thai_phong={{ trang_thai_phong }}"
+                class="w-9 h-9 flex items-center justify-center rounded-full text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition"
+                title="Trang {{ num }}">
+                {{ num }}
+            </a>
+            {% elif num == 1 or num == phong_tros.paginator.num_pages %}
+            <a href="?ma_khu_vuc={{ ma_khu_vuc }}&page_number={{ num }}&keyword={{ keyword }}&trang_thai_phong={{ trang_thai_phong }}"
+                class="w-9 h-9 flex items-center justify-center rounded-full text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition"
+                title="Trang {{ num }}">
+                {{ num }}
+            </a>
+            {% elif num == phong_tros.number|add:'-2' or num == phong_tros.number|add:'2' %}
+            <span class="w-9 h-9 flex items-center justify-center text-gray-400">…</span>
+            {% endif %}
+            {% endfor %}
+            {% if phong_tros.has_next %}
+            <a href="?ma_khu_vuc={{ ma_khu_vuc }}&page_number={{ phong_tros.next_page_number }}&keyword={{ keyword }}&trang_thai_phong={{ trang_thai_phong }}"
+                class="px-4 h-9 flex items-center justify-center rounded-full bg-white text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 transition text-sm font-medium shadow-sm border border-gray-300">
+                Sau
+            </a>
+            {% else %}
+            <span class="px-4 h-9 flex items-center justify-center rounded-full text-gray-400 bg-gray-50 cursor-not-allowed text-sm font-medium border border-gray-200">
+                Sau
+            </span>
+            {% endif %}
+        </nav>
+    </div>
+    {% endif %}
+    {% endif %}
+</div>
 
 <style>
     @keyframes fadeIn {
@@ -415,13 +343,10 @@ function showRoomWorkflowModal(action, roomId, contractId = null) {
     currentRoomContractId = contractId;
     currentRoomAction = action;
     
-    // Close any existing room menu
     const existingMenus = document.querySelectorAll('[id^="menuPhongTro-"]');
     existingMenus.forEach(menu => menu.classList.add('hidden'));
     
-    // Handle different actions
     if (action === 'create_contract') {
-        // For new contract creation, redirect to contract creation page
         window.location.href = `/admin/hopdong/viewthem/?ma_phong=${roomId}`;
         return;
     } else if (action === 'extend') {
@@ -431,7 +356,6 @@ function showRoomWorkflowModal(action, roomId, contractId = null) {
         showRoomEarlyEndModal();
         return;
     } else {
-        // Show confirmation modal for simple actions
         showRoomConfirmationModal(action);
     }
 }
@@ -479,7 +403,6 @@ function showRoomExtensionModal() {
     const modal = document.getElementById('extensionModal') || createRoomExtensionModal();
     modal.classList.remove('hidden');
     
-    // Set minimum date to today
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('newEndDate').setAttribute('min', today);
 }
@@ -488,7 +411,6 @@ function showRoomEarlyEndModal() {
     const modal = document.getElementById('earlyEndModal') || createRoomEarlyEndModal();
     modal.classList.remove('hidden');
     
-    // Set minimum date to today  
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('earlyEndDate').setAttribute('min', today);
 }
@@ -508,7 +430,6 @@ function executeRoomWorkflowAction() {
         return;
     }
     
-    // Show loading
     const body = document.getElementById('workflowModalBody');
     if (body) {
         body.innerHTML = `
@@ -519,7 +440,6 @@ function executeRoomWorkflowAction() {
         `;
     }
     
-    // Get CSRF token
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value ||
                      document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
     
@@ -529,7 +449,6 @@ function executeRoomWorkflowAction() {
         return;
     }
     
-    // Make AJAX request
     fetch('/admin/phongtro/room-workflow-action/', {
         method: 'POST',
         headers: {
@@ -549,7 +468,7 @@ function executeRoomWorkflowAction() {
                 window.location.href = data.redirect;
             } else {
                 alert(data.message || 'Thao tác thành công!');
-                location.reload(); // Refresh the page to show updated data
+                location.reload();
             }
         } else {
             alert(data.message || 'Có lỗi xảy ra!');
@@ -563,7 +482,6 @@ function executeRoomWorkflowAction() {
     });
 }
 
-// Helper function to create workflow modal if it doesn't exist
 function createRoomWorkflowModal() {
     if (document.getElementById('workflowModal')) {
         return document.getElementById('workflowModal');
@@ -581,7 +499,6 @@ function createRoomWorkflowModal() {
                     </button>
                 </div>
                 <div id="workflowModalBody" class="px-6 py-6">
-                    <!-- Content will be dynamically loaded here -->
                 </div>
             </div>
         </div>

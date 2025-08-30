@@ -942,3 +942,115 @@ def xoa_dich_vu(request, ma_dich_vu):
 
     messages.success(request, f"Dịch vụ '{dich_vu.TEN_DICH_VU}' và các áp dụng liên quan đã được xóa thành công.")
     return redirect('dichvu:dichvu_list')
+
+
+def get_dichvu_with_chiso_for_phong(phong):
+    """
+    Helper function để lấy danh sách dịch vụ với chỉ số cho một phòng
+    Sử dụng cùng logic như view_lap_hop_dong để đảm bảo tính nhất quán
+    """
+    from apps.hopdong.models import HopDong
+    
+    # Lấy danh sách dịch vụ áp dụng cho khu vực của phòng
+    lichsu_dichvu = LichSuApDungDichVu.objects.filter(
+        MA_KHU_VUC=phong.MA_KHU_VUC,
+        NGAY_HUY_DV__isnull=True
+    ).select_related('MA_DICH_VU')
+
+    # Tạo danh sách dịch vụ với chỉ số từ hợp đồng cuối cùng
+    result = []
+    
+    for lichsu in lichsu_dichvu:
+        # Lấy hợp đồng cuối cùng của phòng
+        latest_contract = HopDong.objects.filter(
+            MA_PHONG=phong,
+            TRANG_THAI_HD__in=['Đã kết thúc', 'Hủy']
+        ).order_by('-NGAY_TRA_PHONG').first()
+        
+        chi_so_cu = 0
+        so_luong_cu = 1
+        
+        if latest_contract:
+            # Lấy chỉ số từ hợp đồng cuối cùng - sử dụng relationship qua MA_HOP_DONG
+            latest_chiso = ChiSoDichVu.objects.filter(
+                MA_HOP_DONG__MA_PHONG=phong,
+                MA_DICH_VU=lichsu.MA_DICH_VU,
+                MA_HOP_DONG=latest_contract
+            ).order_by('-NGAY_GHI_CS').first()
+            
+            if latest_chiso:
+                chi_so_cu = latest_chiso.CHI_SO_MOI
+                so_luong_cu = latest_chiso.SO_LUONG
+        else:
+            # Nếu không có hợp đồng cũ, lấy chỉ số mới nhất từ tất cả hợp đồng của phòng
+            latest_chiso = ChiSoDichVu.objects.filter(
+                MA_DICH_VU=lichsu.MA_DICH_VU,
+                MA_HOP_DONG__MA_PHONG=phong
+            ).order_by('-NGAY_GHI_CS').first()
+            
+            if latest_chiso:
+                chi_so_cu = latest_chiso.CHI_SO_MOI
+                so_luong_cu = latest_chiso.SO_LUONG
+
+        # Tạo object giống latest_chiso để template hoạt động
+        chiso_obj = type('ChiSo', (), {
+            'CHI_SO_CU': chi_so_cu,
+            'CHI_SO_MOI': chi_so_cu,  # Mặc định bằng cũ
+            'SO_LUONG': so_luong_cu
+        })()
+        
+        result.append({
+            'lichsu': lichsu,
+            'latest_chiso': chiso_obj
+        })
+    
+    return result
+
+
+def lay_dich_vu_theo_phong(request):
+    """
+    AJAX view để lấy danh sách dịch vụ theo phòng
+    """
+    if not request.session.get('is_authenticated'):
+        return JsonResponse({'success': False, 'message': 'Bạn cần đăng nhập'})
+    
+    ma_phong = request.GET.get('ma_phong')
+    if not ma_phong:
+        return JsonResponse({'success': False, 'message': 'Thiếu mã phòng'})
+    
+    try:
+        from apps.phongtro.models import PhongTro
+        
+        phong = get_object_or_404(PhongTro, MA_PHONG=ma_phong)
+        
+        # Sử dụng helper function chung
+        lichsu_dichvu_with_chiso = get_dichvu_with_chiso_for_phong(phong)
+        
+        # Serialize data cho AJAX response
+        dich_vu_data = []
+        for item in lichsu_dichvu_with_chiso:
+            lichsu = item['lichsu']
+            chiso = item['latest_chiso']
+            
+            dich_vu_data.append({
+                'MA_DICH_VU': lichsu.MA_DICH_VU.MA_DICH_VU,
+                'TEN_DICH_VU': lichsu.MA_DICH_VU.TEN_DICH_VU,
+                'DON_VI_TINH': lichsu.MA_DICH_VU.DON_VI_TINH,
+                'LOAI_DICH_VU': lichsu.MA_DICH_VU.LOAI_DICH_VU,
+                'GIA_DICH_VU_AD': float(lichsu.GIA_DICH_VU_AD) if lichsu.GIA_DICH_VU_AD else 0,
+                'CHI_SO_CU': chiso.CHI_SO_CU,
+                'CHI_SO_MOI': chiso.CHI_SO_MOI,
+                'SO_LUONG': chiso.SO_LUONG,
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'dich_vus': dich_vu_data,
+            'message': f'Tìm thấy {len(dich_vu_data)} dịch vụ'
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(e)}'
+        })

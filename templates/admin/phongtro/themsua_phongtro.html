@@ -36,7 +36,7 @@
                 <input name="GIA_PHONG" type="number"
                        class="w-full border border-gray-300 rounded-lg px-3 py-2"
                        placeholder="VD: 1500000"
-                       value="{% if phong_tro %}{{ phong_tro.GIA_PHONG }}{% else %}{{ form.GIA_PHONG.value|default:'' }}{% endif %}"
+                       value="{% if phong_tro %}{{ phong_tro.GIA_PHONG|floatformat:0 }}{% else %}{{ form.GIA_PHONG.value|default:'' }}{% endif %}"
                        required>
             </div>
 
@@ -85,7 +85,7 @@
                        class="w-full border border-gray-300 rounded-lg px-3 py-2"
                        min="0" step="1000"
                        placeholder="VD: 500000"
-                       value="{% if phong_tro %}{{ phong_tro.SO_TIEN_CAN_COC }}{% else %}{{ form.SO_TIEN_CAN_COC.value|default:'' }}{% endif %}"
+                       value="{% if phong_tro %}{{ phong_tro.SO_TIEN_CAN_COC|floatformat:0 }}{% else %}{{ form.SO_TIEN_CAN_COC.value|default:''|cut:',' }}{% endif %}"
                        required>
             </div>
 
@@ -96,7 +96,7 @@
                        class="w-full border border-gray-300 rounded-lg px-3 py-2"
                        min="0" step="0.01"
                        placeholder="VD: 20.5"
-                       value="{% if phong_tro %}{{ phong_tro.DIEN_TICH }}{% else %}{{ form.DIEN_TICH.value|default:'' }}{% endif %}">
+                       value="{% if phong_tro %}{{ phong_tro.DIEN_TICH|floatformat:0 }}{% else %}{{ form.DIEN_TICH.value|default:'' }}{% endif %}">
             </div>
         </div>
     </div>

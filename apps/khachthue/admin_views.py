@@ -473,3 +473,59 @@ def chuyen_phong(request, ma_khach_thue, ma_lich_su):
     
     messages.error(request, 'Yêu cầu không hợp lệ.')
     return redirect('khachthue:khachthue_list')
+
+def search_khach_thue(request):
+    """
+    API endpoint để tìm kiếm khách thuê theo tên, SĐT hoặc CCCD
+    """
+    if not request.session.get('is_authenticated'):
+        return JsonResponse({'success': False, 'message': 'Bạn cần đăng nhập'})
+    
+    query = request.GET.get('q', '').strip()
+    
+    if not query or len(query) < 2:
+        return JsonResponse({'success': False, 'message': 'Vui lòng nhập ít nhất 2 ký tự'})
+    
+    try:
+        # Tìm kiếm theo tên, SĐT hoặc CCCD
+        khachthue_queryset = KhachThue.objects.select_related('cccd_cmnd').filter(
+            Q(HO_TEN_KT__icontains=query) |
+            Q(SDT_KT__icontains=query) |
+            Q(cccd_cmnd__SO_CMND_CCCD__icontains=query)
+        ).distinct()[:20]  # Giới hạn 20 kết quả
+        
+        results = []
+        for khach_thue in khachthue_queryset:
+            # Lấy thông tin CCCD nếu có
+            cccd_info = None
+            if hasattr(khach_thue, 'cccd_cmnd') and khach_thue.cccd_cmnd:
+                cccd_info = khach_thue.cccd_cmnd.SO_CMND_CCCD
+            
+            results.append({
+                'MA_KHACH_THUE': khach_thue.MA_KHACH_THUE,
+                'HO_TEN_KT': khach_thue.HO_TEN_KT,
+                'SDT_KT': khach_thue.SDT_KT,
+                'GIOI_TINH_KT': khach_thue.GIOI_TINH_KT,
+                'NGAY_SINH_KT': khach_thue.NGAY_SINH_KT.strftime('%Y-%m-%d') if khach_thue.NGAY_SINH_KT else None,
+                'SO_CMND_CCCD': cccd_info
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'results': results,
+            'count': len(results)
+        })
+        
+    except Exception as e:
+        # Trả lỗi dưới dạng API
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False,
+                'message': f'Có lỗi xảy ra: {str(e)}'
+            })
+        # Hoặc hiển thị trên giao diện nếu không phải API call
+        messages.error(request, f'Có lỗi xảy ra: {str(e)}')
+        return render(request, 'admin/khachthue/cap_nhat_cccd.html', {
+            'khachthue': None,
+            'cccd_cmnd': None,
+        })

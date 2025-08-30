@@ -22,4 +22,7 @@ urlpatterns = [
     # Các chức năng khác
     path('khachthue/xoa/<str:ma_khach_thue>/', admin_views.xoa_khach_thue, name='xoa_khach_thue'),
     path('khachthue/cccd/<str:ma_khach_thue>/', admin_views.view_cccd, name='view_CCCD'),
+
+    # API endpoints
+    path('khachthue/api/search/', admin_views.search_khach_thue, name='search_khach_thue'),
 ]

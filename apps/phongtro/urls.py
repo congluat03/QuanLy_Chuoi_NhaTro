@@ -5,7 +5,7 @@ app_name = 'phongtro'
 urlpatterns = [
     path('phongtro/', admin_views.phongtro_list, name='phongtro_list'),
     # path('phongtro/<str:ma_khu_vuc>/<int:page_number>/', admin_views.phongtro_list, name='phong_tro_theo_khu_vuc'),
-    path('phongtro/view-themsua-phongtro/<int:ma_khu_vuc>/<str:loai>/', admin_views.phongtro_list, name='view_them_phong_tro'),
+    path('phongtro/view-themsua-phongtro/<int:ma_khu_vuc>/<str:loai>/', admin_views.view_themsua_phongtro, name='view_them_phong_tro'),
     path('phongtro/view-themsua-phongtro/<int:ma_khu_vuc>/<str:loai>/<int:ma_phong_tro>/', admin_views.view_themsua_phongtro, name='view_sua_phong_tro'),
     
     path('phongtro/them-phongtro/', admin_views.them_phongtro, name='them_phongtro'),
@@ -28,4 +28,8 @@ urlpatterns = [
     path('tin-dang/<int:ma_tin_dang>/sua/', admin_views.dang_tin_edit, name='dang_tin_edit'),
     path('tin-dang/<int:ma_tin_dang>/xoa/', admin_views.dang_tin_delete, name='dang_tin_delete'),
     path('tin-dang/<int:ma_tin_dang>/toggle-status/', admin_views.dang_tin_toggle_status, name='dang_tin_toggle_status'),
+    
+    # AJAX URLs for contract form
+    path('ajax/lay-phong-kha-dung/', admin_views.lay_phong_kha_dung, name='lay_phong_kha_dung'),
+    path('ajax/lay-thong-tin-phong/', admin_views.lay_thong_tin_phong, name='lay_thong_tin_phong'),
 ]

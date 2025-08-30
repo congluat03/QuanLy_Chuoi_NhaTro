@@ -35,11 +35,19 @@
                 </button>
                 {% endif %}
                 
+                {% if hop_dong.TRANG_THAI_HD == 'Chờ xác nhận' %}
                 <a href="{% url 'hopdong:view_chinh_sua_hop_dong' hop_dong.MA_HOP_DONG %}" 
                    class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                     <i class="fas fa-edit mr-2"></i>
                     Chỉnh sửa
                 </a>
+                {% else %}
+                <div class="inline-flex items-center px-4 py-2 bg-gray-400 text-white rounded-lg cursor-not-allowed" 
+                     title="Chỉ có thể sửa hợp đồng ở trạng thái 'Chờ xác nhận'">
+                    <i class="fas fa-edit mr-2"></i>
+                    Chỉnh sửa (Không khả dụng)
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -176,6 +184,9 @@
 
     <!-- Lịch sử Gia hạn -->
     {% include 'admin/hopdong/lich_su_gia_han_section.html' %}
+
+    <!-- Lịch sử Báo kết thúc -->
+    {% include 'admin/hopdong/lich_su_bao_ket_thuc_section.html' %}
 
     <!-- Danh sách Hóa đơn -->
     <div class="bg-white rounded-xl shadow-lg p-6">

@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect
 from django.core.paginator import Paginator
-from .models import HopDong, LichSuHopDong
+from django.db.models import Q, Count, Exists, OuterRef
+from .models import HopDong, LichSuHopDong, DonDieuChinh
 from apps.phongtro.models import PhongTro, CocPhong
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
@@ -9,6 +10,7 @@ from django.contrib import messages
 from django.views.decorators.http import require_http_methods, require_POST
 from apps.khachthue.models import CccdCmnd, KhachThue
 from apps.phongtro.models import TAISANBANGIAO
+from apps.nhatro.models import KhuVuc
 from apps.dichvu.models import ChiSoDichVu, LichSuApDungDichVu
 from django.db import transaction
 from django.utils import timezone
@@ -18,6 +20,85 @@ import json
 # Import workflow services
 from .services import HopDongWorkflowService, HopDongReportService
 from .workflow_service import ContractLifecycleManager
+
+def apply_filters(queryset, request):
+    """Áp dụng các bộ lọc cho queryset hợp đồng"""
+    
+    # Lọc theo tìm kiếm
+    search = request.GET.get('search', '').strip()
+    if search:
+        queryset = queryset.filter(
+            Q(MA_PHONG__TEN_PHONG__icontains=search) |
+            Q(lichsuhopdong__MA_KHACH_THUE__HO_TEN_KT__icontains=search) |
+            Q(lichsuhopdong__MA_KHACH_THUE__SDT_KT__icontains=search)
+        ).distinct()
+    
+    # Lọc theo trạng thái
+    trang_thai = request.GET.get('trang_thai', '').strip()
+    if trang_thai:
+        queryset = queryset.filter(TRANG_THAI_HD=trang_thai)
+    
+    # Lọc theo khu vực
+    khu_vuc = request.GET.get('khu_vuc', '').strip()
+    if khu_vuc:
+        queryset = queryset.filter(MA_PHONG__MA_KHU_VUC=khu_vuc)
+    
+    # Lọc theo khoảng ngày lập
+    tu_ngay = request.GET.get('tu_ngay', '').strip()
+    den_ngay = request.GET.get('den_ngay', '').strip()
+    
+    if tu_ngay:
+        try:
+            from datetime import datetime
+            tu_ngay_obj = datetime.strptime(tu_ngay, '%Y-%m-%d').date()
+            queryset = queryset.filter(NGAY_LAP_HD__gte=tu_ngay_obj)
+        except ValueError:
+            pass
+    
+    if den_ngay:
+        try:
+            from datetime import datetime
+            den_ngay_obj = datetime.strptime(den_ngay, '%Y-%m-%d').date()
+            queryset = queryset.filter(NGAY_LAP_HD__lte=den_ngay_obj)
+        except ValueError:
+            pass
+    
+    # Lọc nhanh
+    quick_filters = request.GET.getlist('quick_filter')
+    
+    if 'sap_het_han' in quick_filters:
+        today = timezone.now().date()
+        sap_het_han_date = today + timedelta(days=30)
+        queryset = queryset.filter(
+            NGAY_TRA_PHONG__lte=sap_het_han_date,
+            NGAY_TRA_PHONG__gt=today,
+            TRANG_THAI_HD__in=['Đang hoạt động', 'Sắp kết thúc']
+        )
+    
+    if 'da_gia_han' in quick_filters:
+        # Chỉ lấy hợp đồng có lịch sử gia hạn
+        queryset = queryset.filter(
+            Exists(DonDieuChinh.objects.filter(
+                MA_HOP_DONG=OuterRef('pk'),
+                LOAI_DC='Gia hạn hợp đồng'
+            ))
+        )
+    
+    if 'chua_xac_nhan' in quick_filters:
+        queryset = queryset.filter(TRANG_THAI_HD='Chờ xác nhận')
+    
+    # Sắp xếp
+    sort_by = request.GET.get('sort_by', 'MA_HOP_DONG').strip()
+    if sort_by in [
+        'MA_HOP_DONG', '-NGAY_LAP_HD', 'NGAY_LAP_HD', 
+        '-NGAY_TRA_PHONG', 'NGAY_TRA_PHONG', 
+        '-GIA_THUE', 'GIA_THUE'
+    ]:
+        queryset = queryset.order_by(sort_by)
+    else:
+        queryset = queryset.order_by('MA_HOP_DONG')
+    
+    return queryset
 
 class ContractWrapper:
     """Wrapper class để tránh circular references trong comparison"""
@@ -148,10 +229,13 @@ def hopdong_list(request):
         'Đã kết thúc': {'text': 'Đã kết thúc', 'color': 'bg-red-600'},
     }
 
-    # Fetch contracts with related room and filter for representative tenant
-    hop_dongs = HopDong.objects.select_related('MA_PHONG').prefetch_related(
-        'lichsuhopdong__MA_KHACH_THUE'
-    ).order_by('MA_HOP_DONG')
+    # Build queryset with filters
+    hop_dongs = HopDong.objects.select_related(
+        'MA_PHONG', 'MA_PHONG__MA_KHU_VUC'
+    ).prefetch_related('lichsuhopdong__MA_KHACH_THUE', 'lichsugiahan')
+    
+    # Apply filters
+    hop_dongs = apply_filters(hop_dongs, request)
     
     # Enhanced contract processing with workflow status - Fix comparison recursion
     enhanced_contracts = []
@@ -191,8 +275,9 @@ def hopdong_list(request):
     page_number = request.GET.get('page')
     hop_dongs_page = paginator.get_page(page_number)
 
-    # Fetch all rooms
+    # Fetch all rooms and areas for filter dropdowns
     phong_tros = PhongTro.objects.order_by('MA_PHONG')
+    khu_vucs = KhuVuc.objects.order_by('TEN_KHU_VUC')
     
     # Get dashboard statistics
     stats = HopDongReportService.thong_ke_hop_dong_theo_trang_thai()
@@ -201,6 +286,7 @@ def hopdong_list(request):
     return render(request, 'admin/hopdong/danhsach_hopdong.html', {
         'hop_dongs': hop_dongs_page,
         'phong_tros': phong_tros,
+        'khu_vucs': khu_vucs,
         'stats': stats,
         'contracts_expiring_count': contracts_expiring.count(),
         'current_page_size': page_size,
@@ -210,6 +296,15 @@ def hopdong_list(request):
 def view_chinh_sua_hop_dong(request, ma_hop_dong):
     # Lấy hợp đồng hoặc trả về 404
     hop_dong = get_object_or_404(HopDong, MA_HOP_DONG=ma_hop_dong)
+    
+    # Kiểm tra trạng thái hợp đồng - chỉ cho phép sửa khi chờ xác nhận
+    if hop_dong.TRANG_THAI_HD != 'Chờ xác nhận':
+        messages.error(
+            request, 
+            f'Không thể chỉnh sửa hợp đồng ở trạng thái "{hop_dong.TRANG_THAI_HD}". '
+            'Chỉ có thể sửa hợp đồng ở trạng thái "Chờ xác nhận".'
+        )
+        return redirect('hopdong:hopdong_list')
     
     # Lấy bản ghi cọc phòng mới nhất cho phòng
     coc_phong = CocPhong.objects.filter(
@@ -230,18 +325,49 @@ def view_chinh_sua_hop_dong(request, ma_hop_dong):
     # Lấy danh sách phòng trọ
     phong_tros = PhongTro.objects.all().only('MA_PHONG', 'TEN_PHONG')
 
-    return render(request, 'admin/hopdong/themsua_hopdong.html', {
+    # Lấy danh sách dịch vụ dựa vào bảng chỉ số dịch vụ của hợp đồng
+    lichsu_dichvu_with_chiso = []
+    if hop_dong:
+        # Lấy tất cả chỉ số dịch vụ đã ghi cho hợp đồng này
+        chiso_dichvu_list = ChiSoDichVu.objects.filter(
+            MA_HOP_DONG=hop_dong
+        ).select_related('MA_DICH_VU').order_by('MA_DICH_VU__TEN_DICH_VU', '-NGAY_GHI_CS')
+        
+        # Group theo dịch vụ để lấy chỉ số mới nhất của mỗi dịch vụ
+        dichvu_processed = set()
+        
+        for chiso in chiso_dichvu_list:
+            if chiso.MA_DICH_VU.MA_DICH_VU not in dichvu_processed:
+                # Lấy thông tin lịch sử áp dụng dịch vụ cho khu vực
+                lichsu = LichSuApDungDichVu.objects.filter(
+                    MA_KHU_VUC=hop_dong.MA_PHONG.MA_KHU_VUC,
+                    MA_DICH_VU=chiso.MA_DICH_VU,
+                    NGAY_HUY_DV__isnull=True
+                ).first()
+                
+                # Nếu có lịch sử áp dụng, thêm vào danh sách
+                if lichsu:
+                    lichsu_dichvu_with_chiso.append({
+                        'lichsu': lichsu,
+                        'latest_chiso': chiso
+                    })
+                    dichvu_processed.add(chiso.MA_DICH_VU.MA_DICH_VU)
+
+    return render(request, 'admin/hopdong/sua_hopdong.html', {
         'hop_dong': hop_dong,
         'coc_phong': coc_phong,
         'khach_thue': khach_thue,
         'cccd_cmnd': cccd_cmnd,
         'phong_tros': phong_tros,
+        'lichsu_dichvu_with_chiso': lichsu_dichvu_with_chiso,
     })
 def view_them_hop_dong(request):
     # Ví dụ: lấy danh sách phòng thuộc nhà trọ có mã là 1
     phong_tros = PhongTro.lay_phong_theo_ma_nha_tro(1)
+    khu_vucs = KhuVuc.objects.filter(MA_NHA_TRO=1).order_by('MA_KHU_VUC')
     return render(request, 'admin/hopdong/themsua_hopdong.html', {
         'phong_tros': phong_tros,
+        'khu_vucs': khu_vucs,
     })
 @csrf_exempt
 def kiem_tra_coc_phong(request, ma_phong):
@@ -264,8 +390,7 @@ def kiem_tra_coc_phong(request, ma_phong):
                         'HO_TEN_KT': coc_phong.MA_KHACH_THUE.HO_TEN_KT,
                         'GIOI_TINH_KT': coc_phong.MA_KHACH_THUE.GIOI_TINH_KT,
                         'NGAY_SINH_KT': coc_phong.MA_KHACH_THUE.NGAY_SINH_KT.strftime('%Y-%m-%d') if coc_phong.MA_KHACH_THUE.NGAY_SINH_KT else '',
-                        'SDT_KT': coc_phong.MA_KHACH_THUE.SDT_KT,
-                        'SO_CMND_CCCD': coc_phong.MA_KHACH_THUE.cccd_cmnd.first().SO_CMND_CCCD if coc_phong.MA_KHACH_THUE.cccd_cmnd.exists() else ''
+                        'SDT_KT': coc_phong.MA_KHACH_THUE.SDT_KT
                     }
                 }
             })
@@ -273,6 +398,145 @@ def kiem_tra_coc_phong(request, ma_phong):
             return JsonResponse({'success': False, 'message': 'Không tìm thấy cọc phòng hợp lệ'})
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)})
+
+@csrf_exempt
+def lay_thong_tin_phong(request, ma_phong):
+    """API lấy thông tin phòng bao gồm giá phòng và tiền cọc"""
+    try:
+        # Lấy thông tin phòng
+        phong = PhongTro.objects.get(MA_PHONG=ma_phong)
+        
+        # Kiểm tra có cọc phòng không
+        coc_phong = CocPhong.objects.filter(
+            MA_PHONG=phong,
+            TRANG_THAI_CP__in=['Đã cọc', 'Chờ xác nhận']
+        ).select_related('MA_KHACH_THUE').first()
+        
+        response_data = {
+            'success': True,
+            'phong': {
+                'MA_PHONG': phong.MA_PHONG,
+                'TEN_PHONG': phong.TEN_PHONG,
+                'GIA_PHONG': str(phong.GIA_PHONG) if phong.GIA_PHONG else '0',
+                'SO_TIEN_CAN_COC': str(phong.SO_TIEN_CAN_COC) if phong.SO_TIEN_CAN_COC else '0',
+                'DIEN_TICH': str(phong.DIEN_TICH) if phong.DIEN_TICH else '0',
+                'SO_NGUOI_TOI_DA': phong.SO_NGUOI_TOI_DA or 1,
+                'TRANG_THAI_P': phong.TRANG_THAI_P
+            }
+        }
+        
+        # Nếu có cọc phòng, thêm thông tin khách thuê
+        if coc_phong:
+            response_data['coc_phong'] = {
+                'MA_COC_PHONG': coc_phong.MA_COC_PHONG,
+                'TIEN_COC_PHONG': str(coc_phong.TIEN_COC_PHONG) if coc_phong.TIEN_COC_PHONG else '0',
+                'NGAY_COC_PHONG': coc_phong.NGAY_COC_PHONG.strftime('%Y-%m-%d') if coc_phong.NGAY_COC_PHONG else '',
+                'TRANG_THAI_CP': coc_phong.TRANG_THAI_CP
+            }
+            
+            if coc_phong.MA_KHACH_THUE:
+                response_data['khach_thue'] = {
+                    'MA_KHACH_THUE': coc_phong.MA_KHACH_THUE.MA_KHACH_THUE,
+                    'HO_TEN_KT': coc_phong.MA_KHACH_THUE.HO_TEN_KT,
+                    'GIOI_TINH_KT': coc_phong.MA_KHACH_THUE.GIOI_TINH_KT,
+                    'NGAY_SINH_KT': coc_phong.MA_KHACH_THUE.NGAY_SINH_KT.strftime('%Y-%m-%d') if coc_phong.MA_KHACH_THUE.NGAY_SINH_KT else '',
+                    'SDT_KT': coc_phong.MA_KHACH_THUE.SDT_KT,
+                    'EMAIL_KT': coc_phong.MA_KHACH_THUE.EMAIL_KT or ''
+                }
+        
+        return JsonResponse(response_data)
+        
+    except PhongTro.DoesNotExist:
+        return JsonResponse({
+            'success': False, 
+            'message': 'Không tìm thấy phòng'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False, 
+            'message': f'Lỗi hệ thống: {str(e)}'
+        })
+
+@csrf_exempt
+def tim_khach_thue_co_san(request):
+    """
+    API tìm kiếm khách thuê có sẵn - chỉ hiển thị khách thuê:
+    1. Chưa có hợp đồng nào
+    2. Hoặc có hợp đồng đã kết thúc/đã rời đi
+    """
+    if not request.session.get('is_authenticated'):
+        return JsonResponse({'success': False, 'message': 'Bạn cần đăng nhập'})
+    
+    query = request.GET.get('q', '').strip()
+    
+    if not query or len(query) < 2:
+        return JsonResponse({'success': False, 'message': 'Vui lòng nhập ít nhất 2 ký tự'})
+    
+    try:
+        from apps.khachthue.models import KhachThue
+        from django.db.models import Q, Exists, OuterRef
+        from apps.hopdong.models import HopDong, LichSuHopDong
+        
+        # Tìm khách thuê theo tên hoặc SĐT
+        base_queryset = KhachThue.objects.filter(
+            Q(HO_TEN_KT__icontains=query) | Q(SDT_KT__icontains=query)
+        )
+        
+        # Lọc khách thuê có hợp đồng đang hoạt động
+        active_contracts_subquery = LichSuHopDong.objects.filter(
+            MA_KHACH_THUE=OuterRef('pk'),
+            MA_HOP_DONG__TRANG_THAI_HD__in=[
+                'Đang hoạt động', 
+                'Đã xác nhận',
+                'Sắp kết thúc',
+                'Đang báo kết thúc'
+            ]
+        )
+        
+        # Chỉ lấy khách thuê KHÔNG có hợp đồng đang hoạt động
+        available_tenants = base_queryset.filter(
+            ~Exists(active_contracts_subquery)
+        ).distinct()[:20]  # Giới hạn 20 kết quả
+        
+        results = []
+        for khach_thue in available_tenants:
+            # Lấy thông tin hợp đồng gần nhất (nếu có)
+            latest_contract = LichSuHopDong.objects.filter(
+                MA_KHACH_THUE=khach_thue
+            ).select_related('MA_HOP_DONG').order_by('-MA_HOP_DONG__NGAY_LAP_HD').first()
+            
+            contract_info = None
+            if latest_contract:
+                contract_info = {
+                    'last_contract_end': latest_contract.MA_HOP_DONG.NGAY_TRA_PHONG.strftime('%d/%m/%Y') if latest_contract.MA_HOP_DONG.NGAY_TRA_PHONG else '',
+                    'status': latest_contract.MA_HOP_DONG.TRANG_THAI_HD,
+                    'room_name': latest_contract.MA_HOP_DONG.MA_PHONG.TEN_PHONG if latest_contract.MA_HOP_DONG.MA_PHONG else ''
+                }
+            
+            results.append({
+                'MA_KHACH_THUE': khach_thue.MA_KHACH_THUE,
+                'HO_TEN_KT': khach_thue.HO_TEN_KT,
+                'SDT_KT': khach_thue.SDT_KT,
+                'EMAIL_KT': khach_thue.EMAIL_KT or '',
+                'GIOI_TINH_KT': khach_thue.GIOI_TINH_KT or '',
+                'NGAY_SINH_KT': khach_thue.NGAY_SINH_KT.strftime('%Y-%m-%d') if khach_thue.NGAY_SINH_KT else '',
+                'TRANG_THAI_KT': khach_thue.TRANG_THAI_KT or '',
+                'contract_info': contract_info,
+                'is_available': True  # Tất cả kết quả đều available
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'results': results,
+            'count': len(results),
+            'message': f'Tìm thấy {len(results)} khách thuê có sẵn'
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi tìm kiếm: {str(e)}'
+        })
 
 
 
@@ -299,8 +563,7 @@ def them_hop_dong(request):
                 'HO_TEN_KT': request.POST.get('HO_TEN_KT'),
                 'GIOI_TINH_KT': request.POST.get('GIOI_TINH_KT'),
                 'NGAY_SINH_KT': request.POST.get('NGAY_SINH_KT'),
-                'SDT_KT': request.POST.get('SDT_KT'),
-                'SO_CMND_CCCD': request.POST.get('SO_CMND_CCCD'), 
+                'SDT_KT': request.POST.get('SDT_KT'), 
                 'GIA_COC_HD' : request.POST.get('GIA_COC_HD', 0.00),
             }
             dich_vu_su_dung = []
@@ -338,7 +601,7 @@ def them_hop_dong(request):
     phong_tros = PhongTro.objects.all().only('MA_PHONG', 'TEN_PHONG')  # Tối ưu truy vấn
     return render(request, 'admin/hopdong/themsua_hopdong.html', {'phong_tros': phong_tros})
 
-@require_http_methods('POST')
+@require_http_methods(['GET', 'POST'])
 def chinh_sua_hop_dong(request, ma_hop_dong):
     hop_dong = get_object_or_404(HopDong, MA_HOP_DONG=ma_hop_dong)
     
@@ -354,37 +617,69 @@ def chinh_sua_hop_dong(request, ma_hop_dong):
                 'SO_THANH_VIEN_TOI_DA': request.POST.get('SO_THANH_VIEN_TOI_DA'),
                 'GIA_THUE': request.POST.get('GIA_THUE'),
                 'NGAY_THU_TIEN': request.POST.get('NGAY_THU_TIEN'),
-                'PHUONG_THUC_THANH_TOAN': request.POST.get('PHUONG_THUC_THANH_TOAN'),
                 'THOI_DIEM_THANH_TOAN': request.POST.get('THOI_DIEM_THANH_TOAN'),
+                'CHU_KY_THANH_TOAN': request.POST.get('CHU_KY_THANH_TOAN'),
                 'GHI_CHU_HD': request.POST.get('GHI_CHU_HD'),
                 # Dữ liệu cho Cọc phòng
                 'MA_COC_PHONG': request.POST.get('MA_COC_PHONG'),
-                'TIEN_COC_PHONG': request.POST.get('TIEN_COC_PHONG'),
-                'GHI_CHU_CP': request.POST.get('GHI_CHU_CP'),
+                'GIA_COC_HD': request.POST.get('GIA_COC_HD'),
 
                 # Dữ liệu khách thuê
                 'HO_TEN_KT': request.POST.get('HO_TEN_KT'),
                 'SDT_KT': request.POST.get('SDT_KT'),
                 'NGAY_SINH_KT': request.POST.get('NGAY_SINH_KT'),
                 'GIOI_TINH_KT': request.POST.get('GIOI_TINH_KT'),
-                'SO_CMND_CCCD': request.POST.get('SO_CMND_CCCD'),
+                'EMAIL_KT': request.POST.get('EMAIL_KT'),
             }
             
-            hop_dong.cap_nhat_hop_dong(data)
+            # Xử lý cập nhật dịch vụ
+            with transaction.atomic():
+                hop_dong.cap_nhat_hop_dong(data)
+                
+                # Cập nhật chỉ số dịch vụ nếu có
+                for key, value in request.POST.items():
+                    if key.startswith('chiso_hien_tai_') and value:
+                        ma_dich_vu = key.replace('chiso_hien_tai_', '')
+                        
+                        # Lấy chỉ số hiện tại từ DB để làm CHI_SO_CU
+                        chi_so_hien_tai = ChiSoDichVu.objects.filter(
+                            MA_HOP_DONG=hop_dong,
+                            MA_DICH_VU_id=ma_dich_vu
+                        ).order_by('-NGAY_GHI_CS').first()
+                        
+                        chi_so_cu = chi_so_hien_tai.CHI_SO_MOI if chi_so_hien_tai else 0
+                        
+                        # Tạo bản ghi mới với chỉ số hiện tại
+                        ChiSoDichVu.objects.create(
+                            MA_HOP_DONG=hop_dong,
+                            MA_DICH_VU_id=ma_dich_vu,
+                            CHI_SO_CU=chi_so_cu,
+                            CHI_SO_MOI=int(value),
+                            NGAY_GHI_CS=timezone.now().date()
+                        )
+                    
+                    elif key.startswith('soluong_') and value:
+                        ma_dich_vu = key.replace('soluong_', '')
+                        
+                        # Cập nhật số lượng cho dịch vụ cố định
+                        ChiSoDichVu.objects.update_or_create(
+                            MA_HOP_DONG=hop_dong,
+                            MA_DICH_VU_id=ma_dich_vu,
+                            defaults={
+                                'SO_LUONG': int(value),
+                                'NGAY_GHI_CS': timezone.now().date()
+                            }
+                        )
+                
             messages.success(request, 'Cập nhật hợp đồng thành công!')
             return redirect('hopdong:hopdong_list')
         except ValueError as e:
             messages.error(request, f'Lỗi dữ liệu: {str(e)}')
         except Exception as e:
             messages.error(request, f'Lỗi hệ thống: {str(e)}')
-
-    phong_tros = PhongTro.objects.all().only('MA_PHONG', 'TEN_PHONG')
-    coc_phong = CocPhong.objects.filter(MA_PHONG=hop_dong.MA_PHONG).select_related('MA_KHACH_THUE').first()
-    return render(request, 'admin/hopdong/themsua_hopdong.html', {
-        'hop_dong': hop_dong,
-        'phong_tros': phong_tros,
-        'coc_phong': coc_phong
-    })
+    
+    # Nếu là GET request, hiển thị form
+    return redirect('hopdong:view_chinh_sua_hop_dong', ma_hop_dong=ma_hop_dong)
 @require_http_methods('POST')
 def xoa_hop_dong(request, ma_hop_dong):
     try:
@@ -399,65 +694,7 @@ def xoa_hop_dong(request, ma_hop_dong):
     return redirect('hopdong:hopdong_list')
 
 
-@require_POST
-def xac_nhan_hop_dong(request, ma_hop_dong):
-    """Xác nhận hợp đồng và sinh hóa đơn bắt đầu nếu chưa có"""
-    try:
-        hop_dong = get_object_or_404(HopDong, MA_HOP_DONG=ma_hop_dong)
-        
-        # Kiểm tra xem đã có hóa đơn bắt đầu chưa
-        da_co_hoa_don = hop_dong.get_hoa_don_bat_dau() is not None
-        
-        hoa_don, error = hop_dong.xac_nhan_hop_dong()
-        
-        if hoa_don and error is None:
-            if da_co_hoa_don:
-                messages.success(
-                    request, 
-                    f'Đã xác nhận hợp đồng! Hóa đơn bắt đầu đã có sẵn: {hoa_don.MA_HOA_DON}'
-                )
-            else:
-                messages.success(
-                    request, 
-                    f'Đã xác nhận hợp đồng và tạo hóa đơn bắt đầu! Mã hóa đơn: {hoa_don.MA_HOA_DON}'
-                )
-        elif error:
-            messages.error(request, f'Lỗi: {error}')
-        else:
-            messages.success(request, 'Đã xác nhận hợp đồng!')
-            
-    except Exception as e:
-        messages.error(request, f'Lỗi hệ thống: {str(e)}')
-    
-    return redirect('hopdong:hopdong_list')
 
-def sinh_lai_hoa_don_bat_dau(request, ma_hop_dong):
-    """Sinh lại hóa đơn bắt đầu (nếu cần)"""
-    if request.method == 'POST':
-        try:
-            hop_dong = get_object_or_404(HopDong, MA_HOP_DONG=ma_hop_dong)
-            
-            # Xóa hóa đơn cũ (nếu có)
-            hoa_don_cu = hop_dong.get_hoa_don_bat_dau()
-            if hoa_don_cu and hoa_don_cu.TRANG_THAI_HDON == 'Chưa thanh toán':
-                hoa_don_cu.delete()
-                hop_dong.DA_SINH_HOA_DON_BAT_DAU = False
-                hop_dong.save()
-            
-            # Sinh hóa đơn mới
-            from django.apps import apps
-            HoaDon = apps.get_model('hoadon', 'HoaDon')
-            hoa_don, error = HoaDon.sinh_hoa_don_bat_dau_hop_dong(hop_dong)
-            
-            if hoa_don:
-                messages.success(request, f'Đã sinh lại hóa đơn bắt đầu! Mã: {hoa_don.MA_HOA_DON}')
-            else:
-                messages.error(request, f'Lỗi sinh hóa đơn: {error}')
-                
-        except Exception as e:
-            messages.error(request, f'Lỗi: {str(e)}')
-    
-    return redirect('hopdong:chi_tiet_hop_dong', ma_hop_dong=ma_hop_dong)
 
 def chi_tiet_hop_dong(request, ma_hop_dong):
     """Chi tiết hợp đồng với thông tin hóa đơn"""
@@ -473,6 +710,9 @@ def chi_tiet_hop_dong(request, ma_hop_dong):
     # Lấy lịch sử gia hạn
     lich_su_gia_han = hop_dong.get_lich_su_gia_han()
     
+    # Lấy lịch sử báo kết thúc
+    lich_su_bao_ket_thuc = hop_dong.lichsugiahan.filter(LOAI_DC='Báo kết thúc sớm').order_by('-NGAY_TAO_DC')
+    
     context = {
         'hop_dong': hop_dong,
         'khach_thue': khach_thue,  # Trả về cả object lich su hop dong
@@ -480,129 +720,12 @@ def chi_tiet_hop_dong(request, ma_hop_dong):
         'danh_sach_hoa_don': danh_sach_hoa_don,
         'lich_su_gia_han': lich_su_gia_han,
         'so_lan_gia_han': hop_dong.da_gia_han_bao_nhieu_lan(),
+        'lich_su_bao_ket_thuc': lich_su_bao_ket_thuc,
         'can_sinh_hoa_don_bat_dau': not hop_dong.get_hoa_don_bat_dau(),
     }
     
     return render(request, 'admin/hopdong/chi_tiet_hop_dong.html', context)
 
-@require_POST
-def gia_han_hop_dong(request, ma_hop_dong):
-    """Gia hạn hợp đồng"""
-    try:
-        hop_dong = get_object_or_404(HopDong, MA_HOP_DONG=ma_hop_dong)
-        
-        # Lấy dữ liệu từ form
-        ngay_tra_phong_moi_str = request.POST.get('ngay_tra_phong_moi')
-        thoi_han_moi = request.POST.get('thoi_han_moi')
-        gia_thue_moi = request.POST.get('gia_thue_moi')
-        ly_do = request.POST.get('ly_do_gia_han')
-        
-        # Validate và convert ngày
-        from datetime import datetime
-        try:
-            ngay_tra_phong_moi = datetime.strptime(ngay_tra_phong_moi_str, '%Y-%m-%d').date()
-        except (ValueError, TypeError):
-            messages.error(request, 'Ngày trả phòng mới không hợp lệ')
-            return redirect('hopdong:chi_tiet_hop_dong', ma_hop_dong=ma_hop_dong)
-        
-        # Convert giá thuê mới (nếu có)
-        if gia_thue_moi:
-            try:
-                gia_thue_moi = float(gia_thue_moi)
-            except (ValueError, TypeError):
-                messages.error(request, 'Giá thuê mới không hợp lệ')
-                return redirect('hopdong:chi_tiet_hop_dong', ma_hop_dong=ma_hop_dong)
-        else:
-            gia_thue_moi = None
-        
-        # Thực hiện gia hạn
-        success, lich_su_or_error = hop_dong.gia_han_hop_dong(
-            ngay_tra_phong_moi=ngay_tra_phong_moi,
-            thoi_han_moi=thoi_han_moi,
-            gia_thue_moi=gia_thue_moi,
-            ly_do=ly_do
-        )
-        
-        if success:
-            lich_su = lich_su_or_error
-            messages.success(request, f'Đã gia hạn hợp đồng đến {ngay_tra_phong_moi}! Mã gia hạn: {lich_su.MA_GIA_HAN}')
-        else:
-            messages.error(request, f'Lỗi gia hạn: {lich_su_or_error}')
-            
-    except Exception as e:
-        messages.error(request, f'Lỗi hệ thống: {str(e)}')
-    
-    return redirect('hopdong:chi_tiet_hop_dong', ma_hop_dong=ma_hop_dong)
-
-@require_POST
-def bao_ket_thuc_som(request, ma_hop_dong):
-    """Báo kết thúc sớm hợp đồng"""
-    try:
-        hop_dong = get_object_or_404(HopDong, MA_HOP_DONG=ma_hop_dong)
-        
-        # Lấy dữ liệu từ form
-        ngay_bao_ket_thuc_str = request.POST.get('ngay_bao_ket_thuc')
-        ly_do = request.POST.get('ly_do')
-        
-        # Validate và convert ngày
-        from datetime import datetime
-        try:
-            ngay_bao_ket_thuc = datetime.strptime(ngay_bao_ket_thuc_str, '%Y-%m-%d').date()
-        except (ValueError, TypeError):
-            messages.error(request, 'Ngày báo kết thúc không hợp lệ')
-            return redirect('hopdong:chi_tiet_hop_dong', ma_hop_dong=ma_hop_dong)
-        
-        # Thực hiện báo kết thúc
-        success, error = hop_dong.bao_ket_thuc_som(
-            ngay_bao_ket_thuc=ngay_bao_ket_thuc,
-            ly_do=ly_do
-        )
-        
-        if success:
-            messages.success(request, f'Đã báo kết thúc hợp đồng vào {ngay_bao_ket_thuc}!')
-        else:
-            messages.error(request, f'Lỗi báo kết thúc: {error}')
-            
-    except Exception as e:
-        messages.error(request, f'Lỗi hệ thống: {str(e)}')
-    
-    return redirect('hopdong:chi_tiet_hop_dong', ma_hop_dong=ma_hop_dong)
-
-@require_POST
-def ket_thuc_hop_dong(request, ma_hop_dong):
-    """Kết thúc hợp đồng và sinh hóa đơn cuối"""
-    try:
-        hop_dong = get_object_or_404(HopDong, MA_HOP_DONG=ma_hop_dong)
-        
-        # Lấy ngày kết thúc thực tế (nếu có)
-        ngay_ket_thuc_str = request.POST.get('ngay_ket_thuc_thuc_te')
-        ngay_ket_thuc = None
-        
-        if ngay_ket_thuc_str:
-            from datetime import datetime
-            try:
-                ngay_ket_thuc = datetime.strptime(ngay_ket_thuc_str, '%Y-%m-%d').date()
-            except (ValueError, TypeError):
-                messages.error(request, 'Ngày kết thúc không hợp lệ')
-                return redirect('hopdong:chi_tiet_hop_dong', ma_hop_dong=ma_hop_dong)
-        
-        # Thực hiện kết thúc hợp đồng
-        hoa_don_cuoi, error = hop_dong.ket_thuc_hop_dong(ngay_ket_thuc)
-        
-        if hoa_don_cuoi:
-            messages.success(
-                request, 
-                f'Đã kết thúc hợp đồng và sinh hóa đơn cuối! Mã hóa đơn: {hoa_don_cuoi.MA_HOA_DON}'
-            )
-        elif error:
-            messages.error(request, f'Lỗi kết thúc hợp đồng: {error}')
-        else:
-            messages.success(request, 'Đã kết thúc hợp đồng!')
-            
-    except Exception as e:
-        messages.error(request, f'Lỗi hệ thống: {str(e)}')
-    
-    return redirect('hopdong:hopdong_list')
 
 
 # ======================= WORKFLOW FUNCTIONS =======================
@@ -615,12 +738,11 @@ def get_available_workflow_actions(contract):
         actions.extend([
             {'action': 'confirm', 'label': 'Xác nhận & Sinh HĐ', 'icon': 'fas fa-check-circle', 'class': 'btn-success'},
             {'action': 'edit', 'label': 'Chỉnh sửa', 'icon': 'fas fa-edit', 'class': 'btn-warning'},
-            {'action': 'cancel', 'label': 'Hủy', 'icon': 'fas fa-times', 'class': 'btn-danger'}
+            {'action': 'cancel', 'label': 'Kết thúc hợp đồng', 'icon': 'fas fa-stop-circle', 'class': 'btn-danger'}
         ])
     
     elif contract.TRANG_THAI_HD == 'Đang hoạt động':
         actions.extend([
-            {'action': 'invoice', 'label': 'Lập hóa đơn tháng', 'icon': 'fas fa-receipt', 'class': 'btn-primary'},
             {'action': 'extend', 'label': 'Gia hạn', 'icon': 'fas fa-calendar-plus', 'class': 'btn-info'},
             {'action': 'early_end', 'label': 'Báo kết thúc sớm', 'icon': 'fas fa-exclamation-triangle', 'class': 'btn-warning'},
             {'action': 'view_detail', 'label': 'Chi tiết', 'icon': 'fas fa-eye', 'class': 'btn-secondary'}
@@ -629,7 +751,6 @@ def get_available_workflow_actions(contract):
     elif contract.TRANG_THAI_HD in ['Sắp kết thúc', 'Đang báo kết thúc']:
         actions.extend([
             {'action': 'extend', 'label': 'Gia hạn', 'icon': 'fas fa-calendar-plus', 'class': 'btn-info'},
-            {'action': 'end', 'label': 'Kết thúc', 'icon': 'fas fa-stop-circle', 'class': 'btn-danger'},
             {'action': 'view_detail', 'label': 'Chi tiết', 'icon': 'fas fa-eye', 'class': 'btn-secondary'}
         ])
     
@@ -641,316 +762,8 @@ def get_available_workflow_actions(contract):
     
     return actions
 
-@csrf_exempt
-@require_POST
-def workflow_action(request):
-    """Xử lý các action workflow từ AJAX"""
-    # Check authentication and permissions
-    if not request.session.get('is_authenticated'):
-        return JsonResponse({'success': False, 'message': 'Bạn cần đăng nhập để thực hiện thao tác này'})
-    
-    vai_tro = request.session.get('vai_tro')
-    if vai_tro not in ['Chủ trọ', 'admin']:
-        return JsonResponse({'success': False, 'message': 'Bạn không có quyền thực hiện thao tác này'})
-        
-    try:
-        data = json.loads(request.body)
-        action = data.get('action')
-        ma_hop_dong = data.get('ma_hop_dong') or data.get('contract_id')
-        
-        if not action or not ma_hop_dong:
-            return JsonResponse({
-                'success': False,
-                'message': 'Thiếu thông tin action hoặc mã hợp đồng'
-            })
-        
-        hop_dong = get_object_or_404(HopDong, MA_HOP_DONG=ma_hop_dong)
-        
-        # Xử lý từng action
-        if action == 'confirm':
-            return handle_confirm_contract(hop_dong, data)
-        elif action == 'invoice':
-            return handle_create_invoice(hop_dong, data)
-        elif action == 'extend':
-            return handle_extend_contract(hop_dong, data)
-        elif action == 'early_end':
-            return handle_early_end_contract(hop_dong, data)
-        elif action == 'end':
-            return handle_end_contract(hop_dong, data)
-        elif action == 'cancel':
-            return handle_cancel_contract(hop_dong, data)
-        else:
-            return JsonResponse({
-                'success': False,
-                'message': f'Action không được hỗ trợ: {action}'
-            })
-            
-    except json.JSONDecodeError:
-        return JsonResponse({
-            'success': False,
-            'message': 'Dữ liệu JSON không hợp lệ'
-        })
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'message': f'Lỗi hệ thống: {str(e)}'
-        })
 
-def handle_confirm_contract(hop_dong, data):
-    """Xử lý xác nhận hợp đồng"""
-    try:
-        hoa_don, success_msg, errors = HopDongWorkflowService.xac_nhan_va_kich_hoat_hop_dong(hop_dong)
-        
-        if hoa_don:
-            # Lấy thông tin khách thuê
-            lich_su = hop_dong.lichsuhopdong.filter(MOI_QUAN_HE='Chủ hợp đồng').first()
-            khach_thue = lich_su.MA_KHACH_THUE if lich_su else None
-            
-            # Chuẩn bị dữ liệu hóa đơn chi tiết để hiển thị
-            hoa_don_data = {
-                'ma_hoa_don': hoa_don.MA_HOA_DON,
-                'ngay_lap': hoa_don.NGAY_LAP_HDON.strftime('%d/%m/%Y') if hoa_don.NGAY_LAP_HDON else '',
-                'loai_hoa_don': hoa_don.LOAI_HOA_DON,
-                'trang_thai': hoa_don.TRANG_THAI_HDON,
-                
-                # Thông tin hợp đồng
-                'ma_hop_dong': hop_dong.MA_HOP_DONG,
-                'ten_phong': hop_dong.MA_PHONG.TEN_PHONG,
-                'ngay_nhan_phong': hop_dong.NGAY_NHAN_PHONG.strftime('%d/%m/%Y') if hop_dong.NGAY_NHAN_PHONG else '',
-                'ngay_tra_phong': hop_dong.NGAY_TRA_PHONG.strftime('%d/%m/%Y') if hop_dong.NGAY_TRA_PHONG else '',
-                
-                # Thông tin khách thuê
-                'ten_khach_thue': khach_thue.HO_TEN_KT if khach_thue else '',
-                'sdt_khach_thue': khach_thue.SDT_KT if khach_thue else '',
-                'ngay_sinh': khach_thue.NGAY_SINH_KT.strftime('%d/%m/%Y') if khach_thue and khach_thue.NGAY_SINH_KT else '',
-                
-                # Chi tiết thanh toán
-                'tien_phong': f"{float(hoa_don.TIEN_PHONG or 0):,.0f}",
-                'tien_dich_vu': f"{float(hoa_don.TIEN_DICH_VU or 0):,.0f}",
-                'tien_coc': f"{float(hoa_don.TIEN_COC or 0):,.0f}",
-                'tien_khau_tru': f"{float(hoa_don.TIEN_KHAU_TRU or 0):,.0f}",
-                'tong_tien': f"{float(hoa_don.TONG_TIEN or 0):,.0f}",
-                
-                # Thông tin bổ sung
-                'han_thanh_toan': (hoa_don.NGAY_LAP_HDON + timedelta(days=7)).strftime('%d/%m/%Y') if hoa_don.NGAY_LAP_HDON else '',
-                'ngay_tao': timezone.now().strftime('%d/%m/%Y %H:%M')
-            }
-            
-            return JsonResponse({
-                'success': True,
-                'message': success_msg,
-                'show_invoice': True,  # Flag để hiển thị modal hóa đơn
-                'invoice_data': hoa_don_data,
-                'data': {
-                    'ma_hoa_don': hoa_don.MA_HOA_DON,
-                    'tong_tien': float(hoa_don.TONG_TIEN),
-                    'trang_thai_hop_dong': hop_dong.TRANG_THAI_HD
-                }
-            })
-        else:
-            return JsonResponse({
-                'success': True,
-                'message': success_msg,
-                'show_invoice': False,
-                'data': {
-                    'trang_thai_hop_dong': hop_dong.TRANG_THAI_HD
-                }
-            })
-            
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'message': f'Lỗi xác nhận hợp đồng: {str(e)}'
-        })
 
-def handle_create_invoice(hop_dong, data):
-    """Xử lý tạo hóa đơn hàng tháng"""
-    try:
-        thang = data.get('thang') or datetime.now().month
-        nam = data.get('nam') or datetime.now().year
-        
-        from django.apps import apps
-        HoaDon = apps.get_model('hoadon', 'HoaDon')
-        hoa_don, error = HoaDon.sinh_hoa_don_hang_thang(hop_dong, thang, nam)
-        
-        if hoa_don:
-            return JsonResponse({
-                'success': True,
-                'message': f'Đã sinh hóa đơn tháng {thang}/{nam}',
-                'data': {
-                    'ma_hoa_don': hoa_don.MA_HOA_DON,
-                    'tong_tien': float(hoa_don.TONG_TIEN),
-                    'ngay_lap': hoa_don.NGAY_LAP_HDON.isoformat()
-                }
-            })
-        else:
-            return JsonResponse({
-                'success': False,
-                'message': error or 'Không thể sinh hóa đơn'
-            })
-            
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'message': f'Lỗi sinh hóa đơn: {str(e)}'
-        })
-
-def handle_extend_contract(hop_dong, data):
-    """Xử lý gia hạn hợp đồng"""
-    try:
-        ngay_tra_phong_moi_str = data.get('ngay_tra_phong_moi')
-        thoi_han_moi = data.get('thoi_han_moi')
-        gia_thue_moi = data.get('gia_thue_moi')
-        
-        if not ngay_tra_phong_moi_str:
-            return JsonResponse({
-                'success': False,
-                'message': 'Thiếu ngày trả phòng mới'
-            })
-        
-        # Convert string to date
-        ngay_tra_phong_moi = datetime.strptime(ngay_tra_phong_moi_str, '%Y-%m-%d').date()
-        
-        success, message, errors = HopDongWorkflowService.gia_han_hop_dong(
-            hop_dong=hop_dong,
-            ngay_tra_phong_moi=ngay_tra_phong_moi,
-            thoi_han_moi=thoi_han_moi,
-            gia_thue_moi=gia_thue_moi
-        )
-        
-        if success:
-            return JsonResponse({
-                'success': True,
-                'message': message,
-                'data': {
-                    'ngay_tra_phong_moi': hop_dong.NGAY_TRA_PHONG.isoformat(),
-                    'thoi_han_hd': hop_dong.THOI_HAN_HD,
-                    'gia_thue': float(hop_dong.GIA_THUE or 0)
-                }
-            })
-        else:
-            return JsonResponse({
-                'success': False,
-                'message': 'Không thể gia hạn hợp đồng',
-                'errors': errors
-            })
-            
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'message': f'Lỗi gia hạn hợp đồng: {str(e)}'
-        })
-
-def handle_early_end_contract(hop_dong, data):
-    """Xử lý báo kết thúc sớm"""
-    try:
-        ngay_bao_ket_thuc_str = data.get('ngay_bao_ket_thuc')
-        ly_do = data.get('ly_do', '')
-        
-        if not ngay_bao_ket_thuc_str:
-            return JsonResponse({
-                'success': False,
-                'message': 'Thiếu ngày báo kết thúc'
-            })
-        
-        # Convert string to date
-        ngay_bao_ket_thuc = datetime.strptime(ngay_bao_ket_thuc_str, '%Y-%m-%d').date()
-        
-        success, message, errors = HopDongWorkflowService.bao_ket_thuc_som(
-            hop_dong=hop_dong,
-            ngay_bao_ket_thuc=ngay_bao_ket_thuc,
-            ly_do=ly_do
-        )
-        
-        if success:
-            return JsonResponse({
-                'success': True,
-                'message': message,
-                'data': {
-                    'trang_thai': hop_dong.TRANG_THAI_HD,
-                    'ghi_chu': hop_dong.GHI_CHU_HD
-                }
-            })
-        else:
-            return JsonResponse({
-                'success': False,
-                'message': 'Không thể báo kết thúc sớm',
-                'errors': errors
-            })
-            
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'message': f'Lỗi báo kết thúc sớm: {str(e)}'
-        })
-
-def handle_end_contract(hop_dong, data):
-    """Xử lý kết thúc hợp đồng"""
-    try:
-        ngay_ket_thuc_str = data.get('ngay_ket_thuc')
-        ngay_ket_thuc = None
-        
-        if ngay_ket_thuc_str:
-            ngay_ket_thuc = datetime.strptime(ngay_ket_thuc_str, '%Y-%m-%d').date()
-        
-        hoa_don, message, errors = HopDongWorkflowService.ket_thuc_hop_dong(
-            hop_dong=hop_dong,
-            ngay_ket_thuc_thuc_te=ngay_ket_thuc
-        )
-        
-        if message:
-            return JsonResponse({
-                'success': True,
-                'message': message,
-                'data': {
-                    'trang_thai': hop_dong.TRANG_THAI_HD,
-                    'trang_thai_phong': hop_dong.MA_PHONG.TRANG_THAI_P,
-                    'ma_hoa_don_ket_thuc': hoa_don.MA_HOA_DON if hoa_don else None
-                }
-            })
-        else:
-            return JsonResponse({
-                'success': False,
-                'message': 'Không thể kết thúc hợp đồng',
-                'errors': errors
-            })
-            
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'message': f'Lỗi kết thúc hợp đồng: {str(e)}'
-        })
-
-def handle_cancel_contract(hop_dong, data):
-    """Xử lý hủy hợp đồng"""
-    try:
-        ly_do = data.get('ly_do', 'Hủy bởi admin')
-        
-        # Logic hủy hợp đồng
-        hop_dong.TRANG_THAI_HD = 'Đã hủy'
-        hop_dong.GHI_CHU_HD = f"{hop_dong.GHI_CHU_HD or ''}\n[Hủy {date.today()}]: {ly_do}"
-        hop_dong.save()
-        
-        # Cập nhật trạng thái phòng về trống
-        hop_dong.MA_PHONG.TRANG_THAI_P = 'Trống'
-        hop_dong.MA_PHONG.save()
-        
-        # Cập nhật trạng thái cọc phòng
-        CocPhong.cap_nhat_trang_thai_coc(hop_dong.MA_PHONG, 'Đã thu hồi')
-        
-        return JsonResponse({
-            'success': True,
-            'message': 'Đã hủy hợp đồng',
-            'data': {
-                'trang_thai': hop_dong.TRANG_THAI_HD
-            }
-        })
-        
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'message': f'Lỗi hủy hợp đồng: {str(e)}'
-        })
 
 @require_http_methods(['GET'])
 def dashboard_statistics(request):
@@ -1288,208 +1101,280 @@ def send_invoice_email(request, ma_hoa_don):
         }, status=500)
 
 
+
+
+
+
+
+# ==================== 3 VIEWS MỚI CHO CHỈNH SỬA RIÊNG BIỆT ====================
+
 @require_http_methods(['GET', 'POST'])
-def thiet_lap_hoa_don_bat_dau_hop_dong(request, ma_hop_dong):
-    """
-    Thiết lập và tạo hóa đơn bắt đầu cho hợp đồng chờ xác nhận
-    """
-    from decimal import Decimal
-    from django.apps import apps
+def sua_thongtin_hopdong(request, ma_hop_dong):
+    """Chỉnh sửa thông tin và điều khoản hợp đồng"""
+    hop_dong = get_object_or_404(HopDong, MA_HOP_DONG=ma_hop_dong)
     
-    try:
-        hop_dong = get_object_or_404(HopDong, MA_HOP_DONG=ma_hop_dong)
-        
-        # Kiểm tra trạng thái hợp đồng
-        if hop_dong.TRANG_THAI_HD != 'Chờ xác nhận':
-            return JsonResponse({
-                'success': False,
-                'message': 'Chỉ có thể tạo hóa đơn bắt đầu cho hợp đồng đang chờ xác nhận'
-            })
-        
-        # Kiểm tra đã có hóa đơn bắt đầu chưa
-        if hop_dong.get_hoa_don_bat_dau():
-            return JsonResponse({
-                'success': False,
-                'message': 'Hợp đồng này đã có hóa đơn bắt đầu'
-            })
-        
-        if request.method == 'GET':
-            # Lấy thông tin khách thuê
-            lich_su = hop_dong.lichsuhopdong.filter(MOI_QUAN_HE='Chủ hợp đồng').first()
-            khach_thue = lich_su.MA_KHACH_THUE if lich_su else None
+    # Kiểm tra trạng thái hợp đồng
+    if hop_dong.TRANG_THAI_HD != 'Chờ xác nhận':
+        messages.error(
+            request, 
+            f'Không thể chỉnh sửa hợp đồng ở trạng thái "{hop_dong.TRANG_THAI_HD}". '
+            'Chỉ có thể sửa hợp đồng ở trạng thái "Chờ xác nhận".'
+        )
+        return redirect('hopdong:hopdong_list')
+    
+    if request.method == 'POST':
+        try:
+            with transaction.atomic():
+                # Cập nhật thông tin hợp đồng
+                hop_dong.NGAY_LAP_HD = request.POST.get('NGAY_LAP_HD')
+                hop_dong.NGAY_NHAN_PHONG = request.POST.get('NGAY_NHAN_PHONG')
+                hop_dong.NGAY_TRA_PHONG = request.POST.get('NGAY_TRA_PHONG')
+                hop_dong.GIA_THUE = request.POST.get('GIA_THUE')
+                hop_dong.GIA_COC_HD = request.POST.get('GIA_COC_HD')
+                hop_dong.SO_THANH_VIEN = request.POST.get('SO_THANH_VIEN_TOI_DA')
+                hop_dong.THOI_HAN_HD = request.POST.get('THOI_HAN_HD')
+                hop_dong.NGAY_THU_TIEN = request.POST.get('NGAY_THU_TIEN')
+                hop_dong.THOI_DIEM_THANH_TOAN = request.POST.get('THOI_DIEM_THANH_TOAN')
+                hop_dong.CHU_KY_THANH_TOAN = request.POST.get('CHU_KY_THANH_TOAN')
+                hop_dong.GHI_CHU_HD = request.POST.get('GHI_CHU_HD')
+                
+                hop_dong.save()
+                
+            messages.success(request, 'Cập nhật thông tin hợp đồng thành công!')
+            return redirect('hopdong:hopdong_list')
             
-            # Tạo preview đơn giản
-            tien_phong = hop_dong.GIA_THUE or Decimal(0)
-            tien_coc = hop_dong.GIA_COC_HD or Decimal(0)
-            tien_dich_vu = Decimal(0)  # Sẽ tính dựa vào dịch vụ phòng
+        except Exception as e:
+            messages.error(request, f'Lỗi cập nhật: {str(e)}')
+    
+    return render(request, 'admin/hopdong/sua_thongtin_hopdong.html', {
+        'hop_dong': hop_dong
+    })
 
-            tong_tien = tien_phong + tien_coc + tien_dich_vu
-            
-            # Tạo dữ liệu đơn giản cho preview
-            hoa_don_preview = {
-                'tien_phong': tien_phong,
-                'tien_coc': tien_coc, 
-                'tien_dich_vu': tien_dich_vu,
-                'tien_khau_tru': Decimal(0),
-                'tong_tien': tong_tien
-            }
-            
-            return JsonResponse({
-                'success': True,
-                'html': render(request, 'admin/hopdong/modal_tao_hoa_don_bat_dau.html', {
-                    'hop_dong': hop_dong,
-                    'khach_thue': khach_thue,
-                    'hoa_don_preview': hoa_don_preview
-                }).content.decode('utf-8')
-            })
-        
-        elif request.method == 'POST':
-            # Tạo hóa đơn bắt đầu trực tiếp
-            HoaDon = apps.get_model('hoadon', 'HoaDon')
-            
-            try:
-                with transaction.atomic():
-                    # Tính toán các khoản phí
-                    tien_phong = hop_dong.GIA_THUE or Decimal(0)
-                    tien_coc = hop_dong.GIA_COC_HD or Decimal(0)
-                    tien_dich_vu = Decimal(0)  # Có thể tính từ dịch vụ sau
-                    tien_khau_tru = Decimal(0)
+@require_http_methods(['GET', 'POST'])  
+def sua_khachthue_hopdong(request, ma_hop_dong):
+    """Chỉnh sửa thông tin khách thuê"""
+    hop_dong = get_object_or_404(HopDong, MA_HOP_DONG=ma_hop_dong)
+    
+    # Kiểm tra trạng thái hợp đồng
+    if hop_dong.TRANG_THAI_HD != 'Chờ xác nhận':
+        messages.error(
+            request, 
+            f'Không thể chỉnh sửa hợp đồng ở trạng thái "{hop_dong.TRANG_THAI_HD}". '
+            'Chỉ có thể sửa hợp đồng ở trạng thái "Chờ xác nhận".'
+        )
+        return redirect('hopdong:hopdong_list')
+    
+    # Lấy thông tin khách thuê hiện tại
+    lich_su = LichSuHopDong.objects.filter(
+        MA_HOP_DONG=hop_dong,
+        MOI_QUAN_HE='Chủ hợp đồng'
+    ).select_related('MA_KHACH_THUE').first()
+    
+    khach_thue = lich_su.MA_KHACH_THUE if lich_su else None
+    cccd_cmnd = CccdCmnd.objects.filter(MA_KHACH_THUE=khach_thue).first() if khach_thue else None
+    
+    if request.method == 'POST':
+        try:
+            with transaction.atomic():
+                ma_khach_thue_post = request.POST.get('MA_KHACH_THUE')
+                tenant_type = request.POST.get('tenant_type', 'existing')
+                
+                if tenant_type == 'search' and ma_khach_thue_post and ma_khach_thue_post.isdigit():
+                    # Chọn khách thuê có sẵn từ hệ thống
+                    khach_thue_moi = get_object_or_404(KhachThue, MA_KHACH_THUE=ma_khach_thue_post)
                     
-                    tong_tien = tien_phong + tien_coc + tien_dich_vu - tien_khau_tru
-                    # Tạo hóa đơn
-                    hoa_don = HoaDon.objects.create(
-                        MA_HOP_DONG=hop_dong,
-                        LOAI_HOA_DON='Hóa đơn bắt đầu',
-                        NGAY_LAP_HDON=timezone.now().date(),
-                        TIEN_PHONG=tien_phong,
-                        TIEN_DICH_VU=tien_dich_vu,
-                        TIEN_COC=tien_coc,
-                        TIEN_KHAU_TRU=tien_khau_tru,
-                        TONG_TIEN=tong_tien,
-                        TRANG_THAI_HDON='Chưa thanh toán'
-                    )
+                    # Cập nhật lịch sử hợp đồng để trỏ đến khách thuê mới
+                    if lich_su:
+                        lich_su.MA_KHACH_THUE = khach_thue_moi
+                        lich_su.save()
+                    else:
+                        LichSuHopDong.objects.create(
+                            MA_HOP_DONG=hop_dong,
+                            MA_KHACH_THUE=khach_thue_moi,
+                            MOI_QUAN_HE='Chủ hợp đồng',
+                            NGAY_THAM_GIA=timezone.now().date()
+                        )
                     
-                    # Lấy thông tin khách thuê để trả về
-                    lich_su = hop_dong.lichsuhopdong.filter(MOI_QUAN_HE='Chủ hợp đồng').first()
-                    khach_thue = lich_su.MA_KHACH_THUE if lich_su else None
+                    messages.success(request, f'Đã chuyển hợp đồng sang khách thuê: {khach_thue_moi.HO_TEN_KT}')
                     
-                    return JsonResponse({
-                        'success': True,
-                        'message': f'Đã tạo hóa đơn bắt đầu thành công! Mã hóa đơn: {hoa_don.MA_HOA_DON}',
-                        'show_invoice': True,
-                        'invoice_data': {
-                            'ma_hoa_don': hoa_don.MA_HOA_DON,
-                            'ngay_lap': hoa_don.NGAY_LAP_HDON.strftime('%d/%m/%Y'),
-                            'loai_hoa_don': hoa_don.LOAI_HOA_DON,
-                            'trang_thai': hoa_don.TRANG_THAI_HDON,
-                            'ma_hop_dong': hop_dong.MA_HOP_DONG,
-                            'ten_phong': hop_dong.MA_PHONG.TEN_PHONG,
-                            'ten_khach_thue': khach_thue.HO_TEN_KT if khach_thue else '',
-                            'tien_phong': f"{float(tien_phong):,.0f}",
-                            'tien_dich_vu': f"{float(tien_dich_vu):,.0f}",
-                            'tien_coc': f"{float(tien_coc):,.0f}",
-                            'tien_khau_tru': f"{float(tien_khau_tru):,.0f}",
-                            'tong_tien': f"{float(tong_tien):,.0f}",
-                            'can_delete': True  # Vì là hóa đơn mới tạo
-                        }
-                    })
-                    
-            except Exception as e:
-                return JsonResponse({
-                    'success': False,
-                    'message': f'Lỗi tạo hóa đơn: {str(e)}'
-                })
+                else:
+                    # Cập nhật thông tin khách thuê hiện tại (chỉ thông tin cơ bản)
+                    if khach_thue:
+                        khach_thue.HO_TEN_KT = request.POST.get('HO_TEN_KT')
+                        khach_thue.GIOI_TINH_KT = request.POST.get('GIOI_TINH_KT')
+                        khach_thue.NGAY_SINH_KT = request.POST.get('NGAY_SINH_KT') or None
+                        khach_thue.SDT_KT = request.POST.get('SDT_KT')
+                        khach_thue.EMAIL_KT = request.POST.get('EMAIL_KT')
+                        khach_thue.save()
+                        
+                        messages.success(request, 'Cập nhật thông tin khách thuê thành công!')
+                    else:
+                        messages.error(request, 'Không tìm thấy khách thuê để cập nhật!')
+                        return redirect('hopdong:hopdong_list')
+                
+            return redirect('hopdong:hopdong_list')
             
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'message': f'Lỗi hệ thống: {str(e)}'
-        })
-
-
-@require_http_methods(['POST'])
-def xoa_hoa_don_bat_dau(request, ma_hop_dong):
-    """
-    Xóa hóa đơn bắt đầu của hợp đồng (chỉ khi chưa thanh toán)
-    """
-    try:
-        hop_dong = get_object_or_404(HopDong, MA_HOP_DONG=ma_hop_dong)
-        
-        # Lấy hóa đơn bắt đầu
-        hoa_don_bat_dau = hop_dong.get_hoa_don_bat_dau()
-        
-        if not hoa_don_bat_dau:
-            return JsonResponse({
-                'success': False,
-                'message': 'Không tìm thấy hóa đơn bắt đầu để xóa'
-            })
-        
-        # Chỉ cho phép xóa hóa đơn chưa thanh toán
-        if hoa_don_bat_dau.TRANG_THAI_HDON == 'Đã thanh toán':
-            return JsonResponse({
-                'success': False,
-                'message': 'Không thể xóa hóa đơn đã thanh toán'
-            })
-        
-        # Xóa hóa đơn
-        with transaction.atomic():
-            ma_hoa_don = hoa_don_bat_dau.MA_HOA_DON
-            hoa_don_bat_dau.delete()
-            
-            return JsonResponse({
-                'success': True,
-                'message': f'Đã xóa hóa đơn bắt đầu {ma_hoa_don} thành công'
-            })
-            
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'message': f'Lỗi hệ thống: {str(e)}'
-        })
-
+        except Exception as e:
+            messages.error(request, f'Lỗi cập nhật: {str(e)}')
+    
+    return render(request, 'admin/hopdong/sua_khachthue_hopdong.html', {
+        'hop_dong': hop_dong,
+        'khach_thue': khach_thue,
+        'cccd_cmnd': cccd_cmnd
+    })
 
 @require_http_methods(['GET'])
-def xem_hoa_don_bat_dau(request, ma_hop_dong):
-    """
-    Xem hóa đơn bắt đầu hiện tại của hợp đồng
-    """
-    try:
-        hop_dong = get_object_or_404(HopDong, MA_HOP_DONG=ma_hop_dong)
-        
-        # Lấy hóa đơn bắt đầu
-        hoa_don = hop_dong.get_hoa_don_bat_dau()
-        
-        if not hoa_don:
-            return JsonResponse({
-                'success': False,
-                'message': 'Hợp đồng này chưa có hóa đơn bắt đầu'
-            })
-        
-        # Lấy thông tin khách thuê
-        lich_su = hop_dong.lichsuhopdong.filter(MOI_QUAN_HE='Chủ hợp đồng').first()
-        khach_thue = lich_su.MA_KHACH_THUE if lich_su else None
-        
-        return JsonResponse({
-            'success': True,
-            'data': {
-                'ma_hoa_don': hoa_don.MA_HOA_DON,
-                'ma_hop_dong': ma_hop_dong,
-                'ten_phong': hop_dong.MA_PHONG.TEN_PHONG,
-                'ten_khach_thue': khach_thue.HO_TEN_KT if khach_thue else '',
-                'ngay_lap': hoa_don.NGAY_LAP_HDON.strftime('%d/%m/%Y') if hoa_don.NGAY_LAP_HDON else '',
-                'loai_hoa_don': hoa_don.LOAI_HOA_DON,
-                'trang_thai': hoa_don.TRANG_THAI_HDON,
-                'tien_phong': f"{float(hoa_don.TIEN_PHONG or 0):,.0f}",
-                'tien_dich_vu': f"{float(hoa_don.TIEN_DICH_VU or 0):,.0f}",
-                'tien_coc': f"{float(hoa_don.TIEN_COC or 0):,.0f}",
-                'tien_khau_tru': f"{float(hoa_don.TIEN_KHAU_TRU or 0):,.0f}",
-                'tong_tien': f"{float(hoa_don.TONG_TIEN or 0):,.0f}",
-                'can_delete': hoa_don.TRANG_THAI_HDON != 'Đã thanh toán'
-            }
+def tim_khach_thue_ajax(request):
+    """API tìm kiếm khách thuê cho chỉnh sửa hợp đồng"""
+    query = request.GET.get('q', '').strip()
+    
+    if len(query) < 2:
+        return JsonResponse({'results': []})
+    
+    # Tìm kiếm khách thuê theo tên hoặc SĐT
+    khach_thue_list = KhachThue.objects.filter(
+        Q(HO_TEN_KT__icontains=query) | 
+        Q(SDT_KT__icontains=query)
+    ).exclude(
+        TRANG_THAI_KT='Đã rời đi'
+    )[:10]  # Giới hạn 10 kết quả
+    
+    results = []
+    for khach_thue in khach_thue_list:
+        results.append({
+            'id': khach_thue.MA_KHACH_THUE,
+            'ho_ten': khach_thue.HO_TEN_KT or '',
+            'sdt': khach_thue.SDT_KT or '',
+            'email': khach_thue.EMAIL_KT or '',
+            'gioi_tinh': khach_thue.GIOI_TINH_KT or 'Nam',
+            'ngay_sinh': khach_thue.NGAY_SINH_KT.strftime('%Y-%m-%d') if khach_thue.NGAY_SINH_KT else '',
+            'display_text': f"{khach_thue.HO_TEN_KT} - {khach_thue.SDT_KT}"
         })
+    
+    return JsonResponse({'results': results})
+
+
+@require_http_methods(['GET', 'POST'])
+def sua_dichvu_hopdong(request, ma_hop_dong):
+    """Chỉnh sửa dịch vụ hợp đồng"""
+    hop_dong = get_object_or_404(HopDong, MA_HOP_DONG=ma_hop_dong)
+    
+    # Kiểm tra trạng thái hợp đồng  
+    if hop_dong.TRANG_THAI_HD != 'Chờ xác nhận':
+        messages.error(
+            request, 
+            f'Không thể chỉnh sửa hợp đồng ở trạng thái "{hop_dong.TRANG_THAI_HD}". '
+            'Chỉ có thể sửa hợp đồng ở trạng thái "Chờ xác nhận".'
+        )
+        return redirect('hopdong:hopdong_list')
+    
+    # Lấy danh sách dịch vụ theo khu vực của phòng
+    lichsu_dichvu_with_chiso = []
+    if hop_dong and hop_dong.MA_PHONG and hop_dong.MA_PHONG.MA_KHU_VUC:
+        # Lấy tất cả dịch vụ áp dụng cho khu vực
+        lichsu_dichvu_list = LichSuApDungDichVu.objects.filter(
+            MA_KHU_VUC=hop_dong.MA_PHONG.MA_KHU_VUC,
+            NGAY_HUY_DV__isnull=True
+        ).select_related('MA_DICH_VU').order_by('MA_DICH_VU__TEN_DICH_VU')
+        
+        # Với mỗi dịch vụ, tìm chỉ số mới nhất của hợp đồng (nếu có)
+        for lichsu in lichsu_dichvu_list:
+            latest_chiso = ChiSoDichVu.objects.filter(
+                MA_HOP_DONG=hop_dong,
+                MA_DICH_VU=lichsu.MA_DICH_VU
+            ).order_by('-NGAY_GHI_CS').first()
             
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'message': f'Lỗi hệ thống: {str(e)}'
-        })
+            lichsu_dichvu_with_chiso.append({
+                'lichsu': lichsu,
+                'latest_chiso': latest_chiso,
+                'co_chi_so': latest_chiso is not None
+            })
+    
+    # Tính toán thống kê
+    tong_dich_vu = len(lichsu_dichvu_with_chiso)
+    theo_chi_so = len([item for item in lichsu_dichvu_with_chiso if item['lichsu'].MA_DICH_VU.LOAI_DICH_VU == 'Tính theo chỉ số'])
+    co_dinh = tong_dich_vu - theo_chi_so
+    
+    if request.method == 'POST':
+        try:
+            with transaction.atomic():
+                # Lấy danh sách dịch vụ được chọn (checked)
+                selected_services = request.POST.getlist('selected_services')
+                
+                # Lấy tất cả dịch vụ của khu vực để biết dịch vụ nào bị bỏ chọn
+                all_services = [str(item['lichsu'].MA_DICH_VU.MA_DICH_VU) for item in lichsu_dichvu_with_chiso]
+                
+                # Duyệt qua tất cả dịch vụ
+                for item in lichsu_dichvu_with_chiso:
+                    ma_dich_vu_str = str(item['lichsu'].MA_DICH_VU.MA_DICH_VU)
+                    dich_vu = item['lichsu'].MA_DICH_VU
+                    latest_chiso = item['latest_chiso']
+                    co_chi_so_truoc = item['co_chi_so']
+                    
+                    # Kiểm tra dịch vụ có được chọn không
+                    duoc_chon = ma_dich_vu_str in selected_services
+                    
+                    if duoc_chon:
+                        # Dịch vụ được chọn - tạo hoặc cập nhật
+                        if dich_vu.LOAI_DICH_VU == 'Tính theo chỉ số':
+                            # Dịch vụ theo chỉ số
+                            chi_so_moi_value = request.POST.get(f'chiso_moi_{ma_dich_vu_str}')
+                            if chi_so_moi_value:
+                                if co_chi_so_truoc and latest_chiso:
+                                    # Cập nhật chỉ số hiện tại
+                                    latest_chiso.CHI_SO_MOI = int(chi_so_moi_value)
+                                    latest_chiso.NGAY_GHI_CS = timezone.now().date()
+                                    latest_chiso.save()
+                                else:
+                                    # Tạo chỉ số mới
+                                    chi_so_cu = request.POST.get(f'chiso_cu_{ma_dich_vu_str}', 0)
+                                    ChiSoDichVu.objects.create(
+                                        MA_HOP_DONG=hop_dong,
+                                        MA_DICH_VU=dich_vu,
+                                        CHI_SO_CU=int(chi_so_cu),
+                                        CHI_SO_MOI=int(chi_so_moi_value),
+                                        NGAY_GHI_CS=timezone.now().date()
+                                    )
+                        else:
+                            # Dịch vụ cố định
+                            so_luong_value = request.POST.get(f'soluong_{ma_dich_vu_str}')
+                            if so_luong_value:
+                                if co_chi_so_truoc and latest_chiso:
+                                    # Cập nhật số lượng hiện tại
+                                    latest_chiso.SO_LUONG = int(so_luong_value)
+                                    latest_chiso.NGAY_GHI_CS = timezone.now().date()
+                                    latest_chiso.save()
+                                else:
+                                    # Tạo bản ghi mới
+                                    ChiSoDichVu.objects.create(
+                                        MA_HOP_DONG=hop_dong,
+                                        MA_DICH_VU=dich_vu,
+                                        CHI_SO_CU=None,
+                                        CHI_SO_MOI=None,
+                                        SO_LUONG=int(so_luong_value),
+                                        NGAY_GHI_CS=timezone.now().date()
+                                    )
+                
+                # Xử lý các dịch vụ bị bỏ chọn (uncheck) - xóa chỉ số
+                for item in lichsu_dichvu_with_chiso:
+                    ma_dich_vu_str = str(item['lichsu'].MA_DICH_VU.MA_DICH_VU)
+                    latest_chiso = item['latest_chiso']
+                    co_chi_so_truoc = item['co_chi_so']
+                    
+                    # Nếu dịch vụ không được chọn và trước đó có chỉ số
+                    if ma_dich_vu_str not in selected_services and co_chi_so_truoc and latest_chiso:
+                        latest_chiso.delete()
+                
+            messages.success(request, 'Cập nhật chỉ số dịch vụ thành công!')
+            return redirect('hopdong:hopdong_list')
+            
+        except Exception as e:
+            messages.error(request, f'Lỗi cập nhật: {str(e)}')
+    
+    return render(request, 'admin/hopdong/sua_dichvu_hopdong.html', {
+        'hop_dong': hop_dong,
+        'lichsu_dichvu_with_chiso': lichsu_dichvu_with_chiso,
+        'tong_dich_vu': tong_dich_vu,
+        'theo_chi_so': theo_chi_so,
+        'co_dinh': co_dinh
+    })

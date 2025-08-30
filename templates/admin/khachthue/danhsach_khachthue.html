@@ -3,352 +3,349 @@
 {% load custom_filters %}
 
 {% block content_body %}
-<div class="bg-white shadow-xl rounded-2xl p-6 sm:p-8">
-    <div class="container mx-auto px-4">
-        <!-- Main White Container -->
-        <div class="bg-white shadow-xl rounded-2xl p-6 sm:p-8">
-            <!-- Header Section -->
-            <div class="bg-gray-50 border-b border-gray-200 p-6">
-                <div class="flex items-center justify-between">
-                    <!-- Left: Icon + Title -->
-                    <div class="flex items-center space-x-4">
-                        <div class="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-building text-gray-700 text-xl"></i>
-                        </div>
-                        <div>
-                            <h1 class="text-2xl font-bold text-gray-900">Quản lý Khách Thuê</h1>
-                            <p class="text-gray-600 text-sm">Quản lý thông tin khách thuê theo phòng và khu vực</p>
+<div class="mx-auto w-full md:w-[85%] py-6">
+    <div class="bg-white shadow-xl rounded-2xl p-6 sm:p-8">
+        <!-- Header Section -->
+        <div class="bg-gray-50 border-b border-gray-200 p-6">
+            <div class="flex items-center justify-between">
+                <!-- Left: Icon + Title -->
+                <div class="flex items-center space-x-4">
+                    <div class="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-building text-gray-700 text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">Quản lý Khách Thuê</h1>
+                        <p class="text-gray-600 text-sm">Quản lý thông tin khách thuê theo phòng và khu vực</p>
+                    </div>
+                </div>
+                <!-- Right: Buttons -->
+                <div class="flex space-x-3">
+                    <a href="{% url 'khachthue:view_them' %}" 
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors shadow-sm">
+                        <i class="fas fa-user-plus mr-2"></i>Thêm khách thuê
+                    </a>
+                    <button type="button" onclick="exportExcel()"
+                            class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition-colors shadow-sm">
+                        <i class="fas fa-file-export mr-2"></i>Xuất Excel
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content Container -->
+        <div class="flex">
+            <!-- Left Sidebar - Danh sách phòng và bộ lọc khu vực (25%) -->
+            <div class="w-1/4 border-r border-gray-200 bg-gray-50">
+                <!-- Sidebar Header -->
+                <div class="p-4 border-b border-gray-200 bg-white">
+                    <h3 class="text-lg font-semibold text-gray-800 flex items-center">
+                        <i class="fas fa-building mr-2 text-blue-600"></i>
+                        Danh sách phòng
+                    </h3>
+                    <p class="text-sm text-gray-600">Chọn phòng để lọc khách thuê</p>
+                </div>
+
+                <!-- Area Filter -->
+                <div class="p-4 border-b border-gray-200">
+                    <select id="areaFilter" class="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="all">Tất cả khu vực</option>
+                        {% for khu_vuc in khu_vucs %}
+                        <option value="{{ khu_vuc.MA_KHU_VUC }}">{{ khu_vuc.TEN_KHU_VUC }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Room List -->
+                <div class="p-4 space-y-2 max-h-96 overflow-y-auto">
+                    <!-- Tất cả phòng -->
+                    <div class="room-item cursor-pointer p-3 rounded-lg border-2 border-blue-500 bg-blue-50 transition-all duration-200"
+                            data-room="all">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-globe text-blue-600 text-sm"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-medium text-gray-900 text-sm">Tất cả phòng</h4>
+                                    <p class="text-xs text-gray-500">{{ all_tenants_count }} khách thuê</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <!-- Right: Buttons -->
-                    <div class="flex space-x-3">
-                        <a href="{% url 'khachthue:view_them' %}" 
-                           class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors shadow-sm">
-                            <i class="fas fa-user-plus mr-2"></i>Thêm khách thuê
-                        </a>
-                        <button type="button" onclick="exportExcel()"
-                                class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition-colors shadow-sm">
-                            <i class="fas fa-file-export mr-2"></i>Xuất Excel
-                        </button>
+
+                    {% for room_id, room_data in grouped_by_room.items %}
+                    <div class="room-item cursor-pointer p-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 transform"
+                            data-room="{{ room_id }}"
+                            data-khu-vuc="{{ room_data.khu_vuc.MA_KHU_VUC }}">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-door-open text-green-600 text-sm"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-medium text-gray-900 text-sm">{{ room_data.room_name }}</h4>
+                                    <p class="text-xs text-gray-500">{{ room_data.tenants|length }} khách thuê</p>
+                                </div>
+                            </div>
+                            <div class="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded">
+                                #{{ room_id }}
+                            </div>
+                        </div>
                     </div>
+                    {% endfor %}
                 </div>
             </div>
 
-            <!-- Content Container -->
-            <div class="flex">
-                <!-- Left Sidebar - Danh sách phòng và bộ lọc khu vực (25%) -->
-                <div class="w-1/4 border-r border-gray-200 bg-gray-50">
-                    <!-- Sidebar Header -->
-                    <div class="p-4 border-b border-gray-200 bg-white">
-                        <h3 class="text-lg font-semibold text-gray-800 flex items-center">
-                            <i class="fas fa-building mr-2 text-blue-600"></i>
-                            Danh sách phòng
-                        </h3>
-                        <p class="text-sm text-gray-600">Chọn phòng để lọc khách thuê</p>
-                    </div>
+            <!-- Right Content - 75% -->
+            <div class="flex-1">
+                <!-- Toolbar Section -->
+                <div class="p-4 border-b border-gray-200 bg-white">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900" id="selectedRoomTitle">
+                                Tất cả khách thuê
+                            </h3>
+                            <p class="text-sm text-gray-600" id="selectedRoomInfo">
+                                Hiển thị toàn bộ danh sách khách thuê
+                            </p>
+                        </div>
+                        <div class="flex items-center space-x-4">
+                            <!-- Search -->
+                            <div class="relative w-72">
+                                <input type="text" id="searchInput" placeholder="Tìm kiếm khách thuê..." 
+                                        value="{{ search_query }}"
+                                        class="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-xl shadow-sm 
+                                                focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent 
+                                                placeholder-gray-400 transition duration-200">
+                                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                            </div>
 
-                    <!-- Area Filter -->
-                    <div class="p-4 border-b border-gray-200">
-                        <select id="areaFilter" class="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                            <option value="all">Tất cả khu vực</option>
-                            {% for khu_vuc in khu_vucs %}
-                            <option value="{{ khu_vuc.MA_KHU_VUC }}">{{ khu_vuc.TEN_KHU_VUC }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <!-- Room List -->
-                    <div class="p-4 space-y-2 max-h-96 overflow-y-auto">
-                        <!-- Tất cả phòng -->
-                        <div class="room-item cursor-pointer p-3 rounded-lg border-2 border-blue-500 bg-blue-50 transition-all duration-200"
-                             data-room="all">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center space-x-3">
-                                    <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                                        <i class="fas fa-globe text-blue-600 text-sm"></i>
-                                    </div>
-                                    <div>
-                                        <h4 class="font-medium text-gray-900 text-sm">Tất cả phòng</h4>
-                                        <p class="text-xs text-gray-500">{{ all_tenants_count }} khách thuê</p>
-                                    </div>
-                                </div>
+                            <!-- Filter buttons -->
+                            <div class="flex space-x-2">
+                                <button type="button" 
+                                        class="filter-btn active px-3 py-1 text-xs rounded-full bg-blue-100 text-blue-700 hover:bg-blue-200 border border-blue-200 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-sm">
+                                    Tất cả
+                                </button>
+                                <button type="button" 
+                                        class="filter-btn px-3 py-1 text-xs rounded-full bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-sm">
+                                    Đang ở
+                                </button>
+                                <button type="button" 
+                                        class="filter-btn px-3 py-1 text-xs rounded-full bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-sm">
+                                    Không còn ở
+                                </button>
+                                <button type="button" 
+                                        class="filter-btn px-3 py-1 text-xs rounded-full bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-sm">
+                                    Đã nộp giấy tờ
+                                </button>
+                                <button type="button" 
+                                        class="filter-btn px-3 py-1 text-xs rounded-full bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-sm">
+                                    Chưa nộp giấy tờ
+                                </button>
                             </div>
                         </div>
-
-                        {% for room_id, room_data in grouped_by_room.items %}
-                        <div class="room-item cursor-pointer p-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 transform"
-                             data-room="{{ room_id }}"
-                             data-khu-vuc="{{ room_data.khu_vuc.MA_KHU_VUC }}">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center space-x-3">
-                                    <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                                        <i class="fas fa-door-open text-green-600 text-sm"></i>
-                                    </div>
-                                    <div>
-                                        <h4 class="font-medium text-gray-900 text-sm">{{ room_data.room_name }}</h4>
-                                        <p class="text-xs text-gray-500">{{ room_data.tenants|length }} khách thuê</p>
-                                    </div>
-                                </div>
-                                <div class="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded">
-                                    #{{ room_id }}
-                                </div>
-                            </div>
-                        </div>
-                        {% endfor %}
                     </div>
                 </div>
 
-                <!-- Right Content - 75% -->
-                <div class="flex-1">
-                    <!-- Toolbar Section -->
-                    <div class="p-4 border-b border-gray-200 bg-white">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <h3 class="text-lg font-semibold text-gray-900" id="selectedRoomTitle">
-                                    Tất cả khách thuê
-                                </h3>
-                                <p class="text-sm text-gray-600" id="selectedRoomInfo">
-                                    Hiển thị toàn bộ danh sách khách thuê
-                                </p>
-                            </div>
-                            <div class="flex items-center space-x-4">
-                                <!-- Search -->
-                                <div class="relative w-72">
-                                    <input type="text" id="searchInput" placeholder="Tìm kiếm khách thuê..." 
-                                           value="{{ search_query }}"
-                                           class="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-xl shadow-sm 
-                                                  focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent 
-                                                  placeholder-gray-400 transition duration-200">
-                                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                                </div>
+                <!-- Table Section -->
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50 border-b border-gray-200">
+                            <tr>
+                                <th class="w-[20%] min-w-[200px] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Tên khách thuê
+                                </th>
+                                <th class="w-[18%] min-w-[180px] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Thông tin liên hệ
+                                </th>
+                                <th class="w-[22%] min-w-[250px] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Thông tin cá nhân
+                                </th>
+                                <th class="w-[15%] min-w-[150px] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                CMND/CCCD
+                                </th>
+                                <th class="w-[12%] min-w-[100px] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Trạng thái
+                                </th>
+                                <th class="w-[13%] min-w-[80px] px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Hành động
+                                </th>
 
-                                <!-- Filter buttons -->
-                                <div class="flex space-x-2">
-                                    <button type="button" 
-                                            class="filter-btn active px-3 py-1 text-xs rounded-full bg-blue-100 text-blue-700 hover:bg-blue-200 border border-blue-200 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-sm">
-                                        Tất cả
-                                    </button>
-                                    <button type="button" 
-                                            class="filter-btn px-3 py-1 text-xs rounded-full bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-sm">
-                                        Đang ở
-                                    </button>
-                                    <button type="button" 
-                                            class="filter-btn px-3 py-1 text-xs rounded-full bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-sm">
-                                        Không còn ở
-                                    </button>
-                                    <button type="button" 
-                                            class="filter-btn px-3 py-1 text-xs rounded-full bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-sm">
-                                        Đã nộp giấy tờ
-                                    </button>
-                                    <button type="button" 
-                                            class="filter-btn px-3 py-1 text-xs rounded-full bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-sm">
-                                        Chưa nộp giấy tờ
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Table Section -->
-                    <div class="overflow-x-auto">
-                        <table class="w-full">
-                            <thead class="bg-gray-50 border-b border-gray-200">
-                                <tr>
-                                   <th class="w-[20%] min-w-[200px] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Tên khách thuê
-                                    </th>
-                                    <th class="w-[18%] min-w-[180px] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Thông tin liên hệ
-                                    </th>
-                                    <th class="w-[22%] min-w-[250px] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Thông tin cá nhân
-                                    </th>
-                                    <th class="w-[15%] min-w-[150px] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    CMND/CCCD
-                                    </th>
-                                    <th class="w-[12%] min-w-[100px] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Trạng thái
-                                    </th>
-                                    <th class="w-[13%] min-w-[80px] px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Hành động
-                                    </th>
-
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                {% for room_id, room_data in grouped_by_room.items %}
-                                {% for tenant in room_data.tenants %}
-                                {% with khach_thue=tenant.khach_thue lich_su=tenant.lich_su %}
-                                <tr class="tenant-row hover:bg-gray-50 hover:shadow-sm transition-all duration-150"
-                                    data-room="{{ room_id }}"
-                                    data-khu-vuc="{{ room_data.khu_vuc.MA_KHU_VUC }}"
-                                    data-residence="dang_o"
-                                    data-papers="{% if khach_thue.cccd_cmnd.first %}da_nop{% else %}chua_nop{% endif %}">
-                                    <td class="px-4 py-3">
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for room_id, room_data in grouped_by_room.items %}
+                            {% for tenant in room_data.tenants %}
+                            {% with khach_thue=tenant.khach_thue lich_su=tenant.lich_su %}
+                            <tr class="tenant-row hover:bg-gray-50 hover:shadow-sm transition-all duration-150"
+                                data-room="{{ room_id }}"
+                                data-khu-vuc="{{ room_data.khu_vuc.MA_KHU_VUC }}"
+                                data-residence="dang_o"
+                                data-papers="{% if khach_thue.cccd_cmnd.first %}da_nop{% else %}chua_nop{% endif %}">
+                                <td class="px-4 py-3">
+                                    <div class="flex items-center">
+                                        <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-semibold mr-3">
+                                            {{ khach_thue.HO_TEN_KT|slice:":1"|upper|default:"K" }}
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center font-medium text-gray-900">                                      
+                                                {{ khach_thue.HO_TEN_KT|default:"Chưa cập nhật" }}
+                                            </div>
+                                            <div class="flex items-center text-sm text-gray-500">
+                                                <i class="fas fa-door-open w-4 text-gray-400 mr-2"></i>
+                                                {{ room_data.room_name }}
+                                            </div>
+                                            <div class="flex items-center text-sm text-gray-500">
+                                                <i class="fas fa-users w-4 text-gray-400 mr-2"></i>
+                                                {{ lich_su.MOI_QUAN_HE|default:"Chưa cập nhật" }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-4 py-3 text-sm text-gray-900">
+                                    <div class="space-y-1">
+                                        <div class="flex items-center text-sm">
+                                            <i class="fas fa-phone w-4 text-gray-400 mr-2"></i>
+                                            {{ khach_thue.SDT_KT|default:"Chưa cập nhật" }}
+                                        </div>
+                                        <div class="flex items-center text-sm text-gray-500">
+                                            <i class="fas fa-envelope w-4 text-gray-400 mr-2"></i>
+                                            {{ khach_thue.EMAIL_KT|default:"Chưa cập nhật" }}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-4 py-3 text-sm text-gray-900">
+                                    <div class="space-y-1">
                                         <div class="flex items-center">
-                                            <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-semibold mr-3">
-                                                {{ khach_thue.HO_TEN_KT|slice:":1"|upper|default:"K" }}
-                                            </div>
-                                            <div>
-                                                <div class="flex items-center font-medium text-gray-900">                                      
-                                                    {{ khach_thue.HO_TEN_KT|default:"Chưa cập nhật" }}
-                                                </div>
-                                                <div class="flex items-center text-sm text-gray-500">
-                                                    <i class="fas fa-door-open w-4 text-gray-400 mr-2"></i>
-                                                    {{ room_data.room_name }}
-                                                </div>
-                                                <div class="flex items-center text-sm text-gray-500">
-                                                    <i class="fas fa-users w-4 text-gray-400 mr-2"></i>
-                                                    {{ lich_su.MOI_QUAN_HE|default:"Chưa cập nhật" }}
-                                                </div>
-                                            </div>
+                                            <i class="fas fa-calendar-alt w-4 text-gray-400 mr-2"></i>
+                                            {{ khach_thue.NGAY_SINH_KT|date:"d/m/Y"|default:"Chưa cập nhật" }}
                                         </div>
-                                    </td>
-                                    <td class="px-4 py-3 text-sm text-gray-900">
-                                        <div class="space-y-1">
-                                            <div class="flex items-center text-sm">
-                                                <i class="fas fa-phone w-4 text-gray-400 mr-2"></i>
-                                                {{ khach_thue.SDT_KT|default:"Chưa cập nhật" }}
-                                            </div>
-                                            <div class="flex items-center text-sm text-gray-500">
-                                                <i class="fas fa-envelope w-4 text-gray-400 mr-2"></i>
-                                                {{ khach_thue.EMAIL_KT|default:"Chưa cập nhật" }}
-                                            </div>
+                                        <div class="flex items-center text-sm text-gray-500">
+                                            <i class="fas fa-map-marker-alt w-4 text-gray-400 mr-2"></i>
+                                            {{ khach_thue.NOI_SINH_KT|default:"Chưa cập nhật" }}
                                         </div>
-                                    </td>
-                                    <td class="px-4 py-3 text-sm text-gray-900">
-                                        <div class="space-y-1">
+                                        <div class="flex items-center text-sm text-gray-500">
+                                            <i class="fas fa-venus-mars w-4 text-gray-400 mr-2"></i>
+                                            {{ khach_thue.GIOI_TINH_KT|default:"Chưa cập nhật" }}
+                                        </div>
+                                        <div class="flex items-center text-sm text-gray-500">
+                                            <i class="fas fa-briefcase w-4 text-gray-400 mr-2"></i>
+                                            {{ khach_thue.NGHE_NGHIEP|default:"Chưa cập nhật" }}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-4 py-3 text-sm text-gray-900">
+                                    {% with cccd=khach_thue.cccd_cmnd.first %}
+                                    {% if cccd %}
+                                        <div class="space-y-1 cursor-pointer hover:bg-blue-50 p-2 rounded-lg transition-colors"
+                                                onclick="viewCCCDImages('{% if cccd.ANH_MAT_TRUOC %}{{ cccd.ANH_MAT_TRUOC.url }}{% endif %}', '{% if cccd.ANH_MAT_SAU %}{{ cccd.ANH_MAT_SAU.url }}{% endif %}', '{{ khach_thue.HO_TEN_KT }}', '{{ cccd.SO_CMND_CCCD }}')">
                                             <div class="flex items-center">
-                                                <i class="fas fa-calendar-alt w-4 text-gray-400 mr-2"></i>
-                                                {{ khach_thue.NGAY_SINH_KT|date:"d/m/Y"|default:"Chưa cập nhật" }}
+                                                <i class="fas fa-id-card w-4 text-blue-600 mr-2"></i>
+                                                <span class="text-blue-600 hover:text-blue-800">{{ cccd.SO_CMND_CCCD }}</span>
                                             </div>
                                             <div class="flex items-center text-sm text-gray-500">
-                                                <i class="fas fa-map-marker-alt w-4 text-gray-400 mr-2"></i>
-                                                {{ khach_thue.NOI_SINH_KT|default:"Chưa cập nhật" }}
+                                                <i class="fas fa-calendar-check w-4 text-gray-400 mr-2"></i>
+                                                {{ cccd.NGAY_CAP|date:"d/m/Y"|default:"Chưa cập nhật" }}
                                             </div>
-                                            <div class="flex items-center text-sm text-gray-500">
-                                                <i class="fas fa-venus-mars w-4 text-gray-400 mr-2"></i>
-                                                {{ khach_thue.GIOI_TINH_KT|default:"Chưa cập nhật" }}
-                                            </div>
-                                            <div class="flex items-center text-sm text-gray-500">
-                                                <i class="fas fa-briefcase w-4 text-gray-400 mr-2"></i>
-                                                {{ khach_thue.NGHE_NGHIEP|default:"Chưa cập nhật" }}
+                                            <div class="flex items-center text-xs text-blue-600 mt-1">
+                                                <i class="fas fa-eye w-3 mr-1"></i>
+                                                Xem ảnh CCCD
                                             </div>
                                         </div>
-                                    </td>
-                                    <td class="px-4 py-3 text-sm text-gray-900">
+                                    {% else %}
+                                        <span class="text-gray-500">Chưa cập nhật</span>
+                                    {% endif %}
+                                    {% endwith %}
+                                </td>
+                                <td class="px-4 py-3">
+                                    <div class="space-y-1 flex flex-col items-center">
+                                        <!-- Trạng thái cư trú -->
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            <span class="w-1.5 h-1.5 bg-green-400 rounded-full mr-1.5"></span>
+                                            Đang ở
+                                        </span>
+                                        
+                                        <!-- Trạng thái giấy tờ -->
                                         {% with cccd=khach_thue.cccd_cmnd.first %}
                                         {% if cccd %}
-                                            <div class="space-y-1 cursor-pointer hover:bg-blue-50 p-2 rounded-lg transition-colors"
-                                                 onclick="viewCCCDImages('{% if cccd.ANH_MAT_TRUOC %}{{ cccd.ANH_MAT_TRUOC.url }}{% endif %}', '{% if cccd.ANH_MAT_SAU %}{{ cccd.ANH_MAT_SAU.url }}{% endif %}', '{{ khach_thue.HO_TEN_KT }}', '{{ cccd.SO_CMND_CCCD }}')">
-                                                <div class="flex items-center">
-                                                    <i class="fas fa-id-card w-4 text-blue-600 mr-2"></i>
-                                                    <span class="text-blue-600 hover:text-blue-800">{{ cccd.SO_CMND_CCCD }}</span>
-                                                </div>
-                                                <div class="flex items-center text-sm text-gray-500">
-                                                    <i class="fas fa-calendar-check w-4 text-gray-400 mr-2"></i>
-                                                    {{ cccd.NGAY_CAP|date:"d/m/Y"|default:"Chưa cập nhật" }}
-                                                </div>
-                                                <div class="flex items-center text-xs text-blue-600 mt-1">
-                                                    <i class="fas fa-eye w-3 mr-1"></i>
-                                                    Xem ảnh CCCD
-                                                </div>
-                                            </div>
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                <span class="w-1.5 h-1.5 bg-blue-400 rounded-full mr-1.5"></span>
+                                                Đã nộp giấy tờ
+                                            </span>
                                         {% else %}
-                                            <span class="text-gray-500">Chưa cập nhật</span>
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                                <span class="w-1.5 h-1.5 bg-yellow-400 rounded-full mr-1.5"></span>
+                                                Chưa nộp giấy tờ
+                                            </span>
                                         {% endif %}
                                         {% endwith %}
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        <div class="space-y-1 flex flex-col items-center">
-                                            <!-- Trạng thái cư trú -->
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                <span class="w-1.5 h-1.5 bg-green-400 rounded-full mr-1.5"></span>
-                                                Đang ở
-                                            </span>
-                                            
-                                            <!-- Trạng thái giấy tờ -->
-                                            {% with cccd=khach_thue.cccd_cmnd.first %}
-                                            {% if cccd %}
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                                    <span class="w-1.5 h-1.5 bg-blue-400 rounded-full mr-1.5"></span>
-                                                    Đã nộp giấy tờ
-                                                </span>
-                                            {% else %}
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                                    <span class="w-1.5 h-1.5 bg-yellow-400 rounded-full mr-1.5"></span>
-                                                    Chưa nộp giấy tờ
-                                                </span>
+                                    </div>
+                                </td>
+                                <td class="px-4 py-3 text-center">
+                                    <div class="relative inline-block">
+                                        <div class="inline-flex items-center justify-center w-8 h-8 bg-gray-200 rounded-full cursor-pointer hover:bg-gray-300 hover:scale-105 transition-all duration-150 tooltipKhachThue"
+                                                onclick="toggleMenuKhachThue({{ khach_thue.MA_KHACH_THUE }})">
+                                            <i class="fas fa-ellipsis-v text-gray-600"></i>
+                                        </div>
+                                        <div onmouseleave="hideMenuKhachThue({{ khach_thue.MA_KHACH_THUE }})"
+                                                class="absolute right-0 mt-2 w-64 origin-top-right bg-white border border-gray-200 rounded-xl shadow-lg z-20 hidden"
+                                                id="menuKhachThue-{{ khach_thue.MA_KHACH_THUE }}">
+                                            <a href="#" class="block px-4 py-2 text-blue-600 text-sm hover:bg-blue-50 rounded flex items-center"
+                                                onclick="showChucNangKhachThue('chitiet', {{ khach_thue.MA_KHACH_THUE }}, event)">
+                                                <i class="fas fa-file-alt mr-2"></i>Xem văn bản tạm trú
+                                            </a>
+                                            <a href="{% url 'khachthue:view_CCCD' khach_thue.MA_KHACH_THUE %}"
+                                                class="block px-4 py-2 text-blue-600 text-sm hover:bg-blue-50 rounded flex items-center">
+                                                <i class="fas fa-id-card mr-2"></i>Cập nhật CCCD/CMND
+                                            </a>
+                                            <a href="{% url 'khachthue:sua_thong_tin_khach_thue' khach_thue.MA_KHACH_THUE %}"
+                                                class="block px-4 py-2 text-blue-600 text-sm hover:bg-blue-50 rounded flex items-center">
+                                                <i class="fas fa-user-edit mr-2"></i>Sửa thông tin cá nhân
+                                            </a>
+                                            {% if lich_su.MOI_QUAN_HE != 'Chủ hợp đồng' %}
+                                            <a href="{% url 'khachthue:roi_di_chuyen_phong' khach_thue.MA_KHACH_THUE %}"
+                                                class="block px-4 py-2 text-blue-600 text-sm hover:bg-blue-50 rounded flex items-center">
+                                                <i class="fas fa-exchange-alt mr-2"></i>Rời đi / Chuyển phòng
+                                            </a>
                                             {% endif %}
-                                            {% endwith %}
+                                            <hr class="my-2 border-gray-200">
+                                            <form action="{% url 'khachthue:xoa_khach_thue' khach_thue.MA_KHACH_THUE %}" method="POST"
+                                                    class="inline-block" onsubmit="return confirm('Bạn có chắc muốn xóa khách thuê này?');">
+                                                {% csrf_token %}
+                                                <button type="submit" class="block px-4 py-2 text-red-600 text-sm hover:bg-gray-100 rounded flex items-center">
+                                                    <i class="fas fa-trash mr-2"></i>Xóa khách thuê
+                                                </button>
+                                            </form>
                                         </div>
-                                    </td>
-                                    <td class="px-4 py-3 text-center">
-                                        <div class="relative inline-block">
-                                            <div class="inline-flex items-center justify-center w-8 h-8 bg-gray-200 rounded-full cursor-pointer hover:bg-gray-300 hover:scale-105 transition-all duration-150 tooltipKhachThue"
-                                                 onclick="toggleMenuKhachThue({{ khach_thue.MA_KHACH_THUE }})">
-                                                <i class="fas fa-ellipsis-v text-gray-600"></i>
-                                            </div>
-                                            <div onmouseleave="hideMenuKhachThue({{ khach_thue.MA_KHACH_THUE }})"
-                                                 class="absolute right-0 mt-2 w-64 origin-top-right bg-white border border-gray-200 rounded-xl shadow-lg z-20 hidden"
-                                                 id="menuKhachThue-{{ khach_thue.MA_KHACH_THUE }}">
-                                                <a href="#" class="block px-4 py-2 text-blue-600 text-sm hover:bg-blue-50 rounded flex items-center"
-                                                   onclick="showChucNangKhachThue('chitiet', {{ khach_thue.MA_KHACH_THUE }}, event)">
-                                                    <i class="fas fa-file-alt mr-2"></i>Xem văn bản tạm trú
-                                                </a>
-                                                <a href="{% url 'khachthue:view_CCCD' khach_thue.MA_KHACH_THUE %}"
-                                                   class="block px-4 py-2 text-blue-600 text-sm hover:bg-blue-50 rounded flex items-center">
-                                                    <i class="fas fa-id-card mr-2"></i>Cập nhật CCCD/CMND
-                                                </a>
-                                                <a href="{% url 'khachthue:sua_thong_tin_khach_thue' khach_thue.MA_KHACH_THUE %}"
-                                                   class="block px-4 py-2 text-blue-600 text-sm hover:bg-blue-50 rounded flex items-center">
-                                                    <i class="fas fa-user-edit mr-2"></i>Sửa thông tin cá nhân
-                                                </a>
-                                                {% if lich_su.MOI_QUAN_HE != 'Chủ hợp đồng' %}
-                                                <a href="{% url 'khachthue:roi_di_chuyen_phong' khach_thue.MA_KHACH_THUE %}"
-                                                   class="block px-4 py-2 text-blue-600 text-sm hover:bg-blue-50 rounded flex items-center">
-                                                    <i class="fas fa-exchange-alt mr-2"></i>Rời đi / Chuyển phòng
-                                                </a>
-                                                {% endif %}
-                                                <hr class="my-2 border-gray-200">
-                                                <form action="{% url 'khachthue:xoa_khach_thue' khach_thue.MA_KHACH_THUE %}" method="POST"
-                                                      class="inline-block" onsubmit="return confirm('Bạn có chắc muốn xóa khách thuê này?');">
-                                                    {% csrf_token %}
-                                                    <button type="submit" class="block px-4 py-2 text-red-600 text-sm hover:bg-gray-100 rounded flex items-center">
-                                                        <i class="fas fa-trash mr-2"></i>Xóa khách thuê
-                                                    </button>
-                                                </form>
-                                            </div>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endwith %}
-                                {% endfor %}
-                                {% empty %}
-                                <tr>
-                                    <td colspan="6" class="px-4 py-12 text-center">
-                                        <div class="text-gray-500">
-                                            <i class="fas fa-users text-4xl text-gray-300 mb-4"></i>
-                                            <p>Không có khách thuê nào</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endwith %}
+                            {% endfor %}
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="px-4 py-12 text-center">
+                                    <div class="text-gray-500">
+                                        <i class="fas fa-users text-4xl text-gray-300 mb-4"></i>
+                                        <p>Không có khách thuê nào</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
 
-                        <!-- Empty state khi filter -->
-                        <div id="empty-state" class="hidden">
-                            <div class="text-center py-12">
-                                <i class="fas fa-search text-4xl text-gray-300 mb-4"></i>
-                                <h3 class="text-lg font-medium text-gray-900 mb-2">Không tìm thấy khách thuê</h3>
-                                <p class="text-gray-500">
-                                    Không có khách thuê nào trong phòng/khu vực này hoặc thỏa mãn điều kiện tìm kiếm.
-                                </p>
-                            </div>
+                    <!-- Empty state khi filter -->
+                    <div id="empty-state" class="hidden">
+                        <div class="text-center py-12">
+                            <i class="fas fa-search text-4xl text-gray-300 mb-4"></i>
+                            <h3 class="text-lg font-medium text-gray-900 mb-2">Không tìm thấy khách thuê</h3>
+                            <p class="text-gray-500">
+                                Không có khách thuê nào trong phòng/khu vực này hoặc thỏa mãn điều kiện tìm kiếm.
+                            </p>
                         </div>
                     </div>
-                    <!-- Premium Pagination -->
                 </div>
+                <!-- Premium Pagination -->
             </div>
         </div>
     </div>

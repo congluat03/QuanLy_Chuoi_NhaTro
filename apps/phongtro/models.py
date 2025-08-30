@@ -10,10 +10,7 @@ from django.conf import settings
 # Hằng số trạng thái
 TRANG_THAI_COC_PHONG = {
     'CHO_XAC_NHAN': 'Chờ xác nhận',
-    'DA_COC': 'Đã cọc',
-    'DA_SU_DUNG': 'Đã sử dụng',
-    'DA_HOAN_TRA': 'Đã hoàn trả',
-    'DA_THU_HOI': 'Đã thu hồi'
+    'DA_COC': 'Đã cọc'
 }
 # Model for loaiphong
 class LoaiPhong(models.Model):
@@ -79,6 +76,28 @@ class PhongTro(models.Model):
             NGAY_NHAN_PHONG__lte=today,
             NGAY_TRA_PHONG__gte=today
         ).order_by('-NGAY_LAP_HD').first()
+    
+    def cap_nhat_trang_thai_tu_dong(self):
+        """Cập nhật trạng thái phòng dựa trên hợp đồng và cọc phòng"""
+        hop_dong = self.hopdong.filter(
+            TRANG_THAI_HD__in=['Đang hoạt động', 'Chờ xác nhận', 'Sắp kết thúc', 'Đang báo kết thúc']
+        ).first()
+        
+        if hop_dong:
+            if hop_dong.TRANG_THAI_HD in ['Đang hoạt động', 'Sắp kết thúc', 'Đang báo kết thúc']:
+                self.TRANG_THAI_P = 'Đang ở'
+            elif hop_dong.TRANG_THAI_HD == 'Chờ xác nhận':
+                self.TRANG_THAI_P = 'Đang cọc'
+        else:
+            # Kiểm tra có cọc phòng không
+            coc_phong = self.cocphong.filter(TRANG_THAI_CP__in=['Đã cọc', 'Chờ xác nhận']).first()
+            if coc_phong:
+                self.TRANG_THAI_P = 'Đang cọc'
+            else:
+                self.TRANG_THAI_P = 'Trống'
+        
+        self.save()
+        return self.TRANG_THAI_P
 
 # Model for cocphong - Hỗ trợ cả admin tạo và guest booking online
 class CocPhong(models.Model):

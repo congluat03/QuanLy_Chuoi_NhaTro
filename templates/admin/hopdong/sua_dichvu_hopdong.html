@@ -1,0 +1,310 @@
+{% extends 'admin/admin_layout.html' %}
+{% load static %}
+
+{% block content_body %}
+<div class="bg-gradient-to-br from-purple-50 to-indigo-100 min-h-screen">
+    <div class="container mx-auto px-4 py-4">
+        <!-- Header -->
+        <div class="bg-white rounded-lg shadow-md p-4 mb-4">
+            <div class="flex items-center justify-between flex-wrap gap-3">
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-md flex items-center justify-center">
+                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 7.172V5L8 4z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-800 mb-1">
+                            <i class="fas fa-concierge-bell text-purple-600 mr-2"></i>
+                            Chỉnh sửa dịch vụ hợp đồng
+                        </h1>
+                        <p class="text-sm text-gray-600">Cập nhật chỉ số và thông tin dịch vụ của hợp đồng</p>
+                    </div>
+                </div>
+                <div class="flex gap-2 flex-wrap">
+                    <a href="{% url 'hopdong:sua_thongtin_hopdong' hop_dong.MA_HOP_DONG %}" 
+                       class="bg-blue-500 text-white px-2 py-1 rounded-md hover:bg-blue-600 transition-colors flex items-center text-sm">
+                        <i class="fas fa-file-contract mr-1"></i>Sửa hợp đồng
+                    </a>
+                    <a href="{% url 'hopdong:sua_khachthue_hopdong' hop_dong.MA_HOP_DONG %}" 
+                       class="bg-green-500 text-white px-2 py-1 rounded-md hover:bg-green-600 transition-colors flex items-center text-sm">
+                        <i class="fas fa-user mr-1"></i>Sửa khách thuê
+                    </a>
+                    <a href="{% url 'hopdong:hopdong_list' %}" 
+                       class="bg-gray-500 text-white px-2 py-1 rounded-md hover:bg-gray-600 transition-colors flex items-center text-sm">
+                        <i class="fas fa-arrow-left mr-1"></i>Quay lại
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Messages -->
+        {% if messages %}
+            <div class="px-4 py-3">
+                {% for message in messages %}
+                    <div class="p-3 mb-2 rounded-md border-l-4 {% if message.tags == 'error' %}bg-red-50 border-red-400 text-red-800{% else %}bg-green-50 border-green-400 text-green-800{% endif %}">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                {% if message.tags == 'error' %}
+                                    <svg class="w-4 h-4 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {% else %}
+                                    <svg class="w-4 h-4 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {% endif %}
+                            </div>
+                            <div class="ml-2">
+                                <p class="text-sm font-medium">{{ message }}</p>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Statistics -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+            <div class="bg-white rounded-md p-3 shadow-md hover:shadow-lg transition-shadow">
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-purple-100 rounded-md flex items-center justify-center mr-2">
+                        <i class="fas fa-list-alt text-purple-600 text-sm"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">Tổng dịch vụ</p>
+                        <p class="text-xl font-bold text-gray-900">{{ tong_dich_vu }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-md p-3 shadow-md hover:shadow-lg transition-shadow">
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-green-100 rounded-md flex items-center justify-center mr-2">
+                        <i class="fas fa-calculator text-green-600 text-sm"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">Theo chỉ số</p>
+                        <p class="text-xl font-bold text-gray-900" id="metered_services_count">{{ theo_chi_so }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-md p-3 shadow-md hover:shadow-lg transition-shadow">
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-blue-100 rounded-md flex items-center justify-center mr-2">
+                        <i class="fas fa-clock text-blue-600 text-sm"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">Cập nhật cuối</p>
+                        <p class="text-sm font-bold text-gray-900" id="last_updated">Hôm nay</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Form and Instructions -->
+        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <div class="bg-gradient-to-r from-purple-600 to-indigo-600 px-3 py-2">
+                <div class="flex items-center justify-between text-white flex-wrap gap-2">
+                    <div class="flex items-center">
+                        <div class="w-6 h-6 bg-white bg-opacity-20 rounded-md flex items-center justify-center mr-2">
+                            <i class="fas fa-cogs text-sm"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-semibold">Dịch vụ hợp đồng</h3>
+                            <p class="text-sm opacity-90">Hợp đồng #{{ hop_dong.MA_HOP_DONG }} - Phòng: {{ hop_dong.MA_PHONG.TEN_PHONG }}</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm opacity-90">Khu vực: {{ hop_dong.MA_PHONG.MA_KHU_VUC.TEN_KHU_VUC }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 p-3">
+                <!-- Service List -->
+                <div class="lg:col-span-2">
+                    <form action="{% url 'hopdong:sua_dichvu_hopdong' hop_dong.MA_HOP_DONG %}" method="POST" id="servicesForm">
+                        {% csrf_token %}
+                        
+                        {% if lichsu_dichvu_with_chiso %}
+                            <div class="space-y-2">
+                                <!-- Metered Services -->
+                                {% for item in lichsu_dichvu_with_chiso %}
+                                {% with lichsu=item.lichsu dich_vu=item.lichsu.MA_DICH_VU latest_chiso=item.latest_chiso %}
+                                {% if dich_vu.LOAI_DICH_VU == 'Tính theo chỉ số' %}
+                                <div class="bg-gray-50 rounded-md p-3 border border-gray-200 hover:border-purple-300 transition-colors service-item" data-service-type="{{ dich_vu.LOAI_DICH_VU }}">
+                                    <div class="flex items-center justify-between flex-wrap gap-2">
+                                        <!-- Checkbox -->
+                                        <div class="flex items-center mr-2">
+                                            <input type="checkbox" name="selected_services" value="{{ dich_vu.MA_DICH_VU }}"
+                                                class="h-3 w-3 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                                                {% if item.co_chi_so %}checked{% endif %}>
+                                        </div>
+                                        <!-- Service Info and Input -->
+                                        <div class="flex-1 flex items-center gap-3">
+                                            <div class="flex items-center">
+                                                <div class="w-6 h-6 bg-purple-100 rounded-md flex items-center justify-center mr-2">
+                                                    <i class="fas fa-tachometer-alt text-purple-600 text-sm"></i>
+                                                </div>
+                                                <div>
+                                                    <div class="flex items-center gap-2">
+                                                        <h4 class="text-base font-semibold text-gray-900">{{ dich_vu.TEN_DICH_VU }}</h4>
+                                                        <span class="px-1 py-0.5 text-sm font-medium rounded-full bg-orange-100 text-orange-700">
+                                                            {{ dich_vu.LOAI_DICH_VU }}
+                                                        </span>
+                                                    </div>
+                                                    <p class="text-sm text-gray-600 mt-0.5">
+                                                        <i class="fas fa-coins text-yellow-500 mr-1"></i>
+                                                        Giá: <span class="font-semibold text-purple-600">{{ lichsu.GIA_DICH_VU_AD|floatformat:0 }}</span> VNĐ/{{ dich_vu.DON_VI_TINH }}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div class="flex-1">
+                                                <label for="chiso_moi_{{ dich_vu.MA_DICH_VU }}" class="text-sm font-medium text-gray-700 flex items-center">
+                                                    <i class="fas fa-edit text-purple-500 mr-1"></i>Chỉ số hiện tại
+                                                </label>
+                                                <input type="number" name="chiso_moi_{{ dich_vu.MA_DICH_VU }}" 
+                                                    id="chiso_moi_{{ dich_vu.MA_DICH_VU }}"
+                                                    placeholder="Nhập chỉ số hiện tại" 
+                                                    value="{% if latest_chiso %}{{ latest_chiso.CHI_SO_MOI|default_if_none:latest_chiso.CHI_SO_CU|default_if_none:'0' }}{% else %}0{% endif %}"
+                                                    min="{% if latest_chiso %}{{ latest_chiso.CHI_SO_MOI|default_if_none:latest_chiso.CHI_SO_CU|default_if_none:'0' }}{% else %}0{% endif %}"
+                                                    class="w-full p-1 border border-gray-300 rounded-md text-center text-sm font-semibold bg-white focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-200 transition-colors">
+                                                <input type="hidden" name="chiso_cu_{{ dich_vu.MA_DICH_VU }}" value="{% if latest_chiso %}{{ latest_chiso.CHI_SO_MOI|default_if_none:latest_chiso.CHI_SO_CU|default_if_none:'0' }}{% else %}0{% endif %}">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- Last Updated -->
+                                    {% if latest_chiso and latest_chiso.NGAY_GHI_CS %}
+                                    <div class="mt-1 text-sm text-gray-500 flex items-center">
+                                        <i class="fas fa-clock mr-1"></i>
+                                        Cập nhật lần cuối: {{ latest_chiso.NGAY_GHI_CS|date:"d/m/Y" }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                                {% endwith %}
+                                {% endfor %}
+
+                                <!-- Fixed Services -->
+                                {% for item in lichsu_dichvu_with_chiso %}
+                                {% with lichsu=item.lichsu dich_vu=item.lichsu.MA_DICH_VU latest_chiso=item.latest_chiso %}
+                                {% if dich_vu.LOAI_DICH_VU != 'Tính theo chỉ số' %}
+                                <div class="bg-gray-50 rounded-md p-3 border border-gray-200 hover:border-purple-300 transition-colors service-item" data-service-type="{{ dich_vu.LOAI_DICH_VU }}">
+                                    <div class="flex items-center justify-between flex-wrap gap-2">
+                                        <!-- Checkbox -->
+                                        <div class="flex items-center mr-2">
+                                            <input type="checkbox" name="selected_services" value="{{ dich_vu.MA_DICH_VU }}"
+                                                class="h-3 w-3 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                                                {% if item.co_chi_so %}checked{% endif %}>
+                                        </div>
+                                        <!-- Service Info and Input -->
+                                        <div class="flex-1 flex items-center gap-3">
+                                            <div class="flex items-center">
+                                                <div class="w-6 h-6 bg-purple-100 rounded-md flex items-center justify-center mr-2">
+                                                    <i class="fas fa-check-circle text-green-600 text-sm"></i>
+                                                </div>
+                                                <div>
+                                                    <div class="flex items-center gap-2">
+                                                        <h4 class="text-base font-semibold text-gray-900">{{ dich_vu.TEN_DICH_VU }}</h4>
+                                                        <span class="px-1 py-0.5 text-sm font-medium rounded-full bg-green-100 text-green-700">
+                                                            {{ dich_vu.LOAI_DICH_VU }}
+                                                        </span>
+                                                    </div>
+                                                    <p class="text-sm text-gray-600 mt-0.5">
+                                                        <i class="fas fa-coins text-yellow-500 mr-1"></i>
+                                                        Giá: <span class="font-semibold text-purple-600">{{ lichsu.GIA_DICH_VU_AD|floatformat:0 }}</span> VNĐ/{{ dich_vu.DON_VI_TINH }}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div class="flex-1">
+                                                <label for="soluong_{{ dich_vu.MA_DICH_VU }}" class="text-sm font-medium text-gray-700 flex items-center">
+                                                    <i class="fas fa-hashtag text-green-500 mr-1"></i>Số lượng
+                                                </label>
+                                                <input type="number" name="soluong_{{ dich_vu.MA_DICH_VU }}" 
+                                                    id="soluong_{{ dich_vu.MA_DICH_VU }}"
+                                                    placeholder="1" value="{% if latest_chiso %}{{ latest_chiso.SO_LUONG|default_if_none:'1' }}{% else %}1{% endif %}" min="1"
+                                                    class="w-full p-1 border border-gray-300 rounded-md text-center text-sm font-semibold bg-white focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-200 transition-colors">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- Last Updated -->
+                                    {% if latest_chiso and latest_chiso.NGAY_GHI_CS %}
+                                    <div class="mt-1 text-sm text-gray-500 flex items-center">
+                                        <i class="fas fa-clock mr-1"></i>
+                                        Cập nhật lần cuối: {{ latest_chiso.NGAY_GHI_CS|date:"d/m/Y" }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                                {% endwith %}
+                                {% endfor %}
+                            </div>                           
+                            <!-- Submit buttons -->
+                            <div class="flex items-center justify-end gap-2 mt-4 pt-3 border-t border-gray-200">
+                                <button type="submit" class="px-4 py-1 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors font-medium text-sm">
+                                    <i class="fas fa-save mr-1"></i>Lưu chỉ số dịch vụ
+                                </button>
+                                <a href="{% url 'hopdong:hopdong_list' %}" class="px-4 py-1 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors font-medium text-sm">
+                                    <i class="fas fa-times mr-1"></i>Hủy bỏ
+                                </a>
+                            </div>
+                        {% else %}
+                            <!-- No Services -->
+                            <div class="text-center py-6">
+                                <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                                    <i class="fas fa-inbox text-2xl text-gray-400"></i>
+                                </div>
+                                <h3 class="text-base font-semibold text-gray-900 mb-2">Chưa có dịch vụ nào</h3>
+                                <p class="text-sm text-gray-600 mb-3">Hợp đồng này chưa có dịch vụ nào được ghi chỉ số.</p>
+                                <a href="{% url 'hopdong:sua_thongtin_hopdong' hop_dong.MA_HOP_DONG %}" 
+                                   class="inline-flex items-center px-3 py-1 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors text-sm">
+                                    <i class="fas fa-arrow-left mr-1"></i>Quay lại chỉnh sửa hợp đồng
+                                </a>
+                            </div>
+                        {% endif %}
+                    </form>
+                </div>
+
+                <!-- Instructions/Notes -->
+                <div class="lg:col-span-1">
+                    <div class="bg-white rounded-md shadow-md p-4">
+                        <h3 class="text-base font-semibold text-gray-900 mb-2 flex items-center">
+                            <i class="fas fa-info-circle text-purple-600 mr-2"></i>
+                            Hướng dẫn chỉnh sửa chỉ số dịch vụ
+                        </h3>
+                        <ul class="text-sm text-gray-600 space-y-2">
+                            <li class="flex items-start">
+                                <i class="fas fa-check text-green-500 mr-2 mt-1"></i>
+                                <span>Chọn dịch vụ cần chỉnh sửa bằng cách tích vào ô checkbox bên trái.</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check text-green-500 mr-2 mt-1"></i>
+                                <span>Nhập chỉ số hiện tại cho các dịch vụ "Tính theo chỉ số" (ví dụ: điện, nước).</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check text-green-500 mr-2 mt-1"></i>
+                                <span>Nhập số lượng cho các dịch vụ "Cố định" (ví dụ: internet, vệ sinh).</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-exclamation-circle text-yellow-500 mr-2 mt-1"></i>
+                                <span>Đảm bảo chỉ số hiện tại lớn hơn hoặc bằng chỉ số trước đó để tránh lỗi tính toán.</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-exclamation-circle text-yellow-500 mr-2 mt-1"></i>
+                                <span>Kiểm tra kỹ thông tin trước khi nhấn "Lưu chỉ số dịch vụ" để xác nhận.</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-info text-blue-500 mr-2 mt-1"></i>
+                                <span>Liên hệ quản lý khu vực nếu có thắc mắc về hợp đồng hoặc dịch vụ.</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% endblock %}

@@ -293,28 +293,64 @@ class HopDong(models.Model):
             return None, str(e)
     
     def _sinh_hoa_don_bat_dau_mac_dinh(self):
-        """Sinh hóa đơn bắt đầu theo cách mặc định (backward compatibility)"""
+        """Sinh hóa đơn bắt đầu theo cách mặc định sử dụng CHITIETHOADON"""
         from django.apps import apps
         
         HoaDon = apps.get_model('hoadon', 'HoaDon')
+        CHITIETHOADON = apps.get_model('hoadon', 'CHITIETHOADON')
         
         # Tính toán các khoản phí
         tien_phong = self.GIA_THUE or 0
         tien_coc = self.GIA_COC_HD or 0  # Lấy từ phòng
         tien_dich_vu = 0  # Có thể tính từ dịch vụ nếu cần
         
-        # Tạo hóa đơn bắt đầu
+        # Tổng tiền
+        tong_tien = tien_phong + tien_dich_vu + tien_coc
+        
+        # Tạo hóa đơn bắt đầu - chỉ sử dụng fields có trong model
         hoa_don = HoaDon.objects.create(
             MA_HOP_DONG=self,
             LOAI_HOA_DON='Hóa đơn bắt đầu',
             NGAY_LAP_HDON=timezone.now().date(),
-            TIEN_PHONG=tien_phong,
-            TIEN_DICH_VU=tien_dich_vu,
-            TIEN_COC=tien_coc,
-            TIEN_KHAU_TRU=0,
-            TONG_TIEN=tien_phong + tien_dich_vu + tien_coc,
+            TONG_TIEN=tong_tien,
             TRANG_THAI_HDON='Chưa thanh toán'
         )
+        
+        # Tạo chi tiết hóa đơn cho tiền phòng
+        if tien_phong > 0:
+            CHITIETHOADON.objects.create(
+                MA_HOA_DON=hoa_don,
+                LOAI_KHOAN='PHONG',
+                NOI_DUNG=f'Tiền thuê phòng tháng đầu - {self.MA_PHONG.TEN_PHONG}',
+                SO_LUONG=1,
+                DON_GIA=tien_phong,
+                THANH_TIEN=tien_phong,
+                GHI_CHU_CTHD=f'Từ {self.NGAY_NHAN_PHONG} đến {self.NGAY_TRA_PHONG}'
+            )
+            
+        # Tạo chi tiết hóa đơn cho tiền cọc
+        if tien_coc > 0:
+            CHITIETHOADON.objects.create(
+                MA_HOA_DON=hoa_don,
+                LOAI_KHOAN='COC',
+                NOI_DUNG='Tiền cọc hợp đồng',
+                SO_LUONG=1,
+                DON_GIA=tien_coc,
+                THANH_TIEN=tien_coc,
+                GHI_CHU_CTHD='Tiền cọc sẽ được hoàn trả khi kết thúc hợp đồng'
+            )
+            
+        # Tạo chi tiết hóa đơn cho dịch vụ (nếu có)
+        if tien_dich_vu > 0:
+            CHITIETHOADON.objects.create(
+                MA_HOA_DON=hoa_don,
+                LOAI_KHOAN='DICH_VU',
+                NOI_DUNG='Dịch vụ tháng đầu',
+                SO_LUONG=1,
+                DON_GIA=tien_dich_vu,
+                THANH_TIEN=tien_dich_vu,
+                GHI_CHU_CTHD='Chi tiết dịch vụ xem bảng kê chi tiết'
+            )
         
         return hoa_don, None
 
@@ -328,6 +364,7 @@ class HopDong(models.Model):
                 return None, 'Đã sinh hóa đơn kết thúc trước đó'
             
             HoaDon = apps.get_model('hoadon', 'HoaDon')
+            CHITIETHOADON = apps.get_model('hoadon', 'CHITIETHOADON')
             
             # Lấy cấu hình hóa đơn kết thúc
             cau_hinh = ThietLapHoaDonMacDinh.lay_cau_hinh_mac_dinh('ket_thuc', self)
@@ -352,18 +389,53 @@ class HopDong(models.Model):
         tien_phat = 0  # Có thể có phí phạt nếu kết thúc sớm
         tien_dich_vu_cuoi = 0  # Dịch vụ tháng cuối
         
-        # Tạo hóa đơn kết thúc (thường là hoàn tiền cọc)
+        # Tính tổng tiền (hoàn cọc là âm, dịch vụ và phạt là dương)
+        tong_tien = -tien_hoan_coc + tien_dich_vu_cuoi + tien_phat
+        
+        # Tạo hóa đơn kết thúc
         hoa_don = HoaDon.objects.create(
             MA_HOP_DONG=self,
             LOAI_HOA_DON='Hóa đơn kết thúc',
             NGAY_LAP_HDON=timezone.now().date(),
-            TIEN_PHONG=0,
-            TIEN_DICH_VU=tien_dich_vu_cuoi,
-            TIEN_COC=-tien_hoan_coc,  # Số âm = hoàn lại
-            TIEN_KHAU_TRU=tien_phat,
-            TONG_TIEN=-tien_hoan_coc + tien_dich_vu_cuoi + tien_phat,
-            TRANG_THAI_HDON='Chưa thanh toán'
+            TONG_TIEN=tong_tien,
+            TRANG_THAI_HDON='Chưa thanh toán' if tong_tien > 0 else 'Chờ hoàn trả'
         )
+        
+        # Tạo chi tiết hoàn cọc (nếu có)
+        if tien_hoan_coc > 0:
+            CHITIETHOADON.objects.create(
+                MA_HOA_DON=hoa_don,
+                LOAI_KHOAN='HOAN_COC',
+                NOI_DUNG='Hoàn trả tiền cọc hợp đồng',
+                SO_LUONG=1,
+                DON_GIA=-tien_hoan_coc,
+                THANH_TIEN=-tien_hoan_coc,
+                GHI_CHU_CTHD='Hoàn trả tiền cọc khi kết thúc hợp đồng'
+            )
+            
+        # Tạo chi tiết dịch vụ cuối (nếu có)
+        if tien_dich_vu_cuoi > 0:
+            CHITIETHOADON.objects.create(
+                MA_HOA_DON=hoa_don,
+                LOAI_KHOAN='DICH_VU',
+                NOI_DUNG='Dịch vụ cuối kỳ',
+                SO_LUONG=1,
+                DON_GIA=tien_dich_vu_cuoi,
+                THANH_TIEN=tien_dich_vu_cuoi,
+                GHI_CHU_CTHD='Chi tiết dịch vụ cuối kỳ'
+            )
+            
+        # Tạo chi tiết phạt (nếu có)
+        if tien_phat > 0:
+            CHITIETHOADON.objects.create(
+                MA_HOA_DON=hoa_don,
+                LOAI_KHOAN='KHAU_TRU',
+                NOI_DUNG='Phí phạt kết thúc hợp đồng sớm',
+                SO_LUONG=1,
+                DON_GIA=tien_phat,
+                THANH_TIEN=tien_phat,
+                GHI_CHU_CTHD='Phí phạt theo quy định hợp đồng'
+            )
         
         return hoa_don, None
     
@@ -375,7 +447,7 @@ class HopDong(models.Model):
         from decimal import Decimal
         
         HoaDon = apps.get_model('hoadon', 'HoaDon')
-        ChiTietHoaDon = apps.get_model('hoadon', 'ChiTietHoaDon')
+        ChiTietHoaDon = apps.get_model('hoadon', 'CHITIETHOADON')
         
         try:
             # Tính toán các khoản phí theo cấu hình
@@ -408,18 +480,37 @@ class HopDong(models.Model):
                 chi_phi_dict.get('phi_bao_tri', {}).get('gia_tri', Decimal(0))
             )
             
-            # Tạo hóa đơn - không lưu MA_PHONG cho cả hóa đơn bắt đầu và kết thúc
+            # Tạo hóa đơn - chỉ sử dụng các field có trong model
             hoa_don = HoaDon.objects.create(
                 MA_HOP_DONG=self,
                 LOAI_HOA_DON=loai_hoa_don,
                 NGAY_LAP_HDON=timezone.now().date(),
-                TIEN_PHONG=tien_phong,
-                TIEN_DICH_VU=tien_dich_vu,
-                TIEN_COC=tien_coc,
-                TIEN_KHAU_TRU=tien_khau_tru,
                 TONG_TIEN=tong_tien,
                 TRANG_THAI_HDON='Chưa thanh toán'
             )
+            
+            # Tạo chi tiết hóa đơn từ chi_phi_dict
+            for phi_ten, phi_gia_tri in chi_phi_dict.items():
+                if phi_gia_tri != 0:  # Chỉ tạo chi tiết nếu có giá trị
+                    # Xác định loại khoản dựa trên tên phí
+                    if 'phòng' in phi_ten.lower():
+                        loai_khoan = 'PHONG'
+                    elif 'cọc' in phi_ten.lower():
+                        loai_khoan = 'COC' if phi_gia_tri > 0 else 'HOAN_COC'
+                    elif 'dịch vụ' in phi_ten.lower():
+                        loai_khoan = 'DICH_VU'
+                    else:
+                        loai_khoan = 'KHAU_TRU'
+                    
+                    ChiTietHoaDon.objects.create(
+                        MA_HOA_DON=hoa_don,
+                        LOAI_KHOAN=loai_khoan,
+                        NOI_DUNG=phi_ten,
+                        SO_LUONG=1,
+                        DON_GIA=phi_gia_tri,
+                        THANH_TIEN=phi_gia_tri,
+                        GHI_CHU_CTHD=f'{phi_ten} theo cấu hình hệ thống'
+                    )
             
             # Lưu lịch sử cấu hình đã áp dụng
             LichSuHoaDonCauHinh.objects.create(
@@ -450,36 +541,40 @@ class HopDong(models.Model):
     
     def get_lich_su_gia_han(self):
         """Lấy danh sách lịch sử gia hạn"""
-        return self.lichsugiahan.all().order_by('-NGAY_GIA_HAN')
+        return self.lichsugiahan.filter(LOAI_DC='Gia hạn hợp đồng').order_by('-NGAY_TAO_DC')
     
     def da_gia_han_bao_nhieu_lan(self):
         """Đếm số lần gia hạn"""
-        return self.lichsugiahan.count()
+        return self.lichsugiahan.filter(LOAI_DC='Gia hạn hợp đồng').count()
     
     def gia_han_lan_cuoi(self):
         """Lấy thông tin gia hạn lần cuối"""
-        return self.lichsugiahan.first()
+        return self.lichsugiahan.filter(LOAI_DC='Gia hạn hợp đồng').order_by('-NGAY_TAO_DC').first()
 
     def gia_han_hop_dong(self, ngay_tra_phong_moi, thoi_han_moi=None, gia_thue_moi=None, ly_do=None):
-        """Gia hạn hợp đồng"""
+        """Gia hạn hợp đồng và tạo bản ghi điều chỉnh"""
+        import logging
+        logger = logging.getLogger(__name__)
         
+        # Validation trước khi thực hiện transaction
+        if self.TRANG_THAI_HD not in ['Đang hoạt động', 'Sắp kết thúc']:
+            error_msg = f'Chỉ có thể gia hạn hợp đồng đang hoạt động hoặc sắp kết thúc. Trạng thái hiện tại: {self.TRANG_THAI_HD}'
+            logger.warning(f"Gia hạn hợp đồng {self.MA_HOP_DONG} thất bại: {error_msg}")
+            return False, error_msg
+        
+        # Kiểm tra ngày gia hạn hợp lệ
+        if ngay_tra_phong_moi <= self.NGAY_TRA_PHONG:
+            error_msg = f'Ngày trả phòng mới ({ngay_tra_phong_moi}) phải sau ngày trả phòng hiện tại ({self.NGAY_TRA_PHONG})'
+            logger.warning(f"Gia hạn hợp đồng {self.MA_HOP_DONG} thất bại: {error_msg}")
+            return False, error_msg
+            
         try:
             with transaction.atomic():
-                if self.TRANG_THAI_HD not in ['Đang hoạt động', 'Sắp kết thúc']:
-                    raise ValueError('Chỉ có thể gia hạn hợp đồng đang hoạt động hoặc sắp kết thúc')
+                logger.info(f"Bắt đầu gia hạn hợp đồng {self.MA_HOP_DONG} đến {ngay_tra_phong_moi}")
                 
-                # Kiểm tra ngày gia hạn hợp lệ
-                if ngay_tra_phong_moi <= self.NGAY_TRA_PHONG:
-                    raise ValueError('Ngày trả phòng mới phải sau ngày trả phòng hiện tại')
-                
-                # Tạo lịch sử gia hạn trước khi cập nhật
-                lich_su = LichSuGiaHan.tao_lich_su_gia_han(
-                    hop_dong=self,
-                    ngay_tra_phong_moi=ngay_tra_phong_moi,
-                    gia_thue_moi=gia_thue_moi,
-                    thoi_han_moi=thoi_han_moi,
-                    ly_do=ly_do
-                )
+                # Lưu thông tin cũ để log
+                ngay_tra_phong_cu = self.NGAY_TRA_PHONG
+                gia_thue_cu = self.GIA_THUE
                 
                 # Cập nhật thông tin hợp đồng
                 self.NGAY_TRA_PHONG = ngay_tra_phong_moi
@@ -492,29 +587,61 @@ class HopDong(models.Model):
                 
                 # Cập nhật trạng thái về đang hoạt động
                 self.TRANG_THAI_HD = 'Đang hoạt động'
+                
+                # Validate trước khi save
+                self.full_clean()
                 self.save()
+                
+                logger.info(f"Đã cập nhật hợp đồng {self.MA_HOP_DONG}: {ngay_tra_phong_cu} → {ngay_tra_phong_moi}")
+                
+                # Tạo bản ghi điều chỉnh sau khi cập nhật hợp đồng
+                lich_su = DonDieuChinh.objects.create(
+                    MA_HOP_DONG=self,
+                    NGAY_DC=ngay_tra_phong_moi,  # Ngày hiệu lực mới
+                    LOAI_DC='Gia hạn hợp đồng',
+                    LY_DO_DC=ly_do
+                )
+                
+                logger.info(f"Tạo lịch sử gia hạn {lich_su.MA_DIEU_CHINH} cho hợp đồng {self.MA_HOP_DONG}")
                 
                 return True, lich_su
                 
+        except ValidationError as ve:
+            error_msg = f"Lỗi validation: {str(ve)}"
+            logger.error(f"Gia hạn hợp đồng {self.MA_HOP_DONG} thất bại - ValidationError: {ve}")
+            return False, error_msg
         except Exception as e:
-            return False, str(e)
+            error_msg = f"Lỗi hệ thống: {str(e)}"
+            logger.error(f"Gia hạn hợp đồng {self.MA_HOP_DONG} thất bại - Exception: {e}", exc_info=True)
+            return False, error_msg
 
     def bao_ket_thuc_som(self, ngay_bao_ket_thuc, ly_do=None):
-        """Báo kết thúc sớm hợp đồng"""
+        """Báo kết thúc sớm hợp đồng và lưu vào DonDieuChinh"""
+        import logging
+        logger = logging.getLogger(__name__)
         
+        # Validation trước khi thực hiện transaction
+        if self.TRANG_THAI_HD != 'Đang hoạt động':
+            error_msg = f'Chỉ có thể báo kết thúc hợp đồng đang hoạt động. Trạng thái hiện tại: {self.TRANG_THAI_HD}'
+            logger.warning(f"Báo kết thúc hợp đồng {self.MA_HOP_DONG} thất bại: {error_msg}")
+            return False, error_msg
+        
+        # Kiểm tra ngày báo kết thúc hợp lệ
+        if ngay_bao_ket_thuc <= timezone.now().date():
+            error_msg = f'Ngày báo kết thúc ({ngay_bao_ket_thuc}) phải sau ngày hiện tại ({timezone.now().date()})'
+            logger.warning(f"Báo kết thúc hợp đồng {self.MA_HOP_DONG} thất bại: {error_msg}")
+            return False, error_msg
+            
+        if ngay_bao_ket_thuc >= self.NGAY_TRA_PHONG:
+            error_msg = f'Ngày báo kết thúc ({ngay_bao_ket_thuc}) phải trước ngày kết thúc hợp đồng ({self.NGAY_TRA_PHONG})'
+            logger.warning(f"Báo kết thúc hợp đồng {self.MA_HOP_DONG} thất bại: {error_msg}")
+            return False, error_msg
+            
         try:
             with transaction.atomic():
-                if self.TRANG_THAI_HD != 'Đang hoạt động':
-                    raise ValueError('Chỉ có thể báo kết thúc hợp đồng đang hoạt động')
+                logger.info(f"Bắt đầu báo kết thúc hợp đồng {self.MA_HOP_DONG} vào ngày {ngay_bao_ket_thuc}")
                 
-                # Kiểm tra ngày báo kết thúc hợp lệ
-                if ngay_bao_ket_thuc <= timezone.now().date():
-                    raise ValueError('Ngày báo kết thúc phải sau ngày hiện tại')
-                    
-                if ngay_bao_ket_thuc >= self.NGAY_TRA_PHONG:
-                    raise ValueError('Ngày báo kết thúc phải trước ngày kết thúc hợp đồng')
-                
-                # Cập nhật trạng thái
+                # Cập nhật trạng thái hợp đồng
                 self.TRANG_THAI_HD = 'Đang báo kết thúc'
                 
                 # Cập nhật ghi chú
@@ -523,11 +650,75 @@ class HopDong(models.Model):
                     self.GHI_CHU_HD = ghi_chu_moi
                 
                 self.save()
+                logger.info(f"Đã cập nhật trạng thái hợp đồng {self.MA_HOP_DONG} thành 'Đang báo kết thúc'")
                 
-                return True, None
+                # Tạo bản ghi điều chỉnh
+                lich_su = DonDieuChinh.objects.create(
+                    MA_HOP_DONG=self,
+                    NGAY_DC=ngay_bao_ket_thuc,  # Ngày kết thúc dự kiến
+                    LOAI_DC='Báo kết thúc sớm',
+                    LY_DO_DC=ly_do
+                )
                 
+                logger.info(f"Tạo lịch sử báo kết thúc {lich_su.MA_DIEU_CHINH} cho hợp đồng {self.MA_HOP_DONG}")
+                
+                return True, lich_su
+                
+        except ValidationError as ve:
+            error_msg = f"Lỗi validation: {str(ve)}"
+            logger.error(f"Báo kết thúc hợp đồng {self.MA_HOP_DONG} thất bại - ValidationError: {ve}")
+            return False, error_msg
         except Exception as e:
-            return False, str(e)
+            error_msg = f"Lỗi hệ thống: {str(e)}"
+            logger.error(f"Báo kết thúc hợp đồng {self.MA_HOP_DONG} thất bại - Exception: {e}", exc_info=True)
+            return False, error_msg
+
+    def huy_bao_ket_thuc(self, ly_do=None):
+        """Hủy báo kết thúc sớm hợp đồng và khôi phục trạng thái"""
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        # Validation trước khi thực hiện transaction
+        if self.TRANG_THAI_HD != 'Đang báo kết thúc':
+            error_msg = f'Chỉ có thể hủy báo kết thúc với hợp đồng đang ở trạng thái "Đang báo kết thúc". Trạng thái hiện tại: {self.TRANG_THAI_HD}'
+            logger.warning(f"Hủy báo kết thúc hợp đồng {self.MA_HOP_DONG} thất bại: {error_msg}")
+            return False, error_msg
+            
+        try:
+            with transaction.atomic():
+                logger.info(f"Bắt đầu hủy báo kết thúc hợp đồng {self.MA_HOP_DONG}")
+                
+                # Khôi phục trạng thái về đang hoạt động
+                self.TRANG_THAI_HD = 'Đang hoạt động'
+                
+                # Cập nhật ghi chú
+                if ly_do:
+                    ghi_chu_moi = f"{self.GHI_CHU_HD}\n[Hủy báo kết thúc {timezone.now().date()}]: {ly_do}" if self.GHI_CHU_HD else f"[Hủy báo kết thúc {timezone.now().date()}]: {ly_do}"
+                    self.GHI_CHU_HD = ghi_chu_moi
+                
+                self.save()
+                logger.info(f"Đã khôi phục trạng thái hợp đồng {self.MA_HOP_DONG} thành 'Đang hoạt động'")
+                
+                # Tạo bản ghi điều chỉnh cho việc hủy
+                lich_su = DonDieuChinh.objects.create(
+                    MA_HOP_DONG=self,
+                    NGAY_DC=timezone.now().date(),  # Ngày hủy báo kết thúc
+                    LOAI_DC='Hủy báo kết thúc',
+                    LY_DO_DC=ly_do
+                )
+                
+                logger.info(f"Tạo lịch sử hủy báo kết thúc {lich_su.MA_DIEU_CHINH} cho hợp đồng {self.MA_HOP_DONG}")
+                
+                return True, lich_su
+                
+        except ValidationError as ve:
+            error_msg = f"Lỗi validation: {str(ve)}"
+            logger.error(f"Hủy báo kết thúc hợp đồng {self.MA_HOP_DONG} thất bại - ValidationError: {ve}")
+            return False, error_msg
+        except Exception as e:
+            error_msg = f"Lỗi hệ thống: {str(e)}"
+            logger.error(f"Hủy báo kết thúc hợp đồng {self.MA_HOP_DONG} thất bại - Exception: {e}", exc_info=True)
+            return False, error_msg
 
     def ket_thuc_hop_dong(self, ngay_ket_thuc_thuc_te=None):
         """Kết thúc hợp đồng và sinh hóa đơn cuối"""
@@ -588,12 +779,6 @@ class HopDong(models.Model):
         elif current_status == 'Đang hoạt động':
             actions.extend([
                 {
-                    'action': 'create_invoice',
-                    'label': 'Tạo Hóa đơn',
-                    'icon': 'fas fa-file-invoice',
-                    'color': 'blue'
-                },
-                {
                     'action': 'extend',
                     'label': 'Gia hạn Hợp đồng',
                     'icon': 'fas fa-calendar-plus',
@@ -615,27 +800,16 @@ class HopDong(models.Model):
                     'icon': 'fas fa-calendar-plus',
                     'color': 'green'
                 },
-                {
-                    'action': 'end',
-                    'label': 'Kết thúc Hợp đồng',
-                    'icon': 'fas fa-door-open',
-                    'color': 'red'
-                }
             ])
         
         elif current_status == 'Đang báo kết thúc':
-            actions.append({
-                'action': 'end',
-                'label': 'Xác nhận Kết thúc',
-                'icon': 'fas fa-door-open',
-                'color': 'red'
-            })
+            pass
         
         # Universal actions (available in most states)
         if current_status not in ['Đã kết thúc', 'Đã hủy']:
             actions.append({
                 'action': 'cancel',
-                'label': 'Hủy Hợp đồng',
+                'label': 'Kết thúc Hợp đồng',
                 'icon': 'fas fa-times-circle',
                 'color': 'red'
             })
@@ -720,41 +894,31 @@ class LichSuHopDong(models.Model):
 
 
 
-# Model for lichsugiahan
-class LichSuGiaHan(models.Model):
-    MA_GIA_HAN = models.AutoField(primary_key=True)
+# Model for lichsugiahan - Đổi tên từ LichSuGiaHan thành DonDieuChinh
+class DonDieuChinh(models.Model):
+    MA_DIEU_CHINH = models.AutoField(primary_key=True)
     MA_HOP_DONG = models.ForeignKey(
         'HopDong',
         on_delete=models.CASCADE,
         db_column='MA_HOP_DONG',
         related_name='lichsugiahan'
     )
-    NGAY_GIA_HAN = models.DateTimeField(
+    NGAY_TAO_DC = models.DateField(
         auto_now_add=True,
-        verbose_name="Ngày gia hạn"
+        verbose_name="Ngày tạo điều chỉnh"
     )
-    NGAY_TRA_PHONG_MOI = models.DateField(
-        verbose_name="Ngày trả phòng mới"
+    NGAY_DC = models.DateField(
+        verbose_name="Ngày điều chỉnh"
     )
-    GIA_THUE_MOI = models.DecimalField(
-        max_digits=10, decimal_places=2, null=True, blank=True,
-        verbose_name="Giá thuê mới"
-    )
-    THOI_HAN_MOI = models.CharField(
-        max_length=50, null=True, blank=True,
-        verbose_name="Thời hạn mới"
-    )
-    LY_DO_GIA_HAN = models.TextField(
-        null=True, blank=True,
-        verbose_name="Lý do gia hạn"
-    )
-
+    LOAI_DC = models.CharField(max_length=50, verbose_name="Loại điều chỉnh")
+    LY_DO_DC = models.TextField(null=True, blank=True, verbose_name="Lý do điều chỉnh")
+    
     def __str__(self):
-        return f"Gia hạn {self.MA_GIA_HAN} - HĐ {self.MA_HOP_DONG_id}"
+        return f"Điều chỉnh {self.MA_DIEU_CHINH} - HĐ {self.MA_HOP_DONG_id}"
 
     class Meta:
-        db_table = 'lichsugiahan'
-        ordering = ['-NGAY_GIA_HAN']
+        db_table = 'dondieuchinh'
+        ordering = ['-NGAY_TAO_DC']
 
     @classmethod
     def tao_lich_su_gia_han(cls, hop_dong, ngay_tra_phong_moi, 
@@ -762,10 +926,8 @@ class LichSuGiaHan(models.Model):
         """Tạo bản ghi lịch sử gia hạn"""
         return cls.objects.create(
             MA_HOP_DONG=hop_dong,
-            NGAY_TRA_PHONG_MOI=ngay_tra_phong_moi,
-            GIA_THUE_MOI=gia_thue_moi,
-            THOI_HAN_MOI=thoi_han_moi,
-            LY_DO_GIA_HAN=ly_do
+            NGAY_DC=ngay_tra_phong_moi,
+            LOAI_DC='Gia hạn hợp đồng'
         )
 
 

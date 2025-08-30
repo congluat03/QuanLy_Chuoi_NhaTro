@@ -16,6 +16,7 @@ from datetime import date
 from django.db.models import Q
 from apps.hopdong.services import HopDongWorkflowService
 import json
+from decimal import Decimal
 
 
 
@@ -33,19 +34,26 @@ def phongtro_list(request):
     ma_khu_vuc = request.GET.get('ma_khu_vuc')
     page_number = request.GET.get('page_number', 1)
 
-    # Nếu không có mã khu vực → trả về danh sách khu vực nhà trọ có MA_NHA_TRO = 1
-    # Kiểm tra khu vực có tồn tại không
+    # Lấy danh sách khu vực nhà trọ có MA_NHA_TRO = 1
     khu_vucs = KhuVuc.objects.filter(MA_NHA_TRO=1)
     
-
-    # Lấy tham số tìm kiếm và bộ lọc từ request
-    keyword = request.GET.get('keyword', '')
-    trang_thai_filters = request.GET.getlist('options[]', [])
+    # Nếu không có mã khu vực, chọn khu vực đầu tiên
     if not ma_khu_vuc and khu_vucs.exists():
         ma_khu_vuc = khu_vucs.first().MA_KHU_VUC
-        # Lấy danh sách phòng trọ theo mã khu vực
+    
+    # Chuyển đổi ma_khu_vuc thành integer để so sánh
+    try:
+        ma_khu_vuc = int(ma_khu_vuc) if ma_khu_vuc else None
+    except (ValueError, TypeError):
+        ma_khu_vuc = khu_vucs.first().MA_KHU_VUC if khu_vucs.exists() else None
+
+    # Lấy tham số tìm kiếm và bộ lọc từ request
+    keyword = request.GET.get('keyword', '') or request.GET.get('ten_phong', '')
+    trang_thai_phong = request.GET.get('trang_thai_phong', '')
+    
+    # QUAN TRỌNG: Luôn lọc theo khu vực đã chọn, không cho phép lọc sang khu vực khác
     phong_tros = PhongTro.objects.filter(MA_KHU_VUC=ma_khu_vuc)\
-        .select_related('MA_LOAI_PHONG')\
+        .select_related('MA_LOAI_PHONG', 'MA_KHU_VUC')\
         .prefetch_related('cocphong', 'hopdong')
 
     # Áp dụng bộ lọc từ khóa nếu có
@@ -55,39 +63,121 @@ def phongtro_list(request):
             Q(MA_LOAI_PHONG__TEN_LOAI_PHONG__icontains=keyword)
         )
 
-    # Áp dụng bộ lọc trạng thái nếu có
-    if trang_thai_filters:
-        phong_tros = phong_tros.filter(TRANG_THAI_P__in=trang_thai_filters)
+    # Áp dụng bộ lọc trạng thái phòng đơn giản
+    if trang_thai_phong:
+        if trang_thai_phong == 'Đang trống':
+            phong_tros = phong_tros.filter(TRANG_THAI_P='Đang trống')
+        elif trang_thai_phong == 'Đang ở':
+            phong_tros = phong_tros.filter(TRANG_THAI_P='Đang ở')
 
     # Phân trang (8 mục/trang)
     paginator = Paginator(phong_tros, 8)
     phong_tros_page = paginator.get_page(page_number)
 
-    # Danh sách trạng thái
-    trang_thai_phong_choices = ['Đang ở', 'Đang trống', 'Đang cọc dự trọ']
-    trang_thai_hd_choices = ['Sắp kết thúc hợp đồng', 'Đã quá hạn hợp đồng', 'Đang nợ tiền']
+    # Danh sách trạng thái đơn giản
+    trang_thai_phong_choices = ['Đang trống', 'Đang ở']
 
+    # Lấy thông tin khu vực hiện tại
+    khu_vuc_hien_tai = khu_vucs.filter(MA_KHU_VUC=ma_khu_vuc).first() if ma_khu_vuc else None
+    
     context = {
         'phong_tros': phong_tros_page,
         'ma_khu_vuc': ma_khu_vuc,
+        'khu_vuc_hien_tai': khu_vuc_hien_tai,
         'trang_thai_phong_choices': trang_thai_phong_choices,
-        'trang_thai_hd_choices': trang_thai_hd_choices,
         'keyword': keyword,
-        'selected_filters': trang_thai_filters,
+        'trang_thai_phong': trang_thai_phong,
         'khu_vucs': khu_vucs,
     }
     
-    # Thêm thông tin workflow cho các phòng có hợp đồng
+    # Thêm thông tin workflow và cập nhật trạng thái phòng
     for phong in phong_tros_page:
-        # Lấy hợp đồng hiện tại của phòng (nếu có)
-        hop_dong = phong.hopdong.filter(TRANG_THAI_HD__in=['Hoạt động', 'Chưa ký', 'Sắp hết hạn']).first()
+        # Lấy hợp đồng hiện tại của phòng (chỉ những trạng thái yêu cầu)
+        hop_dong = phong.hopdong.filter(TRANG_THAI_HD__in=['Đang hoạt động', 'Sắp kết thúc', 'Đang báo kết thúc']).first()
         phong.current_contract = hop_dong
+        
+        # Cập nhật trạng thái phòng dựa trên hợp đồng
+        if hop_dong:
+            # Chỉ có 3 trạng thái hợp đồng được xem xét
+            phong.trang_thai_hien_thi = 'Đang ở'
+        else:
+            # Kiểm tra có cọc phòng không
+            coc_phong = phong.cocphong.filter(TRANG_THAI_CP__in=['Đã cọc', 'Chờ xác nhận']).first()
+            if coc_phong:
+                phong.trang_thai_hien_thi = 'Đang cọc'
+            else:
+                phong.trang_thai_hien_thi = phong.TRANG_THAI_P or 'Đang trống'
         
         # Thêm thông tin các actions có thể thực hiện
         if hop_dong:
             phong.workflow_actions = hop_dong.get_available_workflow_actions()
         else:
             phong.workflow_actions = []
+            
+        # Lấy thông tin người đại diện và đếm số người thực tế đang ở
+        if hop_dong:
+            from apps.hopdong.models import LichSuHopDong
+            
+            # Lấy người đại diện (Chủ hợp đồng)
+            chu_hop_dong = LichSuHopDong.objects.filter(
+                MA_HOP_DONG=hop_dong,
+                MOI_QUAN_HE='Chủ hợp đồng',
+                NGAY_ROI_DI__isnull=True
+            ).select_related('MA_KHACH_THUE').first()
+            
+            if chu_hop_dong:
+                phong.nguoi_dai_dien = chu_hop_dong.MA_KHACH_THUE
+            else:
+                phong.nguoi_dai_dien = None
+            
+            # Đếm số người từ lịch sử hợp đồng (những người chưa rời đi)
+            so_nguoi_dang_o = LichSuHopDong.objects.filter(
+                MA_HOP_DONG=hop_dong,
+                NGAY_ROI_DI__isnull=True  # Chưa rời đi
+            ).count()
+            phong.so_nguoi_dang_o = so_nguoi_dang_o
+            
+            # Tính toán tình trạng thanh toán
+            from apps.hoadon.models import HoaDon, PHIEUTHU
+            
+            # Lấy tất cả hóa đơn của hợp đồng
+            hoa_dons = hop_dong.hoadon.all()
+            tong_so_tien_can_thu = Decimal('0')
+            tong_so_tien_da_thu = Decimal('0')
+            
+            for hoa_don in hoa_dons:
+                # Tổng tiền hóa đơn
+                tong_so_tien_can_thu += hoa_don.TONG_TIEN or Decimal('0')
+                
+                # Tổng tiền đã thu từ phiếu thu
+                phieu_thus = PHIEUTHU.objects.filter(MA_HOA_DON=hoa_don)
+                for phieu_thu in phieu_thus:
+                    tong_so_tien_da_thu += phieu_thu.SO_TIEN or Decimal('0')
+            
+            # Tính số tiền còn nợ
+            so_tien_con_no = tong_so_tien_can_thu - tong_so_tien_da_thu
+            
+            phong.tong_so_tien_can_thu = tong_so_tien_can_thu
+            phong.tong_so_tien_da_thu = tong_so_tien_da_thu
+            phong.so_tien_con_no = so_tien_con_no
+            phong.co_hoa_don_chua_thanh_toan = so_tien_con_no > 0
+            
+            # Kiểm tra hợp đồng sắp hết hạn (còn 30 ngày)
+            from datetime import date, timedelta
+            if hop_dong.NGAY_TRA_PHONG:
+                ngay_het_han = hop_dong.NGAY_TRA_PHONG
+                ngay_canh_bao = date.today() + timedelta(days=30)
+                phong.sap_het_han = ngay_het_han <= ngay_canh_bao
+            else:
+                phong.sap_het_han = False
+        else:
+            phong.nguoi_dai_dien = None
+            phong.so_nguoi_dang_o = 0
+            phong.tong_so_tien_can_thu = Decimal('0')
+            phong.tong_so_tien_da_thu = Decimal('0')
+            phong.so_tien_con_no = Decimal('0')
+            phong.co_hoa_don_chua_thanh_toan = False
+            phong.sap_het_han = False
 
     return render(request, 'admin/phongtro/phongtro.html', context)
 
@@ -292,7 +382,7 @@ def them_phongtro(request):
                     GIA_PHONG=data.get('GIA_PHONG'),
                     SO_NGUOI_TOI_DA=data.get('SO_NGUOI_TOI_DA'),
                     SO_TIEN_CAN_COC=data.get('SOTIENCANCOC'),
-                    TRANG_THAI_P = 'Đang trống',  # Mặc định trạng thái là 'Đang trống'
+                    TRANG_THAI_P = 'Trống',  # Mặc định trạng thái là 'Trống'
                     DIEN_TICH=data.get('DIEN_TICH', ''),
                     MO_TA_P = data.get('MO_TA_P', ''),
                 )
@@ -539,25 +629,12 @@ def view_lap_hop_dong(request, ma_phong):
     phong_tros = PhongTro.lay_phong_theo_ma_nha_tro(1)
     phong_tro = get_object_or_404(PhongTro, MA_PHONG=ma_phong)
     
-     # Get all applied services for the room
-    # Lấy danh sách dịch vụ áp dụng cho khu vực của phòng
-    lichsu_dichvu = LichSuApDungDichVu.objects.filter(
-        MA_KHU_VUC=phong_tro.MA_KHU_VUC,
-        NGAY_HUY_DV__isnull=True
-    ).select_related('MA_DICH_VU')
+    # Lấy tài sản phòng
     taisanphong_list = TAISANPHONG.objects.filter(MA_PHONG=ma_phong).select_related('MA_TAI_SAN')
 
-    # Tạo danh sách dịch vụ với chỉ số mới nhất
-    lichsu_dichvu_with_chiso = []
-    for lichsu in lichsu_dichvu:
-        latest_chiso = ChiSoDichVu.objects.filter(
-            MA_DICH_VU=lichsu.MA_DICH_VU,
-            MA_PHONG=phong_tro
-        ).order_by('-NGAY_GHI_CS').first()
-        lichsu_dichvu_with_chiso.append({
-            'lichsu': lichsu,
-            'latest_chiso': latest_chiso
-        })
+    # Sử dụng helper function chung từ dichvu app để lấy dịch vụ với chỉ số
+    from apps.dichvu.admin_views import get_dichvu_with_chiso_for_phong
+    lichsu_dichvu_with_chiso = get_dichvu_with_chiso_for_phong(phong_tro)
     coc_phong = CocPhong.objects.filter(
             MA_PHONG_id=ma_phong,
             TRANG_THAI_CP__in=['Đã cọc', 'Chờ xác nhận']  # Điều chỉnh trạng thái theo yêu cầu
@@ -566,12 +643,16 @@ def view_lap_hop_dong(request, ma_phong):
     # return JsonResponse(dict(lichsu_dichvu))
 
 
-    return render(request, 'admin/phongtro/lap_hop_dong.html', {
+    # Lấy danh sách khu vực để hiển thị dropdown
+    khu_vucs = KhuVuc.objects.filter(MA_NHA_TRO=1)
+    
+    return render(request, 'admin/hopdong/themsua_hopdong.html', {
         'phong_tros': phong_tros,
         'phong_tro': phong_tro,
         'lichsu_dichvu_with_chiso': lichsu_dichvu_with_chiso,
         'taisanphong_list': taisanphong_list,
         'coc_phong': coc_phong,
+        'khu_vucs': khu_vucs,
         })
 
 
@@ -871,3 +952,89 @@ def dang_tin_detail(request, ma_tin_dang):
     }
     
     return render(request, 'admin/dangtin/dang_tin_detail.html', context)
+
+
+def lay_phong_kha_dung(request):
+    """
+    AJAX view để lấy danh sách phòng khả dụng theo khu vực
+    """
+    if not request.session.get('is_authenticated'):
+        return JsonResponse({'success': False, 'message': 'Bạn cần đăng nhập'})
+    
+    khu_vuc_id = request.GET.get('khu_vuc_id')
+    if not khu_vuc_id:
+        return JsonResponse({'success': False, 'message': 'Thiếu mã khu vực'})
+    
+    try:
+        # Lấy phòng chưa có hợp đồng hoạt động hoặc đang trống
+        phong_tros = PhongTro.objects.filter(
+            MA_KHU_VUC=khu_vuc_id
+        ).exclude(
+            # Loại bỏ phòng có hợp đồng đang hoạt động
+            hopdong__TRANG_THAI_HD__in=['Đang hoạt động', 'Chờ xác nhận', 'Đã xác nhận']
+        ).select_related('MA_LOAI_PHONG', 'MA_KHU_VUC')
+        
+        # Serialize data
+        phong_data = []
+        for phong in phong_tros:
+            phong_data.append({
+                'MA_PHONG': phong.MA_PHONG,
+                'TEN_PHONG': phong.TEN_PHONG,
+                'TRANG_THAI_P': phong.TRANG_THAI_P,
+                'GIA_PHONG': float(phong.GIA_PHONG) if phong.GIA_PHONG else 0,
+                'SO_NGUOI_TOI_DA': phong.SO_NGUOI_TOI_DA,
+                'SO_TIEN_CAN_COC': float(phong.SO_TIEN_CAN_COC) if phong.SO_TIEN_CAN_COC else 0,
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'phong_tros': phong_data
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(e)}'
+        })
+
+
+def lay_thong_tin_phong(request):
+    """
+    AJAX view để lấy thông tin chi tiết phòng
+    """
+    if not request.session.get('is_authenticated'):
+        return JsonResponse({'success': False, 'message': 'Bạn cần đăng nhập'})
+    
+    ma_phong = request.GET.get('ma_phong')
+    if not ma_phong:
+        return JsonResponse({'success': False, 'message': 'Thiếu mã phòng'})
+    
+    try:
+        phong = get_object_or_404(PhongTro, MA_PHONG=ma_phong)
+        
+        phong_info = {
+            'MA_PHONG': phong.MA_PHONG,
+            'TEN_PHONG': phong.TEN_PHONG,
+            'GIA_PHONG': float(phong.GIA_PHONG) if phong.GIA_PHONG else 0,
+            'SO_NGUOI_TOI_DA': phong.SO_NGUOI_TOI_DA or 1,
+            'SO_TIEN_CAN_COC': float(phong.SO_TIEN_CAN_COC) if phong.SO_TIEN_CAN_COC else 0,
+            'DIEN_TICH': float(phong.DIEN_TICH) if phong.DIEN_TICH else 0,
+            'MO_TA_P': phong.MO_TA_P or '',
+            'TRANG_THAI_P': phong.TRANG_THAI_P,
+        }
+        
+        return JsonResponse({
+            'success': True,
+            'phong_info': phong_info
+        })
+        
+    except PhongTro.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'message': 'Phòng không tồn tại'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(e)}'
+        })

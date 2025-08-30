@@ -1,0 +1,192 @@
+<!-- Section Lịch sử Báo kết thúc -->
+<div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+    <div class="flex justify-between items-center mb-6">
+        <h3 class="text-xl font-bold text-gray-800 flex items-center">
+            <i class="fas fa-exclamation-triangle text-orange-600 mr-3"></i>
+            Lịch sử Báo kết thúc
+            {% if lich_su_bao_ket_thuc|length > 0 %}
+                <span class="ml-2 bg-orange-100 text-orange-800 text-xs font-semibold px-2 py-1 rounded-full">
+                    {{ lich_su_bao_ket_thuc|length }} lần
+                </span>
+            {% endif %}
+        </h3>
+        
+        {% if hop_dong.TRANG_THAI_HD == 'Đang hoạt động' %}
+        <button onclick="hienThiModalBaoKetThuc({
+            MA_HOP_DONG: {{ hop_dong.MA_HOP_DONG }},
+            TEN_PHONG: '{{ hop_dong.MA_PHONG.TEN_PHONG|default:"-" }}',
+            TEN_KHACH_THUE: '{% if khach_thue %}{{ khach_thue.MA_KHACH_THUE.HO_TEN_KT }}{% else %}-{% endif %}',
+            NGAY_TRA_PHONG: '{{ hop_dong.NGAY_TRA_PHONG|date:"Y-m-d" }}',
+            GIA_THUE: {{ hop_dong.GIA_THUE|default:0 }},
+            TRANG_THAI_HD: '{{ hop_dong.TRANG_THAI_HD|default:"-" }}'
+        })" 
+        class="inline-flex items-center px-5 py-2.5 bg-gradient-to-r from-orange-600 to-red-700 text-white text-sm font-semibold rounded-xl hover:from-orange-700 hover:to-red-800 transition-all duration-200 shadow-lg hover:shadow-xl">
+            <i class="fas fa-exclamation-triangle mr-2"></i>
+            Báo kết thúc sớm
+        </button>
+        {% elif hop_dong.TRANG_THAI_HD == 'Đang báo kết thúc' %}
+        <button onclick="huyBaoKetThuc({{ hop_dong.MA_HOP_DONG }})" 
+        class="inline-flex items-center px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-700 text-white text-sm font-semibold rounded-xl hover:from-blue-700 hover:to-indigo-800 transition-all duration-200 shadow-lg hover:shadow-xl">
+            <i class="fas fa-undo mr-2"></i>
+            Hủy báo kết thúc
+        </button>
+        {% endif %}
+    </div>
+
+    {% if lich_su_bao_ket_thuc %}
+        <!-- Danh sách lịch sử báo kết thúc -->
+        <div class="space-y-4">
+            {% for bao_ket_thuc in lich_su_bao_ket_thuc %}
+            <div class="border-2 border-orange-100 rounded-xl p-5 hover:shadow-lg hover:border-orange-300 transition-all duration-200 bg-gradient-to-r from-white to-orange-50">
+                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                    <!-- Thông tin chính -->
+                    <div class="flex-1">
+                        <div class="flex items-center mb-3">
+                            <span class="bg-gradient-to-r from-orange-500 to-red-600 text-white text-xs font-semibold px-3 py-1.5 rounded-full mr-3">
+                                Lần {{ forloop.counter }}
+                            </span>
+                            <span class="text-gray-700 text-sm font-medium">
+                                <i class="fas fa-calendar text-orange-600 mr-1"></i>
+                                {{ bao_ket_thuc.NGAY_TAO_DC|date:"d/m/Y" }}
+                            </span>
+                        </div>
+                        
+                        <div class="bg-orange-50 border border-orange-200 p-4 rounded-xl text-sm">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                                <div class="flex items-center">
+                                    <i class="fas fa-tag text-orange-600 mr-2"></i>
+                                    <span class="text-gray-600">Loại:</span>
+                                    <span class="font-semibold ml-1 text-orange-700">{{ bao_ket_thuc.LOAI_DC }}</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <i class="fas fa-calendar-times text-red-600 mr-2"></i>
+                                    <span class="text-gray-600">Ngày kết thúc dự kiến:</span>
+                                    <span class="font-semibold ml-1 text-red-700">{{ bao_ket_thuc.NGAY_DC|date:"d/m/Y" }}</span>
+                                </div>
+                            </div>
+                            {% if bao_ket_thuc.LY_DO_DC %}
+                            <div class="border-t border-orange-200 pt-3">
+                                <div class="flex items-start">
+                                    <i class="fas fa-comment-alt text-red-600 mr-2 mt-1 flex-shrink-0"></i>
+                                    <div>
+                                        <span class="text-gray-600 font-medium">Lý do:</span>
+                                        <p class="text-gray-700 mt-1 leading-relaxed">{{ bao_ket_thuc.LY_DO_DC }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                    </div>
+                    
+                    <!-- Badge thời gian -->
+                    <div class="flex-shrink-0">
+                        <div class="text-center">
+                            <div class="bg-gradient-to-r from-orange-500 to-red-600 text-white text-xs font-semibold px-4 py-2 rounded-full shadow-md">
+                                Mã: {{ bao_ket_thuc.MA_DIEU_CHINH }}
+                            </div>
+                            <div class="text-xs text-gray-600 mt-2 font-medium">
+                                {{ bao_ket_thuc.NGAY_TAO_DC|timesince }} trước
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Summary -->
+        <div class="mt-6 p-5 bg-gradient-to-r from-orange-50 to-red-50 rounded-xl border-2 border-orange-200">
+            <div class="flex items-center justify-center">
+                <div class="text-center">
+                    <i class="fas fa-exclamation-circle text-orange-600 text-3xl mb-3"></i>
+                    <p class="text-sm text-gray-700">
+                        Hợp đồng đã báo kết thúc <span class="font-bold text-orange-700 text-base">{{ lich_su_bao_ket_thuc|length }} lần</span>
+                        {% if lich_su_bao_ket_thuc.first %}
+                            <br><span class="text-gray-600">Lần cuối: {{ lich_su_bao_ket_thuc.first.NGAY_TAO_DC|date:"d/m/Y" }}</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+    {% else %}
+        <!-- Chưa có lịch sử báo kết thúc -->
+        <div class="text-center py-12">
+            <div class="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                <i class="fas fa-calendar-times text-gray-400 text-3xl"></i>
+            </div>
+            <h4 class="text-lg font-semibold text-gray-600 mb-2">Chưa có lịch sử báo kết thúc</h4>
+            <p class="text-gray-500 text-sm mb-6">Hợp đồng này chưa được báo kết thúc lần nào</p>
+            
+            {% if hop_dong.TRANG_THAI_HD == 'Đang hoạt động' %}
+            <button onclick="hienThiModalBaoKetThuc({
+                MA_HOP_DONG: {{ hop_dong.MA_HOP_DONG }},
+                TEN_PHONG: '{{ hop_dong.MA_PHONG.TEN_PHONG|default:"-" }}',
+                TEN_KHACH_THUE: '{% if khach_thue %}{{ khach_thue.MA_KHACH_THUE.HO_TEN_KT }}{% else %}-{% endif %}',
+                NGAY_TRA_PHONG: '{{ hop_dong.NGAY_TRA_PHONG|date:"Y-m-d" }}',
+                GIA_THUE: {{ hop_dong.GIA_THUE|default:0 }},
+                TRANG_THAI_HD: '{{ hop_dong.TRANG_THAI_HD|default:"-" }}'
+            })" 
+            class="inline-flex items-center px-6 py-3 bg-orange-600 text-white font-medium rounded-lg hover:bg-orange-700 transition-colors shadow-sm">
+                <i class="fas fa-exclamation-triangle mr-2"></i>
+                Báo kết thúc sớm
+            </button>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+
+<!-- Include modal báo kết thúc -->
+{% include 'admin/hopdong/modal_bao_ket_thuc_hop_dong.html' %}
+
+<script>
+// Function xử lý hủy báo kết thúc
+function huyBaoKetThuc(maHopDong) {
+    if (!maHopDong) {
+        alert('Không tìm thấy mã hợp đồng!');
+        return;
+    }
+    
+    // Confirm trước khi hủy
+    const xacNhan = confirm(
+        'Bạn có chắc chắn muốn hủy báo kết thúc hợp đồng này?\n\n' +
+        'Hợp đồng sẽ được khôi phục về trạng thái "Đang hoạt động".'
+    );
+    
+    if (!xacNhan) {
+        return;
+    }
+    
+    // Gọi API hủy báo kết thúc
+    fetch(`/admin/hopdong/huy-bao-ket-thuc/${maHopDong}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value
+        },
+        body: new URLSearchParams({
+            'ly_do_huy': 'Hủy báo kết thúc theo yêu cầu'
+        })
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.json();
+        } else {
+            throw new Error('Server error: ' + response.status);
+        }
+    })
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            window.location.reload(); // Reload để cập nhật giao diện
+        } else {
+            alert('Lỗi: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Fetch error:', error);
+        alert('Lỗi kết nối: ' + error.message);
+    });
+}
+</script>

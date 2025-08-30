@@ -1,0 +1,260 @@
+<!-- Modal Báo kết thúc Hợp đồng -->
+<div id="modalBaoKetThucHopDong" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-orange-600 to-red-700 text-white p-6 rounded-t-2xl">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-exclamation-triangle text-2xl"></i>
+                    <div>
+                        <h3 class="text-xl font-bold tracking-tight">Báo kết thúc Hợp đồng</h3>
+                        <p class="text-orange-100 text-sm mt-1">Hợp đồng #<span id="modalBaoKetThucHopDongId"></span></p>
+                    </div>
+                </div>
+                <button type="button" onclick="dongModalBaoKetThuc()" class="text-white hover:text-red-200 transition-colors duration-200">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Form Content -->
+        <form id="formBaoKetThucHopDong" class="space-y-6">
+            <input type="hidden" id="hiddenBaoKetThucHopDongId" name="ma_hop_dong">
+            
+            <div class="p-6 space-y-6">
+                <!-- Ngày báo kết thúc -->
+                <div class="space-y-3">
+                    <label for="ngayBaoKetThuc" class="block text-sm font-semibold text-gray-800 flex items-center">
+                        <i class="fas fa-calendar-alt text-orange-600 mr-2"></i>
+                        Ngày muốn kết thúc <span class="text-red-500">*</span>
+                    </label>
+                    <input type="date" 
+                           id="ngayBaoKetThuc" 
+                           name="ngay_bao_ket_thuc" 
+                           class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 bg-gray-50 hover:bg-white focus:outline-none"
+                           required>
+                    <p class="text-xs text-gray-600 flex items-center bg-gray-50 p-2 rounded-lg">
+                        <i class="fas fa-info-circle text-orange-600 mr-2"></i>
+                        Chọn ngày muốn kết thúc hợp đồng (phải sau ngày hôm nay)
+                    </p>
+                </div>
+
+                <!-- Lý do báo kết thúc -->
+                <div class="space-y-3">
+                    <label for="lyDoBaoKetThuc" class="block text-sm font-semibold text-gray-800 flex items-center">
+                        <i class="fas fa-comment-alt text-red-600 mr-2"></i>
+                        Lý do báo kết thúc <span class="text-red-500">*</span>
+                    </label>
+                    <textarea id="lyDoBaoKetThuc" 
+                              name="ly_do_bao_ket_thuc" 
+                              rows="4" 
+                              placeholder="Nhập lý do báo kết thúc hợp đồng..."
+                              class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 bg-gray-50 hover:bg-white resize-none focus:outline-none"
+                              required></textarea>
+                    <p class="text-xs text-gray-600 flex items-center bg-gray-50 p-2 rounded-lg">
+                        <i class="fas fa-edit text-red-600 mr-2"></i>
+                        Ví dụ: Khách thuê chuyển chỗ ở mới, Vi phạm quy định nhà trọ
+                    </p>
+                </div>
+
+                <!-- Cảnh báo -->
+                <div class="bg-orange-50 border border-orange-200 rounded-xl p-4">
+                    <div class="flex items-start">
+                        <i class="fas fa-exclamation-triangle text-orange-600 mr-3 mt-1 flex-shrink-0"></i>
+                        <div class="text-sm">
+                            <p class="font-semibold text-orange-800 mb-2">Lưu ý quan trọng:</p>
+                            <ul class="text-orange-700 space-y-1 text-xs">
+                                <li>• Hợp đồng sẽ chuyển sang trạng thái "Đang báo kết thúc"</li>
+                                <li>• Có thể tạo hóa đơn kết thúc sau khi xác nhận</li>
+                                <li>• Thông tin này sẽ được lưu vào lịch sử điều chỉnh</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+               
+                <!-- Thông báo lỗi -->
+                <div id="errorMessageBaoKetThuc" class="hidden bg-red-50 border border-red-200 rounded-xl p-4">
+                    <div class="flex items-center">
+                        <i class="fas fa-exclamation-triangle text-red-600 mr-2"></i>
+                        <span class="text-red-700 font-medium"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer với buttons -->
+            <div class="bg-gray-50 px-6 py-4 rounded-b-2xl flex flex-col sm:flex-row justify-end gap-3">
+                <button type="button" 
+                        onclick="dongModalBaoKetThuc()" 
+                        class="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-100 transition-all duration-200 font-medium flex items-center justify-center">
+                    <i class="fas fa-times mr-2"></i>Hủy bỏ
+                </button>
+                <button type="submit" 
+                        id="btnBaoKetThucSubmit"
+                        class="px-6 py-3 bg-gradient-to-r from-orange-600 to-red-700 text-white rounded-xl hover:from-orange-700 hover:to-red-800 transition-all duration-200 font-medium flex items-center justify-center shadow-lg">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                    <span>Xác nhận báo kết thúc</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Hiển thị modal báo kết thúc
+function hienThiModalBaoKetThuc(hopDongData) {
+    // Set thông tin hợp đồng
+    const modalHopDongId = document.getElementById('modalBaoKetThucHopDongId');
+    const hiddenHopDongId = document.getElementById('hiddenBaoKetThucHopDongId');
+    
+    if (modalHopDongId) {
+        modalHopDongId.textContent = hopDongData.MA_HOP_DONG;
+    }
+    if (hiddenHopDongId) {
+        hiddenHopDongId.value = hopDongData.MA_HOP_DONG;
+    }
+    
+    // Set min date cho input (phải sau ngày hiện tại)
+    const dateInput = document.getElementById('ngayBaoKetThuc');
+    if (dateInput) {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        dateInput.min = tomorrow.toISOString().split('T')[0];
+        
+        // Set max date (không được sau ngày kết thúc hợp đồng)
+        if (hopDongData.NGAY_TRA_PHONG) {
+            const endDate = new Date(hopDongData.NGAY_TRA_PHONG);
+            endDate.setDate(endDate.getDate() - 1); // Trước 1 ngày
+            dateInput.max = endDate.toISOString().split('T')[0];
+        }
+    }
+    
+    // Reset form và ẩn lỗi
+    const form = document.getElementById('formBaoKetThucHopDong');
+    if (form) {
+        form.reset();
+        if (hiddenHopDongId) {
+            hiddenHopDongId.value = hopDongData.MA_HOP_DONG;
+        }
+    }
+    
+    const errorDiv = document.getElementById('errorMessageBaoKetThuc');
+    if (errorDiv) {
+        errorDiv.classList.add('hidden');
+    }
+    
+    // Hiển thị modal
+    const modal = document.getElementById('modalBaoKetThucHopDong');
+    if (modal) {
+        modal.classList.remove('hidden');
+    }
+}
+
+// Đóng modal
+function dongModalBaoKetThuc() {
+    const modal = document.getElementById('modalBaoKetThucHopDong');
+    const form = document.getElementById('formBaoKetThucHopDong');
+    const errorDiv = document.getElementById('errorMessageBaoKetThuc');
+    
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+    if (form) {
+        form.reset();
+    }
+    if (errorDiv) {
+        errorDiv.classList.add('hidden');
+    }
+}
+
+// Hiển thị lỗi
+function hienThiLoiBaoKetThuc(message) {
+    const errorDiv = document.getElementById('errorMessageBaoKetThuc');
+    if (errorDiv) {
+        const spanElement = errorDiv.querySelector('span');
+        if (spanElement) {
+            spanElement.textContent = message;
+        }
+        errorDiv.classList.remove('hidden');
+    } else {
+        alert(message); // Fallback nếu không có error div
+    }
+}
+
+// Setup khi DOM ready
+document.addEventListener('DOMContentLoaded', function() {
+    // Xử lý form submit
+    const form = document.getElementById('formBaoKetThucHopDong');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const maHopDong = document.getElementById('hiddenBaoKetThucHopDongId')?.value;
+            
+            // Validate form
+            const ngayBaoKetThuc = document.getElementById('ngayBaoKetThuc')?.value;
+            const lyDo = document.getElementById('lyDoBaoKetThuc')?.value?.trim();
+            
+            if (!ngayBaoKetThuc) {
+                hienThiLoiBaoKetThuc('Vui lòng chọn ngày báo kết thúc');
+                return;
+            }
+            
+            if (!lyDo) {
+                hienThiLoiBaoKetThuc('Vui lòng nhập lý do báo kết thúc');
+                return;
+            }
+            
+            if (!maHopDong) {
+                hienThiLoiBaoKetThuc('Không tìm thấy mã hợp đồng');
+                return;
+            }
+            
+            // Submit form
+            const submitButton = document.getElementById('btnBaoKetThucSubmit');
+            if (submitButton) {
+                const originalText = submitButton.innerHTML;
+                submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Đang xử lý...';
+                submitButton.disabled = true;
+                
+                fetch(`/admin/hopdong/bao-ket-thuc/${maHopDong}/`, {
+                    method: 'POST',
+                    body: formData
+                }).then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    } else {
+                        throw new Error('Server error: ' + response.status);
+                    }
+                }).then(data => {
+                    if (data.success) {
+                        alert(data.message);
+                        dongModalBaoKetThuc();
+                        window.location.reload(); // Reload trang để cập nhật thông tin
+                    } else {
+                        hienThiLoiBaoKetThuc(data.message);
+                    }
+                }).catch(error => {
+                    console.error('Fetch error:', error);
+                    hienThiLoiBaoKetThuc('Lỗi kết nối: ' + error.message);
+                }).finally(() => {
+                    if (submitButton) {
+                        submitButton.innerHTML = originalText;
+                        submitButton.disabled = false;
+                    }
+                });
+            }
+        });
+    }
+
+    // Đóng modal khi click overlay
+    const modal = document.getElementById('modalBaoKetThucHopDong');
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                dongModalBaoKetThuc();
+            }
+        });
+    }
+});
+</script>

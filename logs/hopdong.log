@@ -1,0 +1,32 @@
+[INFO] 2025-08-30 00:58:53,382 apps.hopdong.admin_views 17464 12304 Action: early_end, ma_hop_dong: None
+[INFO] 2025-08-30 01:01:33,532 apps.hopdong.admin_views 15724 7872 Workflow action data: {'action': 'early_end', 'contract_id': None, 'data': {'early_end_date': '2025-12-30', 'reason': '2323'}}
+[INFO] 2025-08-30 01:01:33,533 apps.hopdong.admin_views 15724 7872 Action: early_end, ma_hop_dong: None
+[INFO] 2025-08-30 01:04:33,497 apps.hopdong.admin_views 15724 17248 Workflow action data: {'action': 'early_end', 'contract_id': 52, 'data': {'early_end_date': '2025-10-30', 'reason': '2323'}}
+[INFO] 2025-08-30 01:04:33,498 apps.hopdong.admin_views 15724 17248 Action: early_end, ma_hop_dong: 52
+[INFO] 2025-08-30 01:04:33,499 apps.hopdong.view_new 15724 17248 handle_early_end_contract: ngày=2025-10-30, lý do='2323'
+[INFO] 2025-08-30 07:58:16,473 apps.hopdong.admin_views 17340 13436 Workflow action data: {'action': 'confirm', 'contract_id': 59}
+[INFO] 2025-08-30 07:58:16,474 apps.hopdong.admin_views 17340 13436 Action: confirm, ma_hop_dong: 59
+[ERROR] 2025-08-30 08:41:48,135 apps.hopdong.view_new 16908 7556 Exception trong bao_ket_thuc_som view: '>=' not supported between instances of 'datetime.date' and 'NoneType'
+Traceback (most recent call last):
+  File "E:\Hoc\KhoaLuan\Code\WebsiteQuanLyNhaTro\apps\hopdong\view_new.py", line 259, in bao_ket_thuc_som
+    success, lich_su_or_error = hop_dong.bao_ket_thuc_som(
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Hoc\KhoaLuan\Code\WebsiteQuanLyNhaTro\apps\hopdong\models.py", line 544, in bao_ket_thuc_som
+    if ngay_bao_ket_thuc >= self.NGAY_TRA_PHONG:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: '>=' not supported between instances of 'datetime.date' and 'NoneType'
+[INFO] 2025-08-30 09:00:19,648 apps.hopdong.view_new 19308 9416 Session is_authenticated: True
+[INFO] 2025-08-30 09:00:19,649 apps.hopdong.view_new 19308 9416 User: TaiKhoan object (57)
+[INFO] 2025-08-30 09:00:19,649 apps.hopdong.view_new 19308 9416 Request method: POST
+[INFO] 2025-08-30 09:08:54,446 apps.hopdong.view_new 19092 14420 Session is_authenticated: True
+[INFO] 2025-08-30 09:08:54,447 apps.hopdong.view_new 19092 14420 User: TaiKhoan object (57)
+[INFO] 2025-08-30 09:08:54,447 apps.hopdong.view_new 19092 14420 Request method: POST
+[INFO] 2025-08-30 09:09:04,832 apps.hopdong.view_new 19092 13844 Session is_authenticated: True
+[INFO] 2025-08-30 09:09:04,832 apps.hopdong.view_new 19092 13844 User: TaiKhoan object (57)
+[INFO] 2025-08-30 09:09:04,833 apps.hopdong.view_new 19092 13844 Request method: POST
+[INFO] 2025-08-30 09:45:13,284 apps.hopdong.view_new 10784 19880 Session is_authenticated: True
+[INFO] 2025-08-30 09:45:13,284 apps.hopdong.view_new 10784 19880 User: TaiKhoan object (57)
+[INFO] 2025-08-30 09:45:13,285 apps.hopdong.view_new 10784 19880 Request method: POST
+[INFO] 2025-08-30 14:14:11,592 apps.hopdong.view_new 18716 2008 Session is_authenticated: True
+[INFO] 2025-08-30 14:14:11,592 apps.hopdong.view_new 18716 2008 User: TaiKhoan object (57)
+[INFO] 2025-08-30 14:14:11,593 apps.hopdong.view_new 18716 2008 Request method: POST

@@ -1,0 +1,236 @@
+{% extends 'admin/admin_layout.html' %}
+{% load static %}
+
+{% block content_body %}
+<div class="bg-gradient-to-br from-green-50 to-emerald-100 min-h-screen">
+    <div class="container mx-auto px-4 py-6">
+        <!-- Header -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="w-10 h-10 bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-800 mb-2">
+                            <i class="fas fa-user-edit text-green-600 mr-3"></i>
+                            Chỉnh sửa thông tin khách thuê
+                        </h1>
+                        <p class="text-gray-600">Cập nhật thông tin cơ bản của khách thuê</p>
+                    </div>
+                </div>
+                <div class="flex gap-3">
+                    <a href="{% url 'hopdong:sua_thongtin_hopdong' hop_dong.MA_HOP_DONG %}" 
+                       class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors">
+                        <i class="fas fa-file-contract mr-2"></i>Sửa hợp đồng
+                    </a>
+                    <a href="{% url 'hopdong:sua_dichvu_hopdong' hop_dong.MA_HOP_DONG %}" 
+                       class="bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600 transition-colors">
+                        <i class="fas fa-concierge-bell mr-2"></i>Sửa dịch vụ
+                    </a>
+                    <a href="{% url 'hopdong:hopdong_list' %}" 
+                       class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors">
+                        <i class="fas fa-arrow-left mr-2"></i>Quay lại
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Messages -->
+        {% if messages %}
+            <div class="px-6 py-4">
+                {% for message in messages %}
+                    <div class="p-4 mb-3 rounded-lg border-l-4 {% if message.tags == 'error' %}bg-red-50 border-red-400 text-red-800{% else %}bg-green-50 border-green-400 text-green-800{% endif %}">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                {% if message.tags == 'error' %}
+                                    <svg class="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {% else %}
+                                    <svg class="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {% endif %}
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm font-medium">{{ message }}</p>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Main Form -->
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div class="bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-4">
+                <div class="flex items-center text-white">
+                    <div class="w-8 h-8 bg-white bg-opacity-20 rounded-lg flex items-center justify-center mr-3">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold">Thông tin khách thuê</h3>
+                        <p class="text-sm opacity-90">Hợp đồng #{{ hop_dong.MA_HOP_DONG }} - Phòng: {{ hop_dong.MA_PHONG.TEN_PHONG }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <form action="{% url 'hopdong:sua_khachthue_hopdong' hop_dong.MA_HOP_DONG %}" method="POST" id="tenantForm" class="p-6">
+                {% csrf_token %}
+                <input type="hidden" name="tenant_type" id="tenant_type_hidden" value="existing">
+                
+                <!-- Tùy chọn khách thuê -->
+                <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                    <div class="flex items-center gap-6 mb-4">
+                        <label class="flex items-center cursor-pointer">
+                            <input type="radio" name="tenant_type" value="existing" id="tenant_type_existing" 
+                                class="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 focus:ring-green-500" 
+                                {% if khach_thue %}checked{% endif %}>
+                            <span class="ml-2 text-sm font-medium text-gray-700">
+                                <i class="fas fa-user-check text-green-500 mr-1"></i>Khách thuê hiện tại
+                            </span>
+                        </label>
+                        <label class="flex items-center cursor-pointer">
+                            <input type="radio" name="tenant_type" value="search" id="tenant_type_search" 
+                                class="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 focus:ring-green-500">
+                            <span class="ml-2 text-sm font-medium text-gray-700">
+                                <i class="fas fa-search text-blue-500 mr-1"></i>Tìm khách thuê khác
+                            </span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Search Form -->
+                <div id="search_tenant_form" class="hidden mb-6">
+                    <div class="bg-blue-50 rounded-lg p-4">
+                        <div class="flex items-center mb-3">
+                            <i class="fas fa-search text-blue-600 mr-2"></i>
+                            <span class="text-sm font-medium text-blue-800">Tìm kiếm khách thuê có sẵn</span>
+                        </div>
+                        <div class="relative">
+                            <input type="text" id="search_tenant_input" 
+                                placeholder="Nhập tên hoặc số điện thoại để tìm kiếm..." 
+                                class="w-full p-3 border border-gray-300 rounded-lg bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 pr-12"
+                                autocomplete="off">
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                                <i class="fas fa-search text-gray-400"></i>
+                            </div>
+                        </div>
+                        
+                        <!-- Search Results -->
+                        <div id="search_results" class="hidden mt-3">
+                            <div class="max-h-64 overflow-y-auto border border-gray-200 rounded-lg bg-white shadow-sm">
+                                <div id="search_results_list"></div>
+                            </div>
+                        </div>
+                        
+                        <p class="text-xs text-blue-600 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Nhập ít nhất 2 ký tự để bắt đầu tìm kiếm. Chọn khách thuê từ danh sách để tự động điền thông tin.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Tenant Information Form -->
+                <div id="tenant_info_form">
+                    <input type="hidden" name="MA_KHACH_THUE" id="MA_KHACH_THUE" value="{% if khach_thue %}{{ khach_thue.MA_KHACH_THUE }}{% endif %}">
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <!-- Thông tin cơ bản -->
+                        <div class="space-y-6">
+                            <div class="flex items-center mb-4">
+                                <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                                    <i class="fas fa-id-card text-green-600"></i>
+                                </div>
+                                <h4 class="text-lg font-semibold text-gray-900">Thông tin cơ bản</h4>
+                            </div>
+
+                            <!-- Họ tên -->
+                            <div>
+                                <label for="HO_TEN_KT" class="flex items-center text-sm font-medium text-gray-700 mb-2">
+                                    <i class="fas fa-user text-green-500 mr-2"></i>Họ và tên
+                                </label>
+                                <input name="HO_TEN_KT" id="HO_TEN_KT" type="text" placeholder="Nhập họ và tên" required 
+                                    class="w-full p-3 border border-gray-300 rounded-lg bg-white focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-200"
+                                    value="{% if khach_thue %}{{ khach_thue.HO_TEN_KT }}{% endif %}">
+                            </div>
+
+                            <!-- Giới tính và ngày sinh -->
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label for="GIOI_TINH_KT" class="flex items-center text-sm font-medium text-gray-700 mb-2">
+                                        <i class="fas fa-venus-mars text-green-500 mr-2"></i>Giới tính
+                                    </label>
+                                    <select name="GIOI_TINH_KT" id="GIOI_TINH_KT" required 
+                                        class="w-full p-3 border border-gray-300 rounded-lg bg-white focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-200">
+                                        <option value="Nam" {% if khach_thue and khach_thue.GIOI_TINH_KT == "Nam" %}selected{% endif %}>Nam</option>
+                                        <option value="Nữ" {% if khach_thue and khach_thue.GIOI_TINH_KT == "Nữ" %}selected{% endif %}>Nữ</option>
+                                        <option value="Khác" {% if khach_thue and khach_thue.GIOI_TINH_KT == "Khác" %}selected{% endif %}>Khác</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="NGAY_SINH_KT" class="flex items-center text-sm font-medium text-gray-700 mb-2">
+                                        <i class="fas fa-birthday-cake text-green-500 mr-2"></i>Ngày sinh
+                                    </label>
+                                    <input name="NGAY_SINH_KT" id="NGAY_SINH_KT" type="date" 
+                                        class="w-full p-3 border border-gray-300 rounded-lg bg-white focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-200"
+                                        value="{% if khach_thue and khach_thue.NGAY_SINH_KT %}{{ khach_thue.NGAY_SINH_KT|date:'Y-m-d' }}{% endif %}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Thông tin liên hệ -->
+                        <div class="space-y-6">
+                            <div class="flex items-center mb-4">
+                                <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                                    <i class="fas fa-phone text-blue-600"></i>
+                                </div>
+                                <h4 class="text-lg font-semibold text-gray-900">Liên hệ</h4>
+                            </div>
+
+                            <!-- Điện thoại và email -->
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label for="SDT_KT" class="flex items-center text-sm font-medium text-gray-700 mb-2">
+                                        <i class="fas fa-phone text-green-500 mr-2"></i>Điện thoại
+                                    </label>
+                                    <input name="SDT_KT" id="SDT_KT" type="tel" placeholder="0123456789" required 
+                                        class="w-full p-3 border border-gray-300 rounded-lg bg-white font-mono focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-200"
+                                        value="{% if khach_thue %}{{ khach_thue.SDT_KT }}{% endif %}">
+                                </div>
+                                <div>
+                                    <label for="EMAIL_KT" class="flex items-center text-sm font-medium text-gray-700 mb-2">
+                                        <i class="fas fa-envelope text-green-500 mr-2"></i>Email
+                                    </label>
+                                    <input name="EMAIL_KT" id="EMAIL_KT" type="email" placeholder="email@example.com" 
+                                        class="w-full p-3 border border-gray-300 rounded-lg bg-white focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-200"
+                                        value="{% if khach_thue %}{{ khach_thue.EMAIL_KT }}{% endif %}">
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Submit buttons -->
+                <div class="flex items-center justify-end gap-4 mt-8 pt-6 border-t border-gray-200">
+                    <button type="submit" class="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium">
+                        <i class="fas fa-save mr-2"></i>Lưu thay đổi
+                    </button>
+                    <a href="{% url 'hopdong:hopdong_list' %}" class="px-8 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors font-medium">
+                        <i class="fas fa-times mr-2"></i>Hủy bỏ
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/admin/hopdong/sua_khachthue_hopdong.js' %}"></script>
+{% endblock %}

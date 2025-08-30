@@ -151,7 +151,7 @@ function XoaHopDong(dichVuId) {
         return;
     }
 }
-function huyHopDong(dichVuId) {
+function ketThucHopDong(dichVuId) {
     // Kiểm tra ID hợp đồng hợp lệ
     if (!dichVuId) {
         alert("ID hợp đồng không hợp lệ.");
@@ -161,9 +161,9 @@ function huyHopDong(dichVuId) {
     // Lấy ngày hiện tại theo định dạng MySQL (YYYY-MM-DD)
     const currentDate = new Date().toISOString().split('T')[0];
 
-    // Xác nhận hủy hợp đồng
-    if (confirm("Bạn có chắc chắn muốn hủy hợp đồng này?")) {
-        // Gửi yêu cầu hủy hợp đồng
+    // Xác nhận kết thúc hợp đồng
+    if (confirm("Bạn có chắc chắn muốn kết thúc hợp đồng này?")) {
+        // Gửi yêu cầu kết thúc hợp đồng
         fetch(`/hopdong/huyHopDong/${dichVuId}`, {
             method: 'PUT',
             headers: {
@@ -177,13 +177,13 @@ function huyHopDong(dichVuId) {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Nếu hủy hợp đồng thành công, thông báo và cập nhật trạng thái
+                    // Nếu kết thúc hợp đồng thành công, thông báo và cập nhật trạng thái
                     alert(data.message); // Thông báo thành công
 
-                    // Cập nhật trạng thái hủy hợp đồng trên bảng
+                    // Cập nhật trạng thái kết thúc hợp đồng trên bảng
                     location.reload();  // Tải lại trang hoặc cập nhật giao diện theo nhu cầu
                 } else {
-                    // Nếu có lỗi khi hủy, thông báo lỗi
+                    // Nếu có lỗi khi kết thúc, thông báo lỗi
                     alert(data.message); // Thông báo lỗi
                 }
             })
@@ -192,7 +192,7 @@ function huyHopDong(dichVuId) {
                 alert('Có lỗi xảy ra, vui lòng thử lại!' + error);
             });
     } else {
-        // Nếu không xác nhận hủy hợp đồng
+        // Nếu không xác nhận kết thúc hợp đồng
         return;
     }
 }
@@ -615,43 +615,124 @@ if (typeof executeWorkflowAction === 'function') {
     window.executeWorkflowAction = function(action, contractId, additionalData = {}) {
         console.log(`🔄 Executing workflow action: ${action} for contract ${contractId}`);
         
-        const data = {
-            action: action,
-            ma_hop_dong: contractId,
-            ...additionalData
-        };
+        // Xử lý đặc biệt cho action 'cancel' - chuyển đến trang kết thúc
+        if (action === 'cancel') {
+            console.log(`Redirecting to termination page for contract ${contractId}`);
+            window.location.href = `/admin/hopdong/ket-thuc/${contractId}/`;
+            return Promise.resolve({ success: true, redirect: true });
+        }
         
-        return fetch('/admin/hopdong/workflow-action/', {
+        // Show loading trong modal nếu có
+        const modalBody = document.getElementById('workflowModalBody');
+        if (modalBody) {
+            modalBody.innerHTML = `
+                <div class="text-center">
+                    <div class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p class="text-blue-600 font-medium">Đang xử lý...</p>
+                </div>
+            `;
+        }
+        
+        // Xử lý action confirm bằng form submission để cho phép redirect tự nhiên
+        if (action === 'confirm') {
+            // Đóng modal trước khi submit form
+            if (typeof closeWorkflowModal === 'function') {
+                closeWorkflowModal();
+            }
+            
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/admin/hopdong/xac-nhan/${contractId}/`;
+            form.style.display = 'none';
+            
+            // Thêm CSRF token
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrfmiddlewaretoken';
+            csrfInput.value = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+            form.appendChild(csrfInput);
+            
+            // Submit form để server có thể redirect với messages
+            document.body.appendChild(form);
+            form.submit();
+            
+            // Trả về resolved promise để tương thích
+            return Promise.resolve({ success: true, message: 'Đang xác nhận hợp đồng...' });
+        }
+        
+        // Đối với các actions khác sử dụng fetch
+        let requestUrl = '';
+        let requestData = new FormData();
+        
+        if (action === 'early_end') {
+            requestUrl = `/admin/hopdong/bao-ket-thuc/${contractId}/`;
+            if (additionalData.data) {
+                requestData.append('ngay_bao_ket_thuc', additionalData.data.early_end_date);
+                requestData.append('ly_do_bao_ket_thuc', additionalData.data.reason);
+            }
+        } else {
+            console.error('Action không được hỗ trợ:', action);
+            showNotification('Chức năng chưa được hỗ trợ', 'error');
+            return Promise.reject(new Error('Action không được hỗ trợ: ' + action));
+        }
+        
+        requestData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]')?.value || '');
+        
+        return fetch(requestUrl, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
-            },
-            body: JSON.stringify(data)
+            body: requestData
         })
-        .then(response => response.json())
+        .then(response => {
+            if (response.ok) {
+                return response.json();
+            } else {
+                throw new Error(`HTTP ${response.status}`);
+            }
+        })
         .then(data => {
-            console.log('📦 Workflow response:', data);
+            console.log('📦 Response:', data);
             
             if (data.success) {
                 showNotification(data.message, 'success');
                 
+                // Đóng modal tương ứng với action
+                if (action === 'early_end' && typeof closeEarlyEndModal === 'function') {
+                    closeEarlyEndModal();
+                } else if (typeof closeWorkflowModal === 'function') {
+                    closeWorkflowModal();
+                }
+                
                 // Hiển thị modal hóa đơn nếu có
                 if (data.show_invoice && data.invoice_data) {
                     setTimeout(() => showHoaDonModal(data.invoice_data), 500);
+                } else {
+                    // Reload sau khi thành công
+                    setTimeout(() => window.location.reload(), 2000);
                 }
-                
-                // Reload trang sau 2s để cập nhật UI
-                setTimeout(() => window.location.reload(), 2000);
             } else {
                 showNotification(data.message || 'Có lỗi xảy ra', 'error');
+                
+                // Đóng modal khi có lỗi
+                if (action === 'early_end' && typeof closeEarlyEndModal === 'function') {
+                    closeEarlyEndModal();
+                } else if (typeof closeWorkflowModal === 'function') {
+                    closeWorkflowModal();
+                }
             }
             
             return data;
         })
         .catch(error => {
             console.error('❌ Workflow error:', error);
-            showNotification('Lỗi kết nối', 'error');
+            showNotification('Lỗi kết nối: ' + error.message, 'error');
+            
+            // Đóng modal khi có lỗi
+            if (action === 'early_end' && typeof closeEarlyEndModal === 'function') {
+                closeEarlyEndModal();
+            } else if (typeof closeWorkflowModal === 'function') {
+                closeWorkflowModal();
+            }
+            
             throw error;
         });
     };
